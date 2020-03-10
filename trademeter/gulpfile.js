@@ -12,15 +12,15 @@ var notify = require('gulp-notify');
 var path = "src/";
 
 gulp.task('sass', function() {
-  return gulp.src(path+'sass/**')
-    // .pipe(sourcemaps.init())
+  return gulp.src(path+'sass/main.sass')
+    .pipe(sourcemaps.init())
     .pipe(sass({ outputStyle: 'expanded' }))
     .on('error', notify.onError())
     .pipe(autoprefixer({
       browsers: ['last 4 versions']
     }))
     .pipe(minifyCSS())
-    // .pipe(sourcemaps.write())
+    .pipe(sourcemaps.write())
     .pipe(gulp.dest('dist/css'))
     .pipe(browserSync.stream({ match: '**/*.css' }));
 });

@@ -8,7 +8,9 @@ import {
   Tooltip,
   Radio,
   Input,
-  Switch
+  Switch,
+  Typography,
+  Tag
 } from 'antd/es'
 import $ from "jquery"
 import "chart.js"
@@ -20,6 +22,7 @@ import params from "./params";
 
 const { Option } = Select;
 const { Group } = Radio;
+const { Text } = Typography;
 
 var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 var chart;
@@ -264,6 +267,9 @@ class App extends React.Component {
       directUnloading: true
     };
 
+    this.state.tools.map((tool, i) => Object.assign( tool, { id: i } ));
+    this.state.toolsTemp = [...this.state.tools];
+
     this.state.showWithdrawal = this.state.withdrawal != 0;
     this.state.rowsNumber = (this.state.days < 10) ? this.state.days : 10;
     this.state.data      = this.buildData(this.state.days);
@@ -409,6 +415,24 @@ class App extends React.Component {
     this.setState({ tools });
   }
 
+  bindEvents() {
+    var $modal = $(".modal");
+    var $body = $("body");
+    $(".js-open-modal").click(e => {
+      console.log(this);
+
+      this.setState({ toolsTemp: [...this.state.tools] }, () => {
+        $modal.addClass("visible");
+        $body.addClass("scroll-disabled");
+      });
+    });
+
+    $(".js-close-modal").click(e => {
+      $modal.removeClass("visible");
+      $body.removeClass("scroll-disabled");
+    });
+  }
+
   componentDidMount() {
     this.recalc();
 
@@ -476,6 +500,8 @@ class App extends React.Component {
         }
       }
     });
+
+    this.bindEvents();
   }
 
   recalc() {
@@ -613,7 +639,10 @@ class App extends React.Component {
                 <Row className="card-1-label-group" type="flex" justify="space-between" align="middle">
                   <label className="input-group">
                     <span className="input-group__title">Сумма на вывод</span>
-                    <Tooltip title={(this.state.withdrawal > (this.state.depoStart * 0.15)) ? "Слишком большой вывод!" : null}>
+                    <Tooltip 
+                      title="Слишком большой вывод!"
+                      visible={this.state.withdrawal > (this.state.depoStart * 0.15)}
+                    >
                       <NumericInput 
                         className={"input-group__input ".concat(
                           (this.state.withdrawal > (this.state.depoStart * 0.15)) ? "error" : ""
@@ -1082,20 +1111,46 @@ class App extends React.Component {
                     </tr>
                   </thead>
                   {
-                    this.state.tools.map((tool, i) =>
-                      <tr className="js-config-row" key={i}>
+                    this.state.toolsTemp.map((tool, i) =>
+                      <tr className="config-tr js-config-row" key={tool.id}>
                         {
-                          Object.keys(tool).map((key, i) => 
-                            <td className="table-td" key={i}>
-                              <Input 
-                                className="config__input" 
-                                defaultValue={tool[key]}
-                                placeholder={tool[key]}
-                                data-name={key}
-                              />
-                            </td>
+                          Object.keys(tool).map((key, i) =>
+                            key == "id" ? (
+                              null
+                            )
+                            :
+                              <td className="table-td">
+                                <Input 
+                                  className="config__input" 
+                                  defaultValue={tool[key]}
+                                  placeholder={tool[key]}
+                                  data-name={key}
+                                />
+                              </td>
                           )
                         }
+                        <td className="table-td">
+                          {
+                            this.state.tools.length > 1 ? (
+                              <button className="config-tr-delete" aria-label="Удалить инструмент"
+                                onClick={e => {
+                                  let tools = [...this.state.toolsTemp];
+
+                                  var i = $(e.target).parents("tr").index() - 1;
+
+                                  tools.splice(i, 1);
+                                  // console.log(tools);
+
+                                  this.setState({ toolsTemp: tools });
+                                }}
+                              >
+                                <Tag color="magenta">Удалить</Tag>
+                              </button>
+                            )
+                            :
+                              null
+                          }
+                        </td>
                       </tr>
                     )
                   }
@@ -1107,7 +1162,8 @@ class App extends React.Component {
                 className="config__add-btn"
                 type="link"
                 onClick={() => {
-                  let tools = [...this.state.tools];
+                  let tools = [...this.state.toolsTemp];
+
                   tools.push({
                     name:            "Инструмент",
                     stepPrice:       0,
@@ -1115,9 +1171,11 @@ class App extends React.Component {
                     averageProgress: 0,
                     currentPrice:    0,
                     lotSize:         0,
-                    dollarRate:      0
+                    dollarRate:      0,
+                    id:              Math.random()
                   });
-                  this.setState({ tools });
+                  
+                  this.setState({ toolsTemp: tools }, () => $(".config-table-wrap").scrollTop(999999) );
                 }}
               >
                 Добавить инструмент
