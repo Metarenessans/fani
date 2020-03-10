@@ -620,7 +620,7 @@ class App extends React.Component {
                         <span className="input-group__title">Доходность в день</span>
                         <NumericInput
                           key={this.state.days}
-                          className="input-group__input"
+                          className={"input-group__input ".concat(this.state.days == 2600 && this.state.incomePersantageCustom > 1 ? "error" : "")}
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
                           min={(this.state.minDailyIncome).toFixed(3)}
@@ -628,6 +628,16 @@ class App extends React.Component {
                           onBlur={val => this.setState({
                             incomePersantageCustom: val
                           }, this.recalc)}
+                          onInvalid={val => {
+                            let { days } = this.state;
+
+                            if (days == 2600 && val > 1) {
+                              return "Вывод больше 1% депозита";
+                            }
+
+                            return "";
+                          }}
+                          onChange={(e, value) => console.log(e, value)}
                           format={formatNumber}
                           suffix="%"
                         />
@@ -639,32 +649,28 @@ class App extends React.Component {
                 <Row className="card-1-label-group" type="flex" justify="space-between" align="middle">
                   <label className="input-group">
                     <span className="input-group__title">Сумма на вывод</span>
-                    <Tooltip 
-                      title="Слишком большой вывод!"
-                      visible={this.state.withdrawal > (this.state.depoStart * 0.15)}
-                    >
-                      <NumericInput 
-                        className={"input-group__input ".concat(
-                          (this.state.withdrawal > (this.state.depoStart * 0.15)) ? "error" : ""
-                        )} 
-                        defaultValue={this.state.withdrawal}
-                        format={formatNumber}
-                        suffix="/день"
-                        max={this.state.depoStart}
-                        onBlur={val => {
-                          let { depoStart } = this.state;
+                    <NumericInput 
+                      className="input-group__input"
+                      defaultValue={this.state.withdrawal}
+                      format={formatNumber}
+                      suffix="/день"
+                      max={this.state.depoStart}
+                      onBlur={val => {
+                        this.setState({
+                          withdrawal:     val,
+                          showWithdrawal: val !== 0
+                        }, this.recalc)
+                      }}
+                      onInvalid={val => {
+                        let { depoStart } = this.state;
 
-                          if (val > (depoStart * 0.15)) {
-                            console.warn("more than 15%!");
-                          }
+                        if (val > (depoStart * 0.15)) {
+                          return "Слишком большой вывод!";
+                        }
 
-                          this.setState({
-                            withdrawal:     val,
-                            showWithdrawal: val !== 0
-                          }, this.recalc)
-                        }}
-                      />
-                    </Tooltip>
+                        return "";
+                      }}
+                    />
                   </label>
                   
                   <label className="input-group">
@@ -868,7 +874,7 @@ class App extends React.Component {
                   </Select>
                 </div>
 
-                <label className="switch">
+                <label className="switch card-4__switch">
                   <Switch 
                     className="switch__input" 
                     defaultChecked={this.state.directUnloading} 

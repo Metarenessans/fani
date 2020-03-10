@@ -80,6 +80,8 @@ body
     text-align: center
 
 .switch
+  cursor: pointer
+  
   &__input
     margin-top: -.25em
   &__label
@@ -140,8 +142,19 @@ body
   &__input
     text-align: center
 
-    &.error .ant-input
-      box-shadow: 0 0 0 .15em red!important
+    &.error
+      .ant-input
+        border-color: red
+
+        &:focus
+          box-shadow: 0 0 0 2rem rgba(red, .2)
+
+        &:hover
+          border-color: red
+      
+      .ant-input-suffix
+        pointer-events: none
+
 
 .paginator
   display: inline-flex
