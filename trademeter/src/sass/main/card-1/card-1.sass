@@ -1,0 +1,21 @@
+@import "../../mixins"
+  
+.card-1
+
+  &__header
+    display: flex
+    justify-content: space-between
+    align-items: center
+    padding: 2em 0 3em
+  
+  &-label-group
+    width: 45%
+
+    +lg
+      width: 49%
+
+    &__arrow
+      align-self: flex-end
+      width:  2em
+      height: 2em
+      transform: translateY(-1.25em) rotate(180deg)

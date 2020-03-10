@@ -1,0 +1,42 @@
+$fonts: "../fonts/";
+
+@font-face {
+  font-family: 'Circe';
+  src: local('Circe'),
+       local('Circe-Regular'),
+       url($fonts + 'Circe/Regular/Circe-Regular.woff2') format('woff2'),
+       url($fonts + 'Circe/Regular/Circe-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@mixin circe {
+  font-family: 'Circe', sans-serif;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'Circe';
+  src: local('Circe Bold'),
+       local('Circe-Bold'),
+       url($fonts + 'Circe/Bold/Circe-Bold.woff2') format('woff2'),
+       url($fonts + 'Circe/Bold/Circe-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@mixin circeBold {
+  font-family: 'Circe', sans-serif;
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Circe';
+  src: local('Circe ExtraBold'),
+       local('Circe-ExtraBold'),
+       url($fonts + 'Circe/ExtraBold/Circe-ExtraBold.woff2') format('woff2'),
+       url($fonts + 'Circe/ExtraBold/Circe-ExtraBold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+}
+

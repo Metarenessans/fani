@@ -1,0 +1,29 @@
+[
+  {
+    "name":            "Золото (GDZ9)",
+    "stepPrice":       6.37,
+    "go":              7194.1,
+    "averageProgress": 50,
+    "currentPrice":    1495,
+    "lotSize":         0,
+    "dollarRate":      0
+  }
+  ,{
+    "name":            "Палладий (PDZ9)",
+    "stepPrice":       0.64,
+    "go":              17600.0,
+    "averageProgress": 50,
+    "currentPrice":    2400,
+    "lotSize":         0,
+    "dollarRate":      0
+  }
+  ,{
+    "name":            "Test",
+    "stepPrice":       0.54,
+    "go":              14200.2,
+    "averageProgress": 12,
+    "currentPrice":    100,
+    "lotSize":         0,
+    "dollarRate":      0
+  }
+]
