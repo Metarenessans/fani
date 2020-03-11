@@ -107,6 +107,10 @@ class App extends React.Component {
       contracts: 40,
       // Просадка
       drawdown: 200000,
+      // Догрузка (в процентах)
+      additionalLoading: 20,
+      // Ожидаемый ход (в долларах)
+      stepExpected: 1,
 
       // ===================
       // Вычисляемые значения
@@ -116,6 +120,8 @@ class App extends React.Component {
       freeMoney: 0,
       // Прошло пунктов против
       pointsAgainst: 0,
+      // 
+      incomeExpected: 0,
 
       tools: this.loadConfig() || [
         {
@@ -123,6 +129,7 @@ class App extends React.Component {
           stepPrice: 6.37,
           guaranteeValue: 7194.1,
           averageProgress: 50,
+          priceStep: 0.10,
           currentPrice: 1495,
           lotSize: 1.0,
           dollarRate: 0
@@ -132,6 +139,7 @@ class App extends React.Component {
           stepPrice: 0.64,
           guaranteeValue: 17600.0,
           averageProgress: 50,
+          priceStep: 0.01,
           currentPrice: 2400,
           lotSize: 1.0,
           dollarRate: 0
@@ -141,6 +149,7 @@ class App extends React.Component {
           stepPrice: 12.74,
           guaranteeValue: 22301.4,
           averageProgress: 200,
+          priceStep: 10.00,
           currentPrice: 141520,
           lotSize: 1.0,
           dollarRate: 0
@@ -150,6 +159,7 @@ class App extends React.Component {
           stepPrice: 1.00,
           guaranteeValue: 4296.5,
           averageProgress: 100,
+          priceStep: 1.00,
           currentPrice: 64226,
           lotSize: 1.0,
           dollarRate: 0
@@ -159,6 +169,7 @@ class App extends React.Component {
           stepPrice: 1.00,
           guaranteeValue: 4448.5,
           averageProgress: 100,
+          priceStep: 1.00,
           currentPrice: 24413,
           lotSize: 1.0,
           dollarRate: 0
@@ -168,6 +179,7 @@ class App extends React.Component {
           stepPrice: 0.64,
           guaranteeValue: 19709.8,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 310,
           lotSize: 1.0,
           dollarRate: 63.58
@@ -177,6 +189,7 @@ class App extends React.Component {
           stepPrice: 0.64,
           guaranteeValue: 381.5,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 17,
           lotSize: 1.0,
           dollarRate: 63.58
@@ -186,6 +199,7 @@ class App extends React.Component {
           stepPrice: 0.64,
           guaranteeValue: 13004.7,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 204.54,
           lotSize: 1.0,
           dollarRate: 63.58
@@ -195,6 +209,7 @@ class App extends React.Component {
           stepPrice: 0.64,
           guaranteeValue: 3053.7,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 48.03,
           lotSize: 1.0,
           dollarRate: 63.58
@@ -204,6 +219,7 @@ class App extends React.Component {
           stepPrice: 0.10,
           guaranteeValue: 2525.0,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 252.5,
           lotSize: 10.0,
           dollarRate: 0
@@ -213,6 +229,7 @@ class App extends React.Component {
           stepPrice: 0.10,
           guaranteeValue: 3199.5,
           averageProgress: 50,
+          priceStep: 0.100,
           currentPrice: 3199.5,
           lotSize: 1.0,
           dollarRate: 0
@@ -222,6 +239,7 @@ class App extends React.Component {
           stepPrice: 0.10,
           guaranteeValue: 936.0,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 93.6,
           lotSize: 10.0,
           dollarRate: 0
@@ -231,6 +249,7 @@ class App extends React.Component {
           stepPrice: .50,
           guaranteeValue: 4646.6,
           averageProgress: 200,
+          priceStep: 0.005,
           currentPrice: 46.455,
           lotSize: 100.0,
           dollarRate: 0
@@ -240,6 +259,7 @@ class App extends React.Component {
           stepPrice: 1.00,
           guaranteeValue: 4183.0,
           averageProgress: 50,
+          priceStep: 0.100,
           currentPrice: 418.3,
           lotSize: 10.0,
           dollarRate: 0
@@ -249,12 +269,13 @@ class App extends React.Component {
           stepPrice: .10,
           guaranteeValue: 705.8,
           averageProgress: 100,
+          priceStep: 0.010,
           currentPrice: 70.58,
           lotSize: 10.0,
           dollarRate: 0
         }
       ],
-      currentToolIndex: 2,
+      currentToolIndex: 0,
     };
 
     this.state.tools.map((tool, i) => Object.assign(tool, { id: i }));
@@ -321,14 +342,17 @@ class App extends React.Component {
   }
 
   recalc() {
-    const { depo, drawdown, contracts, tools, currentToolIndex } = this.state
+    const { depo, drawdown, additionalLoading, stepExpected, contracts, tools, currentToolIndex } = this.state;
     
     let currentTool = tools[currentToolIndex];
     let rubbles = contracts * currentTool.guaranteeValue;
 
+    console.log(drawdown, contracts, currentTool.stepPrice);
+    console.log(drawdown / (contracts * currentTool.stepPrice));
     this.setState({ 
-      freeMoney:     depo - drawdown - rubbles,
-      pointsAgainst: drawdown / (contracts * currentTool.stepPrice),
+      freeMoney:      depo - drawdown - rubbles,
+      pointsAgainst:  drawdown / (contracts * currentTool.stepPrice),
+      incomeExpected: ((depo * (additionalLoading / 100)) / currentTool.guaranteeValue) * (stepExpected / currentTool.priceStep * currentTool.stepPrice)
     });
   }
 
@@ -410,7 +434,7 @@ class App extends React.Component {
                         className="input-group__input"
                         defaultValue={this.state.contracts}
                         round
-                        onBlur={val => this.setState({ contracts: val })}
+                        onBlur={val => this.setState({ contracts: val }, this.recalc)}
                         format={formatNumber}
                       />
                     </label>
@@ -464,7 +488,7 @@ class App extends React.Component {
 
                             return (
                               <Text>
-                                { formatNumber(currentTool.currentPrice - (pointsAgainst * currentTool.stepPrice)) }
+                                { formatNumber((currentTool.currentPrice - (pointsAgainst * currentTool.priceStep)).toFixed(1)) }
                               </Text>
                             ) 
                           })()
@@ -500,7 +524,7 @@ class App extends React.Component {
                       <label className="switch card-2__switch">
                         <Switch
                           className="switch__input"
-                          defaultChecked={false}
+                          defaultChecked={true}
                           onChange={val => {}} />
                         <span className="switch__label">Прямая</span>
                       </label>
@@ -511,13 +535,8 @@ class App extends React.Component {
                       <div className="days-select">
                         <span className="days-select__label">Догрузка</span>
                         <Select
-                          defaultValue={0}
-                          onChange={(val, i) => { }}
-                          showSearch
-                          optionFilterProp="children"
-                          filterOption={(input, option) =>
-                            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                          }
+                          defaultValue={2}
+                          onChange={(val, i) => this.setState({ additionalLoading: +i.props.children.match(/\d+/g)[0] }, this.recalc) }
                           style={{ width: "100%" }}
                         >
                           {
@@ -537,34 +556,23 @@ class App extends React.Component {
                         <Text>Итераций</Text>
                       </Col>
                       <Col span={12} style={{ fontWeight: "bold" }}>
-                        <Text>4</Text>
+                        <Text>{ (this.state.drawdown / this.state.incomeExpected).toFixed(1) }</Text>
                       </Col>
                     </Col>
                   </Row>
                   <Row className="card-2__row" type="flex" justify="space-between" align="bottom">
                     <Col span={11} style={{ textAlign: "center" }}>
                       <div className="days-select">
-                        <span className="days-select__label">Ожидаемый ход (пп)</span>
-                        <Select
-                          defaultValue={100}
-                          onChange={(val, i) => { }}
-                          showSearch
-                          optionFilterProp="children"
-                          filterOption={(input, option) =>
-                            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                          }
-                          style={{ width: "100%" }}
-                        >
-                          {
-                            [5].concat(
-                              new Array(7).fill(0).map((val, i) => 10 * (i + 1))
-                            )
-                              .map(val => val + "% от депо")
-                              .map((value, index) => (
-                                <Option key={index} value={index}>{value}</Option>
-                              ))
-                          }
-                        </Select>
+                        <label className="input-group">
+                          <span className="input-group__title">Ожидаемый ход (пп)</span>
+                          <NumericInput
+                            className="input-group__input"
+                            defaultValue={this.state.stepExpected}
+                            round
+                            onBlur={val => this.setState({ stepExpected: val }, this.recalc)}
+                            format={formatNumber}
+                          />
+                        </label>
                       </div>
                     </Col>
                     <Col span={11}>
@@ -575,7 +583,7 @@ class App extends React.Component {
                         </Text>
                       </Col>
                       <Col span={12} style={{ fontWeight: "bold" }}>
-                        <Text>8 243</Text>
+                        <Text>{formatNumber(this.state.incomeExpected.toFixed(1))}</Text>
                       </Col>
                     </Col>
                   </Row>
@@ -679,6 +687,7 @@ class App extends React.Component {
                       <th className="table-th">Цена шага</th>
                       <th className="table-th">ГО</th>
                       <th className="table-th">Средний ход<br /> инструмента</th>
+                      <th className="table-th">Шаг цены</th>
                       <th className="table-th">Текущая цена</th>
                       <th className="table-th">Размер лота</th>
                       <th className="table-th">Курс доллара</th>
