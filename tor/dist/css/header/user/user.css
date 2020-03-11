@@ -1,0 +1,1 @@
+.user{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center}.user-avatar{border:.1em dashed rgba(255,255,255,.3);padding:.5em;border-radius:50%;cursor:pointer}.user-avatar__img{width:6em;height:6em;border-radius:50%}.user__avatar{margin-right:1.5em}.user__name{font-size:2em;letter-spacing:.01em}

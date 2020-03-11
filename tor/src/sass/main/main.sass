@@ -1,0 +1,58 @@
+@import "card-1/card-1"
+@import "card-3/card-3"
+@import "card-4/card-4"
+  
+.main
+  padding: 2em 0
+
+  color: #141414
+
+  &-top
+    display: flex
+    justify-content: space-between
+    align-items: flex-end
+
+  &__title
+    margin: 0
+    margin-bottom: .75em
+
+    font-size: 4em
+    font-weight: bold
+
+  &-save
+    font-size: 1.5em
+
+  &-settings
+    position: relative
+    z-index: 0
+    width:  3.25em
+    height: 3.25em
+    background: none
+    padding: 0
+    border: none
+
+    transition: all .25s ease-in
+
+    cursor: pointer
+
+    &:focus,
+    &:hover
+      transform: rotate(-45deg)
+      outline: none
+      box-shadow: none
+
+    &__icon
+      fill: #1890ff
+
+  &__card-1
+    margin: 1.25em 0
+
+  &__card-2
+    display: flex
+    flex-direction: column
+
+  &__card-3
+    width: 50%
+
+  &__card-4
+    margin-top: 1.25em
