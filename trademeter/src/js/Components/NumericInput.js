@@ -51,7 +51,12 @@ export default class NumericInput extends React.Component {
       .replace(/\s+/g, "")
       .replace(/\,/g, ".")
       .replace(/^0+/g, "0");
-    if (value.indexOf(".") < 0 && value.length > 1 && value[0] == "0") {
+    if (
+      !this.props.round      &&
+      value.indexOf(".") < 0 &&
+      value.length > 1       &&
+      value[0] == "0"
+    ) {
       var before = value.substring(0, 1);
       var after = value.substring(1, value.length);
       value = before + "." + after;

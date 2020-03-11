@@ -419,8 +419,6 @@ class App extends React.Component {
     var $modal = $(".modal");
     var $body = $("body");
     $(".js-open-modal").click(e => {
-      console.log(this);
-
       this.setState({ toolsTemp: [...this.state.tools] }, () => {
         $modal.addClass("visible");
         $body.addClass("scroll-disabled");
@@ -652,6 +650,7 @@ class App extends React.Component {
                     <NumericInput 
                       className="input-group__input"
                       defaultValue={this.state.withdrawal}
+                      round
                       format={formatNumber}
                       suffix="/день"
                       max={this.state.depoStart}
