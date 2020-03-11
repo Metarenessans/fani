@@ -8,7 +8,8 @@ import {
   Tooltip,
   Radio,
   Input,
-  Switch
+  Switch,
+  Tag
 } from 'antd/es'
 import CustomSlider from "./Components/CustomSlider"
 import NumericInput from "./Components/NumericInput"
@@ -122,6 +123,9 @@ class App extends React.Component {
       ],
       currentTool: 0
     };
+
+    this.state.tools.map((tool, i) => Object.assign(tool, { id: i }));
+    this.state.toolsTemp = [...this.state.tools];
   }
 
   buildData() {
@@ -247,6 +251,36 @@ class App extends React.Component {
     chart.update();
   }
 
+  bindEvents() {
+    var $modal = $(".modal");
+    var $body = $("body");
+    $(".js-open-modal").click(e => {
+      this.setState({ toolsTemp: [...this.state.tools] }, () => {
+        $modal.addClass("visible");
+        $body.addClass("scroll-disabled");
+      });
+    });
+
+    $(".js-close-modal").click(e => {
+      $modal.removeClass("visible");
+      $body.removeClass("scroll-disabled");
+    });
+
+    $(".js-tm-link").click(e => {
+      e.preventDefault();
+
+      const { depoStart, depoRequired, days } = this.state;
+
+      var href = `
+        ${e.target.href}#
+        depoStart=${depoStart}&
+        depoEnd=${Math.round(depoRequired)}&
+        days=${days}
+      `.replace(/[\s\n\t]+/g, "");
+      window.open(href, "_blank");
+    })
+  }
+
   componentDidMount() {
     let { tools, currentTool } = this.state;
 
@@ -316,7 +350,7 @@ class App extends React.Component {
               var val1 = item[0].value;
               
               item[0].value = "Планируемый депо: " + formatNumber(item[0].value);
-              item[1].value = "Пассивный доход: " + formatNumber(Math.round(val1 * (tools[currentTool].rate / 100) / 12));
+              item[1].value = "Пассивный доход: " + formatNumber(Math.round(val1 * (tools[currentTool].rate / 100) / 12 / 30)) + " / в день";
               return "День " + item[0].label
             },
             labelColor: function (tooltipItem, chart) {
@@ -337,32 +371,7 @@ class App extends React.Component {
     });
 
     this.recalc();
-
-    var $modal = $(".modal");
-    var $body = $("body");
-    $(".js-open-modal").click(function (e) {
-      $modal.addClass("visible");
-      $body.addClass("scroll-disabled");
-    });
-
-    $(".js-close-modal").click(function (e) {
-      $modal.removeClass("visible");
-      $body.removeClass("scroll-disabled");
-    });
-
-    $(".js-tm-link").click(e => {
-      e.preventDefault();
-
-      const { depoStart, depoRequired, days } = this.state;
-
-      var href = `
-        ${e.target.href}#
-        depoStart=${depoStart}&
-        depoEnd=${Math.round(depoRequired)}&
-        days=${days}
-      `.replace(/[\s\n\t]+/g, "");
-      window.open(href, "_blank");
-    })
+    this.bindEvents();
   }
 
   render() {
@@ -394,7 +403,6 @@ class App extends React.Component {
                       <NumericInput
                         className="card-1-input-group__input"
                         defaultValue={this.state.depoStart}
-                        round
                         onBlur={val => this.setState({ depoStart: val }, this.recalc)}
                         format={formatNumber}
                         />
@@ -405,7 +413,6 @@ class App extends React.Component {
                       <NumericInput
                         className="card-1-input-group__input"
                         defaultValue={this.state.income}
-                        round
                         onBlur={val => this.setState({ income: val }, this.recalc)}
                         format={formatNumber}
                       />
@@ -520,48 +527,84 @@ class App extends React.Component {
           <div className="modal-content">
             <div className="config card">
               <h2 className="config__title">Настройка инструментов</h2>
-              <table className="table">
-                <thead className="table-header">
-                  <tr className="table-tr">
-                    <th className="table-th">Инструмент</th>
-                    <th className="table-th">Купонных доход</th>
-                    <th className="table-th">Ставка</th>
-                    <th className="table-th">Частота</th>
-                    <th className="table-th">Дата выплаты</th>
-                  </tr>
-                </thead>
-                {
-                  this.state.tools.map((tool, i) =>
-                    <tr className="js-config-row" key={i}>
-                      {
-                        Object.keys(tool).map((key, i) =>
-                          <td className="table-td" key={i}>
-                            <Input
-                              className="config__input"
-                              defaultValue={tool[key]}
-                              placeholder={tool[key]}
-                              data-name={key}
-                            />
-                          </td>
-                        )
-                      }
+
+              <div className="config-table-wrap">
+                <table className="table">
+                  <thead className="table-header">
+                    <tr className="table-tr">
+                      <th className="table-th">Инструмент</th>
+                      <th className="table-th">Купонный доход</th>
+                      <th className="table-th">Ставка</th>
+                      <th className="table-th">Частота</th>
+                      <th className="table-th">Дата выплаты</th>
                     </tr>
-                  )
-                }
-              </table>
+                  </thead>
+                  {
+                    this.state.toolsTemp.map((tool, i) =>
+                      <tr className="config-tr js-config-row" key={tool.id}>
+                        {
+                          Object.keys(tool).map((key, i) =>
+                            key == "id" ? (
+                              null
+                            )
+                              :
+                              <td className="table-td">
+                                <Input
+                                  className="config__input"
+                                  defaultValue={tool[key]}
+                                  placeholder={tool[key]}
+                                  data-name={key}
+                                />
+                              </td>
+                          )
+                        }
+                        <td className="table-td">
+                          {
+                            this.state.toolsTemp.length > 1 ? (
+                              <button className="config-tr-delete" aria-label="Удалить инструмент"
+                                onClick={e => {
+                                  let tools = [...this.state.toolsTemp];
+
+                                  var i = $(e.target).parents("tr").index() - 1;
+
+                                  tools.splice(i, 1);
+                                  // console.log(tools);
+
+                                  this.setState({ toolsTemp: tools });
+                                }}
+                              >
+                                <Tag color="magenta">Удалить</Tag>
+                              </button>
+                            )
+                              :
+                              null
+                          }
+                        </td>
+                      </tr>
+                    )
+                  }
+                </table>
+              </div>
+              {/* /.config-talbe-wrap */}
+              
               <Button
                 className="config__add-btn"
                 type="link"
                 onClick={() => {
-                  let tools = [...this.state.tools];
+                  let tools = [...this.state.toolsTemp];
+
                   tools.push({
-                    name: "Инструмент",
-                    couponIncome: 0,
-                    rate: 0,
-                    frequency: 0,
-                    date: "01.01.2020"
+                    name:            "Инструмент",
+                    stepPrice:       0,
+                    guaranteeValue:  0,
+                    averageProgress: 0,
+                    currentPrice:    0,
+                    lotSize:         0,
+                    dollarRate:      0,
+                    id:              Math.random()
                   });
-                  this.setState({ tools });
+                  
+                  this.setState({ toolsTemp: tools }, () => $(".config-table-wrap").scrollTop(999999) );
                 }}
               >
                 Добавить акцию
