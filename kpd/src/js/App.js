@@ -394,6 +394,7 @@ class App extends React.Component {
                       <NumericInput
                         className="card-1-input-group__input"
                         defaultValue={this.state.depoStart}
+                        round
                         onBlur={val => this.setState({ depoStart: val }, this.recalc)}
                         format={formatNumber}
                         />
@@ -404,6 +405,7 @@ class App extends React.Component {
                       <NumericInput
                         className="card-1-input-group__input"
                         defaultValue={this.state.income}
+                        round
                         onBlur={val => this.setState({ income: val }, this.recalc)}
                         format={formatNumber}
                       />
