@@ -262,13 +262,17 @@ class App extends React.Component {
           dollarRate: 0
         }
       ],
-      toolSelected: 0,
+      currentToolIndex: 0,
       isSafe: true,
       directUnloading: true
     };
 
     this.state.tools.map((tool, i) => Object.assign( tool, { id: i } ));
     this.state.toolsTemp = [...this.state.tools];
+
+    if (this.state.currentToolIndex > this.state.tools.length - 1) {
+      this.state.currentToolIndex = this.state.tools.length - 1;
+    }
 
     this.state.showWithdrawal = this.state.withdrawal != 0;
     this.state.rowsNumber = (this.state.days < 10) ? this.state.days : 10;
@@ -281,13 +285,13 @@ class App extends React.Component {
       tools,
       depoStart,
       withdrawal,
-      toolSelected,
+      currentToolIndex,
       minDailyIncome,
       depoPersentageStart,
       incomePersantageCustom
     } = this.state;
 
-    let currentTool = tools[toolSelected];
+    let currentTool = tools[currentToolIndex];
 
     let data = new Array(length).fill(0);
     data.forEach((val, i) => {
@@ -526,11 +530,11 @@ class App extends React.Component {
     }, () => this.updateData(days, () => {
       var {
         tools,
-        toolSelected,
+        currentToolIndex,
         minDailyIncome
       } = this.state;
 
-      let currentTool = tools[toolSelected];
+      let currentTool = tools[currentToolIndex];
       let numberOfIterations = Math.round(+(this.state.data[0].pointsForIteration / currentTool.averageProgress).toFixed(2));
       if (numberOfIterations < 1) {
         numberOfIterations = 1;
@@ -856,7 +860,7 @@ class App extends React.Component {
                   <Select
                     defaultValue={0}
                     onChange={val => {
-                      this.setState({ toolSelected: val }, () => this.updateData(this.state.days))
+                      this.setState({ currentToolIndex: val }, () => this.updateData(this.state.days))
                     }}
                     showSearch
                     optionFilterProp="children"
@@ -906,12 +910,12 @@ class App extends React.Component {
                             incomePersantageCustom,
                             rowsFirstIndex,
                             tools,
-                            toolSelected,
+                            currentToolIndex,
                             directUnloading,
                             numberOfIterations
                           } = this.state;
                           let day = i + rowsFirstIndex;
-                          let tool = tools[toolSelected];
+                          let tool = tools[currentToolIndex];
 
                           function round(value, decimals) {
                             let dec = Math.pow(10, decimals);
@@ -1136,17 +1140,20 @@ class App extends React.Component {
                         }
                         <td className="table-td">
                           {
-                            this.state.tools.length > 1 ? (
+                            this.state.toolsTemp.length > 1 ? (
                               <button className="config-tr-delete" aria-label="Удалить инструмент"
                                 onClick={e => {
                                   let tools = [...this.state.toolsTemp];
+                                  const { currentToolIndex } = this.state;
 
                                   var i = $(e.target).parents("tr").index() - 1;
 
                                   tools.splice(i, 1);
-                                  // console.log(tools);
 
-                                  this.setState({ toolsTemp: tools });
+                                  this.setState({ 
+                                    toolsTemp:        tools,
+                                    currentToolIndex: (currentToolIndex > tools.length - 1) ? tools.length - 1 : currentToolIndex
+                                  }, this.recalc);
                                 }}
                               >
                                 <Tag color="magenta">Удалить</Tag>
