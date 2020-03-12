@@ -594,14 +594,12 @@ class App extends React.Component {
                   let tools = [...this.state.toolsTemp];
 
                   tools.push({
-                    name:            "Инструмент",
-                    stepPrice:       0,
-                    guaranteeValue:  0,
-                    averageProgress: 0,
-                    currentPrice:    0,
-                    lotSize:         0,
-                    dollarRate:      0,
-                    id:              Math.random()
+                    name:         "Акция",
+                    couponIncome: 0,
+                    rate:         0,
+                    frequency:    0,
+                    date:         "01.01.2020",
+                    id:           Math.random()
                   });
                   
                   this.setState({ toolsTemp: tools }, () => $(".config-table-wrap").scrollTop(999999) );
