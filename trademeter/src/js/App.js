@@ -102,15 +102,24 @@ class App extends React.Component {
 
       mode: 0,
       // Начальный депозит
-      depoStart: +params.get("depoStart") || 1000000,
+      depoStart: [
+        +params.get("depoStart") || 1000000,
+        +params.get("depoStart") || 1000000,
+      ],
       // Целевой депозит
       depoEnd: +params.get("depoEnd") || 3000000,
       // Доходность в день
       incomePersantageCustom: 1,
       // Сумма на вывод
-      withdrawal: 0,
+      withdrawal: [
+        0,
+        0
+      ],
       // Торговых дней
-      days: +params.get("days") || 260,
+      days: [
+        +params.get("days") || 260,
+        +params.get("days") || 260
+      ],
       // Процент депозита на вход в сделку
       depoPersentageStart: 10,
       // Кол-во итераций в день
@@ -274,22 +283,23 @@ class App extends React.Component {
       this.state.currentToolIndex = this.state.tools.length - 1;
     }
 
-    this.state.showWithdrawal = this.state.withdrawal != 0;
-    this.state.rowsNumber = (this.state.days < 10) ? this.state.days : 10;
-    this.state.data      = this.buildData(this.state.days);
+    this.state.showWithdrawal = this.state.withdrawal[this.state.mode] != 0;
+    this.state.rowsNumber = (this.state.days[this.state.mode] < 10) ? this.state.days[this.state.mode] : 10;
+    this.state.data      = this.buildData(this.state.days[this.state.mode]);
   }
 
   buildData(length = 0) {
     let {
       mode,
       tools,
-      depoStart,
-      withdrawal,
       currentToolIndex,
       minDailyIncome,
       depoPersentageStart,
       incomePersantageCustom
     } = this.state;
+
+    let depoStart  = this.state.depoStart[mode];
+    let withdrawal = this.state.withdrawal[mode];
 
     let currentTool = tools[currentToolIndex];
 
@@ -338,11 +348,12 @@ class App extends React.Component {
     let {
       mode,
       data,
-      depoStart,
-      withdrawal,
       minDailyIncome,
       incomePersantageCustom
     } = this.state;
+
+    let depoStart  = this.state.depoStart[mode];
+    let withdrawal = this.state.withdrawal[mode];
 
     let realData = new Array(data.length).fill(0);
     realData.forEach((val, i) => {
@@ -379,7 +390,7 @@ class App extends React.Component {
     var data2 = this.buildRealData();
     data2 = data2.map(val => Math.round(val.depoEnd));
 
-    chart.data.labels = new Array(this.state.days).fill().map((val, index) => index + 1);
+    chart.data.labels = new Array(this.state.days[this.state.mode]).fill().map((val, index) => index + 1);
     chart.data.datasets[0].data = data;
     chart.data.datasets[1].data = data2;
     chart.update();
@@ -442,7 +453,7 @@ class App extends React.Component {
     chart = new Chart(chartCtx, {
       type: 'line',
       data: {
-        labels: new Array(this.state.days).fill().map((val, index) => index + 1),
+        labels: new Array(this.state.days[this.state.mode]).fill().map((val, index) => index + 1),
         datasets: [
           {
             label: "Планируемый рост депо",
@@ -507,13 +518,15 @@ class App extends React.Component {
   }
 
   recalc() {
-    var { 
-      depoStart,
+    var {
+      mode,
       depoEnd,
-      days,
-      withdrawal,
       isSafe,
     } = this.state;
+
+    let depoStart  = this.state.depoStart[mode];
+    let withdrawal = this.state.withdrawal[mode];
+    let days = this.state.days[mode];
 
     var guess = withdrawal / depoStart;
     if (isNaN(guess) || guess == 0) {
@@ -566,7 +579,14 @@ class App extends React.Component {
                 defaultValue={this.state.mode}
                 onChange={e => {
                   var { value } = e.target;
-                  this.setState({ mode: value }, this.recalc)
+                  var { data } = this.state;
+                  let days = this.state.days[value];
+
+                  if (days > data.length) {
+                    this.updateData(days);
+                  }
+
+                  this.setState({ mode: value }, this.recalc);
                 }}
               >
                 <Radio value={0}>Расчет от желаемой суммы</Radio>
@@ -588,14 +608,19 @@ class App extends React.Component {
                   <label className="input-group">
                     <span className="input-group__title">Начальный депозит</span>
                     <NumericInput
+                      key={this.state.mode}
                       className="input-group__input"
-                      defaultValue={this.state.depoStart}
+                      defaultValue={this.state.depoStart[this.state.mode]}
                       min={10000}
                       max={this.state.depoEnd}
                       round
-                      onBlur={val => this.setState({
-                        depoStart: val == 0 ? 1 : val 
-                      }, this.recalc)}
+                      onBlur={val => {
+                        let depoStart = [...this.state.depoStart];
+                        const { mode } = this.state
+
+                        depoStart[mode] = val == 0 ? 1 : val;
+                        this.setState({ depoStart }, this.recalc)
+                      }}
                       format={formatNumber}
                     />
                   </label>
@@ -610,7 +635,7 @@ class App extends React.Component {
                           key={1}
                           className="input-group__input"
                           defaultValue={this.state.depoEnd}
-                          min={this.state.depoStart}
+                          min={this.state.depoStart[this.state.mode]}
                           round
                           onBlur={val => this.setState({ depoEnd: val == 0 ? 1 : val }, this.recalc)}
                           format={formatNumber}
@@ -621,24 +646,15 @@ class App extends React.Component {
                       <label className="input-group">
                         <span className="input-group__title">Доходность в день</span>
                         <NumericInput
-                          key={this.state.days}
-                          className={"input-group__input ".concat(this.state.days == 2600 && this.state.incomePersantageCustom > 1 ? "error" : "")}
+                          key={this.state.days[this.state.mode]}
+                          className="input-group__input"
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
                           min={(this.state.minDailyIncome).toFixed(3)}
-                          max={this.state.days == 2600 ? 1 : null}
+                          max={this.state.days[this.state.mode] == 2600 ? 1 : null}
                           onBlur={val => this.setState({
                             incomePersantageCustom: val
                           }, this.recalc)}
-                          onInvalid={val => {
-                            let { days } = this.state;
-
-                            if (days == 2600 && val > 1) {
-                              return "Вывод больше 1% депозита";
-                            }
-
-                            return "";
-                          }}
                           onChange={(e, value) => console.log(e, value)}
                           format={formatNumber}
                           suffix="%"
@@ -651,23 +667,32 @@ class App extends React.Component {
                 <Row className="card-1-label-group" type="flex" justify="space-between" align="middle">
                   <label className="input-group">
                     <span className="input-group__title">Сумма на вывод</span>
-                    <NumericInput 
+                    <NumericInput
+                      key={this.state.mode}
                       className="input-group__input"
-                      defaultValue={this.state.withdrawal}
+                      defaultValue={this.state.withdrawal[this.state.mode]}
                       round
                       format={formatNumber}
                       suffix="/день"
-                      max={this.state.depoStart}
+                      max={this.state.depoStart[this.state.mode] * .15}
                       onBlur={val => {
+                        let withdrawal = [...this.state.withdrawal];
+                        const { mode } = this.state
+
+                        withdrawal[mode] = val;
                         this.setState({
-                          withdrawal:     val,
+                          withdrawal,
                           showWithdrawal: val !== 0
                         }, this.recalc)
                       }}
                       onInvalid={val => {
-                        let { depoStart } = this.state;
+                        let depoStart = this.state.depoStart[this.state.mode];
+                        let days = this.state.days[this.state.mode];
 
                         if (val > (depoStart * 0.15)) {
+                          return "Слишком большой вывод!";
+                        }
+                        else if (val > (depoStart * 0.01) && days == 2600) {
                           return "Слишком большой вывод!";
                         }
 
@@ -678,27 +703,31 @@ class App extends React.Component {
                   
                   <label className="input-group">
                     <span className="input-group__title">Торговых дней</span>
-                    <NumericInput 
+                    <NumericInput
+                      key={this.state.mode}
                       className="input-group__input" 
-                      defaultValue={this.state.days}
+                      defaultValue={this.state.days[this.state.mode]}
                       placeholder={1}
                       round
                       min={1}
                       max={2600}
                       onBlur={val => {
-                        var days = val;
-                        var rowsFirstIndex = this.state.rowsFirstIndex + 10 < days ? this.state.rowsFirstIndex : days - 9;
+                        let { mode } = this.state;
+                        var days = [...this.state.days];
+                        days[mode] = val;
+
+                        var rowsFirstIndex = this.state.rowsFirstIndex + 10 < val ? this.state.rowsFirstIndex : val - 9;
                         if (rowsFirstIndex < 1) {
                           rowsFirstIndex = 1;
                         }
 
-                        this.updateData(days);
+                        this.updateData(val);
 
                         this.setState({
                           days:                   days,
-                          rowsNumber:             (days < 10) ? days : 10,
+                          rowsNumber:             (val < 10) ? val : 10,
                           rowsFirstIndex:         rowsFirstIndex,
-                          incomePersantageCustom: days == 2600 ? 1 : this.state.incomePersantageCustom
+                          incomePersantageCustom: val == 2600 ? 1 : this.state.incomePersantageCustom
                         }, this.recalc);
                       }}
                       format={formatNumber}
@@ -763,14 +792,18 @@ class App extends React.Component {
                 <div className="card-3__row">
                   <div className="card-3__key" style={{ fontWeight: "bold" }}>
                     <span className={"".concat(this.state.mode == 0 ? "medium" : "big")}>
-                      Депозит через<br /> {`${this.state.days} ${num2str(this.state.days, ["день", "дня", "дней"])}`}
+                      Депозит через<br /> {`${this.state.days[this.state.mode]} ${num2str(this.state.days[this.state.mode], ["день", "дня", "дней"])}`}
                     </span>
                   </div>
                   <div className="card-3__val" style={{ fontWeight: "bold", fontSize: "1.2em" }}>
                     <span className={"".concat(this.state.mode == 0 ? "medium" : "big")}>
                       {
                         (() => {
-                          let { mode, data, days, depoEnd, withdrawal } = this.state;
+                          let { mode, data, depoEnd } = this.state;
+                          let withdrawal = this.state.withdrawal[mode];
+                          let days = this.state.days[mode];
+
+                          // console.log(data, days);
 
                           var val = mode == 0 ?
                             depoEnd
@@ -790,13 +823,13 @@ class App extends React.Component {
                 </div>
                 <div className="card-3__row">
                   <div className="card-3__key">
-                    Выведено за {`${this.state.days} ${num2str(this.state.days, ["день", "дня", "дней"])}`}
+                    Выведено за {`${this.state.days[this.state.mode]} ${num2str(this.state.days[this.state.mode], ["день", "дня", "дней"])}`}
                   </div>
                   <div className="card-3__val">
                     {
                       formatNumber(new Array(
-                        isNaN(this.state.days) || this.state.days == 0 ? 1 : this.state.days
-                      ).fill(this.state.withdrawal).reduce((prev, curr) => prev + curr))
+                        isNaN(this.state.days[this.state.mode]) || this.state.days[this.state.mode] == 0 ? 1 : this.state.days[this.state.mode]
+                      ).fill(this.state.withdrawal[this.state.mode]).reduce((prev, curr) => prev + curr))
                     }
                   </div>
                 </div>
@@ -821,7 +854,9 @@ class App extends React.Component {
                     <span className={"".concat(this.state.mode == 0 ? "big" : "medium")}>
                       {
                         (() => {
-                          let { mode, minDailyIncome, data, days, depoStart } = this.state;
+                          let { mode, minDailyIncome, data } = this.state;
+                          let depoStart = this.state.depoStart[mode];
+                          let days = this.state.days[mode];
 
                           let val = (mode == 0) ?
                               +(minDailyIncome).toFixed(3)
@@ -860,7 +895,7 @@ class App extends React.Component {
                   <Select
                     defaultValue={0}
                     onChange={val => {
-                      this.setState({ currentToolIndex: val }, () => this.updateData(this.state.days))
+                      this.setState({ currentToolIndex: val }, () => this.updateData(this.state.days[this.state.mode]))
                     }}
                     showSearch
                     optionFilterProp="children"
@@ -906,7 +941,7 @@ class App extends React.Component {
                         new Array(this.state.rowsNumber).fill().map((val, i) => {
                           let { 
                             data,
-                            depoStart,
+                            mode,
                             incomePersantageCustom,
                             rowsFirstIndex,
                             tools,
@@ -914,6 +949,8 @@ class App extends React.Component {
                             directUnloading,
                             numberOfIterations
                           } = this.state;
+
+                          let depoStart = this.state.depoStart[mode];
                           let day = i + rowsFirstIndex;
                           let tool = tools[currentToolIndex];
 
@@ -1007,7 +1044,7 @@ class App extends React.Component {
                               </td>
                               {
                                 this.state.showWithdrawal ?
-                                  <td className="table-td">{this.state.withdrawal}</td>
+                                  <td className="table-td">{this.state.withdrawal[this.state.mode]}</td>
                                 : 
                                   null
                               }
@@ -1044,7 +1081,8 @@ class App extends React.Component {
                 <Col span={8} style={{ textAlign: "center" }}>
                   {
                     (() => {
-                      let { rowsNumber, days, rowsFirstIndex } = this.state;
+                      let { mode, rowsNumber, rowsFirstIndex } = this.state;
+                      let days = this.state.days[mode];
 
                       return rowsFirstIndex < days - rowsNumber ? (
                         <Button
@@ -1072,11 +1110,13 @@ class App extends React.Component {
                 
                 <Col span={8} style={{ textAlign: "right" }}>
                   <Paginator
-                    key={this.state.days}
-                    defaultValue={this.state.days}
-                    max={this.state.days}
+                    key={this.state.days[this.state.mode]}
+                    defaultValue={this.state.days[this.state.mode]}
+                    max={this.state.days[this.state.mode]}
                     onChange={val => {
-                      var { days, rowsNumber } = this.state;
+                      var { mode, rowsNumber } = this.state;
+                      let days = this.state.days[mode];
+
                       var rowsFirstIndex = val < days - rowsNumber ? val : (days + 1) - rowsNumber;
                       if (days < rowsNumber) {
                         rowsFirstIndex = 1;
