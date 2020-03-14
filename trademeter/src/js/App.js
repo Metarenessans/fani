@@ -564,6 +564,30 @@ class App extends React.Component {
     }));
   }
 
+  setWithdrawal(val = 0) {
+    const { mode } = this.state;
+    let withdrawal = [...this.state.withdrawal];
+
+    withdrawal[mode] = val;
+    this.setState({ withdrawal, showWithdrawal: val !== 0 }, this.recalc);
+  }
+
+  checkFn(withdrawal, depoStart, days) {
+    if ((withdrawal > (depoStart * 0.15)) || (withdrawal > (depoStart * 0.01) && days == 2600)) {
+      return "Слишком большой вывод!";
+    }
+
+    return "";
+  }
+
+  checkFn2(dayilyIncome, days) {
+    if (days >= 2600 && dayilyIncome > 1) {
+      return "Слишком большая доходность!";
+    }
+
+    return "";
+  }
+
   render() {
     return (
       <div className="page">
@@ -612,7 +636,7 @@ class App extends React.Component {
                       className="input-group__input"
                       defaultValue={this.state.depoStart[this.state.mode]}
                       min={10000}
-                      max={this.state.depoEnd}
+                      max={this.state.mode == 0 ? this.state.depoEnd : null}
                       round
                       onBlur={val => {
                         let depoStart = [...this.state.depoStart];
@@ -620,6 +644,17 @@ class App extends React.Component {
 
                         depoStart[mode] = val == 0 ? 1 : val;
                         this.setState({ depoStart }, this.recalc)
+                      }}
+                      onChange={(e, val) => {
+                        if (isNaN(val)) {
+                          return;
+                        }
+
+                        const { mode } = this.state;
+                        let withdrawal = this.state.withdrawal[mode];
+                        let days = this.state.days[mode];
+
+                        this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, val, days));
                       }}
                       format={formatNumber}
                     />
@@ -652,10 +687,19 @@ class App extends React.Component {
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
                           min={(this.state.minDailyIncome).toFixed(3)}
                           max={this.state.days[this.state.mode] == 2600 ? 1 : null}
-                          onBlur={val => this.setState({
-                            incomePersantageCustom: val
-                          }, this.recalc)}
-                          onChange={(e, value) => console.log(e, value)}
+                          onBlur={val => {
+                            const { days, mode } = this.state;
+
+                            this.setState({ incomePersantageCustom: val }, this.recalc);
+
+                            this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(val, days[mode]));
+                          }}
+                          onChange={(e, val) => {
+                            const { days, mode } = this.state;
+
+                            this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(val, days[mode]));
+                          }}
+                          onRef={ ref => this.incomePersantageCustomInput = ref }
                           format={formatNumber}
                           suffix="%"
                         />
@@ -675,29 +719,23 @@ class App extends React.Component {
                       format={formatNumber}
                       suffix="/день"
                       max={this.state.depoStart[this.state.mode] * .15}
-                      onBlur={val => {
-                        let withdrawal = [...this.state.withdrawal];
-                        const { mode } = this.state
+                      onBlur={ val => {
+                        this.setWithdrawal(val);
+                        
+                        const { mode } = this.state;
+                        let depoStart = this.state.depoStart[mode];
+                        let days = this.state.days[mode];
 
-                        withdrawal[mode] = val;
-                        this.setState({
-                          withdrawal,
-                          showWithdrawal: val !== 0
-                        }, this.recalc)
+                        this.withdrawalInput.setErrorMsg(this.checkFn(val, depoStart, days));
                       }}
-                      onInvalid={val => {
-                        let depoStart = this.state.depoStart[this.state.mode];
-                        let days = this.state.days[this.state.mode];
+                      onChange={ (e, val) => {
+                        const { mode } = this.state;
+                        let depoStart = this.state.depoStart[mode];
+                        let days = this.state.days[mode];
 
-                        if (val > (depoStart * 0.15)) {
-                          return "Слишком большой вывод!";
-                        }
-                        else if (val > (depoStart * 0.01) && days == 2600) {
-                          return "Слишком большой вывод!";
-                        }
-
-                        return "";
-                      }}
+                        this.withdrawalInput.setErrorMsg(this.checkFn(val, depoStart, days));
+                      } }
+                      onRef={ ref => this.withdrawalInput = ref }
                     />
                   </label>
                   
@@ -730,6 +768,15 @@ class App extends React.Component {
                           incomePersantageCustom: val == 2600 ? 1 : this.state.incomePersantageCustom
                         }, this.recalc);
                       }}
+                      onChange={ (e, val) => {
+                        const { mode } = this.state;
+                        let withdrawal = this.state.withdrawal[mode];
+                        let depoStart = this.state.depoStart[mode];
+
+                        this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, depoStart, val));
+
+                        this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(this.state.incomePersantageCustom, val));
+                      } }
                       format={formatNumber}
                     />
                   </label>
