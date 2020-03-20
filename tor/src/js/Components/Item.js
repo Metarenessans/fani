@@ -47,6 +47,10 @@ export default class Item extends React.Component {
       incomeExpected: 0,
 
       currentToolIndex: 0,
+    };
+
+    if (this.props.onRef) {
+      this.props.onRef(this, this.props.index);
     }
   }
 
@@ -71,13 +75,31 @@ export default class Item extends React.Component {
   render() {
     return (
       <div className="item">
-        <button className="item-close" aria-label="Добавить инструмент" onClick={e => {
-          if (this.props.onCopy) {
-            this.props.onCopy();
-          }
-        }}>
-          &times;
-        </button>
+        <Tooltip title="Добавить инструмент">
+          <button className="item-add" aria-label="Добавить инструмент" onClick={e => {
+            if (this.props.onCopy) {
+              this.props.onCopy(this, this.props.index);
+            }
+          }}>
+            &times;
+          </button>
+        </Tooltip>
+
+        {
+          this.props.index > 0 ? (
+            <Tooltip title="Удалить инструмент">
+              <button className="item-delete" aria-label="Удалить инструмент" onClick={e => {
+                if (this.props.onDelete) {
+                  this.props.onDelete(this, this.props.index);
+                }
+              }}>
+                &times;
+              </button>
+            </Tooltip>
+          )
+          :
+            null
+        }
 
         <div className="card card-1 main__card-1">
           <div className="card-1__wrap">
@@ -157,7 +179,18 @@ export default class Item extends React.Component {
                     <Text>Просадка</Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold", textAlign: "right" }}>
-                    <Text>{"-" + ((this.state.drawdown / this.props.depo) * 100) + "%"}</Text>
+                    {
+                      (() => {
+                        let val = ((this.state.drawdown / this.props.depo) * 100);
+                        if (val > 100) {
+                          val = 100;
+                        }
+
+                        return (
+                          <Text>{"-" + val + "%"}</Text>
+                        )
+                      })()
+                    }
                   </Col>
                 </Col>
 
@@ -319,7 +352,7 @@ export default class Item extends React.Component {
                     <Text>Депозит</Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold" }}>
-                    <Text>{ formatNumber(Math.round(this.state.freeMoney - (-this.state.incomeExpected))) }</Text>
+                    <Text>{ formatNumber(Math.round(this.state.freeMoney - this.state.incomeExpected)) }</Text>
                   </Col>
                 </Col>
               </Row>

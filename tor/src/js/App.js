@@ -48,7 +48,9 @@ class App extends React.Component {
       // Депозит
       depo: 2000000,
 
-      itemsLength: 1,
+      items: [{
+        id: 1
+      }],
 
       // ===================
       // Вычисляемые значения
@@ -311,15 +313,38 @@ class App extends React.Component {
 
             <ul className="items-list">
               {
-                new Array(this.state.itemsLength).fill(0).map(e =>
-                  <li className="items-list-item">
-                    <Item 
+                this.state.items.map((obj, index) =>
+                  <li className="items-list-item" key={obj.id}>
+                    <Item
+                      index={index}
                       tools={this.state.tools}
                       depo={this.state.depo}
                       drawdown={this.state.drawdown}
                       additionalLoading={this.state.additionalLoading}
                       stepExpected={this.state.stepExpected}
-                      onCopy={e => this.setState({ itemsLength: this.state.itemsLength + 1 })}
+                      onCopy={(e, i) => {
+                        let { items } = this.state;
+
+                        var copy = Object.assign({}, items[index]); 
+                        copy.id = Math.random();
+                        items.push(copy);
+
+                        console.log(items);
+
+                        this.setState({ items });
+                      }}
+                      onDelete={(e, i) => {
+                        let { items } = this.state;
+
+                        items.splice(index, 1);
+
+                        this.setState({ items });
+                      }}
+                      onRef={ ref => {
+                        // let { items } = this.state;
+                        // items[0] = ref;
+                        // this.setState({ items });
+                      } }
                     />
                   </li>
                 )
