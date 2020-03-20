@@ -14,6 +14,7 @@ import {
 import CustomSlider from "./Components/CustomSlider"
 import NumericInput from "./Components/NumericInput"
 import Header from "./Components/Header"
+import params from "./params"
 import $ from "jquery"
 import "chart.js"
 import "chartjs-plugin-annotation"
@@ -95,15 +96,20 @@ class App extends React.Component {
 
     this.state = {
       // Начальный депозит
-      depoStart: 1000000,
+      depoStart:    +params.get("depoStart") || 1000000,
       // Доход в месяц
-      income: 1000000,
+      income:       1000000,
       // Требуемый депозит
-      depoRequired: 0,
+      depoRequired: +params.get("depoEnd") || null,
       // Месяцев
-      months: 12,
+      months:       12,
       // Дней
-      days: 260,
+      days:         260,
+      daysOptions: [50, 100].concat( new Array(10).fill(0).map((n, i) => 260 * (i + 1)) ),
+      daysOptionsIndex: 2,
+
+      // Если true, то происходит автоматический пересчет depoRequired
+      safe: true,
       
       tools: this.loadConfig() || [
         {
@@ -124,8 +130,22 @@ class App extends React.Component {
       currentTool: 0
     };
 
+    let { depoRequired, depoStart } = this.state;
+
     this.state.tools.map((tool, i) => Object.assign(tool, { id: i }));
     this.state.toolsTemp = [...this.state.tools];
+
+    if (depoRequired) {
+      console.log('DR exists!');
+      var persantage = this.state.tools[this.state.currentTool].rate / 365 * (365 / 260) / 100;
+
+      this.state.income = Math.round( persantage * depoRequired * 21.6667 );
+      this.state.safe = false;
+    }
+    else {
+      this.state.safe = true;
+    }
+
   }
 
   buildData() {
@@ -158,18 +178,22 @@ class App extends React.Component {
   }
 
   recalc(fn) {
-    let { depoStart, days, income, tools, currentTool } = this.state;
+    let { depoStart, depoRequired, days, income, tools, currentTool, safe } = this.state;
 
     var tool = tools[currentTool];
     var yearIncome = income * 12;
 
-    var depoRequired = yearIncome * 100 / tool.rate;
+    if (safe) {
+      console.log('recalc');
+      depoRequired = yearIncome * 100 / tool.rate;
+    }
 
     var rate = extRate(depoStart, depoRequired, 0, days);
 
     this.setState({
-      depoRequired,
-      minDailyIncome: rate
+      depoRequired:   depoRequired,
+      minDailyIncome: rate,
+      safe:           true
     }, () => {
       if (fn) {
         fn.call(this);
@@ -178,6 +202,35 @@ class App extends React.Component {
       data = this.buildData();
       this.updateChart();
     });
+  }
+  
+  daysOptionsAdd(val) {
+    val = +val;
+    let { daysOptions, daysOptionsIndex } = this.state;
+    let index = daysOptions.indexOf(val);
+
+    if (index != -1) {
+      this.setDays(val, index);
+    }
+    else {
+      let indexOfLast = 0;
+      daysOptions.forEach((n, index) => {
+        if (val > n) {
+          indexOfLast = index;
+        }
+      })
+
+      daysOptions.splice(indexOfLast + 1, 0, val);
+      this.setState({ 
+        days:             val, 
+        daysOptions:      daysOptions,
+        daysOptionsIndex: indexOfLast + 1,
+      }, this.recalc);
+    }
+  }
+
+  setDays(value, index) {
+    this.setState({ days: value, daysOptionsIndex: index }, this.recalc);
   }
 
   loadConfig() {
@@ -265,20 +318,6 @@ class App extends React.Component {
       $modal.removeClass("visible");
       $body.removeClass("scroll-disabled");
     });
-
-    $(".js-tm-link").click(e => {
-      e.preventDefault();
-
-      const { depoStart, depoRequired, days } = this.state;
-
-      var href = `
-        ${e.target.href}#
-        depoStart=${depoStart}&
-        depoEnd=${Math.round(depoRequired)}&
-        days=${days}
-      `.replace(/[\s\n\t]+/g, "");
-      window.open(href, "_blank");
-    })
   }
 
   componentDidMount() {
@@ -350,7 +389,10 @@ class App extends React.Component {
               var val1 = item[0].value;
               
               item[0].value = "Планируемый депо: " + formatNumber(item[0].value);
-              item[1].value = "Пассивный доход: " + formatNumber(Math.round(val1 * (tools[currentTool].rate / 100) / 12 / 30)) + " / в день";
+
+              var persantage = tools[currentTool].rate / 365 * (365 / 260) / 100;
+
+              item[1].value = "Пассивный доход: " + formatNumber(Math.round(val1 * persantage)) + " / в день";
               return "День " + item[0].label
             },
             labelColor: function (tooltipItem, chart) {
@@ -370,7 +412,13 @@ class App extends React.Component {
       plugins: ["annotation"]
     });
 
-    this.recalc();
+    var paramDays = +params.get("days"); 
+    if (paramDays && !isNaN(paramDays) && paramDays > 0) {
+      this.daysOptionsAdd(+paramDays);
+    }
+    else {
+      this.recalc();
+    }
     this.bindEvents();
   }
 
@@ -464,7 +512,13 @@ class App extends React.Component {
                       <span>Доход в месяц: </span>
                     </div>
                     <div className="card-footer__right">
-                      {formatNumber(Math.round((this.state.depoRequired * this.state.tools[this.state.currentTool].rate) / 12 / 100))}
+                      {
+                        (() => {
+                          const { income } = this.state
+
+                          return formatNumber(Math.round( income ))
+                        })()
+                      }
                     </div>
                   </footer>
                   {/* /.card-2__footer */}
@@ -477,46 +531,66 @@ class App extends React.Component {
 
             <div className="main-bottom">
               <div className="days-select">
-                <span className="days-select__label">Дней до цели</span>
+                <span className="days-select__label">
+                  Дней до цели
+                  <Tooltip overlayClassName="days-info-wrap" title="365 календарный дней = 260 рабочих">
+                    <img className="info-icon" src="dist/img/info.svg" />
+                  </Tooltip>
+                </span>
                 <Select
-                  defaultValue={2}
-                  onChange={(val, i) => {
-                    var days = +i.props.children.match(/\d+/)[0];
-                    this.setState({ days }, this.recalc)
+                  // defaultValue={2}
+                  value={this.state.daysOptionsIndex}
+                  onChange={(index, element) => {
+                    var value = +element.props.children.match(/\d+/)[0];
+
+                    this.setDays(value, index);
                   }}
                   showSearch
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }
+                  filterOption={false}
                   style={{ width: "100%" }}
+                  onInputKeyDown={e => {
+                    // Enter
+                    if (e.keyCode == 13) {
+                      var value = e.target.value;
+                      if (!isNaN(value)) {
+                        this.daysOptionsAdd(value);
+                      }
+                    }
+                  }}
                 >
                   {
-                    ["50", "100"].concat(
-                      new Array(10).fill(0).map((n, i) => {
-                        var result = 260 * (i + 1);
-                        var years = result / 260;
-                        return `${result} (${years} ${num2str(years, ["год", "года", "лет"])})`;
+                    this.state.daysOptions
+                      .map((n, i) => {
+                        var years = +(n / 260).toFixed(2);
+                        var suffix = "";
+                        if (n >= 260) {
+                          suffix = ` (${years} ${num2str(years, ["год", "года", "лет"])})`;
+                        }
+                        return `${n}` + suffix;
                       })
-                    )
-                    .map(n => n + "")
-                    // [ 
-                    //   "50",
-                    //   "100",
-                    //   "260 (1 год)",
-                    //   "520 (2 года)",
-                    //   "780 (3 года)",
-                    //   "1040 (4 года)",
-                    //   "1300 (5 лет)",
-                    // ]
-                    .map((value, index) => (
-                      <Option key={index} value={index}>{value}</Option>
-                    ))
+                      .map((value, index) => (
+                        <Option key={index} value={index}>{value}</Option>
+                      ))
                   }
                 </Select>
               </div>
 
-              <a className="main-link js-tm-link" href="http://fani144.ru/trademeter" target="_blank">открыть трейдометр</a>
+              <Button type="link" className="main-link"
+                onClick={e => {
+                  e.preventDefault();
+
+                  const { depoStart, depoRequired, days } = this.state;
+
+                  var href = `http://fani144.ru/trademeter#
+                    depoStart=${depoStart}&
+                    depoEnd=${Math.round(depoRequired)}&
+                    days=${days}
+                  `.replace(/[\s\n\t]+/g, "");
+                  window.open(href, "_blank");
+                }}
+              >
+                Открыть трейдометр
+              </Button>
             </div>
           </div>
           {/* /.container */}

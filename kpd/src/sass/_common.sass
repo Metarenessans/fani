@@ -125,5 +125,60 @@ body
 .danger
   color: red
 
+.info-icon
+  margin-left: .2em
+  margin-top: -.8em
+  width:  .75em
+  height: .75em
+
+.days-info-wrap
+    width: 20em
+    max-width: initial
+
+    .ant-tooltip-inner
+      text-align: center
+
+.submenu
+  position: absolute
+  z-index: 7
+  right:   0
+  top:   100%
+  width: 100%
+
+  display: none
+  background-color: #1c1f2f
+  list-style: none
+  padding: 1em 1.25em
+  margin:  0
+
+  font-size: 1.8em
+
+  &-item
+    margin-bottom: .5em
+
+    &:last-child
+      margin-bottom: 0
+
+.submenu-parent
+  position: relative
+
+  &:hover .submenu
+    display: block
+
+.logout-btn
+  display: flex
+  align-items: center
+  background: none
+  padding: 0
+  border: none
+
+  color: white
+
+  cursor: pointer
+
+  &__icon
+    margin-left: 2em
+    height: 1.25em
+
 canvas
   background: white

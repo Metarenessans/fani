@@ -29,11 +29,35 @@ export default class Header extends React.Component {
 
             <div className="header__separator"></div>
 
-            <figure className="user header__user">
+            <figure className="user header__user submenu-parent">
               <div className="user-avatar user__avatar">
                 <img className="user-avatar__img" src="dist/img/avatar.png" />
               </div>
               <figcaption className="user__name">Иван Иванов</figcaption>
+
+              <ul className="submenu">
+                <li className="submenu-item">
+                  <a href="http://fani144.ru/kpd" target="_blank">КПД</a>
+                </li>
+                <li className="submenu-item">
+                  <a href="http://fani144.ru/trademeter" target="_blank">Трейдометр</a>
+                </li>
+                <li className="submenu-item">
+                  <a href="http://fani144.ru/tor" target="_blank">Калькулятор ТОР</a>
+                </li>
+                <li className="submenu-item" target="_blank">
+                  <a href="#">Профиль инвестора</a>
+                </li>
+                <li className="submenu-item">
+                  <a href="#">Настройки</a>
+                </li>
+                <li className="submenu-item">
+                  <button className="logout-btn">
+                    Выход
+                    <img className="logout-btn__icon" src="dist/img/logout.svg" />
+                  </button>
+                </li>
+              </ul>
             </figure>
           </div>
           {/* /.header__wrap */}
