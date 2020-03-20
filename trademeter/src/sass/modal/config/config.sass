@@ -2,6 +2,24 @@
   background-color: white
   padding: 2.5em
 
+  &-small
+    position: absolute
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    background-color: white
+    box-shadow: 0 0 1.8em rgba(black, .3)
+    padding: 4em
+
+    opacity: 0
+    user-select: none
+    pointer-events: none
+
+    &.visible
+      opacity: 1
+      user-select: initial
+      pointer-events: all
+
   &-table-wrap
     min-height: 60vh
     max-height: 60vh
@@ -16,13 +34,23 @@
   &-tr
 
     &-delete
+      padding: 0
       border: none
       background: none
+
+      cursor: pointer
 
       span
         font-size: 1em
         // width: 100%
         cursor: pointer !important
+
+    &-settings
+      padding: 0 1em
+      border: none
+      background: none
+
+      cursor: pointer
 
   &-footer
     display: flex
@@ -33,7 +61,7 @@
     margin-right: 1em
   
   &__input[type="text"]
-    width: 7em
+    width: 9em
     background: none
     outline: none
     border: none

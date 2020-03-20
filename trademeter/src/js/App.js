@@ -18,11 +18,13 @@ import CustomSlider from "./Components/CustomSlider"
 import NumericInput from "./Components/NumericInput"
 import Paginator from "./Components/Paginator"
 import Header from "./Components/Header"
+import SpeedometerWrap from "./Components/SpeedometerWrap"
 import params from "./params";
+import formatBigNumbers from "./format";
 
 const { Option } = Select;
 const { Group } = Radio;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 var chart;
@@ -89,7 +91,26 @@ function extRate(present, future, payment, periods) {
   }
   //console.log('Точность ' + (current+future)/2/future);
   return rate;
-} 
+}
+
+function BigNumber(props) {
+  var { val, format, threshold } = props;
+  format    = format || formatNumber;
+  let customSuffix = props.suffix || "";
+
+  let originalValue = val;
+
+  if (val > 1e12) {
+    val = formatBigNumbers(val);
+
+    return (
+      <Tooltip title={ format(originalValue) + customSuffix }>
+        <span>{ val + customSuffix }</span>
+      </Tooltip>
+    )
+  }
+  else return <span>{ format(val) + customSuffix }</span>
+}
 
 class App extends React.Component {
 
@@ -135,141 +156,23 @@ class App extends React.Component {
 
       configLoaded: false,
       tools: this.loadConfig() || [
-        {
-          name:            "Золото (GDZ9)",
-          stepPrice:       6.37,
-          guaranteeValue:  7194.1,
-          averageProgress: 50,
-          currentPrice:    1495,
-          lotSize:         1.0,
-          dollarRate:      0
-        }
-        , {
-          name:            "Палладий (PDZ9)",
-          stepPrice:       0.64,
-          guaranteeValue:  17600.0,
-          averageProgress: 50,
-          currentPrice:    2400,
-          lotSize:         1.0,
-          dollarRate:      0
-        }
-        , {
-          name: "Индекс РТС (RIZ9)",
-          stepPrice: 12.74,
-          guaranteeValue: 22301.4,
-          averageProgress: 200,
-          currentPrice: 141520,
-          lotSize:    1.0,
-          dollarRate: 0
-        }
-        , {
-          name: "Доллар/рубль (SIZ9)",
-          stepPrice: 1.00,
-          guaranteeValue: 4296.5,
-          averageProgress: 100,
-          currentPrice: 64226,
-          lotSize:    1.0,
-          dollarRate: 0
-        }
-        , {
-          name: "Сбербанк (SRZ9)",
-          stepPrice: 1.00,
-          guaranteeValue: 4448.5,
-          averageProgress: 100,
-          currentPrice: 24413,
-          lotSize:    1.0,
-          dollarRate: 0
-        }
-        , {
-          name: "APPLE",
-          stepPrice: 0.64,
-          guaranteeValue: 19709.8,
-          averageProgress: 100,
-          currentPrice: 310,
-          lotSize:    1.0,
-          dollarRate: 63.58
-        }
-        , {
-          name: "PG&E",
-          stepPrice: 0.64,
-          guaranteeValue: 381.5,
-          averageProgress: 100,
-          currentPrice: 17,
-          lotSize:    1.0,
-          dollarRate: 63.58
-        }
-        , {
-          name: "NVIDIA",
-          stepPrice: 0.64,
-          guaranteeValue: 13004.7,
-          averageProgress: 100,
-          currentPrice: 204.54,
-          lotSize:    1.0,
-          dollarRate: 63.58
-        }
-        , {
-          name: "MICRON",
-          stepPrice: 0.64,
-          guaranteeValue: 3053.7,
-          averageProgress: 100,
-          currentPrice: 48.03,
-          lotSize:    1.0,
-          dollarRate: 63.58
-        }
-        , {
-          name: "Сбербанк",
-          stepPrice: 0.10,
-          guaranteeValue: 2525.0,
-          averageProgress: 100,
-          currentPrice: 252.5,
-          lotSize:    10.0,
-          dollarRate: 0
-        }
-        , {
-          name: "Магнит",
-          stepPrice: 0.10,
-          guaranteeValue: 3199.5,
-          averageProgress: 50,
-          currentPrice: 3199.5,
-          lotSize:    1.0,
-          dollarRate: 0
-        }
-        , {
-          name: "МосБиржа",
-          stepPrice: 0.10,
-          guaranteeValue: 936.0,
-          averageProgress: 100,
-          currentPrice: 93.6,
-          lotSize:    10.0,
-          dollarRate: 0
-        }
-        , {
-          name: "СургутНефтеГаз",
-          stepPrice: .50,
-          guaranteeValue: 4646.6,
-          averageProgress: 200,
-          currentPrice: 46.455,
-          lotSize:    100.0,
-          dollarRate: 0
-        }
-        , {
-          name: "Газпром",
-          stepPrice: 1.00,
-          guaranteeValue: 4183.0,
-          averageProgress: 50,
-          currentPrice: 418.3,
-          lotSize:    10.0,
-          dollarRate: 0
-        }
-        , {
-          name: "Алроса",
-          stepPrice: .10,
-          guaranteeValue: 705.8,
-          averageProgress: 100,
-          currentPrice: 70.58,
-          lotSize:    10.0,
-          dollarRate: 0
-        }
+        this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`),
+        this.parseTool(`Палладий (PLD-6.20)	0,79537	0,0100	70	43 626,69	1 617,04	1`),
+        this.parseTool(`Доллар/рубль (Si-6.20)	1,00000	1,0000	150	12 610,77	80 446	1 000`),
+        this.parseTool(`Нефть (BR-4.20)	7,95374	0,0100	50	7 561,22	26,56	10	`),
+        this.parseTool(`Индекс РТС (RTS-6.20)	15,90748	10,0000	700	38 030,35	88 480	1	`),
+        this.parseTool(`Сбербанк (SBRF-6.20)	1,00000	1,0000	250	5 131,79	17 860	100	`),
+        this.parseTool(`Магнит (MGNT-6.20)	1,00000	1,0000	50	806,15	2 976	1	`),
+        this.parseTool(`APPLE	0,82000	0,0100	120	20 072,0	244,78	1	82`),
+        this.parseTool(`PG&E	0,82000	0,0100	80	648,6	7,91	1	82`),
+        this.parseTool(`NVIDIA	0,82000	0,0100	250	17 463,5	212,97	1	82`),
+        this.parseTool(`MICRON	0,82000	0,0100	140	2 975,8	36,29	1	82`),
+        this.parseTool(`Сбербанк	0,10000	0,0100	100	1 895,1	189,51	10	1`),
+        this.parseTool(`Магнит	0,10000	0,5000	90	2 950,0	2 950,0	1	1`),
+        this.parseTool(`МосБиржа	0,10000	0,0100	60	884,6	88,46	10	1`),
+        this.parseTool(`СургутНефтеГаз	0,50000	0,0050	350	2 700,0	27,000	100	1`),
+        this.parseTool(`Газпром	1,00000	0,0100	90	1 745,6	174,56	10	1`),
+        this.parseTool(`Алроса	0,10000	0,0100	100	597,0	59,70	10	1`),
       ],
       currentToolIndex: 0,
       isSafe: true,
@@ -278,7 +181,7 @@ class App extends React.Component {
 
     this.state.tools.map((tool, i) => Object.assign( tool, { id: i } ));
     this.state.toolsTemp = [...this.state.tools];
-
+    
     if (this.state.currentToolIndex > this.state.tools.length - 1) {
       this.state.currentToolIndex = this.state.tools.length - 1;
     }
@@ -286,6 +189,35 @@ class App extends React.Component {
     this.state.showWithdrawal = this.state.withdrawal[this.state.mode] != 0;
     this.state.rowsNumber = (this.state.days[this.state.mode] < 10) ? this.state.days[this.state.mode] : 10;
     this.state.data      = this.buildData(this.state.days[this.state.mode]);
+  }
+
+  parseTool(str) {
+    var arr = str
+      .replace(/\,/g, ".")
+      .split(/\t+/g)
+      .map(n => (n + "").replace(/\"/g, "").replace(/(\d+)\s(\d+)/, "$1$2"));
+    
+    var obj = {
+      name:             arr[0],
+      stepPrice:       +arr[1],
+      priceStep:       +arr[2],
+      averageProgress: +arr[3],
+      guaranteeValue:  +arr[4],
+      currentPrice:    +arr[5],
+      lotSize:         +arr[6],
+      dollarRate:      +arr[7] || 0,
+
+      points: [
+        [ 70,  70 ],
+        [ 156, 55 ],
+        [ 267, 41 ],
+        [ 423, 27 ],
+        [ 692, 13 ],
+        [ 960,  7 ],
+      ]
+    };
+    console.log(obj);
+    return obj;
   }
 
   buildData(length = 0) {
@@ -424,6 +356,10 @@ class App extends React.Component {
         pair[key] = val;
         Object.assign(tool, pair);
       });
+
+      if (this.state.tools[i].points) {
+        tool.points = this.state.tools[i].points;
+      }
     });
 
     localStorage.setItem("tools-tr", JSON.stringify(tools));
@@ -432,6 +368,7 @@ class App extends React.Component {
 
   bindEvents() {
     var $modal = $(".modal");
+    var $modalSmall = $(".js-config-small");
     var $body = $("body");
     $(".js-open-modal").click(e => {
       this.setState({ toolsTemp: [...this.state.tools] }, () => {
@@ -443,6 +380,14 @@ class App extends React.Component {
     $(".js-close-modal").click(e => {
       $modal.removeClass("visible");
       $body.removeClass("scroll-disabled");
+    });
+    
+    $(".js-close-modal-small").click(e => {
+      console.log(this.state.tools[this.state.currentToolIndex].points);
+      this.setState({ toolPointsTemp: [...(this.state.tools[this.state.currentToolIndex].points)] }, () => {
+        $modalSmall.removeClass("visible");
+        $body.removeClass("scroll-disabled");
+      });
     });
   }
 
@@ -515,6 +460,26 @@ class App extends React.Component {
     });
 
     this.bindEvents();
+
+    // Speedometer
+    (function () {
+      function ac_add_to_head(el) {
+        var head = document.getElementsByTagName('head')[0];
+        head.insertBefore(el, head.firstChild);
+      }
+      function ac_add_link(url) {
+        var el = document.createElement('link');
+        el.rel = 'stylesheet'; el.type = 'text/css'; el.media = 'all'; el.href = url;
+        ac_add_to_head(el);
+      }
+      function ac_add_style(css) {
+        var ac_style = document.createElement('style');
+        if (ac_style.styleSheet) ac_style.styleSheet.cssText = css;
+        else ac_style.appendChild(document.createTextNode(css));
+        ac_add_to_head(ac_style);
+      }
+      ac_add_link('https://cdn.anychart.com/releases/8.7.1/css/anychart-ui.min.css?hcode=a0c21fc77e1449cc86299c5faa067dc4');
+    })();
   }
 
   recalc() {
@@ -572,12 +537,30 @@ class App extends React.Component {
     this.setState({ withdrawal, showWithdrawal: val !== 0 }, this.recalc);
   }
 
-  checkFn(withdrawal, depoStart, days) {
-    if ((withdrawal > (depoStart * 0.15)) || (withdrawal > (depoStart * 0.01) && days == 2600)) {
-      return "Слишком большой вывод!";
+  checkFn(withdrawal, depoStart, days, persentage) {
+    const { mode } = this.state;
+
+    if (!persentage) {
+      console.log('!!!!!!!!');
+      persentage = mode == 0 ? 15 : this.state.incomePersantageCustom;
+    }
+    persentage = persentage / 100;
+    console.log(withdrawal, depoStart, persentage, "(" + (depoStart * persentage) +")" , days);
+
+    var err = ["Слишком большой вывод!", "Слишком маленькая доходность!"];
+
+    if (mode == 0) {
+      if ((withdrawal > (depoStart * persentage)) || (withdrawal > (depoStart * 0.01) && days == 2600)) {
+        return err;
+      }
+    }
+    else {
+      if (withdrawal > (depoStart * persentage)) {
+        return err;
+      }
     }
 
-    return "";
+    return ["", ""];
   }
 
   checkFn2(dayilyIncome, days) {
@@ -654,7 +637,9 @@ class App extends React.Component {
                         let withdrawal = this.state.withdrawal[mode];
                         let days = this.state.days[mode];
 
-                        this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, val, days));
+                        var errMessages = this.checkFn(withdrawal, val, days);
+                        this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                    this.withdrawalInput.setErrorMsg(errMessages[0]);
                       }}
                       format={formatNumber}
                     />
@@ -685,19 +670,21 @@ class App extends React.Component {
                           className="input-group__input"
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
-                          min={(this.state.minDailyIncome).toFixed(3)}
-                          max={this.state.days[this.state.mode] == 2600 ? 1 : null}
-                          onBlur={val => {
-                            const { days, mode } = this.state;
-
-                            this.setState({ incomePersantageCustom: val }, this.recalc);
-
-                            this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(val, days[mode]));
-                          }}
+                          // min={(this.state.minDailyIncome).toFixed(3)}
+                          // max={this.state.days[this.state.mode] == 2600 ? 1 : null}
+                          onBlur={val => this.setState({ incomePersantageCustom: val }, this.recalc) }
                           onChange={(e, val) => {
-                            const { days, mode } = this.state;
+                            const { days, withdrawal, depoStart, mode } = this.state;
 
-                            this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(val, days[mode]));
+                            var persentage = +val;
+                            if (isNaN(persentage)) {
+                              persentage = undefined;
+                            }
+
+                            var errMessages = this.checkFn(withdrawal[mode], depoStart[mode], days[mode], persentage);
+
+                            this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                        this.withdrawalInput.setErrorMsg(errMessages[0]);
                           }}
                           onRef={ ref => this.incomePersantageCustomInput = ref }
                           format={formatNumber}
@@ -719,21 +706,16 @@ class App extends React.Component {
                       format={formatNumber}
                       suffix="/день"
                       max={this.state.depoStart[this.state.mode] * .15}
-                      onBlur={ val => {
-                        this.setWithdrawal(val);
-                        
-                        const { mode } = this.state;
-                        let depoStart = this.state.depoStart[mode];
-                        let days = this.state.days[mode];
-
-                        this.withdrawalInput.setErrorMsg(this.checkFn(val, depoStart, days));
-                      }}
+                      onBlur={ val => this.setWithdrawal(val) }
                       onChange={ (e, val) => {
                         const { mode } = this.state;
                         let depoStart = this.state.depoStart[mode];
                         let days = this.state.days[mode];
 
-                        this.withdrawalInput.setErrorMsg(this.checkFn(val, depoStart, days));
+                        var errMessages = this.checkFn(val, depoStart, days);
+
+                        this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                    this.withdrawalInput.setErrorMsg(errMessages[0]);
                       } }
                       onRef={ ref => this.withdrawalInput = ref }
                     />
@@ -762,10 +744,9 @@ class App extends React.Component {
                         this.updateData(val);
 
                         this.setState({
-                          days:                   days,
-                          rowsNumber:             (val < 10) ? val : 10,
-                          rowsFirstIndex:         rowsFirstIndex,
-                          incomePersantageCustom: val == 2600 ? 1 : this.state.incomePersantageCustom
+                          days:           days,
+                          rowsNumber:     (val < 10) ? val : 10,
+                          rowsFirstIndex: rowsFirstIndex,
                         }, this.recalc);
                       }}
                       onChange={ (e, val) => {
@@ -773,9 +754,8 @@ class App extends React.Component {
                         let withdrawal = this.state.withdrawal[mode];
                         let depoStart = this.state.depoStart[mode];
 
-                        this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, depoStart, val));
-
-                        this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(this.state.incomePersantageCustom, val));
+                        this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, depoStart, val)[0]);
+                        // this.incomePersantageCustomInput.setErrorMsg(this.checkFn2(this.state.incomePersantageCustom, val));
                       } }
                       format={formatNumber}
                     />
@@ -793,7 +773,7 @@ class App extends React.Component {
                 <div className="slider-block" key={1}>
                   <span className="slider-block__label">
                     Процент депозита на вход в сделку
-                    <Tooltip title="Всплывающая подсказка">
+                    <Tooltip title="Максимальный объем входа в сделку">
                       <img className="slider-block__info" src="dist/img/info.svg"/>
                     </Tooltip>
                   </span>
@@ -812,13 +792,19 @@ class App extends React.Component {
                 <div className="slider-block" key={2}>
                   <span className="slider-block__label">
                     Количество итераций в день
-                    <Tooltip title="Всплывающая подсказка">
+                    <Tooltip title="Количество повторений сделки">
                       <img className="slider-block__info" src="dist/img/info.svg"/>
                     </Tooltip>
                   </span>
 
                   <CustomSlider
-                    value={this.state.directUnloading ? this.state.numberOfIterations : this.state.numberOfIterations * 2}
+                    value={
+                      this.state.directUnloading 
+                      ? 
+                        this.state.numberOfIterations 
+                      : 
+                        (this.state.numberOfIterations * 2 >= 100) ? 100 : this.state.numberOfIterations * 2
+                    }
                     min={1}
                     max={100}
                     step={1}
@@ -856,13 +842,8 @@ class App extends React.Component {
                             depoEnd
                             :
                             Math.round(data[days - 1].depoEnd - withdrawal)
-                          
-                          // if (val > 1e12) {
-                          //   console.log('trillion');
-                          //   val = val.toExponential(2).replace("+", "^")
-                          // }
 
-                          return formatNumber(val)
+                          return <BigNumber val={val} format={formatNumber} />
                         })()
                       }
                     </span>
@@ -914,7 +895,7 @@ class App extends React.Component {
                             val = 0;
                           }
 
-                          return `${val}%`;
+                          return <BigNumber val={val} threshold={1e9} suffix="%" />
                         })()
                       }
                     </span>
@@ -983,66 +964,83 @@ class App extends React.Component {
                         <th className="table-th">Итераций</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {
-                        new Array(this.state.rowsNumber).fill().map((val, i) => {
-                          let { 
-                            data,
-                            mode,
-                            incomePersantageCustom,
-                            rowsFirstIndex,
-                            tools,
-                            currentToolIndex,
-                            directUnloading,
-                            numberOfIterations
-                          } = this.state;
+                    {
+                      (() => {
+                        let {
+                          data,
+                          mode,
+                          incomePersantageCustom,
+                          rowsFirstIndex,
+                          tools,
+                          currentToolIndex,
+                          directUnloading,
+                          numberOfIterations
+                        } = this.state;
 
-                          let depoStart = this.state.depoStart[mode];
-                          let day = i + rowsFirstIndex;
-                          let tool = tools[currentToolIndex];
+                        function round(value, decimals) {
+                          let dec = Math.pow(10, decimals);
+                          return Math.round(value * dec) / dec;
+                        }
 
-                          function round(value, decimals) {
-                            let dec = Math.pow(10, decimals);
-                            return Math.round(value * dec) / dec;
+                        let depoStart = this.state.depoStart[mode];
+                        let tool = tools[currentToolIndex];
+
+                        if (!numberOfIterations) {
+                          numberOfIterations = 1;
+                        }
+
+                        let pointsForIteration = data[0].pointsForIteration / numberOfIterations;
+                        if (!directUnloading && (numberOfIterations * 2) >= 100) {
+                          pointsForIteration = (data[0].pointsForIteration * 2) / 100;
+                        }
+                        
+                        return <tbody>
+                          {
+                            new Array(this.state.rowsNumber).fill().map((val, i) => {
+                              
+                              let day = i + rowsFirstIndex;
+
+                              return (
+                                <tr className="table-row" key={i}>
+                                  {/* День */}
+                                  <td className="table-td">{day}</td>
+                                  {/* Депозит на вход */}
+                                  <td className="table-td">
+                                    {
+                                      formatNumber( Math.round( data[day - 1].depoStartReal ) )
+                                    }
+                                  </td>
+                                  {/* Контрактов */}
+                                  <td className="table-td">
+                                    {
+                                      (data[day - 1].contractsStart).toFixed(1)
+                                    }
+                                  </td>
+                                  {/* Пунктов за итерацию */}
+                                  <SpeedometerWrap
+                                    key={pointsForIteration}
+                                    chances={[
+                                      tool.points.map(row => row[0]),
+                                      tool.points.map(row => row[1])
+                                    ]}
+                                    value={pointsForIteration}
+                                    directUnloading={directUnloading}
+                                    numberOfIterations={numberOfIterations}
+                                    tool={tool}
+                                  />
+                                  {/* Итераций */}
+                                  <td className="table-td">
+                                    {
+                                      Math.min( numberOfIterations * (directUnloading ? 1 : 2), 100 )
+                                    }
+                                  </td>
+                                </tr>
+                              )
+                            })
                           }
-
-                          return (
-                            <tr className="table-row" key={i}>
-                              {/* День */}
-                              <td className="table-td">{day}</td>
-                              {/* Депозит на вход */}
-                              <td className="table-td">
-                                {
-                                  formatNumber( Math.round( data[day - 1].depoStartReal ) )
-                                }
-                              </td>
-                              {/* Контрактов */}
-                              <td className="table-td">
-                                {
-                                  (data[day - 1].contractsStart).toFixed(1)
-                                }
-                              </td>
-                              {/* Пунктов за итерацию */}
-                              <td className={
-                                "table-td"
-                                  .concat((data[0].pointsForIteration / numberOfIterations) > tool.averageProgress  ? " danger" : "")
-                              }
-                              >
-                                {
-                                  round((data[0].pointsForIteration / numberOfIterations).toFixed(2), 1)
-                                }
-                              </td>
-                              {/* Итераций */}
-                              <td className="table-td">
-                                {
-                                  numberOfIterations * (directUnloading ? 1 : 2)
-                                }
-                              </td>
-                            </tr>
-                          )
-                        })
-                      }
-                    </tbody>
+                        </tbody>
+                      })()
+                    }
                   </table>
                 </Col>
                 
@@ -1067,6 +1065,7 @@ class App extends React.Component {
                         new Array(this.state.rowsNumber).fill().map((val, i) => {
                           var { 
                             data,
+                            mode,
                             scaleData,
                             minDailyIncome,
                             rowsFirstIndex,
@@ -1080,13 +1079,13 @@ class App extends React.Component {
                               {/* Депо на конец дня */}
                               <td className="table-td">
                                 {
-                                  formatNumber(Math.round(data[day - 1].depoEnd))
+                                  formatNumber(Math.round( realData[day - 1].depoEnd ))
                                 }
                               </td>
                               {/* Прирост */}
                               <td className="table-td profit">
                                 {
-                                  "+" + formatNumber(Math.round(data[day - 1].income * data[day - 1].scale))
+                                  "+" + formatNumber(Math.round( realData[day - 1].income ))
                                 }
                               </td>
                               {
@@ -1185,6 +1184,31 @@ class App extends React.Component {
             {/* /.card-5 */}
           </div>
           {/* /.container */}
+
+          <footer className="footer">
+            <div className="container">
+              <Button className="footer__link" type="link" onClick={e => {
+                e.preventDefault();
+
+                const { data, mode } = this.state;
+                let days       = this.state.days[mode];
+                let withdrawal = this.state.withdrawal[mode];
+
+                let depoStart = this.state.depoStart[mode];
+                let depoEnd   = mode == 0 ? this.state.depoEnd : data[days - 1].depoEnd - withdrawal;
+
+                var href = `http://fani144.ru/kpd#
+                  depoStart=${depoStart}&
+                  depoEnd=${Math.round(depoEnd)}&
+                  days=${Math.round(days)}
+                `.replace(/[\s\n\t]+/g, "");
+
+                window.open(href, "_blank");
+              }}>
+                Перейти к КПД
+              </Button>
+            </div>
+          </footer>
         </main>
         {/* /.main */}
 
@@ -1197,10 +1221,12 @@ class App extends React.Component {
                 <table className="table">
                   <thead className="table-header">
                     <tr className="table-tr">
+                      <th className="table-th"></th>
                       <th className="table-th">Инструмент</th>
                       <th className="table-th">Цена шага</th>
+                      <th className="table-th">Шаг цены</th>
+                      <th className="table-th">Средний ход</th>
                       <th className="table-th">ГО</th>
-                      <th className="table-th">Средний ход<br/> инструмента</th>
                       <th className="table-th">Текущая цена</th>
                       <th className="table-th">Размер лота</th>
                       <th className="table-th">Курс доллара</th>
@@ -1209,9 +1235,22 @@ class App extends React.Component {
                   {
                     this.state.toolsTemp.map((tool, i) =>
                       <tr className="config-tr js-config-row" key={tool.id}>
+                        <td className="table-td">
+                          <button className="config-tr-settings" aria-label="Удалить инструмент"
+                            onClick={e => {
+                              $(".js-config-small").addClass("visible");
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+                                 width="1.5em" height="1.5em" fill="#1890ff"
+                            >
+                              <path d="M496.66 312.1l-47.06-36.8c.6-5.67 1.1-12.3 1.1-19.32s-.48-13.65-1.1-19.33l47.1-36.82c8.75-6.91 11.14-19.18 5.57-29.4l-48.94-84.67c-5.23-9.56-16.68-14.46-28.3-10.18l-55.54 22.3a190.39 190.39 0 00-33.34-19.35l-8.45-58.9C326.3 8.45 316.58 0 305.09 0h-98.14c-11.5 0-21.2 8.45-22.57 19.46l-8.47 59.11a196.27 196.27 0 00-33.28 19.35L86.95 75.56c-10.43-4.03-22.91.5-28.1 10l-49 84.79a22.94 22.94 0 005.55 29.54l47.06 36.8c-.74 7.2-1.1 13.44-1.1 19.31s.36 12.12 1.1 19.33l-47.1 36.82c-8.75 6.93-11.12 19.2-5.55 29.4l48.94 84.67c5.23 9.53 16.58 14.48 28.3 10.17l55.54-22.29a192.07 192.07 0 0033.32 19.35l8.45 58.88c1.39 11.22 11.1 19.67 22.61 19.67h98.14c11.5 0 21.22-8.45 22.59-19.46l8.47-59.09a197.19 197.19 0 0033.28-19.37l55.68 22.36a22.92 22.92 0 008.36 1.58c8.28 0 15.9-4.53 19.73-11.57l49.16-85.12a23.03 23.03 0 00-5.72-29.22zm-240.64 29.23c-47.06 0-85.33-38.27-85.33-85.33s38.27-85.33 85.33-85.33 85.33 38.27 85.33 85.33-38.27 85.33-85.33 85.33z" />
+                            </svg>
+                          </button>
+                        </td>
                         {
                           Object.keys(tool).map((key, i) =>
-                            key == "id" ? (
+                            key == "id" || key == "points" ? (
                               null
                             )
                             :
@@ -1292,6 +1331,75 @@ class App extends React.Component {
               </footer>
             </div>
             {/* /.config */}
+
+            <div className="config-small js-config-small">
+              <h2 className="config__title">Настройка хода инструмента</h2>
+
+              <Row type="flex" justify="space-between" style={{ marginBottom: "1em" }}>
+                <Col span={11} style={{ textAlign: "center" }}>
+                  <Title level={4}>Пункты</Title>
+                </Col>
+                <Col span={11} style={{ textAlign: "center" }}>
+                  <Title level={4}>Шансы</Title>
+                </Col>
+              </Row>
+
+              {
+                (() => {
+                  const { toolsTemp, currentToolIndex } = this.state;
+                  let currentTool = toolsTemp[currentToolIndex];
+
+                  return currentTool.points.map((n, i) =>
+                    <Row key={i} type="flex" justify="space-between" style={{ marginBottom: "1em" }}>
+                      <Col span={11}>
+                        <NumericInput
+                          defaultValue={n[0]}
+                        />
+                      </Col>
+                      <Col span={11}>
+                        <NumericInput
+                          defaultValue={n[1]}
+                        />
+                      </Col>
+                    </Row>
+                  )
+                })()
+              }
+
+              <Button
+                className="config__add-btn"
+                type="link"
+                onClick={() => {
+                  let toolsTemp = [...this.state.toolsTemp];
+                  const { currentToolIndex } = this.state;
+                  let currentTool = toolsTemp[currentToolIndex]; 
+                  currentTool.points.push([ 0, 0 ]);
+
+                  this.setState({ toolsTemp });
+                }}
+              >
+                Добавить
+              </Button>
+
+              <footer className="config-footer">
+                <Button className="config__cancel-btn js-close-modal-small">Отмена</Button>
+                <Button
+                  className="js-close-modal-small"
+                  type="primary"
+                  onClick={() => {
+                    let toolPointsTemp = [...this.state.toolPointsTemp];
+                    let tools = [...this.state.tools];
+                    const { currentToolIndex } = this.state
+
+                    console.log(tools[currentToolIndex]);
+                    tools[currentToolIndex].points = toolPointsTemp;
+                    this.setState({ tools });
+                  }}
+                >
+                  Сохранить
+                </Button>
+              </footer>
+            </div>
           </div>
           {/* /.modal-content */}
         </div>
