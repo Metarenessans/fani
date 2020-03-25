@@ -586,7 +586,7 @@ class App extends React.Component {
                     depoEnd=${Math.round(depoRequired)}&
                     days=${days}
                   `.replace(/[\s\n\t]+/g, "");
-                  window.open(href, "_blank");
+                  window.location = href;
                 }}
               >
                 Открыть трейдометр
