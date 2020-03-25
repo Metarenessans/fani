@@ -1203,7 +1203,7 @@ class App extends React.Component {
                   days=${Math.round(days)}
                 `.replace(/[\s\n\t]+/g, "");
 
-                window.open(href, "_blank");
+                window.location = href;
               }}>
                 Перейти к КПД
               </Button>
