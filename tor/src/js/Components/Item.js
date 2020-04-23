@@ -290,7 +290,7 @@ export default class Item extends React.Component {
                 <Col span={11} style={{ textAlign: "center" }}>
                   <div className="days-select">
                     <label className="input-group">
-                      <span className="input-group__title">Ожидаемый ход (пп)</span>
+                      <span className="input-group__title">Ожидаемый ход (руб/$)</span>
                       <NumericInput
                         className="input-group__input"
                         defaultValue={this.state.stepExpected}
@@ -359,7 +359,7 @@ export default class Item extends React.Component {
               <Row className="card-2__row" type="flex" justify="space-between" align="bottom">
                 <Col span={11} style={{ textAlign: "center" }}>
                   <label className="input-group">
-                    <span className="input-group__title">Ожидаемый ход (пп)</span>
+                    <span className="input-group__title">Ожидаемый ход (руб/$)</span>
                     <NumericInput
                       className="input-group__input"
                       defaultValue={this.state.stepExpected}

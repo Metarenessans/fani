@@ -12,8 +12,17 @@ export default class NumericInput extends React.Component {
     this.className = this.props.className || "";
 
     this.state = {
-      value: this.format(this.props.defaultValue || 0)
+      value:  this.format(this.props.defaultValue || 0),
+      errMsg: ""
     };
+
+    if (this.props.onRef) {
+      this.props.onRef(this);
+    }
+  }
+
+  setErrorMsg(errMsg) {
+    this.setState({ errMsg });
   }
 
   onChange(e) {
@@ -64,11 +73,11 @@ export default class NumericInput extends React.Component {
     value = Number(value) + "";
 
     if (min && (+value < +min)) {
-      // console.log('min', +value, +min);
+      console.log('min', +value, +min);
       value = +min;
     }
     if (max && (+value > +max)) {
-      // console.log('max', +value, +max);
+      console.log('max', +value, +max);
       value = +max;
     }
 
@@ -102,6 +111,7 @@ export default class NumericInput extends React.Component {
       var { value } = this.state;
 
       var val = this.parse(value);
+      console.log(val);
 
       this.setState({ value: val });
       if (this.props.onBlur) {
@@ -113,22 +123,22 @@ export default class NumericInput extends React.Component {
   }
 
   render() {
-    const { value } = this.props;
+    const { value, errMsg } = this.state;
 
     return (
       <Tooltip
-        title={this.onInvalid(this.state.value)}
-        visible={this.onInvalid(this.state.value)}
+        title={errMsg}
+        visible={errMsg}
       >
         <Input
           placeholder={0}
           {...this.props}
-          className={this.className.concat(this.onInvalid(this.state.value).length ? " error" : "")}
+          className={this.className.concat(errMsg.length ? " error" : "")}
           onKeyDown={e => this.onKeyDown(e)}
           onChange={e => this.onChange(e)}
           onFocus={e => this.onFocus(e)}
           onBlur={e => this.onBlur(e)}
-          value={this.state.value}
+          value={value}
           maxLength={25}
         />
       </Tooltip>

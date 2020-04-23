@@ -1,0 +1,614 @@
+body
+  +font("Circe")
+  font-size: 7.35em
+
+h1.ant-typography
+  color: inherit
+  margin-bottom: 1em
+
+.ant-col-1,
+.ant-col-2,
+.ant-col-3,
+.ant-col-4,
+.ant-col-5,
+.ant-col-6,
+.ant-col-7,
+.ant-col-8,
+.ant-col-9,
+.ant-col-10,
+.ant-col-11,
+.ant-col-12,
+.ant-col-13,
+.ant-col-14,
+.ant-col-15,
+.ant-col-16,
+.ant-col-17,
+.ant-col-18,
+.ant-col-19,
+.ant-col-20,
+.ant-col-21,
+.ant-col-22,
+.ant-col-23,
+.ant-col-24
+  flex: initial
+
+.b
+  font-weight: bold
+  color: $accentColor
+
+.ant-tooltip-inner
+  text-align: center
+
+.custom-btn
+  height: auto
+  padding: .7em 4em
+  border-radius: 2em
+  border: 0.1em solid currentColor
+  background: none
+
+  color: $mainColor
+  font-family: inherit
+  font-size: 1.6em
+  line-height: 1
+  font-weight: 400
+  text-transform: uppercase
+
+  &:focus,
+  &:hover
+    border: 0.1em solid currentColor
+    background: none
+
+    color: $mainColor
+
+  &--secondary
+    color: white
+
+    &:focus,
+    &:hover
+      color: white
+
+.ant-select-search__field
+  box-shadow: none !important
+
+.ant-radio,
+.ant-radio-wrapper
+  // font-size: 1.3em
+
+.slider-block
+  padding: 1.5em 0
+  text-align: center
+
+  user-select: none
+
+  &__label
+    +font("Roboto")
+    font-size: 1.6em
+
+    display: flex
+    justify-content: center
+    align-items: center
+
+  &__info
+    margin-top: -0.5em
+    margin-left: 0.3em
+
+    font-size: .75em
+    color: #d1d1d1
+
+.search
+
+  &__title
+    display: block
+    margin-bottom: .5em
+
+    font-size: 1.4em
+    font-weight: bold
+    text-align: center
+
+.switch
+  cursor: pointer
+  
+  &__input
+    margin-top: -.25em
+  &__label
+    margin-left: .75em
+    font-size: 1.6em
+
+.table
+  background-color: white
+  width: 100%
+  border-collapse: collapse
+
+  font-size: 1.6em
+
+  &-title
+    text-align: center
+    font-size: 2.4em
+    font-weight: bold
+  
+  &-header
+    border-bottom: .2em solid #eee
+  
+  &-th,
+  &-td
+    padding: 0.2em
+    text-align: center
+
+  &-th
+    width:  1%
+    height: 3.5em
+
+    &--small
+      font-size: .8em
+
+  &-td
+    height: 4em
+
+    &-parent
+      position: relative
+    
+    &-speedometer:hover .speedometer
+      display: flex
+  
+  .ant-input
+    width:  4.1em
+    height: auto
+    padding: .1em
+
+    font-size: 1.2em
+    line-height: 1
+    text-align: center
+
+.input-group
+  display: flex
+  flex-direction: column
+
+  &__label
+    display: block
+    margin-bottom: .5em
+
+    +font("Roboto")
+    font-size: 1.6em
+
+    &--centered
+      text-align: center
+
+  &__input
+    text-align: center
+
+    &.error
+      .ant-input
+        border-color: red
+
+        &:focus
+          box-shadow: 0 0 0 2rem rgba(red, .2)
+
+        &:hover
+          border-color: red
+      
+      .ant-input-suffix
+        pointer-events: none
+
+.settings-button
+  width:  3.25em
+  height: 3.25em
+  background: none
+  padding: 0
+  border: none
+
+  transition: transform .2s ease
+  will-change: transform
+
+  cursor: pointer
+
+  &:focus,
+  &:hover
+    transform: rotate(-45deg) scale(1.3)
+    outline: none
+    box-shadow: none
+
+  &__icon
+    color: #1890ff
+    font-size: 3em
+
+.card
+  padding: 1em
+  box-shadow: 0 0 1.75em rgba(0,0,0,0.1)
+
+  &--column
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+  &--secondary
+    background-color: rgba(#4859b4, .1)
+    box-shadow: none
+
+.profit
+  color: green
+
+.danger
+  color: red
+
+.section
+
+  &1,
+  &2,
+  &3,
+  &4,
+    display: flex
+    justify-content: space-between
+
+.controls
+  padding: 3em 0 2em
+  display: flex
+
+  color: #1b1b1b
+
+  &-card1,
+  &-card2
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+  &-card2
+    align-items: flex-start
+
+    &-select
+
+      &__rate
+        display: inline-block
+        margin-top: .5em
+        font-size: 1.6em
+  
+  &__card2
+    margin-top: 1.5em
+
+  &-card3
+    height: 100%
+
+.stats
+  position: relative
+  z-index: 0
+  background-color: rgba(#3f6b33, .1)
+  padding: 2em 0
+  display: flex
+  justify-content: space-between
+
+  &::before,
+  &::after
+    content: ''
+    display: block
+    position: absolute
+    z-index: -1
+    top: 0
+    width: 50vw
+    height: 100%
+    background: inherit
+  
+  &::before
+    right: 100%
+
+  &::after
+    left: 100%
+
+  &-title
+
+  &-subtitle
+    margin: 0
+    margin-bottom: .5em
+
+    font-size: 3.6em
+    font-weight: bold
+    text-transform: uppercase
+
+    span
+      position: relative
+
+      &::before,
+      &::after
+        content: ''
+        display: block
+        width:   10em
+        height: 0.2em
+        background-color: $mainColor
+        position: absolute
+        top: 50%
+        transform: translate(0, -50%)
+
+        font-size: .27em
+
+      &::before
+        left:  -14em
+
+      &::after
+        right: -14em
+
+  &-col
+    text-align: center
+  
+  &-footer
+    display: flex
+    justify-content: center
+  
+  &-key
+    margin-bottom: .5em
+
+  &-val
+    font-size: 2.4em
+
+  &__row
+    margin-bottom: .5em
+    display: flex
+    align-items: center
+    font-size: 2em
+
+    .big
+      font-size: 1.2em
+
+    .medium
+      font-size: 1.1em
+
+    &:last-child
+      margin-bottom: 0
+
+  &__key
+    flex-shrink: 0
+    width: 13.5em
+
+  &__val
+    white-space: nowrap
+
+    &--big
+      font-size: 1.6em
+      font-weight: bold
+
+.section4
+  position: relative
+
+  color: #141414
+
+  &__title
+    position: absolute
+    left:  0
+    top:  -0.29em
+    z-index: 1
+    
+    font-size: 3.6em
+    font-weight: 300
+
+    &::before
+      content: ''
+      display: block
+      position: absolute
+      left:   .35em
+      bottom: 0
+      width:   10em
+      height: 0.2em
+      background-color: $mainColor
+
+      font-size: .275em
+  
+  &-header
+    min-height: 2em
+    margin-bottom: 1em
+
+    text-align: center
+    color: #777
+    font-size: 2.4em
+
+  &-content
+    min-height: 18em
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+    &--centered
+      align-items: center
+      // TODO: delete
+      justify-content: center
+  
+  &-row
+    width: 100%
+    margin-bottom: 1.5em
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    &:last-of-type
+      margin-bottom: 0
+  
+  &-l,
+  &-r
+    font-size: 1.9em
+
+  &-r
+    text-align: right
+    font-weight: bold
+
+  &__day-select
+    width: 4.5em !important
+
+    font-size: 1em
+
+    .ant-select-selection__rendered
+      margin-right: 1em
+
+    .ant-select-arrow
+      right: 0.2em
+
+    .ant-select-search__field
+      text-align: right
+
+    .ant-select-selection
+      border: none
+      border-radius: 0
+      padding: 0
+
+      outline: none
+      box-shadow: none
+
+      &-selected-value
+        float: right
+
+        color: #4859b4
+        +font("Circe", bold)
+  
+  &__switch
+    .switch__input
+      margin-top: 0
+      transform: scale(.6)
+  
+  &-progress
+
+    .ant-progress
+      
+      &-inner
+        width:  5.85em !important
+        height: 5.85em !important
+
+    &__label
+      display: none
+      margin-top: .5em
+
+      font-size: 1.9em
+
+.section5
+  display: flex
+  flex-direction: column
+  align-items: center
+
+  padding: 4em 1em
+  position: relative
+  z-index: 0
+  background: #f2f2f2
+
+  text-align: center
+
+  &::before,
+  &::after
+    content: ''
+    display: block
+    position: absolute
+    z-index: -1
+    top: 0
+    width: 50vw
+    height: 100%
+    background: inherit
+  
+  &::before
+    right: 100%
+
+  &::after
+    left: 100%
+
+  .ant-progress
+    &-inner
+      background: white
+
+  .ant-progress-circle
+    .ant-progress-inner
+      background: none
+
+  &__title
+    font-size: 2.4em
+    font-weight: 400
+    text-transform: uppercase
+    letter-spacing: .5em
+
+    text-align: center
+  
+  &-collapse
+    width: 100%
+    margin-top: 2.5em
+
+    &--collapsed
+      display: none
+  
+  &-footer
+    margin-top: 1.75em
+    padding: 0 24em
+
+    &__label
+      font-size: 1.9em
+
+      b
+        color: #3f6b33
+  
+  &-content
+    display: flex
+    padding: 1em 0
+
+    text-align: left
+
+    &--centered
+      align-items: center
+
+    &-title
+      display: inline-block
+      margin-bottom: .5em
+
+      color: #777
+      font-size: 3.6em
+      font-weight: 700
+      text-transform: uppercase
+      text-align: center
+      
+      position: relative
+
+      &::before,
+      &::after
+        content: ''
+        display: block
+        width:   10em
+        height: 0.2em
+        background-color: $mainColor
+        position: absolute
+        top: 50%
+        transform: translate(0, -50%)
+
+        font-size: .27em
+
+      &::before
+        left:  -14em
+
+      &::after
+        right: -14em
+
+  &-row
+    width: 100%
+    min-height: 4.5em
+    margin-bottom: 1em
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    &:last-of-type
+      margin-bottom: 0
+  
+  &-l,
+  &-r
+    font-size: 1.9em
+
+  &-r
+    text-align: right
+    color: #777
+    font-weight: bold
+
+    .ant-input
+      margin-right: .4em
+      width: 4em
+
+      text-align: center
+
+    &-suffix
+      display: inline-block
+      min-width: 4em
+
+      text-align: left
+
+.anychart-credits
+  display: none
+
+canvas
+  background: white

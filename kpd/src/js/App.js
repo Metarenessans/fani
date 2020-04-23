@@ -11,25 +11,22 @@ import {
   Switch,
   Tag
 } from 'antd/es'
-import CustomSlider from "./Components/CustomSlider"
+const { Option } = Select;
+
+import Header       from "./Components/Header/Header"
+import CustomSelect from "./Components/CustomSelect/CustomSelect"
 import NumericInput from "./Components/NumericInput"
-import Header from "./Components/Header"
-import params from "./params"
+
 import $ from "jquery"
+import params from "./params"
+import num2str from "./num2str"
+
 import "chart.js"
 import "chartjs-plugin-annotation"
 
-const { Option } = Select;
+import "../sass/main.sass"
 
 var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
-
-function num2str(n, text_forms) {
-  n = Math.abs(n) % 100; var n1 = n % 10;
-  if (n > 10 && n < 20) { return text_forms[2]; }
-  if (n1 > 1 && n1 < 5) { return text_forms[1]; }
-  if (n1 == 1) { return text_forms[0]; }
-  return text_forms[2];
-}
 
 function extRate(present, future, payment, periods) {
 
@@ -104,9 +101,7 @@ class App extends React.Component {
       // Месяцев
       months:       12,
       // Дней
-      days:         260,
-      daysOptions: [50, 100].concat( new Array(10).fill(0).map((n, i) => 260 * (i + 1)) ),
-      daysOptionsIndex: 2,
+      days:         +params.get("days") || 260,
 
       // Если true, то происходит автоматический пересчет depoRequired
       safe: true,
@@ -202,35 +197,6 @@ class App extends React.Component {
       data = this.buildData();
       this.updateChart();
     });
-  }
-  
-  daysOptionsAdd(val) {
-    val = +val;
-    let { daysOptions, daysOptionsIndex } = this.state;
-    let index = daysOptions.indexOf(val);
-
-    if (index != -1) {
-      this.setDays(val, index);
-    }
-    else {
-      let indexOfLast = 0;
-      daysOptions.forEach((n, index) => {
-        if (val > n) {
-          indexOfLast = index;
-        }
-      })
-
-      daysOptions.splice(indexOfLast + 1, 0, val);
-      this.setState({ 
-        days:             val, 
-        daysOptions:      daysOptions,
-        daysOptionsIndex: indexOfLast + 1,
-      }, this.recalc);
-    }
-  }
-
-  setDays(value, index) {
-    this.setState({ days: value, daysOptionsIndex: index }, this.recalc);
   }
 
   loadConfig() {
@@ -412,13 +378,7 @@ class App extends React.Component {
       plugins: ["annotation"]
     });
 
-    var paramDays = +params.get("days"); 
-    if (paramDays && !isNaN(paramDays) && paramDays > 0) {
-      this.daysOptionsAdd(+paramDays);
-    }
-    else {
-      this.recalc();
-    }
+    this.recalc();
     this.bindEvents();
   }
 
@@ -530,50 +490,36 @@ class App extends React.Component {
             <canvas id="chart"></canvas>
 
             <div className="main-bottom">
-              <div className="days-select">
+              <label className="days-select">
                 <span className="days-select__label">
                   Дней до цели
                   <Tooltip overlayClassName="days-info-wrap" title="365 календарный дней = 260 рабочих">
                     <img className="info-icon" src="dist/img/info.svg" />
                   </Tooltip>
                 </span>
-                <Select
-                  // defaultValue={2}
-                  value={this.state.daysOptionsIndex}
-                  onChange={(index, element) => {
-                    var value = +element.props.children.match(/\d+/)[0];
-
-                    this.setDays(value, index);
-                  }}
-                  showSearch
-                  filterOption={false}
-                  style={{ width: "100%" }}
-                  onInputKeyDown={e => {
-                    // Enter
-                    if (e.keyCode == 13) {
-                      var value = e.target.value;
-                      if (!isNaN(value)) {
-                        this.daysOptionsAdd(value);
-                      }
-                    }
-                  }}
-                >
-                  {
-                    this.state.daysOptions
-                      .map((n, i) => {
-                        var years = +(n / 260).toFixed(2);
-                        var suffix = "";
-                        if (n >= 260) {
-                          suffix = ` (${years} ${num2str(years, ["год", "года", "лет"])})`;
-                        }
-                        return `${n}` + suffix;
-                      })
-                      .map((value, index) => (
-                        <Option key={index} value={index}>{value}</Option>
-                      ))
+                <CustomSelect
+                  optionsDefault={
+                    [50, 100].concat(new Array(10).fill(0).map((n, i) => 260 * (i + 1)))
                   }
-                </Select>
-              </div>
+                  formatOption={val => {
+                    var years = +(val / 260).toFixed(2);
+                    var suffix = "";
+                    if (val >= 260) {
+                      suffix = ` (${years} ${num2str(years, ["год", "года", "лет"])})`;
+                    }
+                    return `${val}` + suffix;
+                  }}
+                  value={this.state.days}
+                  min={1}
+                  max={2600}
+                  onChange={value => {
+                    let { days } = this.state;
+                    days = value;
+
+                    this.setState({ days }, this.recalc);
+                  }}
+                />
+              </label>
 
               <Button type="link" className="main-link"
                 onClick={e => {
@@ -581,7 +527,7 @@ class App extends React.Component {
 
                   const { depoStart, depoRequired, days } = this.state;
 
-                  var href = `http://fani144.ru/trademeter#
+                  var href = `https://fani144.ru/trademeter/#
                     depoStart=${depoStart}&
                     depoEnd=${Math.round(depoRequired)}&
                     days=${days}

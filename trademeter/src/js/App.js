@@ -10,32 +10,33 @@ import {
   Input,
   Switch,
   Typography,
-  Tag
+  Tag,
+  InputNumber
 } from 'antd/es'
-import $ from "jquery"
-import "chart.js"
-import CustomSlider from "./Components/CustomSlider"
-import NumericInput from "./Components/NumericInput"
-import Paginator from "./Components/Paginator"
-import Header from "./Components/Header"
-import SpeedometerWrap from "./Components/SpeedometerWrap"
-import params from "./params";
-import formatBigNumbers from "./format";
 
 const { Option } = Select;
 const { Group } = Radio;
 const { Text, Title } = Typography;
 
+import $ from "jquery"
+import "chart.js"
+
+import Header          from "./Components/Header/Header"
+import CustomSlider    from "./Components/CustomSlider/CustomSlider"
+import NumericInput    from "./Components/NumericInput"
+import Paginator       from "./Components/Paginator/Paginator"
+import SpeedometerWrap from "./Components/Speedometer/SpeedometerWrap"
+import Chances         from "./Components/Chances/Chances"
+
+import params from "./params";
+import num2str from "./num2str";
+import formatBigNumbers from "./format";
+
+import "../sass/main.sass"
+
+
 var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 var chart;
-
-function num2str(n, text_forms) {
-  n = Math.abs(n) % 100; var n1 = n % 10;
-  if (n > 10 && n < 20) { return text_forms[2]; }
-  if (n1 > 1 && n1 < 5) { return text_forms[1]; }
-  if (n1 == 1) { return text_forms[0]; }
-  return text_forms[2];
-}
 
 function extRate(present, future, payment, periods) {
 
@@ -119,8 +120,8 @@ class App extends React.Component {
 
     this.state = {
       data: [],
-      scaleData: [],
 
+      // Вкладка
       mode: 0,
       // Начальный депозит
       depoStart: [
@@ -132,10 +133,7 @@ class App extends React.Component {
       // Доходность в день
       incomePersantageCustom: 1,
       // Сумма на вывод
-      withdrawal: [
-        0,
-        0
-      ],
+      withdrawal: [0, 0],
       // Торговых дней
       days: [
         +params.get("days") || 260,
@@ -144,11 +142,11 @@ class App extends React.Component {
       // Процент депозита на вход в сделку
       depoPersentageStart: 10,
       // Кол-во итераций в день
-      numberOfIterations: 0,
+      numberOfIterations: 1,
 
       // Минимальная доходность в день
       minDailyIncome: 45,
-      // 
+      // Доходность за итерацию
       incomePersantageDaily: 0,
 
       rowsNumber:     10,
@@ -156,24 +154,25 @@ class App extends React.Component {
 
       configLoaded: false,
       tools: this.loadConfig() || [
-        this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`),
-        this.parseTool(`Палладий (PLD-6.20)	0,79537	0,0100	70	43 626,69	1 617,04	1`),
-        this.parseTool(`Доллар/рубль (Si-6.20)	1,00000	1,0000	150	12 610,77	80 446	1 000`),
-        this.parseTool(`Нефть (BR-4.20)	7,95374	0,0100	50	7 561,22	26,56	10	`),
-        this.parseTool(`Индекс РТС (RTS-6.20)	15,90748	10,0000	700	38 030,35	88 480	1	`),
-        this.parseTool(`Сбербанк (SBRF-6.20)	1,00000	1,0000	250	5 131,79	17 860	100	`),
-        this.parseTool(`Магнит (MGNT-6.20)	1,00000	1,0000	50	806,15	2 976	1	`),
-        this.parseTool(`APPLE	0,82000	0,0100	120	20 072,0	244,78	1	82`),
-        this.parseTool(`PG&E	0,82000	0,0100	80	648,6	7,91	1	82`),
-        this.parseTool(`NVIDIA	0,82000	0,0100	250	17 463,5	212,97	1	82`),
-        this.parseTool(`MICRON	0,82000	0,0100	140	2 975,8	36,29	1	82`),
-        this.parseTool(`Сбербанк	0,10000	0,0100	100	1 895,1	189,51	10	1`),
-        this.parseTool(`Магнит	0,10000	0,5000	90	2 950,0	2 950,0	1	1`),
-        this.parseTool(`МосБиржа	0,10000	0,0100	60	884,6	88,46	10	1`),
-        this.parseTool(`СургутНефтеГаз	0,50000	0,0050	350	2 700,0	27,000	100	1`),
-        this.parseTool(`Газпром	1,00000	0,0100	90	1 745,6	174,56	10	1`),
-        this.parseTool(`Алроса	0,10000	0,0100	100	597,0	59,70	10	1`),
+        this.parseTool(`Золото (GOLD-6.20)	7,72011	0,1000	70	12 723,89	1 637,4	1	1`),
+        this.parseTool(`Палладий (PLD-6.20)	0,77201	0,0100	70	51 425,37	2 147,19	1	1`),
+        this.parseTool(`Доллар/рубль (Si-6.20)	1,00000	1,0000	150	12 258,76	77 370	1 000	1`),
+        this.parseTool(`Нефть (BR-5.20)	7,72011	0,0100	50	7 884,21	34,74	10	1`),
+        this.parseTool(`Индекс РТС (RTS-6.20)	15,44022	10,0000	700	38 429,92	105 280	1	1`),
+        this.parseTool(`Сбербанк (SBRF-6.20)	1,00000	1,0000	250	5 012,61	18 835	100	1`),
+        this.parseTool(`Магнит (MGNT-6.20)	1,00000	1,0000	50	861,73	3 224	1	1`),
+        this.parseTool(`APPLE	0,77000	0,0100	120	18 422,3	239,25	1	77`),
+        this.parseTool(`PG&E	0,77000	0,0100	80	606,8	7,88	1	77`),
+        this.parseTool(`NVIDIA	0,77000	0,0100	250	18 608,6	241,67	1	77`),
+        this.parseTool(`MICRON	0,77000	0,0100	140	3 169,3	41,16	1	77`),
+        this.parseTool(`Сбербанк	0,10000	0,0100	100	1 856,4	185,64	10	1`),
+        this.parseTool(`Магнит	0,10000	0,5000	90	3 189,0	3 189,0	1	1`),
+        this.parseTool(`МосБиржа	0,10000	0,0100	60	990,0	99,00	10	1`),
+        this.parseTool(`СургутНефтеГаз	0,50000	0,0050	350	3 638,5	36,385	100	1`),
+        this.parseTool(`Газпром	1,00000	0,0100	90	1 897,7	189,77	10	1`),
+        this.parseTool(`Алроса		0,0100	100	615,9	61,59	10	1`),
       ],
+      toolToConfigIndex: -1,
       currentToolIndex: 0,
       isSafe: true,
       directUnloading: true
@@ -194,17 +193,17 @@ class App extends React.Component {
   parseTool(str) {
     var arr = str
       .replace(/\,/g, ".")
-      .split(/\t+/g)
+      .split(/\t/g)
       .map(n => (n + "").replace(/\"/g, "").replace(/(\d+)\s(\d+)/, "$1$2"));
     
     var obj = {
       name:             arr[0],
-      stepPrice:       +arr[1],
-      priceStep:       +arr[2],
-      averageProgress: +arr[3],
-      guaranteeValue:  +arr[4],
-      currentPrice:    +arr[5],
-      lotSize:         +arr[6],
+      stepPrice:       +arr[1] || 0,
+      priceStep:       +arr[2] || 0,
+      averageProgress: +arr[3] || 0,
+      guaranteeValue:  +arr[4] || 0,
+      currentPrice:    +arr[5] || 0,
+      lotSize:         +arr[6] || 0,
       dollarRate:      +arr[7] || 0,
 
       points: [
@@ -216,7 +215,7 @@ class App extends React.Component {
         [ 960,  7 ],
       ]
     };
-    console.log(obj);
+    console.log(arr);
     return obj;
   }
 
@@ -363,7 +362,7 @@ class App extends React.Component {
     });
 
     localStorage.setItem("tools-tr", JSON.stringify(tools));
-    this.setState({ tools });
+    this.setState({ tools }, this.recalc);
   }
 
   bindEvents() {
@@ -381,21 +380,12 @@ class App extends React.Component {
       $modal.removeClass("visible");
       $body.removeClass("scroll-disabled");
     });
-    
-    $(".js-close-modal-small").click(e => {
-      console.log(this.state.tools[this.state.currentToolIndex].points);
-      this.setState({ toolPointsTemp: [...(this.state.tools[this.state.currentToolIndex].points)] }, () => {
-        $modalSmall.removeClass("visible");
-        $body.removeClass("scroll-disabled");
-      });
-    });
   }
 
   componentDidMount() {
     this.recalc();
 
-    var chartCtx = document.getElementById("chart").getContext("2d");
-    chart = new Chart(chartCtx, {
+    chart = new Chart(document.getElementById("chart").getContext("2d"), {
       type: 'line',
       data: {
         labels: new Array(this.state.days[this.state.mode]).fill().map((val, index) => index + 1),
@@ -493,11 +483,6 @@ class App extends React.Component {
     let withdrawal = this.state.withdrawal[mode];
     let days = this.state.days[mode];
 
-    var guess = withdrawal / depoStart;
-    if (isNaN(guess) || guess == 0) {
-      guess = .000000001;
-    }
-
     var rate = extRate(depoStart, depoEnd, withdrawal, days);
 
     this.setState({
@@ -514,6 +499,7 @@ class App extends React.Component {
 
       let currentTool = tools[currentToolIndex];
       let numberOfIterations = Math.round(+(this.state.data[0].pointsForIteration / currentTool.averageProgress).toFixed(2));
+      
       if (numberOfIterations < 1) {
         numberOfIterations = 1;
       }
@@ -799,10 +785,10 @@ class App extends React.Component {
 
                   <CustomSlider
                     value={
-                      this.state.directUnloading 
-                      ? 
-                        this.state.numberOfIterations 
-                      : 
+                      this.state.directUnloading
+                        ?
+                        this.state.numberOfIterations
+                        :
                         (this.state.numberOfIterations * 2 >= 100) ? 100 : this.state.numberOfIterations * 2
                     }
                     min={1}
@@ -1018,7 +1004,11 @@ class App extends React.Component {
                                   </td>
                                   {/* Пунктов за итерацию */}
                                   <SpeedometerWrap
-                                    key={pointsForIteration}
+                                    key={
+                                      this.state.tools[this.state.currentToolIndex].points
+                                        .map(half => half.join(";")).join(";")
+                                        .concat("-" + pointsForIteration)
+                                    }
                                     chances={[
                                       tool.points.map(row => row[0]),
                                       tool.points.map(row => row[1])
@@ -1066,7 +1056,6 @@ class App extends React.Component {
                           var { 
                             data,
                             mode,
-                            scaleData,
                             minDailyIncome,
                             rowsFirstIndex,
                           } = this.state;
@@ -1197,7 +1186,7 @@ class App extends React.Component {
                 let depoStart = this.state.depoStart[mode];
                 let depoEnd   = mode == 0 ? this.state.depoEnd : data[days - 1].depoEnd - withdrawal;
 
-                var href = `http://fani144.ru/kpd#
+                var href = `https://fani144.ru/kpd/#
                   depoStart=${depoStart}&
                   depoEnd=${Math.round(depoEnd)}&
                   days=${Math.round(days)}
@@ -1236,9 +1225,9 @@ class App extends React.Component {
                     this.state.toolsTemp.map((tool, i) =>
                       <tr className="config-tr js-config-row" key={tool.id}>
                         <td className="table-td">
-                          <button className="config-tr-settings" aria-label="Удалить инструмент"
+                          <button className="config-tr-settings" aria-label="Настроить инструмент"
                             onClick={e => {
-                              $(".js-config-small").addClass("visible");
+                              this.setState({ toolToConfigIndex: i });
                             }}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
@@ -1255,12 +1244,24 @@ class App extends React.Component {
                             )
                             :
                               <td className="table-td">
-                                <Input 
-                                  className="config__input" 
-                                  defaultValue={tool[key]}
-                                  placeholder={tool[key]}
-                                  data-name={key}
-                                />
+                                {
+                                  key == "name" ? (
+                                    <Input
+                                      className="config__input"
+                                      defaultValue={tool[key]}
+                                      placeholder={tool[key]}
+                                      data-name={key}
+                                    />
+                                  )
+                                  : (
+                                    <NumericInput 
+                                      style={{ width: "6em" }}
+                                      className="config__input"
+                                      defaultValue={tool[key]}
+                                      data-name={key}
+                                    />
+                                  )
+                                }
                               </td>
                           )
                         }
@@ -1305,12 +1306,23 @@ class App extends React.Component {
                   tools.push({
                     name:            "Инструмент",
                     stepPrice:       0,
-                    guaranteeValue:  0,
+                    priceStep:       0,
                     averageProgress: 0,
+                    guaranteeValue:  0,
                     currentPrice:    0,
                     lotSize:         0,
                     dollarRate:      0,
-                    id:              Math.random()
+
+                    points: [
+                      [ 70,  70 ],
+                      [ 156, 55 ],
+                      [ 267, 41 ],
+                      [ 423, 27 ],
+                      [ 692, 13 ],
+                      [ 960,  7 ],
+                    ],
+
+                    id: Math.random()
                   });
                   
                   this.setState({ toolsTemp: tools }, () => $(".config-table-wrap").scrollTop(999999) );
@@ -1332,74 +1344,28 @@ class App extends React.Component {
             </div>
             {/* /.config */}
 
-            <div className="config-small js-config-small">
-              <h2 className="config__title">Настройка хода инструмента</h2>
-
-              <Row type="flex" justify="space-between" style={{ marginBottom: "1em" }}>
-                <Col span={11} style={{ textAlign: "center" }}>
-                  <Title level={4}>Пункты</Title>
-                </Col>
-                <Col span={11} style={{ textAlign: "center" }}>
-                  <Title level={4}>Шансы</Title>
-                </Col>
-              </Row>
-
-              {
-                (() => {
-                  const { toolsTemp, currentToolIndex } = this.state;
-                  let currentTool = toolsTemp[currentToolIndex];
-
-                  return currentTool.points.map((n, i) =>
-                    <Row key={i} type="flex" justify="space-between" style={{ marginBottom: "1em" }}>
-                      <Col span={11}>
-                        <NumericInput
-                          defaultValue={n[0]}
-                        />
-                      </Col>
-                      <Col span={11}>
-                        <NumericInput
-                          defaultValue={n[1]}
-                        />
-                      </Col>
-                    </Row>
-                  )
-                })()
-              }
-
-              <Button
-                className="config__add-btn"
-                type="link"
-                onClick={() => {
-                  let toolsTemp = [...this.state.toolsTemp];
-                  const { currentToolIndex } = this.state;
-                  let currentTool = toolsTemp[currentToolIndex]; 
-                  currentTool.points.push([ 0, 0 ]);
-
-                  this.setState({ toolsTemp });
-                }}
-              >
-                Добавить
-              </Button>
-
-              <footer className="config-footer">
-                <Button className="config__cancel-btn js-close-modal-small">Отмена</Button>
-                <Button
-                  className="js-close-modal-small"
-                  type="primary"
-                  onClick={() => {
-                    let toolPointsTemp = [...this.state.toolPointsTemp];
-                    let tools = [...this.state.tools];
-                    const { currentToolIndex } = this.state
-
-                    console.log(tools[currentToolIndex]);
-                    tools[currentToolIndex].points = toolPointsTemp;
-                    this.setState({ tools });
+            {
+              this.state.toolToConfigIndex > -1 ? (
+                <Chances 
+                  key={this.state.toolsTemp[this.state.toolToConfigIndex].name}
+                  data={this.state.toolsTemp[this.state.toolToConfigIndex].points}
+                  onCancel={() => {
+                    console.log('Canceled!');
+                    this.setState({ toolToConfigIndex: -1 });
                   }}
-                >
-                  Сохранить
-                </Button>
-              </footer>
-            </div>
+                  onSave={(data) => {
+                    console.log('Saved!');
+    
+                    let { toolsTemp, toolToConfigIndex } = this.state;
+                    toolsTemp[toolToConfigIndex].points = data.slice();
+    
+                    this.setState({ toolsTemp, toolToConfigIndex: -1 });
+                  }}
+                />
+              )
+              : null
+            }
+
           </div>
           {/* /.modal-content */}
         </div>

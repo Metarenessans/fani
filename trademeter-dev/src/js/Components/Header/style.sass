@@ -1,0 +1,75 @@
+@import "logo/logo"
+@import "nav/nav"
+@import "user/user"
+  
+.header
+  padding: 1.1em 0
+  border-bottom: 0.2em solid #dcae1d
+  background-color: #1c1f2f
+
+  color: white
+
+  &__wrap
+    display: flex
+    align-items: center
+  
+  &__logo
+    margin-right: 2.25em
+
+  &__separator
+    margin: 0 auto
+    width:   .1em
+    height: 5.4em
+    background-color: #575757
+
+  &__user
+    // margin-left: auto
+
+.submenu
+  position: absolute
+  z-index: 7
+  right:   0
+  top:   100%
+  width: 100%
+
+  display: none
+  background-color: #1c1f2f
+  list-style: none
+  padding: 1em 1.25em
+  margin:  0
+
+  font-size: 1.8em
+
+  &-item
+    margin-bottom: .5em
+
+    &:last-child
+      margin-bottom: 0
+    
+    a:hover
+      color: #dcae1d
+
+.submenu-parent
+  position: relative
+
+  &:hover .submenu
+    display: block
+
+.logout-btn
+  display: flex
+  align-items: center
+  background: none
+  padding: 0
+  border: none
+
+  color: white
+
+  cursor: pointer
+
+  &:hover,
+  &:focus
+    color: #dcae1d
+
+  &__icon
+    margin-left: 2em
+    height: 1.25em

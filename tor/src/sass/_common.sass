@@ -56,23 +56,6 @@ body
     margin-top:   .1em
     margin-left: .25em
 
-.custom-slider
-  position: relative
-  padding-right: 10em
-  
-  &__value
-    position: absolute
-    right:   0.1em
-    bottom: -0.4em
-    width: 2.5em
-    font-size: 3em
-    text-align: center
-
-    user-select: none
-  
-  &__input
-    width: 100%
-
 .search
 
   &__title
@@ -115,7 +98,9 @@ body
     text-align: center
 
   &-th
-    height: 3em
+    height: 3.5em
+    width:  1%
+    
     &--small
       font-size: .8em
 
@@ -254,35 +239,17 @@ body
   padding: 1em 1.25em
   margin:  0
 
-  font-size: 1.4em
+  font-size: 1.8em
 
   &-item
-    margin-bottom: 1em
+    margin-bottom: .5em
 
     &:last-child
       margin-bottom: 0
-
-.submenu-parent
-  position: relative
-
-  &:hover .submenu
-    display: block
-
-.logout-btn
-  display: flex
-  align-items: center
-  background: none
-  padding: 0
-  border: none
-
-  color: white
-  letter-spacing: .1em
-
-  cursor: pointer
-
-  &__icon
-    margin-left: 2em
-    height: 1.25em
+    
+    a:hover,
+    a:focus
+      color: #dcae1d
 
 canvas
   background: white

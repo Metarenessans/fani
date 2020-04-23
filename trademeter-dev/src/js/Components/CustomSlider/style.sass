@@ -1,0 +1,43 @@
+.custom-slider
+  position: relative
+  padding-right: 10em + 2em 
+  padding-left:  0    + 2em
+
+  user-select: none
+  
+  &__value
+    position: absolute
+    right:   0.4em
+    bottom: -0.4em
+    width: 2.5em
+
+    font-family: "Roboto", sans-serif
+    font-size: 3em
+    font-weight: bold
+    text-align: center
+
+  // Change defaults
+  .ant-slider
+    
+    &-rail
+      background-color: #ccc
+
+    &-rail,
+    &-step,
+    &-track
+      height: .15em
+    
+    &-handle
+      margin-top:  -0.44em
+      margin-left:  0
+
+      border-color: white
+      background:   #91d5ff
+
+      &:focus,
+      &:hover
+        border-color: #69c0ff 
+        background:   white
+  
+  &__input
+    width: 100%
