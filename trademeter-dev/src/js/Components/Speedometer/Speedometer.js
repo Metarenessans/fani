@@ -1,12 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-
-import format from '../../format';
-import round from "../../round"
-
 import * as antv from '@antv/g2';
 
-export default class CustomSlider extends React.Component {
+import round from "../../round"
+
+import "./style.sass"
+
+export default class Speedometer extends React.Component {
   constructor(props) {
     super(props);
 
@@ -118,27 +118,6 @@ export default class CustomSlider extends React.Component {
         },
       });
 
-      chart.annotation().text({
-        position: ['50%', '75%'],
-        content: `${data[0].value}%`,
-        style: {
-          fontSize: 36,
-          fill: '#545454',
-          textAlign: 'center',
-        },
-        offsetY: 15,
-      });
-
-      chart.annotation().text({
-        position: ['50%', '95%'],
-        content: 'Вероятность хода'.toUpperCase(),
-        style: {
-          fontSize: 18,
-          fill: '#545454',
-          textAlign: 'center',
-        },
-      });
-      
       chart.changeData(data);
     }
 
@@ -310,8 +289,9 @@ export default class CustomSlider extends React.Component {
         { ...this.props }
       >
         <div id="container"></div>
-        <figcaption className="visually-hidden">
-          { `Вероятность хода: ${ value.toFixed(1) }%` }
+        <figcaption className="speedometer__caption">
+          Вероятность хода
+          <span className="speedometer__value">{ round(value, 2) }%</span>
         </figcaption>
       </figure>
     )

@@ -5,6 +5,8 @@
 
 /* normalize.css */
 @import "../lib/normalize/_normalize"
+/* ant */
+@import "ant"
 
 *,
 *::before,
@@ -17,7 +19,6 @@ a
   &:focus
     outline: none
     box-shadow: 0
-    // box-shadow: 0 0 1px 1px #5e9ed6
 
 a
   display: inline-flex
@@ -33,14 +34,9 @@ a
   overflow: hidden
 
 html
-  font-size: 1.4px
-
   -webkit-font-smoothing: antialiased
   text-rendering: optimizeLegibility
   text-size-adjust: 100%
-
-  +lg
-    font-size: 1.2px
 
 body
   min-width: 320px

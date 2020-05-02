@@ -6,11 +6,11 @@ export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.format = this.props.format || function(val) { return val };
+    this.round     = this.props.round    == "true"; 
+    this.unsigned  = this.props.unsigned == "true";
+    this.format    = this.props.format || function(val) { return val };
     this.onInvalid = this.props.onInvalid || function() { return "" };
-
     this.className = this.props.className || "";
-    this.unsigned = this.props.unsigned || false;
 
     this.state = {
       value:  this.format(this.props.defaultValue || 0),
@@ -44,7 +44,7 @@ export default class NumericInput extends React.Component {
 
     regexpCode = regexpCode + "[0-9]*";
     
-    if (!this.props.round) {
+    if (!this.round) {
       regexpCode = regexpCode + "((\.|\,)[0-9]*)?";
     }
 
@@ -79,7 +79,7 @@ export default class NumericInput extends React.Component {
     }
     
     if (
-      !this.props.round      &&
+      !this.round      &&
       value.indexOf(".") < 0 &&
       value.length > 1       &&
       value[0] == "0"

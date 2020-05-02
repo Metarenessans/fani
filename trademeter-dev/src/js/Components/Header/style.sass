@@ -1,6 +1,27 @@
 @import "logo/logo"
 @import "nav/nav"
 @import "user/user"
+@import "burger/burger"
+
+=lg
+  @media (max-width: 1200px)
+    @content
+
+=md
+  @media (max-width: 992px)
+    @content
+
+=sm
+  @media (max-width: 768px)
+    @content
+
+=xs
+  @media (max-width: 576px)
+    @content
+
+=xxs
+  @media (max-width: 360px)
+    @content
   
 .header
   padding: 1.1em 0
@@ -9,12 +30,60 @@
 
   color: white
 
+  +sm
+    position: relative
+    z-index: 3
+
+  &.popup
+    +sm
+      .header__nav
+        display: flex
+
+      .header__user
+        display: flex
+
   &__wrap
     display: flex
     align-items: center
+
+    +sm
+      justify-content: space-between
+
+      &::before
+        content: ''
+        display: block
+        width:  1em
+        height: 1em
+        font-size: 3.75em
+
+        user-select: none
+        pointer-events: none
   
   &__logo
     margin-right: 2.25em
+
+  &__nav
+
+    +sm
+      display: none
+      position: absolute
+      z-index: -1
+      left: 0
+      top:  100%
+      width: 100%
+      min-height: 100vh
+      background-color: rgba(#1c1f2f, .93)
+  
+  &__user
+
+    +sm
+      display: none
+      position: absolute !important
+      left: 50%
+      top:  6.5em
+      transform: translateX(-50%)
+
+      font-size: 2em
 
   &__separator
     margin: 0 auto
@@ -22,8 +91,14 @@
     height: 5.4em
     background-color: #575757
 
-  &__user
-    // margin-left: auto
+    +sm
+      display: none
+
+  &__burger
+    display: none
+
+    +sm
+      display: flex
 
 .submenu
   position: absolute
@@ -54,6 +129,9 @@
 
   &:hover .submenu
     display: block
+
+    +sm
+      display: none
 
 .logout-btn
   display: flex

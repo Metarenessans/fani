@@ -18,9 +18,9 @@ export default function BigNumber(props) {
 
     return (
       <Tooltip title={format(originalValue) + customSuffix}>
-        <span>{ format(val) + customSuffix }</span>
+        { format(val) + customSuffix }
       </Tooltip>
     )
   }
-  else return <span>{format(val) + customSuffix}</span>
+  else return format(val) + customSuffix
 }

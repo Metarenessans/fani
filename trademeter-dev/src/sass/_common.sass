@@ -1,10 +1,21 @@
 body
   +font("Circe")
-  font-size: 7.35em
 
 h1.ant-typography
   color: inherit
   margin-bottom: 1em
+
+.page
+  font-size: 0.804em
+
+  +lg
+    font-size: 0.9vw
+  
+  +sm
+    font-size: 1.45vw
+
+  +xs
+    font-size: 2.25vw
 
 .ant-col-1,
 .ant-col-2,
@@ -32,9 +43,21 @@ h1.ant-typography
 .ant-col-24
   flex: initial
 
-.b
+.anychart-tooltip
+  width: 18rem
+
+.currency
+  // font-family: sans-serif
+
+.value
   font-weight: bold
   color: $accentColor
+
+  &--neutral
+    color: #777
+  
+  &--negative
+    color: $dangerColor
 
 .ant-tooltip-inner
   text-align: center
@@ -88,12 +111,22 @@ h1.ant-typography
     justify-content: center
     align-items: center
 
+    +xs
+      padding-left: 1.1em
+      justify-content: flex-start
+
+      font-size: 2.2em
+      text-align: left
+
   &__info
     margin-top: -0.5em
     margin-left: 0.3em
 
     font-size: .75em
     color: #d1d1d1
+
+    +xs
+      margin-top: -2.9em
 
 .search
 
@@ -160,8 +193,12 @@ h1.ant-typography
     text-align: center
 
 .input-group
+  width: 20em
   display: flex
   flex-direction: column
+
+  +sm
+    width: 100%
 
   &__label
     display: block
@@ -170,21 +207,40 @@ h1.ant-typography
     +font("Roboto")
     font-size: 1.6em
 
+    +xs
+      font-size: 2.2em
+
     &--centered
       text-align: center
+
+      +xs
+        text-align: left
 
   &__input
     text-align: center
 
+    +xs
+      text-align: left
+
     &.error
+      $error-color: $dangerColor
+
+      border-color: $error-color !important
+
+      &:focus
+        box-shadow: 0 0 0 2px rgba($error-color, .45)
+
+      &:hover
+        border-color: $error-color
+
       .ant-input
-        border-color: red
+        border-color: inherit
 
         &:focus
-          box-shadow: 0 0 0 2rem rgba(red, .2)
+          box-shadow: 0 0 0 2px rgba($error-color, .45)
 
         &:hover
-          border-color: red
+          border-color: $error-color
       
       .ant-input-suffix
         pointer-events: none
@@ -196,7 +252,7 @@ h1.ant-typography
   padding: 0
   border: none
 
-  transition: transform .2s ease
+  transition:  transform .2s ease
   will-change: transform
 
   cursor: pointer
@@ -209,7 +265,7 @@ h1.ant-typography
 
   &__icon
     color: #1890ff
-    font-size: 3em
+    font-size: 2.2em
 
 .card
   padding: 1em
@@ -245,11 +301,74 @@ h1.ant-typography
 
   color: #1b1b1b
 
+  +sm
+    flex-direction: column
+
+  +xs
+    margin: 0 -2.75em
+    padding-top: 0
+  
+  &-col1
+    width: 58.33333333%
+
+  &-col2
+    margin-left: 1.5em
+    width: 41.66666667%
+
+    +sm
+      margin-left: 0
+      margin-top:  1.5em
+
+    +xs
+      margin-top: 0
+
+  &-col1,
+  &-col2
+    // flex-shrink: 0
+
+    +sm
+      width: 100%
+
   &-card1,
-  &-card2
+  &-card2,
     display: flex
     justify-content: space-between
     align-items: center
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .input-group + .input-group
+      margin-left: 1em
+
+      +sm
+        margin-left: 2.5em
+
+      +xs
+        margin-left: 0
+        margin-top: 2em
+
+  &-card4,
+  &-card5
+    width: 100%
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .input-group + .input-group
+      margin-left: 1em
+
+      +sm
+        margin-left: 2.5em
+
+      +xs
+        margin-left: 0
+        margin-top: 2em
 
   &-card2
     align-items: flex-start
@@ -267,6 +386,15 @@ h1.ant-typography
   &-card3
     height: 100%
 
+  &__tool-select
+    width: 41.25em
+
+    +sm
+      flex-shrink: 0
+
+    +xs
+      width: 100%
+
 .stats
   position: relative
   z-index: 0
@@ -274,6 +402,15 @@ h1.ant-typography
   padding: 2em 0
   display: flex
   justify-content: space-between
+
+  +xs
+    margin: 0 -2em
+    padding: 0
+    background: none
+    flex-direction: column
+    align-items: center
+
+    font-size: 1.2em
 
   &::before,
   &::after
@@ -285,6 +422,8 @@ h1.ant-typography
     width: 50vw
     height: 100%
     background: inherit
+
+    +no-select
   
   &::before
     right: 100%
@@ -318,6 +457,9 @@ h1.ant-typography
 
         font-size: .27em
 
+        +sm
+          display: none
+
       &::before
         left:  -14em
 
@@ -326,13 +468,48 @@ h1.ant-typography
 
   &-col
     text-align: center
+
+    +xs
+      width: 100%
+      margin-top: 3em
+
+      &:first-of-type
+        margin-top: 0
+        padding-bottom: 2em
+        position: relative
+
+        &::before
+          content: ''
+          display: block
+          position: absolute
+          left: 50%
+          top:  100%
+          transform: translateX(-50%)
+          width:   26em
+          height: 0.2em
+          border-radius: 0.1em
+          background-color: #dcdcdc
   
   &-footer
     display: flex
     justify-content: center
+
+    +sm
+      flex-direction: column
+      align-items: center
+
+    &-row
+      margin-top: 1em
+
+      +sm
+        &:first-of-type
+          margin-top: 0
   
   &-key
     margin-bottom: .5em
+
+    +sm
+      margin-bottom: 0
 
   &-val
     font-size: 2.4em
@@ -363,31 +540,125 @@ h1.ant-typography
       font-size: 1.6em
       font-weight: bold
 
+.section3
+
+  +sm
+    flex-direction: column
+    align-items: flex-start
+
+  +xs
+    margin: 0 -2.55em
+
+  &-icon
+    position: absolute
+    z-index: 0
+    right: 1.5em
+    top:     1em
+    line-height: 1
+
+    +sm
+      display: none
+
+    +xs
+      top: .5em
+
+  &__tool-block
+    position: relative
+    margin-top: 1.25em
+
+    +sm
+      order: -1
+      margin-top: 0
+      margin-bottom: 1.25em
+    
+    +xs
+      margin-bottom: 0
+
+  &__tool-title
+    text-align: center !important
+
+  &__tool-select
+    width: 100%
+  
+  &-col1,
+  &-col2
+    width: 50%
+    // flex-shrink: 0
+
+    +sm
+      display: flex
+      flex-direction: column
+      width: 100%
+
+    +xs
+      box-shadow: none !important
+
+  &-col1
+    margin-right: 1.25em
+
+    +sm
+      margin-right: 0
+
 .section4
   position: relative
 
   color: #141414
 
+  +sm
+    padding-bottom: 2em
+    flex-direction: column
+    align-items: flex-start
+  
+  +xs
+    margin: 0 -2em
+
+  &-col
+    flex-grow: 1
+    width: 0
+
+    +sm
+      width: 100%
+  
+  &-col2
+    width: 66.6666%
+    display: flex
+
+    +sm
+      width: 100%
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .section4-col
+      margin-left: 1.5em
+
+      +sm
+        width: 50%
+        flex-shrink: initial
+
+        &:first-of-type
+          margin-left: 0
+      
+      +xs
+        width: 100%
+        margin-left: 0
+        margin-top: 2em
+
+        &:first-of-type
+          margin-top: 0
+
   &__title
     position: absolute
     left:  0
-    top:  -0.29em
+    top:  -0.1em
     z-index: 1
     
     font-size: 3.6em
+    line-height: 1
     font-weight: 300
 
-    &::before
-      content: ''
-      display: block
-      position: absolute
-      left:   .35em
-      bottom: 0
-      width:   10em
-      height: 0.2em
-      background-color: $mainColor
-
-      font-size: .275em
+    +underline
   
   &-header
     min-height: 2em
@@ -396,6 +667,28 @@ h1.ant-typography
     text-align: center
     color: #777
     font-size: 2.4em
+
+    +sm
+      margin-bottom: 0
+
+    +xs
+      padding-left: .35em
+      text-align: left
+
+    &--first
+      text-align: right
+
+      +sm
+        text-align: left
+        padding-left: 7em
+
+      +xs
+        padding-left: 0
+        text-align: right
+
+  &__content1
+    +sm
+      box-shadow: none
 
   &-content
     min-height: 18em
@@ -428,6 +721,7 @@ h1.ant-typography
 
   &__day-select
     width: 4.5em !important
+    margin-right: .05em
 
     font-size: 1em
 
@@ -462,10 +756,13 @@ h1.ant-typography
   &-progress
 
     .ant-progress
-      
+
       &-inner
         width:  5.85em !important
         height: 5.85em !important
+
+        +md
+          font-size: 1.25em !important
 
     &__label
       display: none
@@ -478,12 +775,23 @@ h1.ant-typography
   flex-direction: column
   align-items: center
 
+  margin: 1.5em 0
   padding: 4em 1em
   position: relative
   z-index: 0
   background: #f2f2f2
 
   text-align: center
+
+  +sm
+    padding-top: 8em
+    background: none
+  
+  +xs
+    padding-left:  0
+    padding-right: 0
+    padding-top:   12em
+    margin: 0 -2em
 
   &::before,
   &::after
@@ -509,6 +817,48 @@ h1.ant-typography
   .ant-progress-circle
     .ant-progress-inner
       background: none
+      font-size: 1.5em !important
+      width:  6em !important
+      height: 6em !important
+
+      +sm
+        font-size: 1.2em !important
+
+    +sm
+      // margin-left: 3.5em
+
+    +xs
+      margin-left:  0
+      margin-top: 1.5em
+
+  .section5-col + .section5-col
+    +sm
+      margin-left: 2.75em
+    
+    +xs
+      margin-left: 0
+
+  &-col
+    margin: 0 2.5em
+    width: 33.333333%
+
+    +sm
+      width: 50%
+      margin: 0
+    
+    +xs
+      width: 100%
+
+    &--centered
+      text-align: center
+
+      +sm
+        position: absolute
+        bottom: 4em
+        right:  0
+
+      +xs
+        position: static
 
   &__title
     font-size: 2.4em
@@ -517,10 +867,29 @@ h1.ant-typography
     letter-spacing: .5em
 
     text-align: center
+
+    +sm
+      position: absolute
+      left:  0
+      top:   0
+      z-index: 1
+      
+      font-size: 3.6em
+      line-height: 1
+      font-weight: 300
+      text-transform: initial
+      letter-spacing: initial
+
+      +underline
   
   &-collapse
     width: 100%
     margin-top: 2.5em
+
+    +sm
+      display: flex
+      flex-direction: column
+      align-items: flex-start
 
     &--collapsed
       display: none
@@ -529,8 +898,37 @@ h1.ant-typography
     margin-top: 1.75em
     padding: 0 24em
 
+    +sm
+      display: flex
+      flex-direction: column
+      align-items: center
+      width: 50%
+      padding: .5em 1em
+      background-color: rgba(63,107,51,0.1)
+
+    +xs
+      width: 100%
+
+    &-title
+      font-size: 2.4em
+      font-weight: 400
+      text-transform: uppercase
+      letter-spacing: .5em
+
+      text-align: center
+
+      +sm
+        order: -2
+        font-size: 2em      
+
     &__label
       font-size: 1.9em
+      color: #777
+      font-weight: 700
+
+      +sm
+        order: -1
+        font-size: 2.5em
 
       b
         color: #3f6b33
@@ -538,8 +936,17 @@ h1.ant-typography
   &-content
     display: flex
     padding: 1em 0
+    margin: 0 -2.5em
 
     text-align: left
+
+    +sm
+      width: 100%
+      margin: 0
+    
+    +xs
+      flex-direction: column
+      align-items: flex-start
 
     &--centered
       align-items: center
@@ -556,6 +963,19 @@ h1.ant-typography
       
       position: relative
 
+      +sm
+        position: absolute
+        top:   -0.25em
+        right:  0
+
+      +xs
+        font-size: 3em
+        right: initial
+        left: 0
+        top:  2em
+        width: 100%
+        text-align: center
+
       &::before,
       &::after
         content: ''
@@ -568,6 +988,9 @@ h1.ant-typography
         transform: translate(0, -50%)
 
         font-size: .27em
+
+        +sm
+          display: none
 
       &::before
         left:  -14em
@@ -601,6 +1024,9 @@ h1.ant-typography
 
       text-align: center
 
+      +sm
+        font-size: .8em
+
     &-suffix
       display: inline-block
       min-width: 4em
@@ -609,6 +1035,17 @@ h1.ant-typography
 
 .anychart-credits
   display: none
+
+.xs-only
+  display: none
+
+  +xs
+    display: block
+
+#_chart
+
+  +sm
+    margin: 0 -3.5em
 
 canvas
   background: white

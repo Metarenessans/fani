@@ -138,7 +138,7 @@ export default class CustomSelect extends Component {
           this.state.options
             .map((n, i) => this.formatOption(n))
             .map((value, index) => (
-              <Option value={index}>{value}</Option>
+              <Option value={index} key={index}>{value}</Option>
             ))
         }
       </Select>

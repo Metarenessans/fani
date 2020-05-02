@@ -7,18 +7,14 @@ import {
   Button,
   Tooltip,
   Radio,
-  Input,
   Switch,
   Typography,
-  Tag,
   Progress,
   Collapse 
 } from 'antd/es'
 
 import {
   SettingFilled,
-  DeleteOutlined,
-  InfoCircleOutlined,
   QuestionCircleFilled
 } from '@ant-design/icons'
 
@@ -28,18 +24,15 @@ import "chart.js"
 import round from "./round";
 import params from "./params";
 import num2str from './num2str'
-import formatBigNumbers from "./format";
 
 import "../sass/main.sass"
 
-import BigNumber       from "./Components/BigNumber"
-import Header          from "./Components/Header/Header"
-import NumericInput    from "./Components/NumericInput"
-import CustomSlider    from "./Components/CustomSlider/CustomSlider"
-import CustomSelect    from './Components/CustomSelect/CustomSelect'
-import Paginator       from "./Components/Paginator/Paginator"
-import SpeedometerWrap from "./Components/Speedometer/SpeedometerWrap"
-import Chances         from "./Components/Chances/Chances"
+import BigNumber    from "./Components/BigNumber"
+import NumericInput from "./Components/NumericInput"
+import CustomSlider from "./Components/CustomSlider/CustomSlider"
+import CustomSelect from './Components/CustomSelect/CustomSelect'
+import Speedometer  from "./Components/Speedometer/Speedometer"
+import Chances      from "./Components/Chances/Chances"
 
 const { Group } = Radio;
 const { Option } = Select;
@@ -48,6 +41,23 @@ const { Text, Title } = Typography;
 
 var formatNumber = val => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 var chart, chart2, chartData, chartData2, scale, scaleStart, scaleEnd;
+
+function Value(props) {
+  var format = props.format || ( (val) => val );
+  var val = props.children;
+  var classList = ["value"].concat(props.className);
+
+  if (val === 0) {
+    classList.push("value--neutral");
+  }
+  else if (val < 0) {
+    classList.push("value--negative");
+  }
+
+  return (
+    <span className={classList.join(" ").trim()}>{ format(val) }</span>
+  )
+}
 
 function extRate(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 0, dayoffirstpayload = 0) {
 
@@ -124,52 +134,52 @@ class App extends React.Component {
   constructor(props) {
     super(props);
 
+    // Данные из адресной строки
+    const depoStart = Number( params.get("start") ) || 1000000;
+    const depoEnd   = Number( params.get("end") )   || 3000000;
+    const mode      = Number( params.get("mode") )  || 0;
+    const days      = Number( params.get("days") )  || 260;
+
     this.state = {
       data:     [],
       realData: [],
 
-      mode: 0,
+      mode,
+
       // Начальный депозит
-      depoStart: [
-        +params.get("depoStart") || 1000000,
-        +params.get("depoStart") || 1000000,
-      ],
+      depoStart: [ depoStart, depoStart ],
+
       // Целевой депозит
-      depoEnd: +params.get("depoEnd") || 3000000,
+      depoEnd,
+
       // Доходность в день
       incomePersantageCustom: 1,
-      // Сумма на вывод
-      withdrawal: [
-        0,
-        0
-      ],
-      // Сумма на пополнение
-      payload: [
-        0,
-        0
-      ],
-      // Торговых дней
-      days: [
-        +params.get("days") || 260,
-        +params.get("days") || 260
-      ],
-      daysOptions: [50, 100].concat( new Array(10).fill(0).map((n, i) => 260 * (i + 1)) ),
-      daysOptionsIndex: [2, 2],
-      currentDay: 1,
 
+      // Сумма на вывод
+      withdrawal: [ 0, 0 ],
       // Частота вывода
       withdrawalInterval: 20,
+
+      // Сумма на пополнение
+      payload: [ 0, 0 ],
       // Частота пополнения
       payloadInterval:    20,
 
+      // Торговых дней
+      days: [ days, days ],
+
+      // Текущий день
+      currentDay: 1,
+
       // Процент депозита на вход в сделку
       depoPersentageStart: 10,
-      // Кол-во итераций в день
-      numberOfIterations: 0,
+
+      // Количество итераций в день
+      numberOfIterations: 10,
 
       // Минимальная доходность в день
       minDailyIncome: 45,
-      // 
+
       incomePersantageDaily: 0,
 
       configVisible: false,
@@ -206,10 +216,6 @@ class App extends React.Component {
       // Пассивный доход в месяц
       passiveIncomeMonthly: 0,
       pitError: "",
-
-      resultCollapsed: true,
-      resultSaved:     false,
-      resultChanged:   false,
     };
 
     // Default tools
@@ -285,6 +291,8 @@ class App extends React.Component {
       _income = Math.round(_depoStart * incomePersantageCustom) / 100;
     }
 
+    var _incomePure = _income;
+
     if ((i + 1) > 0 && ((i + 1) % withdrawalInterval) == 0) {
       _income -= withdrawal;
     }
@@ -296,9 +304,9 @@ class App extends React.Component {
 
     let _depoStartReal = _depoStart * (depoPersentageStart / 100);
 
-    let _contractsStart = _depoStartReal / currentTool.guaranteeValue;
+    let _contractsStart = Math.floor( _depoStartReal / currentTool.guaranteeValue );
 
-    let _pointsForIteracion = _income / currentTool.stepPrice / _contractsStart;
+    let _pointsForIteracion = _incomePure / currentTool.stepPrice / _contractsStart;
 
     return {
       day:                i + 1,
@@ -306,14 +314,20 @@ class App extends React.Component {
       depoStart:          _depoStart,
       depoStartReal:      _depoStartReal,
       income:             _income,
+      incomePure:         _incomePure,
       depoEnd:            _depoEnd,
       contractsStart:     _contractsStart,
-      pointsForIteration: _pointsForIteracion
+      pointsForIteration: _pointsForIteracion,
+
+      collapsed: true,
+      saved:     false,
+      changed:   false
     }
   }
 
   buildData(length = 0) {
-    console.error('Building data');
+    console.warn("Building data....");
+    
     let data = new Array(length).fill(0);
     data.forEach((val, i) => {
       data[i] = this.createDayData(data, i)
@@ -323,7 +337,8 @@ class App extends React.Component {
   }
 
   buildRealData(data = []) {
-    console.error('Building real data');
+    console.warn("Building real data....");
+
     let { mode, withdrawalInterval, payloadInterval } = this.state;
     let withdrawal = this.state.withdrawal[mode];
     let payload    = this.state.payload[mode];
@@ -350,15 +365,18 @@ class App extends React.Component {
     return realData;
   }
 
-  updateData(length = 0, fn) {
+  updateData(length = 0, cb) {
+    console.warn("Rebuilding data & real data....");
+
     var data     = this.buildData(length);
     var realData = this.buildRealData(data);
-    this.setState({ data, realData }, fn);
+    this.setState({ data, realData }, cb);
   }
 
   updateChart() {
+    console.warn("Updating chart....");
+
     const { days, mode } = this.state
-    console.error('Updating chart');
 
     let data  = [ ...this.state.data ];
     data = data.map(val => Math.round(val.depoEnd));
@@ -366,17 +384,23 @@ class App extends React.Component {
     var data2 = [ ...this.state.realData ];
     data2 = data2.map(val => Math.round(val.depoEnd));
 
-    // chart.data.labels = new Array(days[mode]).fill().map((v, i) => i + 1);
-    // chart.data.datasets[0].data = data;
-    // chart.data.datasets[1].data = data2;
-    // chart.update();
-
     if (chart2) {
       chartData2.data( new Array(days[mode]).fill().map((v, i) => [i + 1,  data[i]] ) );
        chartData.data( new Array(days[mode]).fill().map((v, i) => [i + 1, data2[i]] ) );
 
       scale.minimum(Math.floor(days[mode] * scaleStart) + 1);
       scale.maximum(Math.floor(days[mode] * scaleEnd));
+      scale.ticks().interval(
+        (() => {
+          switch (days[mode]) {
+            case 1:       return 1;
+            case 260:     return 10;
+            case 260 * 2: return 20;
+            case 260 * 3: return 30;
+            case 260 * 4: return 40;
+          }
+        })()
+      )
     }
   }
 
@@ -430,10 +454,16 @@ class App extends React.Component {
      $body.removeClass("scroll-disabled");
   }
 
+  readParams() {
+    var mode = +params.get("mode") || 0;
+    this.setState({ mode });
+  }
+
   bindEvents() {
     $body = $(document.body);
     $modal = $(".m");
     $modalSmall = $(".js-config-small");
+    var $header = $(".header");
 
     $(".js-open-modal").click(e => {
       this.openModal();
@@ -448,18 +478,28 @@ class App extends React.Component {
       });
     });
 
+    $('.js-burger').click(function () {
+      $(this).toggleClass('burger--active');
+      $body.toggleClass("scroll-disabled");
+      $header.toggleClass("popup");
+    });
+
     $modal.click(e => {
       if ($(e.target).is($modal)) {
         this.closeModal();
       }
     });
 
+    if (window.history && window.history.pushState) {
+      $(window).on('popstate', () => this.readParams());
+    }
+
     $(document.body).on("keydown", e => {
       // Esc
       if ( e.keyCode == 27 ) {
         this.closeModal();
       }
-    })
+    });
   }
 
   componentDidMount() {
@@ -503,6 +543,56 @@ class App extends React.Component {
         if (t.length > 0) {
           let { tools } = this.state;
           tools = tools.concat(t);
+
+          // Сброситься к минимальному значению
+          var depoPersentageStart = round(
+            t[0].guaranteeValue / this.state.depoStart[this.state.mode] * 100, 1
+          )
+          
+          this.setState({ tools, depoPersentageStart }, this.recalc);
+        }
+      },
+      error: (err) => console.error(err),
+    });
+
+    $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo",
+      success: (res) => {
+        var data = JSON.parse(res).data;
+        
+        var t = [];
+        for (let tool of data) {
+          if (tool.stepPrice == 0) {
+            continue;
+          }
+          console.log(tool);
+
+          var obj = {
+            shortName:        tool.code            || "default name",
+            name:             tool.name            || "default name",
+            stepPrice:       +tool.stepPrice       || 0,
+            priceStep:       +tool.priceStep       || 0,
+            averageProgress: +tool.averageProgress || 0,
+            guaranteeValue:  +tool.guaranteeValue  || 0,
+            currentPrice:    +tool.currentPrice    || 0,
+            lotSize:         +tool.lotSize         || 0,
+            dollarRate:      +tool.dollarRate      || 0,
+
+            points: [
+              [70, 70],
+              [156, 55],
+              [267, 41],
+              [423, 27],
+              [692, 13],
+              [960, 7],
+            ]
+          };
+          t.push(obj);
+        }
+
+        if (t.length > 0) {
+          let { tools } = this.state;
+          tools = tools.concat(t);
           
           this.setState({ tools }, this.recalc);
         }
@@ -522,6 +612,11 @@ class App extends React.Component {
       );
 
       chart2 = anychart.line();
+      chart2.listen("click", (e) => {
+        if (e.pointIndex) {
+          this.setCurrentDay(e.pointIndex + 1);
+        }
+      });
 
       scaleStart = 0;
       scaleEnd   = 1;
@@ -529,38 +624,94 @@ class App extends React.Component {
       scale.minimum(1);
       scale.maximum(260);
       scale.ticks().interval(1);
-      console.log(scale.ticks());
 
       // turn on X Scroller
       chart2.xScroller(true);
+      chart2.xScroller().thumbs(false);
+      chart2.xScroller().minHeight(40);
+      chart2.xScroller().fill('#40a9ff 0.1');
+      chart2.xScroller().selectedFill('#40a9ff 0.5');
       // adjusting the thumbs behavior and look
       chart2.xScroller().listen("scrollerchange", e => {
         const { days, mode } = this.state;
         scaleStart = e.startRatio;
         scaleEnd   = e.endRatio;
-        console.log(scaleStart, scaleEnd);
 
-        scale.minimum(Math.max(Math.round(days[mode] * scaleStart) + 1, 1));
-        scale.maximum(Math.min(Math.round(days[mode] * scaleEnd)   + 1, days[mode]));
+        var min = Math.max(Math.round(days[mode] * scaleStart) + 1, 1);
+        var max = Math.min(Math.round(days[mode] * scaleEnd) + 1, days[mode]);
+        scale.minimum(min);
+        scale.maximum(max);
+        scale.ticks().interval(
+          (() => {
+            var range = Math.abs(min - max);
+            var breakpoints = new Array(10).fill(0).map((n, i) => 260 * (i + 1));
+            for (var i = breakpoints.length; i--;) {
+              var breakpoint = breakpoints[i];
+              if (range >= breakpoint) {
+                return (breakpoint / 260) * 10;
+              }
+            }
+
+            if (range > 100) {
+              return 10;
+            }
+            if (range > 50) {
+              return 5;
+            }
+
+            return 1;
+          })()
+        )
       });
       chart2.tooltip().titleFormat(e => `День: ${e.name}`);
 
       var series = chart2.line(chartData);
       series.name("Фактический рост депо");
-      series.tooltip().format(e => `${e.seriesName}:  ${formatNumber( e.value )}`);
+      series.tooltip().displayMode("separated");
+      series.tooltip().useHtml(true);
+      series.tooltip().format(e => {
+        var svg = `
+          <svg viewBox="0 0 10 10" width="1em" height="1em" 
+               fill="#87d068" style="position: relative; top: 0.1em">
+            <rect x="0" y="0" width="10" height="10" />
+          </svg>
+        `;
+        return `${svg} ${e.seriesName}: ${formatNumber(e.value)}`
+      });
       // Line color
       series.normal().stroke({
         color:     "#87d068",
         thickness: "5%"
       });
+      series.hovered({
+        fill:    { color: "#87d068", opacity: 0.1 },
+        stroke:  { color: "#87d068", thickness: 2 },
+        markers: { enabled: true, type: "circle" }
+      });
       
       var series2 = chart2.line(chartData2);
       series2.name("Планируемый рост депо");
-      series2.tooltip().format(e => `${e.seriesName}: ${formatNumber( e.value )}`);
+      series2.tooltip().displayMode("separated");
+      series2.tooltip().useHtml(true);
+      series2.tooltip().format(e => {
+        var svg = `
+          <svg viewBox="0 0 10 10" width="1em" height="1em" 
+               fill="#40a9ff" style="position: relative; top: 0.1em">
+            <rect x="0" y="0" width="10" height="10" />
+          </svg>
+        `;
+
+        return `${svg} ${e.seriesName}: ${formatNumber( e.value )}`
+      });
       // Line color
       series2.normal().stroke({
         color:     "#40a9ff",
         thickness: "5%"
+      });
+      series.hovered({
+        fill:    { color: "#40a9ff", opacity: 0.1 },
+        stroke:  { color: "#40a9ff", thickness: 2 },
+        markers: { enabled: true, type: "circle" }
       });
       
       chart2.xAxis().title("Номер дня");
@@ -580,15 +731,12 @@ class App extends React.Component {
   }
 
   recalc(cb) {
-    console.error("Recalc");
-    
     var {
       mode,
       depoEnd,
       isSafe,
       withdrawalInterval,
       payloadInterval,
-      passiveIncomeMonthly
     } = this.state;
 
     let depoStart  = this.state.depoStart[mode];
@@ -610,7 +758,7 @@ class App extends React.Component {
     
     this.setState({
       minDailyIncome: 
-        mode == 0 
+        mode == 0
           ? rate * 100
           : (withdrawal / depoStart) * 100,
     }, () => this.updateData(days, () => {
@@ -660,7 +808,10 @@ class App extends React.Component {
     var err = ["Слишком большой вывод!", "Слишком маленькая доходность!"];
 
     if (mode == 0) {
-      if ((withdrawal > (depoStart * persentage)) || (withdrawal > (depoStart * 0.01) && days == 2600)) {
+      if (
+        (withdrawal > (depoStart * persentage)) || 
+        (withdrawal > (depoStart * 0.01) && days == 2600)
+      ) {
         return err;
       }
     }
@@ -694,15 +845,31 @@ class App extends React.Component {
   }
 
   // ==================
+  // Setters
+  // ==================
+  setCurrentDay(currentDay = 1) {
+    this.setState({ currentDay });
+  }
+  
+  // ==================
   // Getters
   // ==================
 
   /**
-   * Получить текущий торговый инструмент
+   * Получить выбранный торговый инструмент
    */
   getCurrentTool() {
     const { tools, currentToolIndex } = this.state;
     return tools[currentToolIndex] || this.parseTool(`default	7,95374	0,1000	70	13 638,63	1 482,9	1`);
+  }
+
+  /**
+   * @returns {number} начальный депозит
+   */
+  getDepoStart() {
+    const { depoStart, mode } = this.state;
+
+    return depoStart[mode];
   }
 
   /**
@@ -739,13 +906,13 @@ class App extends React.Component {
       pointsForIteration = (data[0].pointsForIteration * 2) / 100;
     }
 
-    return round(pointsForIteration, 1);
+    return (pointsForIteration % 1 === 0) ? pointsForIteration : Math.floor(pointsForIteration) + 1;
   }
 
   render() {
     return (
       <div className="page">
-        <Header />
+        {/* <Header /> */}
 
         <main className="main">
 
@@ -755,6 +922,7 @@ class App extends React.Component {
                 <Title className="main__h1" level={1}>Трейдометр</Title>
                 
                 <Radio.Group
+                  key={this.state.mode}
                   className="tabs"
                   name="radiogroup"
                   defaultValue={this.state.mode}
@@ -767,10 +935,21 @@ class App extends React.Component {
                     if (days > data.length) {
                       var data     = this.buildData(days);
                       var realData = this.buildRealData(data);
+
                       Object.assign(state, { data, realData });
                     }
 
-                    this.setState(Object.assign(state, { mode: value }), this.recalc);
+                    var currentDay = this.state.currentDay;
+                    if (currentDay > days) {
+                      currentDay = days;
+                      Object.assign(state, { currentDay });
+                      console.log("curr day", currentDay);
+                    }
+
+                    this.setState(Object.assign(state, { mode: value }), () => {
+                      params.set("mode", value);
+                      this.recalc();
+                    });
                   }}
                 >
                   <span className="tabs__centerline"></span>
@@ -801,12 +980,12 @@ class App extends React.Component {
 
           <div className="container">
             <section className="controls">
-              <Col span={14}>
+              <Col className="controls-col1">
                 <div className="card controls-card1">
                   <h2 className="visually-hidden">Ввод значений</h2>
 
                   {/* Начальный депозит */}
-                  <label className="input-group" style={{ width: "20em" }}>
+                  <label className="input-group">
                     <span className="input-group__label">Начальный депозит</span>
                     <NumericInput
                       key={this.state.mode}
@@ -814,8 +993,8 @@ class App extends React.Component {
                       defaultValue={this.state.depoStart[this.state.mode]}
                       min={10000}
                       max={this.state.mode == 0 ? this.state.depoEnd : null}
-                      round
-                      unsigned
+                      round="true"
+                      unsigned="true"
                       onBlur={val => {
                         let depoStart = [...this.state.depoStart];
                         const { mode } = this.state
@@ -843,15 +1022,15 @@ class App extends React.Component {
                   {/* Целевой депозит */}
                   {
                     this.state.mode == 0 ? (
-                      <label className="input-group" style={{ width: "20em" }}>
+                      <label className="input-group">
                         <span className="input-group__label">Целевой депозит</span>
                         <NumericInput
                           key={this.state.depoEnd}
                           className="input-group__input"
                           defaultValue={this.state.depoEnd}
                           min={this.state.depoStart[this.state.mode]}
-                          round
-                          unsigned
+                          round="true"
+                          unsigned="true"
                           onBlur={val => {
                             const { 
                               depoEnd,
@@ -876,14 +1055,14 @@ class App extends React.Component {
                       </label>
                     )
                     : (
-                      <label className="input-group" style={{ width: "20em" }}>
+                      <label className="input-group">
                         <span className="input-group__label">Доходность в день</span>
                         <NumericInput
                           key={this.state.days[this.state.mode]}
                           className="input-group__input"
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
-                          unsigned
+                          unsigned="true"
                           onBlur={val => {
                             this.setState({
                               incomePersantageCustom: val
@@ -934,7 +1113,7 @@ class App extends React.Component {
                   }
 
                   {/* Дней */}
-                  <label className="input-group" style={{ width: "20em" }}>
+                  <label className="input-group">
                     <span className="input-group__label input-group__label--centered">
                       Дней
                     </span>
@@ -984,14 +1163,14 @@ class App extends React.Component {
                   <h2 className="visually-hidden">Пассивный доход</h2>
                   
                   {/* Пассивный доход */}
-                  <label className="input-group" style={{ width: "20em" }}>
+                  <label className="input-group">
                     <span className="input-group__label">Пассивный доход</span>
                     <NumericInput
                       className="input-group__input"
                       key={this.state.passiveIncomeMonthly}
                       defaultValue={this.state.passiveIncomeMonthly}
-                      round
-                      unsigned
+                      round="true"
+                      unsigned="true"
                       suffix="/мес"
                       onBlur={val => {
                         const { passiveIncomeTools, currentPassiveIncomeToolIndex } = this.state;
@@ -1012,7 +1191,6 @@ class App extends React.Component {
                           }
 
                           if (currentPassiveIncomeToolIndex < 0) {
-                            console.warn("Tool is not selected!")
                             this.setState({ pitError });
                           }
                           else {
@@ -1030,7 +1208,7 @@ class App extends React.Component {
                     />
                   </label>
 
-                  <label className="input-group" style={{ width: "42em" }}>
+                  <label className="input-group controls__tool-select">
                     <Tooltip 
                       visible={this.state.pitError.length > 0}
                       title={this.state.pitError}
@@ -1082,21 +1260,37 @@ class App extends React.Component {
                 </div>
               </Col>
 
-              <Col span={10} style={{ marginLeft: "1.5em" }}>
+              <Col className="controls-col2">
                 <div className="card card--secondary controls-card3">
                   {/* Вывод */}
-                  <Row type="flex" justify="space-between" align="middle">
+                  <div className="controls-card4">
 
-                    <label className="input-group" style={{ width: "20em" }}>
+                    <label className="input-group">
                       <span className="input-group__label">Вывод</span>
                       <NumericInput
                         key={this.state.mode}
                         className="input-group__input"
                         defaultValue={this.state.withdrawal[this.state.mode]}
-                        round
+                        round="true"
                         format={formatNumber}
-                        max={this.state.depoStart[this.state.mode] * .15}
-                        onBlur={val => this.setWithdrawal(val)}
+                        max={
+                          this.state.mode == 0
+                            ? this.state.depoStart[this.state.mode] * 0.15
+                            : this.state.depoStart[this.state.mode] * (this.state.incomePersantageCustom / 100)
+                        }
+                        onBlur={val => {
+                          this.setWithdrawal(val);
+
+                          const { mode } = this.state;
+                          let depoStart = this.state.depoStart[mode];
+                          let days = this.state.days[mode];
+
+                          var errMessages = this.checkFn(val, depoStart, days);
+                          this.withdrawalInput.setErrorMsg(errMessages[0]);
+                          if (mode == 1) {
+                            this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                          }
+                        }}
                         onChange={(e, val) => {
                           const { mode } = this.state;
                           let depoStart = this.state.depoStart[mode];
@@ -1104,17 +1298,17 @@ class App extends React.Component {
 
                           var errMessages = this.checkFn(val, depoStart, days);
 
+                          this.withdrawalInput.setErrorMsg(errMessages[0]);
                           if (mode == 1) {
                             this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
                           }
-                          this.withdrawalInput.setErrorMsg(errMessages[0]);
                         }}
                         onRef={ref => this.withdrawalInput = ref}
                       />
                     </label>
 
                     {/* Частота */}
-                    <label className="input-group" style={{ width: "20em" }}>
+                    <label className="input-group">
                       <span className="input-group__label">Частота</span>
                       <CustomSelect
                         value={0}
@@ -1128,21 +1322,21 @@ class App extends React.Component {
                       />
                     </label>
 
-                  </Row>
+                  </div>
                   
                   {/* Пополнение */}
-                  <Row type="flex" justify="space-between" align="middle" 
-                       style={{ marginTop: "3em" }}>
+                  <div className="controls-card5" 
+                       style={{ marginTop: "3.5em" }}>
 
-                    <label className="input-group" style={{ width: "20em" }}>
+                    <label className="input-group">
                       <span className="input-group__label">Пополнение</span>
                       <NumericInput
                         key={this.state.mode}
                         className="input-group__input"
                         defaultValue={this.state.payload[this.state.mode]}
-                        round
+                        round="true"
                         format={formatNumber}
-                        max={9999999}
+                        max={Infinity}
                         onBlur={val => {
                           let { mode, payload } = this.state;
                           payload[mode] = val;
@@ -1156,7 +1350,7 @@ class App extends React.Component {
                     </label>
 
                     {/* Частота */}
-                    <label className="input-group" style={{ width: "20em" }}>
+                    <label className="input-group">
                       <span className="input-group__label">Частота</span>
                       <CustomSelect
                         value={0}
@@ -1170,7 +1364,7 @@ class App extends React.Component {
                       />
                     </label>
 
-                  </Row>
+                  </div>
                 </div>
               </Col>
             </section>
@@ -1179,9 +1373,7 @@ class App extends React.Component {
             {(() => {
               let {
                 days,
-                data,
                 mode,
-                depoEnd,
                 minDailyIncome,
                 directUnloading,
                 numberOfIterations,
@@ -1222,11 +1414,11 @@ class App extends React.Component {
                     </p>
 
                     <footer className="stats-footer">
-                      <Col span={12}>
+                      <Col span={12} className="stats-footer-row">
                         <h3 className="stats-key main__h3">
                           <span aria-label="Доходность">Дох-ть</span> на конец периода
                         </h3>
-                        <div className="stats-val b">
+                        <div className="stats-val">
                           {
                             (() => {
                               let { data } = this.state;
@@ -1238,25 +1430,28 @@ class App extends React.Component {
                                 val = 0;
                               }
 
-                              return <BigNumber val={val} threshold={1e9} suffix="%" />
+                              return (
+                                <Value>
+                                  <BigNumber val={val} threshold={1e9} suffix="%" />
+                                </Value>
+                              )
                             })()
                           }
                         </div>
                       </Col>
 
-                      <Col span={12}>
+                      <Col span={12} className="stats-footer-row">
                         <h3 className="stats-key main__h3">
                           <span aria-label="Доходность">Дох-ть</span> за итерацию
                         </h3>
-                        <div className="stats-val b">
+                        <div className="stats-val">
                           {
                             (() => {
-
-
-                              return mode == 0 ?
-                                `${+(minDailyIncome / (numberOfIterations * (directUnloading ? 1 : 2))).toFixed(3)}%`
-                                :
-                                `${+(incomePersantageCustom / (numberOfIterations * (directUnloading ? 1 : 2))).toFixed(3)}%`
+                              var val = (mode == 0)
+                                ? minDailyIncome         / (numberOfIterations * (directUnloading ? 1 : 2))
+                                : incomePersantageCustom / (numberOfIterations * (directUnloading ? 1 : 2));
+                              
+                              return <Value format={val => val.toFixed(3) + "%"}>{ val }</Value>
                             })()
                           }
                         </div>
@@ -1289,12 +1484,14 @@ class App extends React.Component {
                       {
                         paymentTotal !== 0
                         ? (
-                          <Col span={12}>
+                          <Col span={12} className="stats-footer-row">
                             <h3 className="stats-key main__h3">
                               { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
                             </h3>
-                            <div className="stats-val b">
-                              -{ formatNumber( paymentTotal ) }
+                            <div className="stats-val">
+                              <Value>
+                                -{ formatNumber( paymentTotal ) }
+                              </Value>
                             </div>
                           </Col>
                          )
@@ -1304,12 +1501,14 @@ class App extends React.Component {
                       {
                         payloadTotal !== 0
                         ? (
-                          <Col span={12}>
+                          <Col span={12} className="stats-footer-row">
                             <h3 className="stats-key main__h3">
                               { `Пополнено за ${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}` }
                             </h3>
-                            <div className="stats-val b">
-                              +{ formatNumber(payloadTotal) }
+                            <div className="stats-val">
+                              <Value>
+                                +{ formatNumber(payloadTotal) }
+                              </Value>
                             </div>
                           </Col>
                         )
@@ -1325,11 +1524,11 @@ class App extends React.Component {
             <section className="section3">
               <h2 className="visually-hidden">Сделка</h2>
 
-              <Col span={12} style={{ marginRight: "1.5em" }}>
+              <Col className="section3-col1">
                 <Row className="card">
                   <div className="slider-block" key={1}>
                     <span className="slider-block__label">
-                      Процент депозита на вход в сделку
+                      Процент депозита<br className="xs-only" /> на вход в сделку
                       <Tooltip title="Максимальный объем входа в сделку">
                         <QuestionCircleFilled className="slider-block__info" />
                       </Tooltip>
@@ -1337,9 +1536,17 @@ class App extends React.Component {
 
                     <CustomSlider
                       value={this.state.depoPersentageStart}
-                      min={1}
+                      min={
+                        round(
+                          this.getCurrentTool().guaranteeValue / this.state.depoStart[this.state.mode] * 100, 1
+                        )
+                      }
                       max={100}
-                      step={1}
+                      step={
+                        round(
+                          this.getCurrentTool().guaranteeValue / this.state.depoStart[this.state.mode] * 100, 1
+                        )
+                      }
                       filter={val => val + "%"}
                       onChange={val => {
                         this.setState({ depoPersentageStart: val }, () => {
@@ -1354,7 +1561,7 @@ class App extends React.Component {
 
                   <div className="slider-block" key={2}>
                     <span className="slider-block__label">
-                      Количество итераций в день
+                      Количество итераций<br className="xs-only" /> в день
                       <Tooltip title="Количество повторений сделки">
                         <QuestionCircleFilled className="slider-block__info" />
                       </Tooltip>
@@ -1382,19 +1589,16 @@ class App extends React.Component {
                   {/* /.slider-block */}
                 </Row>
 
-                <Row className="card card--secondary" style={{ position: "relative", marginTop: "1.5em" }}>
+                <Row className="card card--secondary section3__tool-block">
                   <Tooltip title="Настройки">
-                    <button 
-                      className="settings-button js-open-modal"
-                      style={{ position: "absolute", right: "1.5em", top: "1em", zIndex: 0 }}
-                    >
+                    <button className="settings-button js-open-modal section3-icon">
                       <span className="visually-hidden">Открыть конфиг</span>
                       <SettingFilled className="settings-button__icon" />
                     </button>
                   </Tooltip>
 
-                  <label className="input-group">
-                    <h2 className="input-group__label input-group__label--centered main__h2">
+                  <label className="input-group section3__tool-select">
+                    <h2 className="input-group__label input-group__label--centered main__h2 section3__tool-title">
                       Торговый инструмент
                     </h2>
                     <Select
@@ -1410,37 +1614,35 @@ class App extends React.Component {
                       style={{ width: "100%" }}
                     >
                       {
-                        this.state.tools.map(el => el.name).map((value, index) => (
-                          <Option key={index} value={index}>{value}</Option>
-                        ))
+                        this.state.tools.length > 0
+                          ? (
+                            this.state.tools.map(el => el.name).map((value, index) => (
+                              <Option key={index} value={index}>{value}</Option>
+                            ))
+                          )
+                          : <Option key={0} value={0}>загрузка...</Option>
                       }
                     </Select>
                   </label>
                 </Row>
               </Col>
 
-              <Col span={12} className="card card--column">
+              <Col className="card card--column section3-col2">
                 {
                   (() => {
                     const { 
-                      data,
                       tools,
                       currentToolIndex,
-                      mode,
+                      numberOfIterations,
                       directUnloading 
                     } = this.state;
-                    let { numberOfIterations } = this.state;
 
                     let tool = tools[currentToolIndex] || this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
-
-                    if (!numberOfIterations) {
-                      numberOfIterations = 1;
-                    }
 
                     let pointsForIteration = this.getPointsForIteration();
 
                     return (
-                      <SpeedometerWrap
+                      <Speedometer
                         key={pointsForIteration}
                         chances={[
                           tool.points.map(row => row[0]),
@@ -1464,15 +1666,24 @@ class App extends React.Component {
                     <Row 
                       className="main__h2"
                       type="flex" justify="center"
-                      style={{ width: "100%", marginTop: "auto" }}
+                      style={{
+                        width:        "100%",
+                        marginTop:    "auto",
+                        marginBottom: "0.2em",
+                        fontSize:     "1.6em"
+                      }}
                     >
                       <span>
                         <b>{pointsForIteration}</b>
-                        {" " + num2str(Math.floor(pointsForIteration), ["пункт", "пункта", "пунктов"])}
+                        {" " + num2str(Math.floor(pointsForIteration), ["шаг", "шага", "шагов"]) + " цены"}
                       </span>
                       =
                       <span>
-                        <b>{ round(pointsForIteration * currentTool.priceStep, 2)}$/₽</b> Изменения цены
+                        <b>
+                          { round(pointsForIteration * currentTool.priceStep, 2)}
+                          <span className="currency">$/₽</span>
+                        </b>
+                        изменения цены
                       </span>
                     </Row>
                   )
@@ -1484,15 +1695,9 @@ class App extends React.Component {
             {(() => {
               let {
                 data,
-                mode,
-                withdrawal,
-                payload,
-                incomePersantageCustom,
                 passiveIncomeTools,
                 currentPassiveIncomeToolIndex,
                 depoPersentageStart,
-                tools,
-                currentToolIndex,
                 directUnloading,
                 numberOfIterations
               } = this.state;
@@ -1508,8 +1713,8 @@ class App extends React.Component {
                 <section className="section4 main__section4">
                   <h2 className="section4__title">План на день</h2>
 
-                  <Col span={8} style={{ marginRight: "1.5em" }}>
-                    <header className="section4-header" style={{ textAlign: "right" }}>
+                  <Col className="section4-col">
+                    <header className="section4-header section4-header--first">
                       <CustomSelect
                         key={this.state.currentDay}
                         className="section4__day-select"
@@ -1520,13 +1725,11 @@ class App extends React.Component {
                         value={this.state.currentDay}
                         min={1}
                         max={days}
-                        onChange={value => {
-                          this.setState({ currentDay: value, resultSaved: false });
-                        }}
+                        onChange={(value) => this.setCurrentDay(value)}
                       />
                       /{days}
                     </header>
-                    <div className="section4-content card">
+                    <div className="section4-content section4__content1 card">
                       <div className="section4-row">
                         <div className="section4-l">
                           Депо на вход
@@ -1612,90 +1815,93 @@ class App extends React.Component {
                     </div>
                   </Col>
 
-                  <Col span={8} style={{ marginRight: "1.5em" }}>
-                    <header className="section4-header">
-                      <label className="switch section4__switch">
-                        <span>Прямая разгрузка</span>
-                        <Switch
-                          className="switch__input"
-                          defaultChecked={this.state.directUnloading}
-                          onChange={val => this.setState({ directUnloading: val }, this.recalc)}
-                        />
-                      </label>
-                    </header>
-                    <div className="section4-content card">
-                      <div className="section4-row">
-                        <div className="section4-l">
-                          Контрактов
-                        </div>
-                        <div className="section4-r">
-                          {
-                            (data[currentDay - 1].contractsStart).toFixed(1)
-                          }
-                        </div>
-                      </div>
-                      {/* /.row */}
-                      <div className="section4-row">
-                        <div className="section4-l">
-                          Пунктов
-                        </div>
-                        <div className="section4-r">
-                          {pointsForIteration}
-                        </div>
-                      </div>
-                      {/* /.row */}
-                      <div className="section4-row">
-                        <div className="section4-l">
-                          Итераций
-                        </div>
-                        <div className="section4-r">
-                          {
-                            Math.min(numberOfIterations * (directUnloading ? 1 : 2), 100)
-                          }
-                        </div>
-                      </div>
-                      {/* /.row */}
-                      <div className="section4-row">
-                        <div className="section4-l">
-                          Дневная цель
-                        </div>
-                        <div className="section4-r">
-                          {
-                            "+" + formatNumber(Math.round(data[currentDay - 1].income))
-                          }
-                        </div>
-                      </div>
-                      {/* /.row */}
-                    </div>
-                  </Col>
-
-                  <Col span={8}>
-                    <header className="section4-header">
-                      До цели
-                    </header>
-                    {(() => {
-                      var persentage = currentDay / days * 100;
-                      var daysLeft = days - currentDay;
-
-                      return (
-                        <div className="section4-content section4-content--centered card">
-                          <Progress 
-                            className="section4-progress"
-                            type="circle"
-                            percent={
-                              (persentage > 3 && persentage < 100) 
-                                ? persentage - 2 
-                                : persentage
-                            } 
-                            format={val => `${daysLeft} ${num2str(daysLeft, ["день", "дня", "дней"])}`}
+                  <div className="section4-col2">
+                    <Col className="section4-col">
+                      <header className="section4-header">
+                        <label className="switch section4__switch">
+                          <span>Прямая разгрузка</span>
+                          <Switch
+                            className="switch__input"
+                            defaultChecked={this.state.directUnloading}
+                            onChange={val => this.setState({ directUnloading: val }, this.recalc)}
                           />
-                          <span className="section4-progress__label">
-                            -{daysLeft} дней
-                          </span>
+                        </label>
+                      </header>
+                      <div className="section4-content card">
+                        <div className="section4-row">
+                          <div className="section4-l">
+                            Контрактов
+                          </div>
+                          <div className="section4-r">
+                            {
+                              data[currentDay - 1].contractsStart
+                            }
+                          </div>
                         </div>
-                      )
-                    })()}
-                  </Col>
+                        {/* /.row */}
+                        <div className="section4-row">
+                          <div className="section4-l">
+                            Шагов цены
+                          </div>
+                          <div className="section4-r">
+                            {pointsForIteration}
+                          </div>
+                        </div>
+                        {/* /.row */}
+                        <div className="section4-row">
+                          <div className="section4-l">
+                            Итераций
+                          </div>
+                          <div className="section4-r">
+                            {
+                              Math.min(numberOfIterations * (directUnloading ? 1 : 2), 100)
+                            }
+                          </div>
+                        </div>
+                        {/* /.row */}
+                        <div className="section4-row">
+                          <div className="section4-l">
+                            Торговая цель
+                          </div>
+                          <div className="section4-r">
+                            {
+                              formatNumber(Math.round(data[currentDay - 1].incomePure))
+                            }
+                          </div>
+                        </div>
+                        {/* /.row */}
+                      </div>
+                    </Col>
+
+                    <Col className="section4-col">
+                      <header className="section4-header">
+                        До цели
+                      </header>
+                      {(() => {
+                        var persentage = currentDay / days * 100;
+                        var daysLeft = days - currentDay;
+
+                        return (
+                          <div className="section4-content section4-content--centered card">
+                            <Progress 
+                              className="section4-progress"
+                              type="circle"
+                              percent={
+                                (persentage > 3 && persentage < 100) 
+                                  ? persentage - 2 
+                                  : persentage
+                              } 
+                              format={val => `${daysLeft} ${num2str(daysLeft, ["день", "дня", "дней"])}`}
+                            />
+                            <span className="section4-progress__label">
+                              -{daysLeft} дней
+                            </span>
+                          </div>
+                        )
+                      })()}
+                    </Col>
+                  </div>
+
                 </section>
               );
             })()}
@@ -1705,15 +1911,11 @@ class App extends React.Component {
               const {
                 data,
                 mode,
-                depoEnd,
                 realData,
                 currentDay,
                 withdrawalInterval,
                 payloadInterval,
-                minDailyIncome,
                 directUnloading,
-                resultCollapsed,
-                passiveIncomeMonthly,
                 passiveIncomeTools,
                 currentPassiveIncomeToolIndex
               } = this.state;
@@ -1722,38 +1924,38 @@ class App extends React.Component {
                 this.state.numberOfIterations * (directUnloading ? 1 : 2), 100
               );
 
-              var realIncome = 0;
-
               return (
-                <section className="section5" style={{ margin: "1.5em 0" }}>
+                <section className="section5">
                   <h2 className="section5__title">Результат</h2>
 
                   {
-                    (resultCollapsed && !this.state.resultSaved)
+                    (data[currentDay - 1].collapsed && !data[currentDay - 1].saved)
                     ? null
                     : (
                       <span className="section5-content-title">
-                        <b className="b">
-                          {
-                            this.state.resultChanged
-                              ? round(data[currentDay - 1].scale, 3)
-                              : "—"
-                          }
-                        </b> /
-                          { round(this.getDailyIncome(), 3) } (
-                        <b className="b">
-                          {
-                            this.state.resultChanged
-                              ? formatNumber(
-                                  Math.round(
-                                    data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
-                                  )
-                                )
-                                : "—"
-                          }
-                        </b> /
                         {
-                        "+" + formatNumber(Math.round(data[currentDay - 1].income))
+                          data[currentDay - 1].changed
+                            ? <Value format={val => round(val, 3)}>{ data[currentDay - 1].scale }</Value>
+                            : "—"
+                        }
+                        /
+                        { round(this.getDailyIncome(), 3) } (
+                        {(() => {
+                          var value = Math.round(
+                            data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
+                          );
+
+                          return data[currentDay - 1].changed
+                            ? (
+                              <Value format={val => val > 0 ? "+" + formatNumber(val) : formatNumber(val)}>
+                                { value }
+                              </Value>
+                            )
+                            : "—"
+                        })()}
+                        /
+                        {
+                          "+" + formatNumber(Math.round(data[currentDay - 1].income))
                         }
                         )
                       </span>
@@ -1762,18 +1964,22 @@ class App extends React.Component {
 
                   <Button
                     className="custom-btn"
-                    type={resultCollapsed ? "primary" : "default"}
+                    type={data[currentDay - 1].collapsed ? "primary" : "default"}
                     onClick={e => {
-                      var resultSaved = this.state.resultSaved;
-                      if (!resultCollapsed) {
+                      const { data, currentDay } = this.state;
+                      var resultSaved = data[currentDay - 1].saved;
+                      if (!data[currentDay - 1].collapsed) {
                         resultSaved = true;
                       }
-                      this.setState({ resultCollapsed: !resultCollapsed, resultSaved });
+                      data[currentDay - 1].saved     = resultSaved;
+                      data[currentDay - 1].collapsed = !data[currentDay - 1].collapsed;
+
+                      this.setState({ data });
                     }}
                   >
                     {
-                      resultCollapsed
-                        ? this.state.resultSaved
+                      data[currentDay - 1].collapsed
+                        ? data[currentDay - 1].saved
                           ? "Изменить"
                           : "Добавить"
                         : "Сохранить"
@@ -1781,11 +1987,11 @@ class App extends React.Component {
                   </Button>
 
                   <div className={"section5-collapse".concat(
-                    resultCollapsed ? " section5-collapse--collapsed" : ""
+                    data[currentDay - 1].collapsed ? " section5-collapse--collapsed" : ""
                   )}>
                     <div className="section5-content">
 
-                      <Col span={8} style={{ marginRight: "5em" }}>
+                      <Col className="section5-col">
                         <div className="section5-row">
                           <div className="section5-l">
                             <span aria-label="Доходность">Дох-ть</span> за день
@@ -1795,7 +2001,7 @@ class App extends React.Component {
                               style={{ padding: ".3em .1em" }}
                               key={data[currentDay - 1].scale}
                               defaultValue={
-                                this.state.resultChanged
+                                data[currentDay - 1].changed
                                   ? round(data[currentDay - 1].scale, 3)
                                   : "—"
                               }
@@ -1803,17 +2009,16 @@ class App extends React.Component {
                               onBlur={val => {
                                 var data = [...this.state.data];
                                 data[currentDay - 1].scale = val;
-                                this.setState({
-                                  data,
-                                  resultChanged: true
-                                }, () => {
+                                data[currentDay - 1].changed = true;
+                                this.setState({ data }, () => {
                                   var realData = this.buildRealData(this.state.data);
                                   this.setState({ realData }, this.updateChart);
                                 });
                               }}
                             />
+                            /
                             <span className="section5-r-suffix">
-                              / {round(this.getDailyIncome(), 3)}%
+                              {round(this.getDailyIncome(), 3)}%
                             </span>
                           </div>
                         </div>
@@ -1825,7 +2030,7 @@ class App extends React.Component {
                           <div className="section5-r">
                             <NumericInput
                               defaultValue={
-                                this.state.resultChanged
+                                data[currentDay - 1].changed
                                   ? 0
                                   : "—"
                               }
@@ -1836,8 +2041,8 @@ class App extends React.Component {
                                 // this.setState({ data }, this.updateChart);
                               }}
                             />
+                            /
                             <span className="section5-r-suffix">
-                              /
                               {
                                 (currentDay !== 0 && currentDay % withdrawalInterval == 0)
                                   ? formatNumber( this.state.withdrawal[mode] )
@@ -1854,7 +2059,7 @@ class App extends React.Component {
                           <div className="section5-r">
                             <NumericInput
                               defaultValue={
-                                this.state.resultChanged
+                                data[currentDay - 1].changed
                                   ? 0
                                   : "—"
                               }
@@ -1865,8 +2070,8 @@ class App extends React.Component {
                                 // this.setState({ data }, this.updateChart);
                               }}
                             />
+                            /
                             <span className="section5-r-suffix">
-                              /
                               {
                                 (currentDay !== 0 && currentDay % payloadInterval == 0)
                                   ? formatNumber(this.state.payload[mode])
@@ -1878,7 +2083,7 @@ class App extends React.Component {
                         {/* /.row */}
                       </Col>
 
-                      <Col span={8} style={{ marginRight: "5em" }}>
+                      <Col className="section5-col">
                         <div className="section5-row">
                           <div className="section5-l">
                             Итераций:
@@ -1887,7 +2092,7 @@ class App extends React.Component {
                             <NumericInput
                               key={numberOfIterations}
                               defaultValue={
-                                this.state.resultChanged
+                                data[currentDay - 1].changed
                                   ? numberOfIterations
                                   : "—"
                               }
@@ -1896,7 +2101,10 @@ class App extends React.Component {
                                 
                               }}
                             />
-                            / { numberOfIterations }
+                            /
+                            <span className="section5-r-suffix">
+                              {numberOfIterations}
+                            </span>
                           </div>
                         </div>
                         {/* /.row */}
@@ -1905,7 +2113,7 @@ class App extends React.Component {
                             Пассивный доход:
                           </div>
                           <div className="section5-r">
-                            <b className="b">
+                            <Value>
                               {(() => {
                                 var val = realData[currentDay - 1].depoEnd;
                                 var tool = passiveIncomeTools[currentPassiveIncomeToolIndex];
@@ -1917,7 +2125,11 @@ class App extends React.Component {
 
                                 return 0;
                               })()}
-                            </b>/день
+                            </Value>
+                            /
+                            <span className="section5-r-suffix">
+                              день
+                            </span>
                           </div>
                         </div>
                         {/* /.row */}
@@ -1926,37 +2138,52 @@ class App extends React.Component {
                             Депозит:
                           </div>
                           <div className="section5-r">
-                            <b className="b">
-                              {
-                                this.state.resultChanged
-                                  ? formatNumber(Math.round(realData[currentDay - 1].depoEnd))
-                                  : "—"
-                              }
-                            </b>
+                            {
+                              data[currentDay - 1].changed
+                                ? (
+                                  <Value format={val => formatNumber(Math.round(val))}>
+                                    { realData[currentDay - 1].depoEnd }
+                                  </Value> 
+                                )
+                                : "—"
+                            }
                             /
-                            <BigNumber
-                              val={Math.floor( this.getDepoEnd() )}
-                              threshold={1e6}
-                              format={formatNumber}
-                            />
+                            <span className="section5-r-suffix">
+                              <BigNumber
+                                val={Math.floor( this.getDepoEnd() )}
+                                threshold={1e6}
+                                format={formatNumber}
+                              />
+                            </span>
                           </div>
                         </div>
                         {/* /.row */}
                       </Col>
 
-                      <Col span={8} style={{ textAlign: "center" }}>
+                      <Col className="section5-col section5-col--centered">
                         {(() => {
                           var persentage = round(data[currentDay - 1].scale / this.getDailyIncome() * 100, 2);
 
                           return (
                             <Progress
                               type="circle"
+                              status={
+                                data[currentDay - 1].changed
+                                  ? persentage >= 100
+                                    ? "success"
+                                    : persentage < 0
+                                      ? "exception"
+                                      : "normal"
+                                  : "normal"
+                              }
                               trailColor="white"
                               percent={
-                                this.state.resultChanged
-                                  ? (persentage > 3 && persentage < 100)
-                                      ? persentage - 2
-                                      : persentage
+                                data[currentDay - 1].changed
+                                  ? persentage < 0
+                                      ? 100
+                                      : (persentage > 3 && persentage < 100)
+                                          ? persentage - 2
+                                          : persentage
                                   : 0
                               }
                             />
@@ -1968,37 +2195,54 @@ class App extends React.Component {
                     </div>
                     {/* /.section5-content */}
 
-                    <footer className="section5-footer">
-                      <span className="section5__title">Дневная цель</span>
-                      <Progress 
-                        trailColor="white" 
-                        percent={
-                          this.state.resultChanged
-                            ?
-                              round(
-                                (data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)) /
-                                 data[currentDay - 1].income * 100
-                              , 2)
-                            : 0
-                        }
-                      />
-                      <span className="section5-footer__label">
-                        <b className="b">
-                          {
-                            this.state.resultChanged
-                              ?
-                                formatNumber(
-                                  Math.round(
-                                    data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
-                                  )
+                    {(() => {
+                      var income  = data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100);
+                      var persent = income / data[currentDay - 1].income;
+
+                      return (
+                        <footer className="section5-footer">
+                          <span className="section5-footer-title">Дневная цель</span>
+                          <Progress 
+                            status={
+                              data[currentDay - 1].changed
+                                ? persent >= 1 
+                                  ? "success"
+                                  : persent < 0
+                                    ? "exception" 
+                                    : "normal"
+                                : "normal"
+                            }
+                            trailColor={
+                              persent >= 1
+                                ? "#3f6b33"
+                                : persent < 0
+                                  ? "#eb4d4b"
+                                  : "#4859b4"
+                            } 
+                            percent={
+                              data[currentDay - 1].changed
+                                ? persent < 0
+                                  ? 100
+                                  : round(persent * 100, 2)
+                                : 0
+                            }
+                          />
+                          <span className="section5-footer__label">
+                            {
+                              data[currentDay - 1].changed
+                                ? (
+                                  <Value format={val => formatNumber(Math.round(val))}>
+                                    { income }
+                                  </Value>
                                 )
-                              : "—"
-                          }
-                        </b>
-                        /
-                        { formatNumber(Math.round(data[currentDay - 1].income)) }
-                      </span>
-                    </footer>
+                                : "—"
+                            }
+                            /
+                            { formatNumber(Math.round(data[currentDay - 1].income)) }
+                          </span>
+                        </footer>
+                      )
+                    })()}
 
                   </div>
 

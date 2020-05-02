@@ -5,6 +5,11 @@
   justify-content: space-between
   align-items: center
 
+  font-size: 1.75em
+
+  +sm
+    flex-direction: column
+
   &__centerline,
   &::before,
   &::after
@@ -18,9 +23,21 @@
     margin-top: .75em
     transform: translateY(-50%)
 
+  
+  &::before,
+  &::after
+    +sm
+      display: none
+
   &__centerline
     left: 50%
     transform: translate(-50%, -50%)
+
+    +sm
+      top: 4.5em
+    
+    +xs
+      top: 3.25em
 
   &::before
     right: 100%
@@ -37,6 +54,15 @@
     letter-spacing: .03em
 
     transition: color .2s ease
+
+    +sm
+      margin-bottom: 2em
+
+      &:last-of-type
+        margin-bottom: 0
+    
+    +xs
+      font-size: 1.35em
 
     &:hover,
     &:focus

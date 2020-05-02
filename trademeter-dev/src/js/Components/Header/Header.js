@@ -12,11 +12,15 @@ export default function Header(props) {
     <header className="header">
       <div className="container">
         <div className="header__wrap">
-          <a className="logo header__logo" aria-label="Логотип FANI">
-            <img className="logo__img" src="dist/img/logo.png" alt="FANI" />
+          <a className="logo header__logo">
+            <img className="logo__img" src="dist/img/logo.png" alt="Логотип FANI" />
           </a>
 
-          <nav className="nav">
+          <button class="burger header__burger js-burger" aria-label="Меню">
+            <span></span>
+          </button>
+
+          <nav className="nav header__nav">
             <ul className="nav-list">
               <li className="nav-item"><a href="#">Главная</a></li>
               <li className="nav-item"><a href="#">Америка</a></li>
