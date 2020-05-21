@@ -26,10 +26,9 @@ import Item         from "./Components/Item"
 
 import num2str from "./num2str"
 import params from "./params";
+import formatNumber from "./formatNumber"
 
 import "../sass/main.sass"
-
-var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 
 class App extends React.Component {
 

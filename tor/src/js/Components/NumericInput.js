@@ -73,11 +73,9 @@ export default class NumericInput extends React.Component {
     value = Number(value) + "";
 
     if (min && (+value < +min)) {
-      console.log('min', +value, +min);
       value = +min;
     }
     if (max && (+value > +max)) {
-      console.log('max', +value, +max);
       value = +max;
     }
 
@@ -111,7 +109,6 @@ export default class NumericInput extends React.Component {
       var { value } = this.state;
 
       var val = this.parse(value);
-      console.log(val);
 
       this.setState({ value: val });
       if (this.props.onBlur) {
@@ -139,7 +136,6 @@ export default class NumericInput extends React.Component {
           onFocus={e => this.onFocus(e)}
           onBlur={e => this.onBlur(e)}
           value={value}
-          maxLength={25}
         />
       </Tooltip>
     )

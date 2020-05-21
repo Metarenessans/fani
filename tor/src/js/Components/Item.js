@@ -15,11 +15,11 @@ import {
 import $ from "jquery"
 import NumericInput from "../Components/NumericInput"
 
+import formatNumber from "../formatNumber"
+
 const { Option } = Select;
 const { Group } = Radio;
 const { Text } = Typography;
-
-var formatNumber = (val) => (val + "").replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, "$1 ");
 
 export default class Item extends React.Component {
   constructor(props) {
@@ -34,6 +34,8 @@ export default class Item extends React.Component {
       additionalLoading: 20,
       // Ожидаемый ход (в долларах)
       stepExpected: 1,
+
+      directUnloading: true,
       
       // ===================
       // Вычисляемые значения
@@ -56,15 +58,25 @@ export default class Item extends React.Component {
 
   recalc() {
     const { depo, tools } = this.props;
-    const { currentToolIndex, drawdown, contracts, additionalLoading, stepExpected } = this.state;
+    const {
+      currentToolIndex,
+      drawdown,
+      contracts,
+      stepExpected,
+      additionalLoading,
+    } = this.state;
 
     let currentTool = tools[currentToolIndex];
     let rubbles = contracts * currentTool.guaranteeValue;
 
+    var additionalLoading2 = this.state.additionalLoading2 || additionalLoading;
+    var stepExpected2      = this.state.stepExpected2      || stepExpected;
+
     this.setState({
       freeMoney:      depo - drawdown - rubbles,
       pointsAgainst:  drawdown / (contracts * currentTool.stepPrice),
-      incomeExpected: ((depo * (additionalLoading / 100)) / currentTool.guaranteeValue) * (stepExpected / currentTool.priceStep * currentTool.stepPrice)
+      incomeExpected: ((depo * (additionalLoading / 100)) / currentTool.guaranteeValue) * (stepExpected / currentTool.priceStep * currentTool.stepPrice),
+      incomeExpected2: ((depo * (additionalLoading2 / 100)) / currentTool.guaranteeValue) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice)
     });
   }
 
@@ -166,8 +178,8 @@ export default class Item extends React.Component {
                   <Col span={12}>
                     <Text>
                       Свободные<br />
-                          деньги
-                        </Text>
+                      деньги
+                    </Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold", textAlign: "right" }}>
                     <Text>{formatNumber(Math.round(this.state.freeMoney))}</Text>
@@ -250,8 +262,8 @@ export default class Item extends React.Component {
                   <label className="switch card-2__switch">
                     <Switch
                       className="switch__input"
-                      defaultChecked={true}
-                      onChange={val => { }} />
+                      defaultChecked={this.state.directUnloading}
+                      onChange={val => this.setState({ directUnloading: val })} />
                     <span className="switch__label">Прямая</span>
                   </label>
                 </Col>
@@ -282,7 +294,12 @@ export default class Item extends React.Component {
                     <Text>Итераций</Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold" }}>
-                    <Text>{(this.state.drawdown / this.state.incomeExpected).toFixed(1)}</Text>
+                    <Text>
+                      {
+                        +(this.state.drawdown / this.state.incomeExpected).toFixed(1) *
+                         (this.state.directUnloading ? 1 : 2)
+                      }
+                    </Text>
                   </Col>
                 </Col>
               </Row>
@@ -293,9 +310,14 @@ export default class Item extends React.Component {
                       <span className="input-group__title">Ожидаемый ход (руб/$)</span>
                       <NumericInput
                         className="input-group__input"
+                        key={this.state.stepExpected}
                         defaultValue={this.state.stepExpected}
-                        round
-                        onBlur={val => this.setState({ stepExpected: val }, this.recalc)}
+                        onBlur={val => {
+                          if (val == 0) {
+                            val = 0.1;
+                          }
+                          this.setState({ stepExpected: val }, this.recalc)
+                        }}
                         format={formatNumber}
                       />
                     </label>
@@ -309,7 +331,9 @@ export default class Item extends React.Component {
                     </Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold" }}>
-                    <Text>{formatNumber(this.state.incomeExpected.toFixed(1))}</Text>
+                    <Text>{formatNumber((
+                      this.state.incomeExpected / (this.state.directUnloading ? 1 : 2 )
+                    ).toFixed(1))}</Text>
                   </Col>
                 </Col>
               </Row>
@@ -352,7 +376,14 @@ export default class Item extends React.Component {
                     <Text>Депозит</Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold" }}>
-                    <Text>{ formatNumber(Math.round(this.state.freeMoney - this.state.incomeExpected)) }</Text>
+                    <Text>
+                      { 
+                        formatNumber(Math.round(
+                          this.state.freeMoney - 
+                          (this.state.incomeExpected2 ? this.state.incomeExpected2 : this.state.incomeExpected)
+                        )) 
+                      }
+                    </Text>
                   </Col>
                 </Col>
               </Row>
@@ -362,9 +393,14 @@ export default class Item extends React.Component {
                     <span className="input-group__title">Ожидаемый ход (руб/$)</span>
                     <NumericInput
                       className="input-group__input"
-                      defaultValue={this.state.stepExpected}
-                      round
-                      onBlur={val => this.setState({ stepExpected: val }, this.recalc)}
+                      key={this.state.stepExpected2 || this.state.stepExpected}
+                      defaultValue={this.state.stepExpected2 || this.state.stepExpected}
+                      onBlur={val => {
+                        if (val == 0) {
+                          val = 0.1;
+                        }
+                        this.setState({ stepExpected2: val }, this.recalc)
+                      }}
                       format={formatNumber}
                     />
                   </label>
@@ -374,10 +410,20 @@ export default class Item extends React.Component {
                     <Text>
                       Убыток<br />
                       на догрузку
-                      </Text>
+                    </Text>
                   </Col>
                   <Col span={12} style={{ fontWeight: "bold" }}>
-                    <Text>{formatNumber(-this.state.incomeExpected.toFixed(1))}</Text>
+                    <Text>
+                      {
+                        formatNumber(
+                          (
+                            this.state.incomeExpected2
+                              ? -this.state.incomeExpected2
+                              : -this.state.incomeExpected
+                          ).toFixed(1) - this.state.drawdown
+                        )
+                      }
+                    </Text>
                   </Col>
                 </Col>
               </Row>

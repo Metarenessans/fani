@@ -1,0 +1,112 @@
+@import "components/breadcrumbs"
+@import "components/dashboard"
+@import "tabs/tabs"
+@import "card-1/card-1"
+@import "card-3/card-3"
+@import "card-4/card-4"
+  
+.main
+  overflow-x: hidden
+  color: #141414
+
+  &__h1
+    margin: .8em !important 
+
+    color: inherit
+    font-size: 4em
+    font-weight: bold
+    letter-spacing: .025em
+
+  &__h2,
+  &__h3
+    color: inherit
+    font-size: 2.4em
+    font-weight: normal
+    text-transform: uppercase
+    letter-spacing: 0.05em
+
+    +sm
+      font-size: 1.8em
+  
+  &__h3
+    font-size: 1.2em
+    letter-spacing: .15em
+  
+  &-top
+    position: relative
+    z-index: 2
+    background: $mainColor url("dist/img/pattern.png") center / 115em
+    box-shadow: 0 1.1em 2.1em rgba(0, 0, 0, 0.15)
+    padding: 2em 0 2.5em
+
+    color: white
+    text-align: center
+
+    &-wrap
+      position: relative
+    
+    &__breadcrumbs
+      margin-bottom: 1.8em
+
+    &__save
+      margin-top: 1.75rem
+
+      &:hover,
+      &:focus
+        background: white
+        color: $mainColor
+    
+    &__icon
+      position: absolute
+      right:   0
+      bottom: -0.2em
+      font-size: 1.4em
+
+      .settings-button__icon
+        fill: currentColor
+        color: inherit
+    
+    &__strategy
+      position: absolute
+      right: 0
+      top:   0
+      width: 15rem
+
+      color: white !important
+
+      .ant-select
+        &-selection
+          background: rgba(white, .4) !important
+
+        &-arrow
+          color: inherit !important
+
+  &-content
+    padding: 3em 0
+
+  &-save
+    font-size: 1.5em
+  
+  &__save
+    margin-top: 1.75rem
+
+    font-size: (1.125rem / 1.5)
+
+  &__stats
+    margin-bottom: 1.5em
+
+  &__card-1
+    margin: 1.25em 0
+
+  &__card-2
+    width: 50%
+    margin-right: 1.25em
+
+  &__card-3
+    width: 50%
+
+  &__card-4
+    margin-top: 1.25em
+
+  &__section4
+    margin-top: 4em
