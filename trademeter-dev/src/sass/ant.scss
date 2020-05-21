@@ -20565,7 +20565,7 @@ textarea.ant-mentions {
   margin: 0;
   padding: 0;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
+  font-size: 1.125rem;
   font-variant: tabular-nums;
   line-height: 1.5;
   list-style: none;
@@ -20574,16 +20574,17 @@ textarea.ant-mentions {
 }
 .ant-statistic-title {
   margin-bottom: 4px;
+  font-weight: bold;
+  line-height: 1;
   color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
 }
 .ant-statistic-content {
   color: rgba(0, 0, 0, 0.85);
-  font-size: 24px;
+  font-size: 1.4em;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 .ant-statistic-content-value-decimal {
-  font-size: 16px;
+  font-size: .65em;
 }
 .ant-statistic-content-prefix,
 .ant-statistic-content-suffix {

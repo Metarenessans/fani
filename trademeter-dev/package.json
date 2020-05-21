@@ -13,6 +13,8 @@
     "@ant-design/icons": "^4.0.5",
     "@antv/g2": "^4.0.5",
     "antd": "^3.24.2",
+    "anychart": "^8.7.1",
+    "anychart-react": "^1.4.1",
     "autoprefixer": "^9.7.5",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
@@ -45,5 +47,8 @@
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.9",
     "webpack-dev-server": "^3.8.2"
+  },
+  "dependencies": {
+    "core-js": "^3.6.5"
   }
 }
