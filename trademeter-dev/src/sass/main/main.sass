@@ -1,8 +1,4 @@
 @import "tabs/tabs"
-@import "card-1/card-1"
-@import "card-3/card-3"
-@import "card-4/card-4"
-@import "footer/footer"
   
 .main
   overflow-x: hidden
@@ -37,12 +33,14 @@
     z-index: 2
     background: $mainColor url("dist/img/pattern.png") center / 115em
     box-shadow: 0 1.1em 2.1em rgba(0, 0, 0, 0.15)
+    // TODO: set the same padding
     padding: 2em 0 6em
 
     color: white
     text-align: center
 
     &-wrap
+      position: relative
       padding: 0 6em
 
       +sm
@@ -55,7 +53,21 @@
       &:focus
         background: white
         color: $mainColor
+    
+    &__strategy
+      position: absolute
+      right: 0
+      top:   0
+      width: 15rem
 
+      color: white !important
+
+      .ant-select
+        &-selection
+          background: rgba(white, .4) !important
+
+        &-arrow
+          color: inherit !important
 
   &-save
     font-size: 1.5em

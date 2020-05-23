@@ -4,10 +4,6 @@ body
   &.scroll-disabled .main
     filter: blur(.4em)
 
-h1.ant-typography
-  color: inherit
-  margin-bottom: 1em
-
 .page
   font-size: 0.804em
 
@@ -19,51 +15,6 @@ h1.ant-typography
 
   +xs
     font-size: 2.25vw
-
-.ant-col-1,
-.ant-col-2,
-.ant-col-3,
-.ant-col-4,
-.ant-col-5,
-.ant-col-6,
-.ant-col-7,
-.ant-col-8,
-.ant-col-9,
-.ant-col-10,
-.ant-col-11,
-.ant-col-12,
-.ant-col-13,
-.ant-col-14,
-.ant-col-15,
-.ant-col-16,
-.ant-col-17,
-.ant-col-18,
-.ant-col-19,
-.ant-col-20,
-.ant-col-21,
-.ant-col-22,
-.ant-col-23,
-.ant-col-24
-  flex: initial
-
-.anychart-tooltip
-  width: 18rem
-
-.currency
-  // font-family: sans-serif
-
-.value
-  font-weight: bold
-  color: $accentColor
-
-  &--neutral
-    color: #777
-  
-  &--negative
-    color: $dangerColor
-
-.ant-tooltip-inner
-  text-align: center
 
 .custom-btn
   height: auto
@@ -113,13 +64,6 @@ h1.ant-typography
     &:focus,
     &:hover
       color: white
-
-.ant-select-search__field
-  box-shadow: none !important
-
-.ant-radio,
-.ant-radio-wrapper
-  // font-size: 1.3em
 
 .slider-block
   padding: 1.5em 0
@@ -291,24 +235,15 @@ h1.ant-typography
     color: #1890ff
     font-size: 2.2em
 
-.card
-  padding: 1em
-  box-shadow: 0 0 1.75em rgba(0,0,0,0.1)
-
-  &--column
-    display: flex
-    flex-direction: column
-    align-items: flex-start
-
-  &--secondary
-    background-color: rgba(#4859b4, .1)
-    box-shadow: none
-
+// TODO: decide if it needs to be deleted
 .profit
   color: green
 
+// TODO: decide if it needs to be deleted
 .danger
   color: red
+
+/* Extract these sections into separate files */
 
 .section
 
@@ -1071,19 +1006,61 @@ h1.ant-typography
   &__input-long
     width: 4rem
 
-.anychart-credits
-  display: none
+.card
+  padding: 1em
+  box-shadow: 0 0 1.75em rgba(0,0,0,0.1)
+
+  &--column
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+  &--secondary
+    background-color: rgba(#4859b4, .1)
+    box-shadow: none
+
+// TODO: extract into component style.scss
+.value
+  font-weight: bold
+  color: $accentColor
+
+  &--neutral
+    color: #777
+  
+  &--negative
+    color: $dangerColor
+
+/* ant */
+.ant
+  &-input
+    &.error
+      $error-color: $dangerColor
+
+      border-color: $error-color !important
+
+      &:focus
+        box-shadow: 0 0 0 2px rgba($error-color, .45)
+
+      &:hover
+        border-color: $error-color
+
+  &-tooltip-inner
+    text-align: center
+  
+  &-select-search__field
+    box-shadow: none !important
+
+/* anychart */
+.anychart
+
+  &-credits
+    display: none
+
+  &-tooltip
+    width: 18rem
 
 .xs-only
   display: none
 
   +xs
     display: block
-
-#_chart
-
-  +sm
-    margin: 0 -3.5em
-
-canvas
-  background: white

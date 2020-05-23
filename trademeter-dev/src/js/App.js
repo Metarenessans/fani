@@ -11,6 +11,7 @@ import {
   Typography,
   Progress,
   Statistic,
+  Input
 } from 'antd/es'
 const { Title } = Typography;
 const { Option } = Select;
@@ -31,6 +32,7 @@ import formatNumber from "./utils/formatNumber";
 import extRate      from "./utils/rate";
 
 import BigNumber    from "./components/BigNumber"
+import Value        from "./components/value"
 import NumericInput from "./components/numeric-input"
 import CustomSlider from "./components/custom-slider"
 import CustomSelect from "./components/custom-select"
@@ -40,28 +42,6 @@ import Modal        from "./components/modal"
 import "../sass/main.sass"
 
 var chartData, chartData2, scale, scaleStart, scaleEnd;
-
-function Value(props) {
-  var format = props.format || ( (val) => val );
-  var val = props.children;
-  var classList = ["value"].concat(props.className);
-
-  if (val === 0) {
-    classList.push("value--neutral");
-  }
-  else if (val < 0) {
-    classList.push("value--negative");
-  }
-
-  return (
-    <span className={classList.join(" ").trim()}>{ format(val) }</span>
-  )
-}
-
-// HTML Elemets
-var $body;
-var $modal;
-var $modalSmall;
 
 export default class App extends React.Component {
 
@@ -78,7 +58,14 @@ export default class App extends React.Component {
       data:     [],
       realData: [],
 
-      staticDisabled: false,
+      staticDisabled:   false,
+      savePopupVisible: false,
+      configVisible:    false,
+      saved:            false,
+      saves:            [],
+      currentSaveIndex: -1,
+
+      title: "Трейдометр",
 
       mode,
 
@@ -118,7 +105,6 @@ export default class App extends React.Component {
 
       incomePersantageDaily: 0,
 
-      configVisible: false,
       // defaults
       tools: [],
       currentToolIndex:   0,
@@ -161,6 +147,251 @@ export default class App extends React.Component {
     this.state.realData = this.buildRealData(this.state.data);
   }
 
+  componentDidMount() {
+    // New chart
+    anychart.onDocumentReady(() => {
+
+      const { mode, days } = this.state;
+      var data = [...this.state.data];
+      var data2 = [...this.state.realData];
+
+      // data
+      chartData = anychart.data.set(
+        new Array(days[mode]).fill().map((v, i) => ({
+          x: String(i + 1),
+          value: data[i].depoEnd
+        }))
+      );
+
+      chartData2 = anychart.data.set(
+        new Array(days[mode]).fill().map((v, i) => ({
+          x: String(i + 1),
+          value: data2[i].depoEnd
+        }))
+      );
+
+      // set chart type
+      var chart = anychart.line();
+      chart.animation(true, 3000);
+      chart.listen("click", e => {
+        if (e.pointIndex) {
+          this.setCurrentDay(e.pointIndex + 1);
+        }
+      });
+      chart.tooltip().titleFormat(e => `День: ${Number(e.x)}`);
+
+      // set data
+      var series = chart.line(chartData);
+      series.name("Фактический рост депо");
+      series.tooltip().displayMode("separated");
+      series.tooltip().useHtml(true);
+      series.tooltip().format(e => {
+        var svg = `
+          <svg viewBox="0 0 10 10" width="1em" height="1em" 
+               fill="#87d068" style="position: relative; top: 0.1em">
+            <rect x="0" y="0" width="10" height="10" />
+          </svg>
+        `;
+        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+      });
+
+      // Line color
+      series.normal().stroke({
+        color: "#87d068",
+        thickness: "5%"
+      });
+
+      var series2 = chart.line(chartData2);
+      series2.name("Планируемый рост депо");
+      series2.tooltip().displayMode("separated");
+      series2.tooltip().useHtml(true);
+      series2.tooltip().format(e => {
+        var svg = `
+          <svg viewBox="0 0 10 10" width="1em" height="1em" 
+               fill="#40a9ff" style="position: relative; top: 0.1em">
+            <rect x="0" y="0" width="10" height="10" />
+          </svg>
+        `;
+
+        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+      });
+      // Line color
+      series2.normal().stroke({
+        color: "#40a9ff",
+        thickness: "5%"
+      });
+
+      scaleStart = 0;
+      scaleEnd = 1;
+      scale = anychart.scales.linear();
+      scale.minimum(1);
+      scale.maximum(260);
+      scale.ticks().interval(1);
+
+      if (false) {
+        // turn on X Scroller
+        chart.xScroller(true);
+        chart.xScroller().thumbs(false);
+        chart.xScroller().minHeight(40);
+        chart.xScroller().fill('#40a9ff 0.1');
+        chart.xScroller().selectedFill('#40a9ff 0.5');
+        // adjusting the thumbs behavior and look
+        chart.xScroller().listen("scrollerchange", e => {
+          const { days, mode } = this.state;
+          scaleStart = e.startRatio;
+          scaleEnd = e.endRatio;
+
+          var min = Math.max(Math.round(days[mode] * scaleStart) + 1, 1);
+          var max = Math.min(Math.round(days[mode] * scaleEnd) + 1, days[mode]);
+          scale.minimum(min);
+          scale.maximum(max);
+          scale.ticks().interval(
+            (() => {
+              var range = Math.abs(min - max);
+              var breakpoints = new Array(10).fill(0).map((n, i) => 260 * (i + 1));
+              for (var i = breakpoints.length; i--;) {
+                var breakpoint = breakpoints[i];
+                if (range >= breakpoint) {
+                  return (breakpoint / 260) * 10;
+                }
+              }
+
+              if (range > 100) {
+                return 10;
+              }
+              if (range > 50) {
+                return 5;
+              }
+
+              return 1;
+            })()
+          )
+        });
+      }
+
+      // Genetal settings
+      chart.xAxis().title("Номер дня");
+      chart.yAxis().labels().format(e => formatNumber(e.value));
+
+      // chart.xAxis().scale(scale);
+      // chart.xAxis().ticks(true);
+
+      // set container and draw chart
+      chart.xScale().mode('continuous');
+      chart.container("_chart").draw();
+
+    });
+
+    this.bindEvents();
+
+    this.fetchTools();
+  }
+
+  fetchTools() {
+    // TODO: remove
+    var resetDepoPersentageStart = () => {
+      const { depoStart, mode, days } = this.state;
+
+      this.updateData(days[mode]);
+
+      var depoPersentageStart = round(this.getCurrentTool().guaranteeValue / depoStart[mode] * 100, 1);
+      this.setState({ depoPersentageStart });
+    }
+
+    $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
+      success: (res) => {
+        let data = JSON.parse(res).data;
+
+        var t = [];
+        for (let tool of data) {
+          if (tool.price == 0 || !tool.volume) {
+            continue;
+          }
+
+          var obj = {
+            shortName:        tool.shortName       || "code",
+            name:             tool.fullName        || tool.shortName,
+            stepPrice:       +tool.stepPrice       || 0,
+            priceStep:       +tool.priceStep       || 0,
+            averageProgress: +tool.averageProgress || 0,
+            guaranteeValue:  +tool.guarantee       || 0,
+            currentPrice:    +tool.price           || 0,
+            lotSize:         +tool.lotVolume       || 0,
+            dollarRate:      +tool.dollarRate      || 0,
+
+            isFuters: true,
+
+            points: [
+              [70, 70],
+              [156, 55],
+              [267, 41],
+              [423, 27],
+              [692, 13],
+              [960, 7],
+            ]
+          };
+          t.push(obj);
+        }
+
+        if (t.length > 0) {
+          let { tools } = this.state;
+          tools = tools.concat(t);
+
+          this.setState({ tools }, resetDepoPersentageStart);
+        }
+      },
+      error: (err) => console.error(err),
+    });
+
+    $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo",
+      success: (res) => {
+        var data = JSON.parse(res).data;
+        
+        var t = [];
+        for (let tool of data) {
+          if (tool.stepPrice == 0) {
+            continue;
+          }
+
+          var obj = {
+            shortName:        tool.code            || "default name",
+            name:             tool.name            || "default name",
+            stepPrice:       +tool.stepPrice       || 0,
+            priceStep:       +tool.priceStep       || 0,
+            averageProgress: +tool.averageProgress || 0,
+            guaranteeValue:  +tool.guaranteeValue  || 0,
+            currentPrice:    +tool.currentPrice    || 0,
+            lotSize:         +tool.lotSize         || 0,
+            dollarRate:      +tool.dollarRate      || 0,
+
+            isFuters: false,
+
+            points: [
+              [70, 70],
+              [156, 55],
+              [267, 41],
+              [423, 27],
+              [692, 13],
+              [960, 7],
+            ]
+          };
+          
+          t.push(obj);
+        }
+
+        if (t.length > 0) {
+          let { tools } = this.state;
+          tools = tools.concat(t);
+          
+          this.setState({ tools }, resetDepoPersentageStart);
+        }
+      },
+      error: (err) => console.error(err),
+    });
+  }
+
   parseTool(str) {
     var arr = str
       .replace(/\,/g, ".")
@@ -192,10 +423,8 @@ export default class App extends React.Component {
   createDayData(daysArray, i) {
     let {
       mode,
-      tools,
       withdrawalInterval,
       payloadInterval,
-      currentToolIndex,
       depoPersentageStart,
       numberOfIterations,
     } = this.state;
@@ -203,7 +432,7 @@ export default class App extends React.Component {
     let depoStart   = this.state.depoStart[mode];
     let withdrawal  = this.state.withdrawal[mode];
     let payload     = this.state.payload[mode];
-    let currentTool = tools[currentToolIndex] || this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
+    let currentTool = this.getCurrentTool();
 
     // Calculating depoStart
     let _depoStart = depoStart;
@@ -316,348 +545,13 @@ export default class App extends React.Component {
 
   }
 
-  openModal() {
-    this.setState({ configVisible: true });
-    $modal.addClass("visible");
-     $body.addClass("scroll-disabled");
-  }
-  
-  closeModal() {
-    this.setState({ configVisible: false });
-    $modal.removeClass("visible");
-     $body.removeClass("scroll-disabled");
-  }
-
-  readParams() {
-    var mode = +params.get("mode") || 0;
-    this.setState({ mode });
-  }
-
   bindEvents() {
-    $body       = $(document.body);
-    $modal      = $(".m");
-    $modalSmall = $(".js-config-small");
-    var $header = $(".header");
-
-    $(".js-open-modal").click(e => {
-      this.openModal();
-    });
-
-    $(".js-close-modal").click(e => this.closeModal());
-    
-    $(".js-close-modal-small").click(e => {
-      this.setState({ toolPointsTemp: [...(this.state.tools[this.state.currentToolIndex].points)] }, () => {
-        $modalSmall.removeClass("visible");
-        $body.removeClass("scroll-disabled");
-      });
-    });
-
-    $('.js-burger').click(function () {
-      $(this).toggleClass('burger--active');
-      $body.toggleClass("scroll-disabled");
-      $header.toggleClass("popup");
-    });
-
-    $modal.click(e => {
-      if ($(e.target).is($modal)) {
-        this.closeModal();
-      }
-    });
-
     if (window.history && window.history.pushState) {
-      $(window).on('popstate', () => this.readParams());
+      $(window).on('popstate', () => {
+        var mode = Number( params.get("mode") ) || 0;
+        this.setState({ mode });
+      });
     }
-
-    $body.on("keydown", e => {
-      // Esc
-      if ( e.keyCode == 27 ) {
-        this.closeModal();
-      }
-    });
-  }
-
-  updateCurrentTool() {
-    
-  }
-
-  fetchTools() {
-    // TODO: remove
-    var resetDepoPersentageStart = () => {
-      const { depoStart, mode, days } = this.state;
-
-      this.updateData(days[mode]);
-
-      var depoPersentageStart = round(this.getCurrentTool().guaranteeValue / depoStart[mode] * 100, 1);
-      this.setState({ depoPersentageStart });
-    }
-
-    $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
-      success: (res) => {
-        let data = JSON.parse(res).data;
-
-        var t = [];
-        for (let tool of data) {
-          if (tool.price == 0 || !tool.volume) {
-            continue;
-          }
-
-          var obj = {
-            shortName:        tool.shortName       || "code",
-            name:             tool.fullName        || tool.shortName,
-            stepPrice:       +tool.stepPrice       || 0,
-            priceStep:       +tool.priceStep       || 0,
-            averageProgress: +tool.averageProgress || 0,
-            guaranteeValue:  +tool.guarantee       || 0,
-            currentPrice:    +tool.price           || 0,
-            lotSize:         +tool.lotVolume       || 0,
-            dollarRate:      +tool.dollarRate      || 0,
-
-            isFuters: true,
-
-            points: [
-              [70, 70],
-              [156, 55],
-              [267, 41],
-              [423, 27],
-              [692, 13],
-              [960, 7],
-            ]
-          };
-          t.push(obj);
-        }
-
-        if (t.length > 0) {
-          let { tools } = this.state;
-          tools = tools.concat(t);
-
-          this.setState({ tools }, resetDepoPersentageStart);
-        }
-      },
-      error: (err) => console.error(err),
-    });
-
-    $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo",
-      success: (res) => {
-        var data = JSON.parse(res).data;
-        
-        var t = [];
-        for (let tool of data) {
-          if (tool.stepPrice == 0) {
-            continue;
-          }
-
-          var obj = {
-            shortName:        tool.code            || "default name",
-            name:             tool.name            || "default name",
-            stepPrice:       +tool.stepPrice       || 0,
-            priceStep:       +tool.priceStep       || 0,
-            averageProgress: +tool.averageProgress || 0,
-            guaranteeValue:  +tool.guaranteeValue  || 0,
-            currentPrice:    +tool.currentPrice    || 0,
-            lotSize:         +tool.lotSize         || 0,
-            dollarRate:      +tool.dollarRate      || 0,
-
-            isFuters: false,
-
-            points: [
-              [70, 70],
-              [156, 55],
-              [267, 41],
-              [423, 27],
-              [692, 13],
-              [960, 7],
-            ]
-          };
-          
-          t.push(obj);
-        }
-
-        if (t.length > 0) {
-          let { tools } = this.state;
-          tools = tools.concat(t);
-          
-          this.setState({ tools }, resetDepoPersentageStart);
-        }
-      },
-      error: (err) => console.error(err),
-    });
-  }
-
-  componentDidMount() {
-    // New chart
-    anychart.onDocumentReady(() => {
-
-      const { mode, days } = this.state;
-      var data  = [...this.state.data];
-      var data2 = [...this.state.realData];
-
-      // data
-      chartData = anychart.data.set(
-        new Array(days[mode]).fill().map((v, i) => ({
-          x:     String(i + 1), 
-          value: data[i].depoEnd 
-        }))
-      );
-      
-      chartData2 = anychart.data.set(
-        new Array(days[mode]).fill().map((v, i) => ({
-          x:     String(i + 1), 
-          value: data2[i].depoEnd 
-        }))
-      );
-
-      // set chart type
-      var chart = anychart.line();
-      chart.animation(true, 3000);
-      chart.listen("click", e => {
-        if (e.pointIndex) {
-          this.setCurrentDay(e.pointIndex + 1);
-        }
-      });
-      chart.tooltip().titleFormat(e => `День: ${Number(e.x)}`);
-
-      // set data
-      var series = chart.line(chartData);
-      series.name("Фактический рост депо");
-      series.tooltip().displayMode("separated");
-      series.tooltip().useHtml(true);
-      series.tooltip().format(e => {
-        var svg = `
-          <svg viewBox="0 0 10 10" width="1em" height="1em" 
-               fill="#87d068" style="position: relative; top: 0.1em">
-            <rect x="0" y="0" width="10" height="10" />
-          </svg>
-        `;
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
-      });
-
-      // Line color
-      series.normal().stroke({
-        color:     "#87d068",
-        thickness: "5%"
-      });
-
-      var series2 = chart.line(chartData2);
-      series2.name("Планируемый рост депо");
-      series2.tooltip().displayMode("separated");
-      series2.tooltip().useHtml(true);
-      series2.tooltip().format(e => {
-        var svg = `
-          <svg viewBox="0 0 10 10" width="1em" height="1em" 
-               fill="#40a9ff" style="position: relative; top: 0.1em">
-            <rect x="0" y="0" width="10" height="10" />
-          </svg>
-        `;
-
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
-      });
-      // Line color
-      series2.normal().stroke({
-        color:     "#40a9ff",
-        thickness: "5%"
-      });
-
-      scaleStart = 0;
-      scaleEnd   = 1;
-      scale = anychart.scales.linear();
-      scale.minimum(1);
-      scale.maximum(260);
-      scale.ticks().interval(1);
-
-      if (false) {
-        // turn on X Scroller
-        chart.xScroller(true);
-        chart.xScroller().thumbs(false);
-        chart.xScroller().minHeight(40);
-        chart.xScroller().fill('#40a9ff 0.1');
-        chart.xScroller().selectedFill('#40a9ff 0.5');
-        // adjusting the thumbs behavior and look
-        chart.xScroller().listen("scrollerchange", e => {
-          const { days, mode } = this.state;
-          scaleStart = e.startRatio;
-          scaleEnd = e.endRatio;
-
-          var min = Math.max(Math.round(days[mode] * scaleStart) + 1, 1);
-          var max = Math.min(Math.round(days[mode] * scaleEnd) + 1, days[mode]);
-          scale.minimum(min);
-          scale.maximum(max);
-          scale.ticks().interval(
-            (() => {
-              var range = Math.abs(min - max);
-              var breakpoints = new Array(10).fill(0).map((n, i) => 260 * (i + 1));
-              for (var i = breakpoints.length; i--;) {
-                var breakpoint = breakpoints[i];
-                if (range >= breakpoint) {
-                  return (breakpoint / 260) * 10;
-                }
-              }
-
-              if (range > 100) {
-                return 10;
-              }
-              if (range > 50) {
-                return 5;
-              }
-
-              return 1;
-            })()
-          )
-        });
-      }
-
-      // Genetal settings
-      chart.xAxis().title("Номер дня");
-      chart.yAxis().labels().format(e => formatNumber(e.value));
-
-      // chart.xAxis().scale(scale);
-      // chart.xAxis().ticks(true);
-
-      // set container and draw chart
-      chart.xScale().mode('continuous');
-      chart.container("_chart").draw();
-
-    });
-
-    this.bindEvents();
-
-    this.fetchTools();
-  }
-
-  /**
-   * @returns {number} минимальная доходность в день
-   */
-  getMinDailyIncome(custom) {
-    const {
-      mode,
-      depoEnd,
-      withdrawalInterval,
-      payloadInterval,
-      incomePersantageCustom
-    } = this.state;
-    const depoStart  = this.state.depoStart[mode];
-    const withdrawal = this.state.withdrawal[mode];
-    const payload    = this.state.payload[mode];
-    const days       = this.state.days[mode];
-
-    var rate = [
-      extRate(
-        depoStart,
-        depoEnd,
-        withdrawal,
-        withdrawalInterval,
-        payload,
-        payloadInterval,
-        days,
-        withdrawalInterval,
-        payloadInterval
-      ) * 100,
-
-      incomePersantageCustom
-    ]
-
-    return rate[custom || mode];
   }
 
   recalc(cb) {
@@ -690,14 +584,6 @@ export default class App extends React.Component {
       }
     });
 
-  }
-
-  setWithdrawal(val = 0) {
-    const { mode } = this.state;
-    let withdrawal = [...this.state.withdrawal];
-
-    withdrawal[mode] = val;
-    this.setState({ withdrawal }, this.recalc);
   }
 
   checkFn(withdrawal, depoStart, days, persentage) {
@@ -737,10 +623,6 @@ export default class App extends React.Component {
     return "";
   }
 
-  recalcPassiveIncome() {
-    
-  }
-
   recalcDepoEnd(val, passiveIncomeTool) {
     let rate = passiveIncomeTool.rate;
     let annualIncome = val * 12;
@@ -750,7 +632,7 @@ export default class App extends React.Component {
   }
 
   // API
-  save() {
+  save(name = "") {
     var { mode,
           data,
           realData,
@@ -768,6 +650,7 @@ export default class App extends React.Component {
 
     var json = {
       static: {
+        name:              name,
         depoStart:         [ depoStart[0], depoStart[1] ],
         depoEnd:           [ depoEnd,      data[days[1] - 1].depoEnd - withdrawal[1] ],
         currentDay:        currentDay, 
@@ -826,6 +709,15 @@ export default class App extends React.Component {
   // ==================
   // Setters
   // ==================
+
+  setWithdrawal(val = 0) {
+    const { mode } = this.state;
+    let withdrawal = [...this.state.withdrawal];
+
+    withdrawal[mode] = val;
+    this.setState({ withdrawal }, this.recalc);
+  }
+
   setCurrentDay(currentDay = 1) {
     this.setState({ currentDay });
   }
@@ -835,11 +727,48 @@ export default class App extends React.Component {
   // ==================
 
   /**
+   * @returns {number} минимальная доходность в день
+   */
+  getMinDailyIncome(custom) {
+    const {
+      mode,
+      depoEnd,
+      withdrawalInterval,
+      payloadInterval,
+      incomePersantageCustom
+    } = this.state;
+    const depoStart = this.state.depoStart[mode];
+    const withdrawal = this.state.withdrawal[mode];
+    const payload = this.state.payload[mode];
+    const days = this.state.days[mode];
+
+    var rate = [
+      extRate(
+        depoStart,
+        depoEnd,
+        withdrawal,
+        withdrawalInterval,
+        payload,
+        payloadInterval,
+        days,
+        withdrawalInterval,
+        payloadInterval
+      ) * 100,
+
+      incomePersantageCustom
+    ]
+
+    return rate[custom || mode];
+  }
+
+  /**
    * Получить выбранный торговый инструмент
    */
   getCurrentTool() {
     const { tools, currentToolIndex } = this.state;
-    return tools[currentToolIndex] || this.parseTool(`default	7,95374	0,1000	70	13 638,63	1 482,9	1`);
+    return tools[currentToolIndex] || 
+      // Fallback
+      this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
   }
 
   /**
@@ -880,7 +809,11 @@ export default class App extends React.Component {
 
     pointsForIteration = Math.max(pointsForIteration, 1);
 
-    return roundUp(pointsForIteration) || 1; // In case it's NaN
+    if (Number.isNaN(pointsForIteration)) {
+      console.warn("pointsForIteration is NaN!");
+    }
+
+    return roundUp(pointsForIteration) || 1; // In case of NaN
   }
 
   render() {
@@ -905,8 +838,31 @@ export default class App extends React.Component {
           }}>
             <div className="container">
               <div className="main-top-wrap">
-                <Title className="main__h1" level={1}>Трейдометр</Title>
-                
+                <Title className="main__h1" level={1}>{ this.state.title }</Title>
+
+                {(() => {
+                  const { saves, currentSaveIndex } = this.state;
+
+                  return currentSaveIndex > -1 ? (
+                    <Select 
+                      className="main-top__strategy" 
+                      value={currentSaveIndex}
+                      onSelect={val => {
+                        const { saves } = this.state
+                        this.setState({
+                          currentSaveIndex: val,
+                          title:            saves[val]       
+                        })
+                      }}>
+                      {saves.map(( name, index ) =>
+                        <Option key={index} value={index}>{name}</Option>
+                      )}
+                    </Select>
+                  )
+                  : null
+                })()}
+
+
                 <Radio.Group
                   key={this.state.mode}
                   className="tabs"
@@ -951,11 +907,14 @@ export default class App extends React.Component {
                 <Button 
                   className="custom-btn custom-btn--secondary main-top__save" 
                   onClick={() => {
-                    this.setState({ staticDisabled: true });
-                    this.save();
-                  }}
-                >
-                  Сохранить
+                    const { saved } = this.state;
+
+                    this.setState({ 
+                      staticDisabled:   true,
+                      savePopupVisible: true
+                    });
+                  }}>
+                  { this.state.saved ? "Изменить" : "Сохранить" }
                 </Button>
 
               </div>
@@ -1625,7 +1584,9 @@ export default class App extends React.Component {
 
                 <Row className="card card--secondary section3__tool-block">
                   <Tooltip title="Настройки">
-                    <button className="settings-button js-open-modal section3-icon">
+                    <button 
+                      className="settings-button section3-icon"
+                      onClick={e => this.setState({ configVisible: true })}>
                       <span className="visually-hidden">Открыть конфиг</span>
                       <SettingFilled className="settings-button__icon" />
                     </button>
@@ -1697,15 +1658,7 @@ export default class App extends React.Component {
               <Col className="card card--column section3-col2">
                 {
                   (() => {
-                    const { 
-                      tools,
-                      currentToolIndex,
-                      numberOfIterations,
-                      directUnloading 
-                    } = this.state;
-
-                    let tool = tools[currentToolIndex] || this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
-
+                    let tool = this.getCurrentTool();
                     let pointsForIteration = this.getPointsForIteration();
 
                     return (
@@ -1716,8 +1669,6 @@ export default class App extends React.Component {
                           tool.points.map(row => row[1])
                         ]}
                         value={pointsForIteration}
-                        directUnloading={directUnloading}
-                        numberOfIterations={numberOfIterations}
                         tool={tool}
                       />
                     )
@@ -1725,9 +1676,8 @@ export default class App extends React.Component {
                 }
 
                 {(() => {
-                  const { tools, currentToolIndex } = this.state
                   let pointsForIteration = this.getPointsForIteration();
-                  let currentTool = tools[currentToolIndex] || this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
+                  let currentTool = this.getCurrentTool();
 
                   return (
                     <Row 
@@ -2314,21 +2264,22 @@ export default class App extends React.Component {
                             Депозит:
                           </div>
                           <div className="section5-r">
-                            {
-                              data[currentDay - 1].changed
-                                ? (
-                                  <Value format={val => formatNumber(Math.round(val))}>
-                                    { realData[currentDay - 1].depoEnd }
-                                  </Value> 
-                                )
-                                : "—"
-                            }
+                            <span>
+                              {
+                                data[currentDay - 1].changed
+                                  ? (
+                                    <Value format={val => formatNumber(Math.round(val))}>
+                                      { realData[currentDay - 1].depoEnd }
+                                    </Value> 
+                                  )
+                                  : "—"
+                              }
+                            </span>
                             /
                             <span className="section5-r-suffix">
                               <BigNumber
                                 val={Math.floor( this.getDepoEnd() )}
                                 threshold={1e6}
-                                format={formatNumber}
                               />
                             </span>
                           </div>
@@ -2438,75 +2389,191 @@ export default class App extends React.Component {
         </main>
         {/* /.main */}
 
-        <div className="m">
-          <div className="m-content">
-
-            <div className="config card">
-              <Title className="config__title" level={2} style={{ textAlign: "center" }}>
-                Инструменты
-              </Title>
-
-              <div className="config-table-wrap js-nice-scroll">
-                {
-                  this.state.configVisible
-                  ? (
-                    <table className="table">
-                      <thead className="table-header">
-                        <tr className="table-tr">
-                          <th className="config-th table-th">Инструмент</th>
-                          <th className="config-th table-th">Цена шага</th>
-                          <th className="config-th table-th">Шаг цены</th>
-                          <th className="config-th table-th">Средний ход</th>
-                          <th className="config-th table-th">ГО</th>
-                          <th className="config-th table-th">Текущая цена</th>
-                          <th className="config-th table-th">Размер лота</th>
-                          <th className="config-th table-th">Курс доллара</th>
-                        </tr>
-                      </thead>
-                      <tbody className="table-body">
-                        {
-                          this.state.tools.map((tool, i) =>
-                            <tr className="config-tr js-config-row" key={i}>
-                              {
-                                Object.keys(tool).map((key, i) =>
-                                  // Don't show these fields
-                                  ["id", "isFuters", "points", "name"].indexOf(key) > -1
-                                    ? null
-                                    : (
-                                      <td 
-                                        className="table-td" 
-                                        style={{ width: (key == "shortName") ? "15em" : "9em" }}
-                                        key={i + 1}
-                                      >
-                                        { tool[key] }
-                                      </td>
-                                    )
-                                )
-                              }
-                            </tr>
-                          )
-                        }
-                      </tbody>
-                    </table>
-                  )
-                  : null
-                }
-              </div>
-              {/* /.config-talbe-wrap */}
-            </div>
-            {/* /.config */}
-            
+        <Modal
+          title={"Инструменты"}
+          visible={this.state.configVisible}
+          hideFooter={true}
+          onOk={e => {
+            this.setState({ configVisible: false });
+            return true;
+          }}
+          onCancel={e => {
+            this.setState({ configVisible: false });
+          }}
+          onClose={e => {
+            this.setState({ configVisible: false });
+          }}>
+          <div className="config-table-wrap">
+            {
+              this.state.configVisible
+                ? (
+                  <table className="table">
+                    <thead className="table-header">
+                      <tr className="table-tr">
+                        <th className="config-th table-th">Инструмент</th>
+                        <th className="config-th table-th">Цена шага</th>
+                        <th className="config-th table-th">Шаг цены</th>
+                        <th className="config-th table-th">Средний ход</th>
+                        <th className="config-th table-th">ГО</th>
+                        <th className="config-th table-th">Текущая цена</th>
+                        <th className="config-th table-th">Размер лота</th>
+                        <th className="config-th table-th">Курс доллара</th>
+                      </tr>
+                    </thead>
+                    <tbody className="table-body">
+                      {
+                        this.state.tools.map((tool, i) =>
+                          <tr className="config-tr js-config-row" key={i}>
+                            {
+                              Object.keys(tool).map((key, i) =>
+                                // Don't show these fields
+                                ["id", "isFuters", "points", "name"].indexOf(key) > -1
+                                  ? null
+                                  : (
+                                    <td
+                                      className="table-td"
+                                      style={{ width: (key == "shortName") ? "15em" : "9em" }}
+                                      key={i + 1}
+                                    >
+                                      {tool[key]}
+                                    </td>
+                                  )
+                              )
+                            }
+                          </tr>
+                        )
+                      }
+                    </tbody>
+                  </table>
+                )
+                : null
+            }
           </div>
-          {/* /.m-content */}
-        </div>
-        {/* /.m */}
+          {/* /.config-talbe-wrap */}
+        </Modal>
 
-        <Modal 
-          title={"Gay"}
-          visible={true}
-          onOk={e => console.log('OK')}
-          onCancel={e => console.log('Cancel')}
-        />
+        {(() => {
+          const { savePopupVisible } = this.state;
+          var name = "";
+
+          function validate(str = "") {
+            str = str.trim();
+
+            var errors = [];
+
+            var test = /[\!\?\@\#\$\%\^\&\*\(\)\+\=\`\'\"\;\:\<\>\{\}\~]/g.exec(str);
+            if (str.length < 3) {
+              errors.push("Имя должно содержать не меньше трех символов!");
+            }
+            else if (test) {
+              errors.push(`Нельзя использовать символ "${ test[0] }"!`);
+            }
+
+            return errors;
+          }
+
+          class ValidatedInput extends React.Component {
+
+            constructor(props) {
+              super(props);
+
+              this.state = {
+                error: ""
+              }
+            }
+
+            render() {
+              const { validate } = this.props;
+              const { error } = this.state;
+
+              return (
+                <div>
+                  <Input
+                    className={error ? "error" : ""}
+                    maxLength={15}
+                    onChange={e => {
+                      var { value } = e.target;
+                      var { onChange } = this.props;
+                      if(onChange) {
+                        onChange(value);
+                      }
+                    }}
+                    onKeyDown={e => {
+                      // Enter
+                      if (e.keyCode === 13) {
+                        var { value } = e.target;
+                        var { onBlur } = this.props;
+
+                        var errors = validate(value);
+                        if (errors.length === 0) {
+                          if (onBlur) {
+                            onBlur(value);
+                          }
+                        }
+
+                        this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                      }
+                    }}
+                    onBlur={e => {
+                      var { value } = e.target;
+                      var errors = validate(value);
+                      this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                    }} />
+
+                    { 
+                      error 
+                        ? <span style={{ color: "#cf1322" }}>{ error }</span> 
+                        : null 
+                    }
+                </div>
+              )
+            }
+          }
+
+          var onOk = () => {
+            var { saves } = this.state;
+            this.save(name);
+
+            var index = saves.push(name) - 1;
+            this.setState({
+              saved:            true,
+              currentSaveIndex: index,
+              saves:            saves,
+              title:            name,
+              savePopupVisible: false,
+            });
+            modalJSX.type.prototype.close();
+          }
+
+          var modalJSX = (
+            <Modal
+              title={"Сохранение трейдометра"}
+              visible={savePopupVisible}
+              onOk={e => {
+                if (validate(name).length === 0) {
+                  onOk();
+                  return true;
+                }
+              }}
+              onCancel={e => {
+                this.setState({ savePopupVisible: false });
+              }}
+              onClose={e => {
+                this.setState({ savePopupVisible: false });
+              }}>
+              <ValidatedInput
+                validate={validate}
+                onChange={val => {
+                  name = val;
+                }}
+                onBlur={val => {
+                  onOk();
+                }} />
+            </Modal>
+          );
+
+          return modalJSX;
+        })()}
 
       </div>
     );
