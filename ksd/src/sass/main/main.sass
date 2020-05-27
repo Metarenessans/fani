@@ -1,21 +1,21 @@
 @import "components/breadcrumbs"
 @import "components/dashboard"
 @import "tabs/tabs"
-@import "card-1/card-1"
-@import "card-3/card-3"
-@import "card-4/card-4"
   
 .main
   overflow-x: hidden
   color: #141414
 
   &__h1
-    margin: .8em !important 
+    margin-bottom: .8em !important 
 
     color: inherit
     font-size: 4em
     font-weight: bold
     letter-spacing: .025em
+
+    +sm
+      font-size: 2.4em
 
   &__h2,
   &__h3
@@ -46,10 +46,18 @@
       position: relative
     
     &__breadcrumbs
-      margin-bottom: 1.8em
+      position: relative
+      top: 0.2em
+      margin: 1.8em 0
+
+      +sm
+        display: none
 
     &__save
       margin-top: 1.75rem
+
+      +xs
+        width: 100%
 
       &:hover,
       &:focus
@@ -62,6 +70,9 @@
       bottom: -0.2em
       font-size: 1.4em
 
+      +sm
+        display: none
+
       .settings-button__icon
         fill: currentColor
         color: inherit
@@ -70,16 +81,46 @@
       position: absolute
       right: 0
       top:   0
-      width: 15rem
 
-      color: white !important
+      +sm
+        position: static
+        display: block
+        float: left
+        margin-left: 4.5em
+      
+      +xs
+        float: none
+        margin-left: 0
+        margin-top: 2em
+    
+    &__mode-select
+      display: none
 
+      +sm
+        display: block
+        float: right
+        margin-right: 4.5em
+
+      +xs
+        float: none
+        margin-right: 0
+
+    &__strategy,
+    &__mode-select
+      &-label
+        display: none
+        +sm
+          display: block
+      
       .ant-select
-        &-selection
-          background: rgba(white, .4) !important
+        +xs
+          width: 100%
 
-        &-arrow
-          color: inherit !important
+  &__footer
+    margin-top: 2em
+
+    +sm
+      text-align: center
 
   &-content
     padding: 3em 0
@@ -88,9 +129,13 @@
     font-size: 1.5em
   
   &__save
-    margin-top: 1.75rem
+    font-size: 1.1em
 
-    font-size: (1.125rem / 1.5)
+    +sm
+      font-size: 1.4em
+
+    +xs
+      font-size: 1.75em
 
   &__stats
     margin-bottom: 1.5em

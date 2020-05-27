@@ -1,4 +1,3 @@
-import "core-js/features/string"
 import React from 'react'
 import ReactDOM from 'react-dom'
 

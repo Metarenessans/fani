@@ -11,6 +11,7 @@ import {
   Typography,
   Progress,
   Statistic,
+  Spin,
 } from 'antd/es'
 
 import {
@@ -19,6 +20,7 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   QuestionCircleFilled,
+  LoadingOutlined,
 } from '@ant-design/icons'
 
 import $ from "jquery"
@@ -255,7 +257,8 @@ class App extends React.Component {
           if (!found) {
 
             Object.assign(obj, {
-              planIncome: round(obj.price / 6, 2),
+              planIncome: round(obj.price / 10, 2),
+              adr: [obj.price * 0.1, obj.price * 0.05]
             });
 
           }
@@ -308,13 +311,32 @@ class App extends React.Component {
                   Калькулятор сравнительной доходности
                 </Title>
 
-                <Select className="main-top__strategy" value={0}>
-                  <Option key={0} value={0}>SavedStrategy_1</Option>
-                  <Option key={1} value={1}>SavedStrategy_2</Option>
-                </Select>
+                <label className="main-top__mode-select labeled-select">
+                  <span className="labeled-select__label main-top__mode-select-label">
+                    Ход цены
+                  </span>
+                  <Select 
+                    value={0}
+                    onSelect={val => this.setState({ mode: val })}
+                  >
+                    <Option key={0} value={0}>Произвольный</Option>
+                    <Option key={1} value={1}>Повышенный</Option>
+                    <Option key={2} value={2}>Аномальный</Option>
+                    <Option key={3} value={3}>Черный лебедь</Option>
+                  </Select>
+                </label>
+
+                <label className="main-top__strategy labeled-select">
+                  <span className="labeled-select__label main-top__strategy-label">
+                    Сохраненная стратегия
+                  </span>
+                  <Select value={0}>
+                    <Option key={0} value={0}>SavedStrategy_1</Option>
+                    <Option key={1} value={1}>SavedStrategy_2</Option>
+                  </Select>
+                </label>
                 
                 <Radio.Group
-                  // key={this.state.mode}
                   className="tabs"
                   name="radiogroup"
                   defaultValue={0}
@@ -380,17 +402,28 @@ class App extends React.Component {
       
                       )
                     )
-                    : null
+                    : (
+                      <span className="dashboard__loading">
+                        <Spin 
+                          className="dashboard__loading-icon" 
+                          indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                        Подождите, инструменты загружаются...
+                      </span>
+                    )
                 }
 
 
               </div>
 
-              <Button className="custom-btn main__save"
-                onClick={() => this.setState({ rowsNumber: this.state.rowsNumber + 1 })}>
-                <PlusOutlined aria-label="Добавить" />
-                инструмент
-              </Button>
+              <footer className="main__footer">
+
+                <Button className="custom-btn main__save"
+                  onClick={() => this.setState({ rowsNumber: this.state.rowsNumber + 1 })}>
+                  <PlusOutlined aria-label="Добавить" />
+                  инструмент
+                </Button>
+
+              </footer>
               
             </div>
             {/* /.container */}

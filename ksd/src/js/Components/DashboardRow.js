@@ -76,11 +76,9 @@ export default class DashboardRow extends React.Component {
       * this.getTool().stepPrice 
       / depo 
       * 100;
-    if (mode == 1) {
+    if (mode > 0) {
       risk = contracts * planIncome / this.getTool().priceStep * this.getTool().stepPrice / depo * 100;
     }
-
-    // console.log(contracts, planIncome, this.getTool());
 
     return (
       <div className="dashboard-row">
@@ -165,21 +163,21 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">% к депо</span>
+          <span className="dashboard-key">К депо</span>
           <span className="dashboard-val">
             { round(incomePercentage, 2) }%
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">% к загрузке </span>
+          <span className="dashboard-key">К загрузке </span>
           <span className="dashboard-val">
             { round((incomePercentage / percentage) * 100, 2) }%
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Риск %</span>
+          <span className="dashboard-key">Риск</span>
           <span className="dashboard-val">
             { round(risk, 1) }%
           </span>

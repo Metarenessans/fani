@@ -1,14 +1,36 @@
 .dashboard {
+  $root: &;
+
   margin-top: 3em;
+
+  &__loading {
+    font-size: 2em;
+
+    &-icon {
+      margin-right: 1em;
+    }
+  }
 
   &-row {
     margin-bottom: 1.5em;
     display: flex;
     align-items: center;
 
+    font-weight: bold;
+    
+    @include sm {
+      flex-wrap: wrap;
+      margin-bottom: 1.25em;
+    }
+
+    @include xs {
+      background-color: #f4f7fb;
+      padding: 1.25em 0;
+    }
+
     &:first-child {
 
-      .dashboard-key {
+      #{$root}-key {
         display: block;
       }
       
@@ -26,17 +48,76 @@
     flex-direction: column;
     align-items: center;
 
-    font-size: 1.125rem;
+    font-size: 1.6em;
     line-height: 1.2;
 
     &--wide {
       flex-basis: 150%;
+    }
+
+    @include sm {
+      flex-basis: (100% / 5);
+
+      &:nth-child(5) ~ * {
+        background-color: #f7fbff !important;
+        padding: .35em 0;
+        
+        #{$root}-key {
+          color: #777;
+        }
+        
+        #{$root}-val {
+          background-color: inherit;
+          min-height: .5em;
+        }
+      }
+    }
+
+    @include xs {
+      flex-basis: (100% / 2);
+      align-items: flex-start;
+
+      font-size: 1.85em;
+
+      &:nth-child(5) ~ * {
+        background-color: inherit !important;
+        padding: 0;
+        
+        #{$root}-key {
+          color: #777;
+        }
+        
+        #{$root}-val {
+          background-color: inherit;
+          min-height: 4em
+        }
+      }
+
+      &:nth-child(2n) {
+        align-items: flex-end;
+        
+        #{$root}-key {
+          position: relative;
+          top: .5em;
+        }
+        
+        #{$root}-val {
+          justify-content: flex-end;
+        }
+      }
     }
   }
 
   &-key {
     display: none;
     margin-bottom: .5em;
+
+    @include xs {
+      display: block;
+      margin-bottom: 0;
+      padding: 0 .35em;
+      color: #777;
+    }
   }
 
   &-val {
@@ -44,11 +125,21 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 3.5rem;
-    padding: .4rem;
+    min-height: 3em;
+    padding: 0.35em;
     background-color: #f4f7fb;
 
     text-align: center;
+
+    @include sm {
+      padding: 0.75em .35em;
+      min-height: 4em;
+    }
+    
+    @include xs {
+      padding: 0.35em .35em;
+      justify-content: flex-start;
+    }
   }
 
   &__input {
