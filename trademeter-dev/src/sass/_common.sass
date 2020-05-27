@@ -17,8 +17,10 @@ body
     font-size: 2.25vw
 
 .custom-btn
+  justify-content: center
   height: auto
-  padding: .7em 4em
+  min-width: 14.5em
+  padding: .7em .5em
   padding-top: .8em
   border-radius: 2em
   border: 0.1em solid currentColor
@@ -26,7 +28,7 @@ body
 
   color: $mainColor
   font-family: inherit
-  font-size: 1.6em
+  font-size: 1em
   line-height: 1
   font-weight: 400
   text-transform: uppercase
@@ -618,6 +620,12 @@ body
     font-weight: 300
 
     +underline
+
+    +sm
+      top: 0.35em
+
+    +xs
+      top: 0.4em
   
   &-header
     min-height: 2em
@@ -628,6 +636,8 @@ body
     font-size: 2.4em
 
     +sm
+      min-height: auto
+      padding: .65em 0
       margin-bottom: 0
 
     +xs
@@ -637,9 +647,9 @@ body
     &--first
       text-align: right
 
-      +sm
-        text-align: left
-        padding-left: 7em
+      // +sm
+      //   text-align: left
+      //   padding-left: 7em
 
       +xs
         padding-left: 0
@@ -663,6 +673,9 @@ body
 
       > * + *
         margin-left: 4.5em
+
+        +lg
+          margin-left: 2.5em
   
   &-row
     width: 100%
@@ -726,10 +739,16 @@ body
     .ant-progress
 
       &-inner
-        width:  5.85em !important
-        height: 5.85em !important
+        width:  5.75em !important
+        height: 5.75em !important
+
+        +lg
+          font-size: 1.25em !important
 
         +md
+          font-size: 1em !important
+        
+        +sm
           font-size: 1.25em !important
 
     &__label
@@ -752,13 +771,13 @@ body
   text-align: center
 
   +sm
-    padding-top: 8em
+    padding-top: 6em
     background: none
   
   +xs
     padding-left:  0
     padding-right: 0
-    padding-top:   12em
+    // padding-top:   12em
     margin: 0 -2em
 
   &::before,
@@ -778,11 +797,33 @@ body
   &::after
     left: 100%
 
-  .ant-progress
-    &-inner
-      background: white
+  .ant-progress-line
+    .ant-progress
+      &-inner
+        background: white
+      
+      &-text
+        margin-left: 1em
+        &[title]
+          visibility: hidden
+          pointer-events: none
+      
+      &-outer
+        margin-right: -3em
+        padding-right: 3em
+        padding-left:  3em
+
+        +sm
+          padding-right: 2.5em
+          padding-left:  2.5em
 
   .ant-progress-circle
+    &-trail
+      stroke: white !important
+
+      +sm
+        stroke: #eee !important
+
     .ant-progress-inner
       background: none
       font-size: 1.5em !important
@@ -797,7 +838,6 @@ body
 
     +xs
       margin-left:  0
-      margin-top: 1.5em
 
   .section5-col + .section5-col
     +sm
@@ -805,6 +845,9 @@ body
     
     +xs
       margin-left: 0
+
+  &__save
+    font-size: 1.6em
 
   &-col
     margin: 0 2.5em
@@ -920,7 +963,9 @@ body
       align-items: center
 
     &-title
-      display: inline-block
+      display: inline-flex
+      flex-wrap: wrap
+      justify-content: center
       margin-bottom: .5em
 
       color: #777
@@ -932,15 +977,9 @@ body
       position: relative
 
       +sm
-        position: absolute
-        top:   -0.25em
-        right:  0
+        
 
       +xs
-        font-size: 3em
-        right: initial
-        left: 0
-        top:  2em
         width: 100%
         text-align: center
 
@@ -972,10 +1011,13 @@ body
     margin-bottom: 1em
     display: flex
     justify-content: space-between
-    align-items: center
+    align-items: baseline
 
     &:last-of-type
       margin-bottom: 0
+
+      +sm
+        margin-bottom: 1em
   
   &-l,
   &-r
@@ -983,28 +1025,70 @@ body
 
     font-size: 1.255rem
 
+  &-l
+    +sm
+      margin-top: .1em
+
   &-r
+    margin-left: 1em
+
     text-align: right
     color: #777
     font-weight: bold
 
+    +lg
+      width: 140%
+    
+    +md
+      width: 100%
+
+    +sm
+      width: 100%
+      display: inline-flex
+      flex-wrap: wrap
+      
+    
+    +xs
+      justify-content: flex-end
+
     .ant-input
-      margin-right: .4em
       width: 4em
 
       text-align: center
 
-      +sm
-        font-size: .8em
+      +md
+        width: 100%
+      
+      +xs
+        width: 4em
+        // font-size: .8em
 
     &-suffix
       display: inline-block
-      min-width: 4em
+      min-width: 4.5em
 
       text-align: left
 
+      +sm
+        min-width: auto
+        // width: 100%
+      
+      +xs
+        min-width: 4.5em
+
+      &__separator
+        margin: 0 .3em
+
   &__input-long
     width: 4rem
+
+.save-modal
+  border-radius: 1.5em
+
+  &__input
+    &-label
+      color: #999
+      padding-left: .75em
 
 .card
   padding: 1em
@@ -1019,10 +1103,40 @@ body
     background-color: rgba(#4859b4, .1)
     box-shadow: none
 
+.labeled-select
+
+  +xs
+    font-size: 1.25em
+
+  &__label
+    display: block
+    margin-bottom: 0.75em
+
+    color: rgba(white, .8)
+    font-size: .95em
+    letter-spacing: .08em
+    text-transform: uppercase
+
+    &--hidden
+      display: none
+
+  .ant-select
+    width: 15em
+
+    color: white !important
+    font-size: 1.6em
+
+    &-selection
+      background: rgba(white, .4) !important
+
+    &-arrow
+      color: inherit !important
+
 // TODO: extract into component style.scss
 .value
   font-weight: bold
   color: $accentColor
+  white-space: nowrap
 
   &--neutral
     color: #777

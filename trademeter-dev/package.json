@@ -46,7 +46,8 @@
     "url-loader": "^4.1.0",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.8.2"
+    "webpack-dev-server": "^3.8.2",
+    "whatwg-fetch": "^3.0.0"
   },
   "dependencies": {
     "core-js": "^3.6.5"

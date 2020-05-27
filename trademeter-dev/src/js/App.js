@@ -23,6 +23,9 @@ import {
   QuestionCircleFilled,
 } from '@ant-design/icons'
 
+import "core-js/features/promise"
+// import "whatwg-fetch"
+
 import $ from "jquery"
 import round        from "./utils/round";
 import roundUp      from "./utils/roundUp";
@@ -58,12 +61,11 @@ export default class App extends React.Component {
       data:     [],
       realData: [],
 
-      staticDisabled:   false,
       savePopupVisible: false,
       configVisible:    false,
       saved:            false,
       saves:            [],
-      currentSaveIndex: -1,
+      currentSaveIndex: 0,
 
       title: "Трейдометр",
 
@@ -215,6 +217,7 @@ export default class App extends React.Component {
 
         return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
       });
+      
       // Line color
       series2.normal().stroke({
         color: "#40a9ff",
@@ -285,6 +288,122 @@ export default class App extends React.Component {
     this.bindEvents();
 
     this.fetchTools();
+
+    this.fetchSaves()
+      .then(() => {
+        const { saves } = this.state;
+        var pure = params.get("pure") === "true";
+        if (!pure) {
+          console.log('Not pure, getting all the saves...');
+
+          if (saves.length > 0) {
+            this.fetchSaveById( saves[0].id );
+            this.setState({ saved: true });
+          }
+          else {
+            console.log('No saves found!');
+          }
+
+        }
+      })
+      .catch(err => console.log(err));
+  }
+
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: "/local/php_interface/s1/ajax/?method=getTrademeterSnapshots",
+        success: (res) => {
+          var res = JSON.parse(res);
+          if (!res.error) {
+            console.log("Downloaded all the saves:", res);
+            var saves = res.data.map(save => ({ name: save.name, id: save.id }));
+            this.setState({ saves });
+
+            resolve();
+          }
+          else {
+            console.log("Couldn't download saves from server! res:", res);
+            reject();
+          }
+        },
+        error: (err) => console.error(err),
+      });
+    });
+  }
+
+  fetchSaveById(id) {
+    if (id) {
+      console.log('Fetching saves for id:', id);
+      $.ajax({
+        url: `/local/php_interface/s1/ajax/?method=getTrademeterSnapshot\
+          &id=${id}`.replace(/\s+/g, ""),
+        method: "GET",
+        success: res => {
+          res = JSON.parse(res);
+          console.log(res);
+          var title = res.data.name || "??";
+          var _static = JSON.parse(res.data.static);
+          var _dynamic = JSON.parse(res.data.dynamic);
+
+          const {
+            depoStart,
+            depoEnd,
+            currentDay,
+            days,
+            minDailyIncome,
+            withdrawal,
+            withdrawalInterval,
+            payload,
+            payloadInterval,
+            passiveIncome,
+            passiveIncomeTool,
+            mode,
+          } = this.state;
+
+          var state = {
+            title,
+            depoStart,
+            depoEnd,
+            currentDay,
+            days,
+            minDailyIncome,
+            withdrawal,
+            withdrawalInterval,
+            payload,
+            payloadInterval,
+            passiveIncome,
+            passiveIncomeTool,
+            mode,
+          };
+
+          state.depoStart[mode]    = _static.depoStart;
+          state.depoEnd            = _static.depoEnd;
+          state.currentDay         = _static.currentDay;
+          state.days[mode]         = _static.days;
+          state.minDailyIncome     = _static.minDailyIncome;
+          state.withdrawal[mode]   = _static.payload;
+          state.withdrawalInterval = _static.paymentInterval;
+          state.payload[mode]      = _static.payload;
+          state.payloadInterval    = _static.payloadInterval;
+          state.passiveIncome      = _static.passiveIncome;
+          state.passiveIncomeTool  = _static.passiveIncomeTool;
+          state.mode               = _static.mode;
+
+          state.saved = true;
+
+          console.log(state);
+
+          this.setState(state, () => {
+            console.log('New static:', this.state);
+            this.recalc(() => {
+              this.overrideData(_dynamic);
+            });
+          });
+        },
+        error: err => console.log(err)
+      });
+    }
   }
 
   fetchTools() {
@@ -344,52 +463,57 @@ export default class App extends React.Component {
       error: (err) => console.error(err),
     });
 
-    $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo",
-      success: (res) => {
-        var data = JSON.parse(res).data;
-        
-        var t = [];
-        for (let tool of data) {
-          if (tool.stepPrice == 0) {
-            continue;
+    if (false) {
+
+      $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo",
+        success: (res) => {
+          var data = JSON.parse(res).data;
+          
+          var t = [];
+          for (let tool of data) {
+            if (tool.stepPrice == 0) {
+              continue;
+            }
+  
+            var obj = {
+              shortName:        tool.code            || "default name",
+              name:             tool.name            || "default name",
+              stepPrice:       +tool.stepPrice       || 0,
+              priceStep:       +tool.priceStep       || 0,
+              averageProgress: +tool.averageProgress || 0,
+              guaranteeValue:  +tool.guaranteeValue  || 0,
+              currentPrice:    +tool.currentPrice    || 0,
+              lotSize:         +tool.lotSize         || 0,
+              dollarRate:      +tool.dollarRate      || 0,
+  
+              isFuters: false,
+  
+              points: [
+                [70, 70],
+                [156, 55],
+                [267, 41],
+                [423, 27],
+                [692, 13],
+                [960, 7],
+              ]
+            };
+            
+            t.push(obj);
           }
+  
+          if (t.length > 0) {
+            let { tools } = this.state;
+            tools = tools.concat(t);
+            
+            this.setState({ tools }, resetDepoPersentageStart);
+          }
+        },
+        error: (err) => console.error(err),
+      });
 
-          var obj = {
-            shortName:        tool.code            || "default name",
-            name:             tool.name            || "default name",
-            stepPrice:       +tool.stepPrice       || 0,
-            priceStep:       +tool.priceStep       || 0,
-            averageProgress: +tool.averageProgress || 0,
-            guaranteeValue:  +tool.guaranteeValue  || 0,
-            currentPrice:    +tool.currentPrice    || 0,
-            lotSize:         +tool.lotSize         || 0,
-            dollarRate:      +tool.dollarRate      || 0,
+    }
 
-            isFuters: false,
-
-            points: [
-              [70, 70],
-              [156, 55],
-              [267, 41],
-              [423, 27],
-              [692, 13],
-              [960, 7],
-            ]
-          };
-          
-          t.push(obj);
-        }
-
-        if (t.length > 0) {
-          let { tools } = this.state;
-          tools = tools.concat(t);
-          
-          this.setState({ tools }, resetDepoPersentageStart);
-        }
-      },
-      error: (err) => console.error(err),
-    });
   }
 
   parseTool(str) {
@@ -523,20 +647,29 @@ export default class App extends React.Component {
     this.setState({ data, realData }, cb);
   }
 
+  overrideData(override = []) {
+    const { realData } = this.state;
+    for (let i = 0; i < override.length; i++) {
+      let item = override[i];
+      Object.assign(realData[i], item);
+    }
+    this.setState({ realData });
+  }
+
   updateChart() {
     const { days, mode } = this.state;
     var data  = [...this.state.data];
     var data2 = [...this.state.realData];
 
     // append data
-    chartData.data(
+    chartData2.data(
       new Array(days[mode]).fill().map((v, i) => ({
         x:     String(i + 1),
         value: data[i].depoEnd
       }))
     );
 
-    chartData2.data(
+    chartData.data(
       new Array(days[mode]).fill().map((v, i) => ({
         x:     String(i + 1),
         value: data2[i].depoEnd
@@ -632,7 +765,7 @@ export default class App extends React.Component {
   }
 
   // API
-  save(name = "") {
+  save(name = "", cb) {
     var { mode,
           data,
           realData,
@@ -650,23 +783,18 @@ export default class App extends React.Component {
 
     var json = {
       static: {
-        name:              name,
-        depoStart:         [ depoStart[0], depoStart[1] ],
-        depoEnd:           [ depoEnd,      data[days[1] - 1].depoEnd - withdrawal[1] ],
+        depoStart:         this.getDepoStart(),
+        depoEnd:           this.getDepoEnd(),
         currentDay:        currentDay, 
-        days:              [ days[0], days[1] ],
-        minDailyIncome:    [
-          round(this.getMinDailyIncome(0), 3),
-          round(this.getMinDailyIncome(1), 3) 
-        ],
-        payment:           [ withdrawal[0], withdrawal[1] ],
+        days:              days[mode],
+        minDailyIncome:    round(this.getMinDailyIncome(), 3),
+        payment:           withdrawal[mode],
         paymentInterval:   withdrawalInterval,
-        payload:           [ payload[0], payload[1] ],
+        payload:           payload[mode],
         payloadInterval:   payloadInterval,
-        passiveIncome:     [ passiveIncomeMonthly, passiveIncomeMonthly ],
+        passiveIncome:     passiveIncomeMonthly,
         passiveIncomeTool: passiveIncomeTools[currentPassiveIncomeToolIndex],
         mode:              mode,
-        // user_id:           0 // ?
       },
       dynamic: data.slice().map((item, index) => ({
         scale:           item.scale,
@@ -689,19 +817,36 @@ export default class App extends React.Component {
         directUnloading: directUnloading
       }))
     };
+    console.log('Sending the data:', json);
 
     $.ajax({
-      url: `https://fani144.ru/local/php_interface/s1/ajax/?method=addTrademeterSnapshot`,
+      url: `/local/php_interface/s1/ajax/?method=addTrademeterSnapshot`,
       method: "POST",
       data: {
-        static: json.static,
-        dynamic: json.dynamic
+        name: name,
+        static: JSON.stringify(json.static),
+        dynamic: JSON.stringify(json.dynamic)
       },
-      success: (res) => {
-        console.log(res);
+      success: res => {
+        var parsed = JSON.parse(res);
+        var id = Number(parsed.id);
+        if (id) {
+          console.log( "Saved! Your id:", id );
+          this.setState({ id });
+
+          if (cb) {
+            cb(id);
+          }
+        }
+        else {
+          console.error("Couldn't get id!");
+        }
       },
-      error: (err) => {
+      error: err => {
         console.log(err);
+        if (cb) {
+          cb();
+        }
       }
     });
   }
@@ -800,20 +945,25 @@ export default class App extends React.Component {
   }
 
   getPointsForIteration() {
-    const { data, directUnloading, numberOfIterations } = this.state;
+    let { data, directUnloading, numberOfIterations } = this.state;
+    numberOfIterations = numberOfIterations || 1;
 
-    let pointsForIteration = data[0].pointsForIteration / (numberOfIterations || 1);
+    let pointsForIteration = data[0].pointsForIteration / numberOfIterations;
     if (!directUnloading && (numberOfIterations * 2) >= 100) {
       pointsForIteration = (data[0].pointsForIteration * 2) / 100;
     }
 
     pointsForIteration = Math.max(pointsForIteration, 1);
 
-    if (Number.isNaN(pointsForIteration)) {
+    if (isNaN(pointsForIteration)) {
       console.warn("pointsForIteration is NaN!");
+      console.warn("pointsForIteration = data[0].pointsForIteration / numberOfIterations", 
+        "data[0].pointsForIteration:", data[0].pointsForIteration + ", " +
+        "numberOfIterations:", numberOfIterations);
+      pointsForIteration = 1;
     }
 
-    return roundUp(pointsForIteration) || 1; // In case of NaN
+    return roundUp(pointsForIteration);
   }
 
   render() {
@@ -821,21 +971,9 @@ export default class App extends React.Component {
       <div className="page">
         {/* <Header /> */}
 
-        <main className="main">
+        <main className="main" onContextMenu={e => this.setState({ saved: true })}>
 
-          <div className="main-top" onContextMenu={e => {
-            // TODO: remove this callback
-            $.ajax({
-              url: `https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterSnapshots`,
-              method: "GET",
-              success: (res) => {
-                console.log(res);
-              },
-              error: (err) => {
-                console.log(err);
-              }
-            });
-          }}>
+          <div className="main-top">
             <div className="container">
               <div className="main-top-wrap">
                 <Title className="main__h1" level={1}>{ this.state.title }</Title>
@@ -843,21 +981,26 @@ export default class App extends React.Component {
                 {(() => {
                   const { saves, currentSaveIndex } = this.state;
 
-                  return currentSaveIndex > -1 ? (
-                    <Select 
-                      className="main-top__strategy" 
-                      value={currentSaveIndex}
-                      onSelect={val => {
-                        const { saves } = this.state
-                        this.setState({
-                          currentSaveIndex: val,
-                          title:            saves[val]       
-                        })
-                      }}>
-                      {saves.map(( name, index ) =>
-                        <Option key={index} value={index}>{name}</Option>
-                      )}
-                    </Select>
+                  return saves.length > 0 ? (
+                    <label className="labeled-select main-top__strategy">
+                      <span className="labeled-select__label labeled-select__label--hidden">
+                        Сохраненный Трейдометр
+                      </span>
+                      <Select 
+                        value={currentSaveIndex}
+                        onSelect={val => {
+                          const { saves } = this.state;
+                          this.setState({
+                            currentSaveIndex: val,
+                            title:            saves[val].name       
+                          });
+                          this.fetchSaveById(saves[val].id);
+                        }}>
+                        {saves.map(( save, index ) =>
+                          <Option key={index} value={index}>{save.name}</Option>
+                        )}
+                      </Select>
+                    </label>
                   )
                   : null
                 })()}
@@ -904,18 +1047,32 @@ export default class App extends React.Component {
                   </Radio>
                 </Radio.Group>
 
-                <Button 
-                  className="custom-btn custom-btn--secondary main-top__save" 
-                  onClick={() => {
-                    const { saved } = this.state;
+                <div className="main-top__footer">
 
-                    this.setState({ 
-                      staticDisabled:   true,
-                      savePopupVisible: true
-                    });
-                  }}>
-                  { this.state.saved ? "Изменить" : "Сохранить" }
-                </Button>
+                  <Button 
+                    className="custom-btn custom-btn--secondary main-top__save" 
+                    onClick={() => {
+                      const { saved } = this.state;
+
+                      this.setState({ savePopupVisible: true });
+                    }}>
+                    { this.state.saved ? "Изменить" : "Сохранить" }
+                  </Button>
+                  
+                  {
+                    this.state.saved ? (
+                      <a
+                        href="#pure=true" 
+                        target="_blank"
+                        className="custom-btn custom-btn--filled main-top__new" 
+                        type="link">
+                        Добавить Трейдометр
+                      </a>
+                    )
+                    : null
+                  }
+
+                </div>
 
               </div>
               {/* /.main-top-wrap */}
@@ -935,7 +1092,7 @@ export default class App extends React.Component {
                     <span className="input-group__label">Начальный депозит</span>
                     <NumericInput
                       key={this.state.mode}
-                      disabled={this.state.staticDisabled}
+                      disabled={this.state.saved}
                       className="input-group__input"
                       defaultValue={this.state.depoStart[this.state.mode]}
                       min={10000}
@@ -979,7 +1136,7 @@ export default class App extends React.Component {
                         <span className="input-group__label">Целевой депозит</span>
                         <NumericInput
                           key={this.state.depoEnd}
-                          disabled={this.state.staticDisabled}
+                          disabled={this.state.saved}
                           className="input-group__input"
                           defaultValue={this.state.depoEnd}
                           min={this.state.depoStart[this.state.mode]}
@@ -1017,7 +1174,7 @@ export default class App extends React.Component {
                         <span className="input-group__label">Доходность в день</span>
                         <NumericInput
                           key={this.state.days[this.state.mode]}
-                          disabled={this.state.staticDisabled}
+                          disabled={this.state.saved}
                           className="input-group__input"
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
@@ -1078,7 +1235,7 @@ export default class App extends React.Component {
                     </span>
                     <CustomSelect 
                       key={this.state.mode}
-                      disabled={this.state.staticDisabled}
+                      disabled={this.state.saved}
                       options={
                         [50, 100].concat(new Array(10).fill(0).map((n, i) => 260 * (i + 1)))
                       }
@@ -1128,7 +1285,7 @@ export default class App extends React.Component {
                     <span className="input-group__label">Пассивный доход</span>
                     <NumericInput
                       className="input-group__input"
-                      disabled={this.state.staticDisabled}
+                      disabled={this.state.saved}
                       key={this.state.passiveIncomeMonthly}
                       defaultValue={this.state.passiveIncomeMonthly}
                       round="true"
@@ -1179,7 +1336,7 @@ export default class App extends React.Component {
                     </Tooltip>
                     <Select
                       defaultValue={this.state.currentPassiveIncomeToolIndex}
-                      disabled={this.state.staticDisabled}
+                      disabled={this.state.saved}
                       onChange={index => {
                         this.setState({
                           currentPassiveIncomeToolIndex: index,
@@ -1232,14 +1389,9 @@ export default class App extends React.Component {
                       <span className="input-group__label">Вывод</span>
                       <NumericInput
                         key={this.state.mode}
-                        disabled={this.state.staticDisabled}
+                        disabled={this.state.saved}
                         className="input-group__input"
-                        defaultValue={
-                          this.state.withdrawal[this.state.mode] == 0
-                            ? ""
-                            : this.state.withdrawal[this.state.mode]
-                        }
-                        placeholder="0"
+                        defaultValue={this.state.withdrawal[this.state.mode]}
                         round="true"
                         unsigned="true"
                         format={formatNumber}
@@ -1282,7 +1434,7 @@ export default class App extends React.Component {
                       <span className="input-group__label">Частота</span>
                       <CustomSelect
                         value={0}
-                        disabled={this.state.staticDisabled}
+                        disabled={this.state.saved}
                         options={[20, 50, 100]}
                         format={val => `раз в ${val} ${num2str(val, ["день", "дня", "дней"])}`}
                         min={1}
@@ -1303,13 +1455,9 @@ export default class App extends React.Component {
                       <span className="input-group__label">Пополнение</span>
                       <NumericInput
                         key={this.state.mode}
-                        disabled={this.state.staticDisabled}
+                        disabled={this.state.saved}
                         className="input-group__input"
-                        defaultValue={
-                          this.state.payload[this.state.mode] == 0
-                            ? ""
-                            : this.state.payload[this.state.mode]
-                        }
+                        defaultValue={this.state.payload[this.state.mode]}
                         round="true"
                         unsigned="true"
                         format={formatNumber}
@@ -1330,7 +1478,7 @@ export default class App extends React.Component {
                     <label className="input-group">
                       <span className="input-group__label">Частота</span>
                       <CustomSelect
-                        disabled={this.state.staticDisabled}
+                        disabled={this.state.saved}
                         value={0}
                         options={[20, 50, 100]}
                         format={val => `раз в ${val} ${num2str(val, ["день", "дня", "дней"])}`}
@@ -1915,9 +2063,11 @@ export default class App extends React.Component {
                         var sum   = 0;
                         var total = 0;
                         var avg   = 0;
+                        var atLeastOneChanged = false;
 
                         for (var dataItem of data) {
                           if (dataItem.changed) {
+                            atLeastOneChanged = true;
                             sum += dataItem.scale;
                           }
                           else {
@@ -1933,7 +2083,9 @@ export default class App extends React.Component {
                           avg = round( this.getMinDailyIncome(), 3 );  
                         }
 
-                        var realDaysLeft = roundUp( getPeriods(this.getDepoStart(), this.getDepoEnd(), avg) );
+                        var realDaysLeft = atLeastOneChanged
+                          ? roundUp( getPeriods(this.getDepoStart(), this.getDepoEnd(), avg) )
+                          : days;
                         var difference = -(days - realDaysLeft);
                         var persentage = (currentDay) / (days + difference) * 100;
 
@@ -1975,7 +2127,7 @@ export default class App extends React.Component {
                                       </span>
                                     }
                                     value={ round( avg, 3 ) }
-                                    valueStyle={{ color: avg < 0 ? "#cf1322 " : "#3f8600" }}
+                                    valueStyle={{ color: avg < 0 ? "#f5222d" : "#3f8600" }}
                                     prefix={
                                       avg < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />
                                     }
@@ -2024,36 +2176,42 @@ export default class App extends React.Component {
                       <span className="section5-content-title">
                         {
                           data[currentDay - 1].changed
-                            ? <Value format={val => round(val, 3)}>{ data[currentDay - 1].scale }</Value>
-                            : "—"
-                        }
-                        /
-                        { round(this.getMinDailyIncome(), 3) } (
-                        {(() => {
-                          var value = Math.round(
-                            data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
-                          );
-
-                          return data[currentDay - 1].changed
-                            ? (
-                              <Value format={val => val > 0 ? "+" + formatNumber(val) : formatNumber(val)}>
-                                { value }
+                            ? <Value format={val => formatNumber(round(val, 3))}>
+                                { data[currentDay - 1].scale }
                               </Value>
-                            )
                             : "—"
-                        })()}
-                        /
-                        {
-                          "+" + formatNumber(Math.round(data[currentDay - 1].income))
                         }
-                        )
+                        &nbsp;/&nbsp;
+                        { round(this.getMinDailyIncome(), 3) }
+                        &nbsp;
+                        <span>
+                          (
+                          {(() => {
+                            var value = Math.round(
+                              data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
+                            );
+
+                            return data[currentDay - 1].changed
+                              ? (
+                                <Value format={val => val > 0 ? "+" + formatNumber(val) : formatNumber(val)}>
+                                  { value }
+                                </Value>
+                              )
+                              : "—"
+                          })()}
+                          {" "}/{" "}
+                          {
+                            "+" + formatNumber(Math.round(data[currentDay - 1].incomePure))
+                          }
+                          )
+                        </span>
                       </span>
                     )
                   }
 
                   <Button
                     className={
-                      "custom-btn"
+                      "section5__save custom-btn"
                         .concat(
                           (data[currentDay - 1].changed || !data[currentDay - 1].collapsed)
                             ? " custom-btn--filled"
@@ -2062,11 +2220,10 @@ export default class App extends React.Component {
                     }
                     type={data[currentDay - 1].collapsed ? "primary" : "default"}
                     onClick={e => {
-                      const { data, currentDay } = this.state;
+                      const { data, currentDay, saved } = this.state;
 
                       var state = {
-                        data,
-                        staticDisabled: true
+                        data
                       };
 
                       // Сохранить / Изменить
@@ -2076,11 +2233,18 @@ export default class App extends React.Component {
                           resultSaved = true;
                         }
                         state.data[currentDay - 1].saved = resultSaved;
+
+                        if (!saved) {
+                          Object.assign(state, { savePopupVisible: true });
+                        }
+                        else {
+                          // TODO: send UPDATE request
+                          console.log('UPDATE request sent!');
+                        }
                       }
 
                       state.data[currentDay - 1].collapsed = !data[currentDay - 1].collapsed;
                       this.setState(state);
-                      
                     }}
                   >
                     {
@@ -2123,8 +2287,8 @@ export default class App extends React.Component {
                                 });
                               }}
                             />
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               {round(this.getMinDailyIncome(), 3)}%
                             </span>
                           </div>
@@ -2154,8 +2318,8 @@ export default class App extends React.Component {
                                 });
                               }}
                             />
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               {
                                 (currentDay !== 0 && currentDay % withdrawalInterval == 0)
                                   ? formatNumber( this.state.withdrawal[mode] )
@@ -2189,8 +2353,8 @@ export default class App extends React.Component {
                                 });
                               }}
                             />
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               {
                                 (currentDay !== 0 && currentDay % payloadInterval == 0)
                                   ? formatNumber(this.state.payload[mode])
@@ -2227,8 +2391,8 @@ export default class App extends React.Component {
                                 });
                               }}
                             />
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               {numberOfIterations}
                             </span>
                           </div>
@@ -2252,8 +2416,8 @@ export default class App extends React.Component {
                                 return 0;
                               })()}
                             </Value>
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               день
                             </span>
                           </div>
@@ -2275,8 +2439,8 @@ export default class App extends React.Component {
                                   : "—"
                               }
                             </span>
-                            /
                             <span className="section5-r-suffix">
+                              <span className="section5-r-suffix__separator">/</span>
                               <BigNumber
                                 val={Math.floor( this.getDepoEnd() )}
                                 threshold={1e6}
@@ -2289,9 +2453,9 @@ export default class App extends React.Component {
 
                       <Col className="section5-col section5-col--centered">
                         {(() => {
-                          var persentage = round(
-                            data[currentDay - 1].scale / (round( this.getMinDailyIncome(), 3 )) * 100
-                            , 2
+                          var percentage = round(
+                            data[currentDay - 1].scale / (round( this.getMinDailyIncome(), 3 )) * 100,
+                            2
                           );
 
                           return (
@@ -2299,21 +2463,27 @@ export default class App extends React.Component {
                               type="circle"
                               status={
                                 data[currentDay - 1].changed
-                                  ? persentage >= 100
+                                  ? percentage >= 100
                                     ? "success"
-                                    : persentage < 0
+                                    : percentage < 0
                                       ? "exception"
                                       : "normal"
                                   : "normal"
                               }
-                              trailColor="white"
+                              trailColor={
+                                percentage >= 100
+                                  ? "#3f6b33"
+                                  : percentage < 0
+                                    ? "#f5222d"
+                                    : "#4859b4"
+                              }
                               percent={
                                 data[currentDay - 1].changed
-                                  ? persentage < 0
+                                  ? percentage < 0
                                       ? 100
-                                      : (persentage > 3 && persentage < 100)
-                                          ? persentage - 2
-                                          : persentage
+                                      : (percentage > 3 && percentage < 100)
+                                          ? percentage - 2
+                                          : percentage
                                   : 0
                               }
                             />
@@ -2327,7 +2497,7 @@ export default class App extends React.Component {
 
                     {(() => {
                       var income  = data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100);
-                      var persent = income / data[currentDay - 1].income;
+                      var percent = income / data[currentDay - 1].incomePure;
 
                       return (
                         <footer className="section5-footer">
@@ -2335,25 +2505,25 @@ export default class App extends React.Component {
                           <Progress 
                             status={
                               data[currentDay - 1].changed
-                                ? persent >= 1 
+                                ? percent >= 1 
                                   ? "success"
-                                  : persent < 0
+                                  : percent < 0
                                     ? "exception" 
                                     : "normal"
                                 : "normal"
                             }
                             trailColor={
-                              persent >= 1
+                              percent >= 1
                                 ? "#3f6b33"
-                                : persent < 0
-                                  ? "#eb4d4b"
+                                : percent < 0
+                                  ? "#f5222d"
                                   : "#4859b4"
                             } 
                             percent={
                               data[currentDay - 1].changed
-                                ? persent < 0
+                                ? percent < 0
                                   ? 100
-                                  : round(persent * 100, 2)
+                                  : round(percent * 100, 2)
                                 : 0
                             }
                           />
@@ -2367,7 +2537,7 @@ export default class App extends React.Component {
                                 )
                                 : "—"
                             }
-                            /
+                            {" "}/{" "}
                             { formatNumber(Math.round(data[currentDay - 1].income)) }
                           </span>
                         </footer>
@@ -2453,8 +2623,9 @@ export default class App extends React.Component {
         </Modal>
 
         {(() => {
-          const { savePopupVisible } = this.state;
-          var name = "";
+          const { savePopupVisible, title } = this.state;
+          
+          var name = title;
 
           function validate(str = "") {
             str = str.trim();
@@ -2477,23 +2648,50 @@ export default class App extends React.Component {
             constructor(props) {
               super(props);
 
+              let { defaultValue } = props;
+
               this.state = {
-                error: ""
+                error: "",
+                value: defaultValue || ""
               }
             }
 
-            render() {
+            vibeCheck() {
               const { validate } = this.props;
-              const { error } = this.state;
+              var { value } = this.state;
+
+              var errors = validate(value);
+              this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+              return errors;
+            }
+
+            render() {
+              const { validate, label } = this.props;
+              const { value, error } = this.state;
 
               return (
-                <div>
+                <label>
+                  {
+                    label
+                      ? <span className="save-modal__input-label">{label}</span>
+                      : null
+                  }
                   <Input
-                    className={error ? "error" : ""}
-                    maxLength={15}
+                    className={"save-modal__input".concat(
+                      error ? " error" : ""
+                    )}
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    value={value}
+                    maxLength={20}
                     onChange={e => {
                       var { value } = e.target;
                       var { onChange } = this.props;
+
+                      this.setState({ value });
+
                       if(onChange) {
                         onChange(value);
                       }
@@ -2515,44 +2713,63 @@ export default class App extends React.Component {
                       }
                     }}
                     onBlur={e => {
-                      var { value } = e.target;
-                      var errors = validate(value);
-                      this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                      this.vibeCheck();
                     }} />
 
                     { 
                       error 
-                        ? <span style={{ color: "#cf1322" }}>{ error }</span> 
+                        ? <span style={{ color: "#f5222d" }}>{ error }</span> 
                         : null 
                     }
-                </div>
+                </label>
               )
             }
           }
 
           var onOk = () => {
             var { saves } = this.state;
-            this.save(name);
+            this.save(name, (id) => {
 
-            var index = saves.push(name) - 1;
-            this.setState({
-              saved:            true,
-              currentSaveIndex: index,
-              saves:            saves,
-              title:            name,
-              savePopupVisible: false,
+              var index = saves.push({ name: name, id: id }) - 1;
+              this.setState({
+                saved:            true,
+                currentSaveIndex: index,
+                saves:            saves,
+                title:            name,
+                savePopupVisible: false,
+              });
+              modalJSX.type.prototype.close();
+
             });
-            modalJSX.type.prototype.close();
           }
 
-          var modalJSX = (
+          let inputJSX = (
+            <ValidatedInput
+              label="Введите название тредометра"
+              validate={validate}
+              defaultValue={title}
+              onChange={val => {
+                name = val;
+              }}
+              onBlur={val => {
+                onOk();
+              }} />
+          );
+          let modalJSX = (
             <Modal
+              className="save-modal"
               title={"Сохранение трейдометра"}
               visible={savePopupVisible}
               onOk={e => {
                 if (validate(name).length === 0) {
                   onOk();
                   return true;
+                }
+                else {
+                  console.error(validate(name));
+
+                  // TODO: передать фокус инпуту, сообщить об ошибке
+                  // inputJSX.type.prototype.vibeCheck.call(inputJSX);
                 }
               }}
               onCancel={e => {
@@ -2561,14 +2778,7 @@ export default class App extends React.Component {
               onClose={e => {
                 this.setState({ savePopupVisible: false });
               }}>
-              <ValidatedInput
-                validate={validate}
-                onChange={val => {
-                  name = val;
-                }}
-                onBlur={val => {
-                  onOk();
-                }} />
+              {inputJSX}
             </Modal>
           );
 

@@ -88,7 +88,8 @@ export default class Modal extends React.Component {
   }
 
   render() {
-    const { title, visible, hideFooter } = this.props;
+    let { className, title, visible, hideFooter } = this.props;
+    className = className || "";
 
     if (visible) {
       $body.addClass("scroll-disabled")
@@ -96,7 +97,12 @@ export default class Modal extends React.Component {
 
     return (
       <div 
-        className={"m".concat(visible ? " visible" : "")}
+        className={
+          []
+            .concat("m")
+            .concat(visible ? " visible" : "")
+            .join(" ")
+        }
         onClick={e => {
           if( $(e.target).hasClass("m") ) {
             this.onClose();
@@ -107,7 +113,7 @@ export default class Modal extends React.Component {
           {
             visible && (
 
-              <div className="config card">
+              <div className={"config card".concat(" " + className)}>
                 <h2 className="config__title">{ title }</h2>
 
                 { this.props.children }
@@ -115,10 +121,21 @@ export default class Modal extends React.Component {
                 {
                   !hideFooter && (
 
-                    <footer className="config-footer">
-                      <Button onClick={() => this.onCancel()}>Отмена</Button>
-                      <Button type="primary" onClick={() => this.onOk()}>Сохранить</Button>
-                    </footer>
+                    <div className="config-footer-wrap">
+                      <footer className="config-footer">
+                        <Button 
+                          className="custom-btn" 
+                          onClick={() => this.onCancel()}>
+                          Отмена
+                        </Button>
+                        <Button 
+                          className="custom-btn custom-btn--filled" 
+                          type="primary" 
+                          onClick={() => this.onOk()}>
+                          Сохранить
+                        </Button>
+                      </footer>
+                    </div>
 
                   )
                 }
