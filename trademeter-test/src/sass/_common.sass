@@ -1,0 +1,1180 @@
+body
+  +font("Circe")
+
+  &.scroll-disabled .main
+    filter: blur(.4em)
+
+.page
+  font-size: 0.804em
+
+  +lg
+    font-size: 0.9vw
+  
+  +sm
+    font-size: 1.45vw
+
+  +xs
+    font-size: 2.25vw
+
+.custom-btn
+  justify-content: center
+  height: auto
+  min-width: 14.5em
+  padding: .7em .5em
+  padding-top: .8em
+  border-radius: 2em
+  border: 0.1em solid currentColor
+  background: none
+
+  color: $mainColor
+  font-family: inherit
+  font-size: 1em
+  line-height: 1
+  font-weight: 400
+  text-transform: uppercase
+
+  &:focus
+    border: 0.1em solid currentColor
+    background: none
+    box-shadow: 0 0 0 2px rgba($mainColor,0.2)
+
+    color: $mainColor
+
+  &:hover
+    border: 0.1em solid $mainColor
+    background: $mainColor
+    box-shadow: 0 0 0 2px rgba($mainColor,0.2)
+
+    color: white
+  
+  &--filled
+    border: 0.1em solid $mainColor
+    background: $mainColor
+
+    color: white
+
+    &:hover,
+    &:focus
+      border: 0.1em solid $mainColor
+      background: $mainColor
+
+      color: white
+
+  &--secondary
+    color: white
+
+    &:focus,
+    &:hover
+      color: white
+
+.slider-block
+  padding: 1.5em 0
+  text-align: center
+
+  user-select: none
+
+  &__label
+    +font("Roboto")
+    font-size: 1.6em
+
+    display: flex
+    justify-content: center
+    align-items: center
+
+    +xs
+      padding-left: 1.1em
+      justify-content: flex-start
+
+      font-size: 2.2em
+      text-align: left
+
+  &__info
+    margin-top: -0.5em
+    margin-left: 0.3em
+
+    font-size: .75em
+    color: #d1d1d1
+
+    +xs
+      margin-top: -2.9em
+
+.search
+
+  &__title
+    display: block
+    margin-bottom: .5em
+
+    font-size: 1.4em
+    font-weight: bold
+    text-align: center
+
+.switch
+  cursor: pointer
+  
+  &__input
+    margin-top: -.25em
+  &__label
+    margin-left: .75em
+    font-size: 1.6em
+
+.table
+  background-color: white
+  width: 100%
+  border-collapse: collapse
+
+  font-size: 1.6em
+
+  &-title
+    text-align: center
+    font-size: 2.4em
+    font-weight: bold
+  
+  &-header
+  
+  &-th,
+  &-td
+    padding: 0.2em
+    text-align: center
+
+  &-th
+    width:  1%
+    height: 3.5em
+    border-bottom: .2em solid #eee
+
+    &--small
+      font-size: .8em
+
+  &-td
+    height: 4em
+
+    &-parent
+      position: relative
+    
+    &-speedometer:hover .speedometer
+      display: flex
+  
+  .ant-input
+    width:  4.1em
+    height: auto
+    padding: .1em
+
+    font-size: 1.2em
+    line-height: 1
+    text-align: center
+
+.input-group
+  width: 20em
+  display: flex
+  flex-direction: column
+
+  +sm
+    width: 100%
+
+  &__label
+    display: block
+    margin-bottom: .5em
+
+    +font("Roboto")
+    font-size: 1.6em
+
+    +xs
+      font-size: 2.2em
+
+    &--centered
+      text-align: center
+
+      +xs
+        text-align: left
+
+  &__input
+    text-align: center
+
+    +xs
+      text-align: left
+
+    &.error
+      $error-color: $dangerColor
+
+      border-color: $error-color !important
+
+      &:focus
+        box-shadow: 0 0 0 2px rgba($error-color, .45)
+
+      &:hover
+        border-color: $error-color
+
+      .ant-input
+        border-color: inherit
+
+        &:focus
+          box-shadow: 0 0 0 2px rgba($error-color, .45)
+
+        &:hover
+          border-color: $error-color
+      
+      .ant-input-suffix
+        pointer-events: none
+
+.settings-button
+  width:  3.25em
+  height: 3.25em
+  background: none
+  padding: 0
+  border: none
+
+  transition:  transform .2s ease
+  will-change: transform
+
+  cursor: pointer
+
+  &:focus,
+  &:hover
+    transform: rotate(-45deg) scale(1.3)
+    outline: none
+    box-shadow: none
+
+  &__icon
+    color: #1890ff
+    font-size: 2.2em
+
+// TODO: decide if it needs to be deleted
+.profit
+  color: green
+
+// TODO: decide if it needs to be deleted
+.danger
+  color: red
+
+/* Extract these sections into separate files */
+
+.section
+
+  &1,
+  &2,
+  &3,
+  &4,
+    display: flex
+    justify-content: space-between
+
+.controls
+  padding: 3em 0 2em
+  display: flex
+
+  color: #1b1b1b
+
+  +sm
+    flex-direction: column
+
+  +xs
+    margin: 0 -2.75em
+    padding-top: 0
+  
+  &-col1
+    width: 58.33333333%
+
+  &-col2
+    margin-left: 1.5em
+    width: 41.66666667%
+
+    +sm
+      margin-left: 0
+      margin-top:  1.5em
+
+    +xs
+      margin-top: 0
+
+  &-col1,
+  &-col2
+    // flex-shrink: 0
+
+    +sm
+      width: 100%
+
+  &-card1,
+  &-card2,
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .input-group + .input-group
+      margin-left: 1em
+
+      +sm
+        margin-left: 2.5em
+
+      +xs
+        margin-left: 0
+        margin-top: 2em
+
+  &-card4,
+  &-card5
+    width: 100%
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .input-group + .input-group
+      margin-left: 1em
+
+      +sm
+        margin-left: 2.5em
+
+      +xs
+        margin-left: 0
+        margin-top: 2em
+
+  &-card2
+    align-items: flex-start
+
+    &-select
+
+      &__rate
+        display: inline-block
+        margin-top: .5em
+        font-size: 1.6em
+  
+  &__card2
+    margin-top: 1.5em
+
+  &-card3
+    height: 100%
+
+  &__tool-select
+    width: 41.25em
+
+    +sm
+      flex-shrink: 0
+
+    +xs
+      width: 100%
+
+.stats
+  position: relative
+  z-index: 0
+  background-color: rgba(#3f6b33, .1)
+  padding: 2em 0
+  display: flex
+  justify-content: space-between
+
+  +xs
+    margin: 0 -2em
+    padding: 0
+    background: none
+    flex-direction: column
+    align-items: center
+
+    font-size: 1.2em
+
+  &::before,
+  &::after
+    content: ''
+    display: block
+    position: absolute
+    z-index: -1
+    top: 0
+    width: 50vw
+    height: 100%
+    background: inherit
+
+    +no-select
+  
+  &::before
+    right: 100%
+
+  &::after
+    left: 100%
+
+  &-title
+
+  &-subtitle
+    margin: 0
+    margin-bottom: .5em
+
+    font-size: 3.6em
+    font-weight: bold
+    text-transform: uppercase
+
+    span
+      position: relative
+
+      &::before,
+      &::after
+        content: ''
+        display: block
+        width:   10em
+        height: 0.2em
+        background-color: $mainColor
+        position: absolute
+        top: 50%
+        transform: translate(0, -50%)
+
+        font-size: .27em
+
+        +sm
+          display: none
+
+      &::before
+        left:  -14em
+
+      &::after
+        right: -14em
+
+  &-col
+    text-align: center
+
+    +xs
+      width: 100%
+      margin-top: 3em
+
+      &:first-of-type
+        margin-top: 0
+        padding-bottom: 2em
+        position: relative
+
+        &::before
+          content: ''
+          display: block
+          position: absolute
+          left: 50%
+          top:  100%
+          transform: translateX(-50%)
+          width:   26em
+          height: 0.2em
+          border-radius: 0.1em
+          background-color: #dcdcdc
+  
+  &-footer
+    display: flex
+    justify-content: center
+
+    +sm
+      flex-direction: column
+      align-items: center
+
+    &-row
+      margin-top: 1em
+
+      +sm
+        &:first-of-type
+          margin-top: 0
+  
+  &-key
+    margin-bottom: .5em
+
+    +sm
+      margin-bottom: 0
+
+  &-val
+    font-size: 2.4em
+
+  &__row
+    margin-bottom: .5em
+    display: flex
+    align-items: center
+    font-size: 2em
+
+    .big
+      font-size: 1.2em
+
+    .medium
+      font-size: 1.1em
+
+    &:last-child
+      margin-bottom: 0
+
+  &__key
+    flex-shrink: 0
+    width: 13.5em
+
+  &__val
+    white-space: nowrap
+
+    &--big
+      font-size: 1.6em
+      font-weight: bold
+
+.section3
+
+  +sm
+    flex-direction: column
+    align-items: flex-start
+
+  +xs
+    margin: 0 -2.55em
+
+  &-icon
+    position: absolute
+    z-index: 0
+    right: 1.5em
+    top:     1em
+    line-height: 1
+
+    +sm
+      display: none
+
+    +xs
+      top: .5em
+
+  &__tool-block
+    position: relative
+    margin-top: 1.25em
+
+    +sm
+      order: -1
+      margin-top: 0
+      margin-bottom: 1.25em
+    
+    +xs
+      margin-bottom: 0
+
+  &__tool-title
+    text-align: center !important
+
+  &__tool-select
+    width: 100%
+  
+  &-col1,
+  &-col2
+    width: 50%
+    // flex-shrink: 0
+
+    +sm
+      display: flex
+      flex-direction: column
+      width: 100%
+
+    +xs
+      box-shadow: none !important
+
+  &-col1
+    margin-right: 1.25em
+
+    +sm
+      margin-right: 0
+
+.section4
+  position: relative
+
+  color: #141414
+
+  +sm
+    padding-bottom: 2em
+    flex-direction: column
+    align-items: flex-start
+  
+  +xs
+    margin: 0 -2em
+
+  &-col
+    flex-grow: 1
+    width: 0
+
+    +sm
+      width: 100%
+  
+  &-col2
+    width: 66.6666%
+    display: flex
+
+    +sm
+      width: 100%
+
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    .section4-col
+      margin-left: 1.5em
+
+      +sm
+        width: 50%
+        flex-shrink: initial
+
+        &:first-of-type
+          margin-left: 0
+      
+      +xs
+        width: 100%
+        margin-left: 0
+        margin-top: 2em
+
+        &:first-of-type
+          margin-top: 0
+
+  &__title
+    position: absolute
+    left:  0
+    top:  -0.1em
+    z-index: 1
+    
+    font-size: 3.6em
+    line-height: 1
+    font-weight: 300
+
+    +underline
+
+    +sm
+      top: 0.35em
+
+    +xs
+      top: 0.4em
+  
+  &-header
+    min-height: 2em
+    margin-bottom: 1em
+
+    text-align: center
+    color: #777
+    font-size: 2.4em
+
+    +sm
+      min-height: auto
+      padding: .65em 0
+      margin-bottom: 0
+
+    +xs
+      padding-left: .35em
+      text-align: left
+
+    &--first
+      text-align: right
+
+      // +sm
+      //   text-align: left
+      //   padding-left: 7em
+
+      +xs
+        padding-left: 0
+        text-align: right
+
+  &__content1
+    +sm
+      box-shadow: none
+
+  &-content
+    min-height: 18em
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+    &--centered
+      flex-direction: row
+      align-items: center
+      // TODO: delete
+      justify-content: center
+
+      > * + *
+        margin-left: 4.5em
+
+        +lg
+          margin-left: 2.5em
+  
+  &-row
+    width: 100%
+    margin-bottom: 1.5em
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+    &:last-of-type
+      margin-bottom: 0
+  
+  &-l,
+  &-r
+    font-size: 1.9em
+
+  &-r
+    text-align: right
+    font-weight: bold
+
+  &__day-select
+    width: 4.5em !important
+    margin-right: .05em
+
+    font-size: 1em
+
+    .ant-select-selection__rendered
+      margin-right: 1em
+
+    .ant-select-arrow
+      right: 0.2em
+
+    .ant-select-search__field
+      text-align: right
+
+    .ant-select-selection
+      border: none
+      border-radius: 0
+      padding: 0
+
+      outline: none
+      box-shadow: none
+
+      &-selected-value
+        float: right
+
+        color: #4859b4
+        +font("Circe", bold)
+  
+  &__switch
+    .switch__input
+      margin-top: 0
+      transform: scale(.6)
+  
+  &-progress
+
+    &-wrap
+      display: flex
+      flex-direction: column
+      align-items: center
+
+    .ant-progress
+
+      &-inner
+        width:  5.75em !important
+        height: 5.75em !important
+
+        +lg
+          font-size: 1.25em !important
+
+        +md
+          font-size: 1em !important
+        
+        +sm
+          font-size: 1.25em !important
+
+    &__label
+      // display: none
+      margin-top: .5em
+
+      font-size: 1.9em
+
+.section5
+  display: flex
+  flex-direction: column
+  align-items: center
+
+  margin: 1.5em 0
+  padding: 4em 1em
+  position: relative
+  z-index: 0
+  background: #f2f2f2
+
+  text-align: center
+
+  +sm
+    padding-top: 6em
+    background: none
+  
+  +xs
+    padding-left:  0
+    padding-right: 0
+    // padding-top:   12em
+    margin: 0 -2em
+
+  &::before,
+  &::after
+    content: ''
+    display: block
+    position: absolute
+    z-index: -1
+    top: 0
+    width: 50vw
+    height: 100%
+    background: inherit
+  
+  &::before
+    right: 100%
+
+  &::after
+    left: 100%
+
+  .ant-progress-line
+    .ant-progress
+      &-inner
+        background: white
+      
+      &-text
+        margin-left: 1em
+        &[title]
+          visibility: hidden
+          pointer-events: none
+      
+      &-outer
+        margin-right: -3em
+        padding-right: 3em
+        padding-left:  3em
+
+        +sm
+          padding-right: 2.5em
+          padding-left:  2.5em
+
+  .ant-progress-circle
+    &-trail
+      stroke: white !important
+
+      +sm
+        stroke: #eee !important
+
+    .ant-progress-inner
+      background: none
+      font-size: 1.5em !important
+      width:  6em !important
+      height: 6em !important
+
+      +sm
+        font-size: 1.2em !important
+
+    +sm
+      // margin-left: 3.5em
+
+    +xs
+      margin-left:  0
+
+  .section5-col + .section5-col
+    +sm
+      margin-left: 2.75em
+    
+    +xs
+      margin-left: 0
+
+  &__save
+    font-size: 1.6em
+
+  &-col
+    margin: 0 2.5em
+    width: 33.333333%
+
+    +sm
+      width: 50%
+      margin: 0
+    
+    +xs
+      width: 100%
+
+    &--centered
+      text-align: center
+
+      +sm
+        position: absolute
+        bottom: 4em
+        right:  0
+
+      +xs
+        position: static
+
+  &__title
+    font-size: 2.4em
+    font-weight: 400
+    text-transform: uppercase
+    letter-spacing: .5em
+
+    text-align: center
+
+    +sm
+      position: absolute
+      left:  0
+      top:   0
+      z-index: 1
+      
+      font-size: 3.6em
+      line-height: 1
+      font-weight: 300
+      text-transform: initial
+      letter-spacing: initial
+
+      +underline
+  
+  &-collapse
+    width: 100%
+    margin-top: 2.5em
+
+    +sm
+      display: flex
+      flex-direction: column
+      align-items: flex-start
+
+    &--collapsed
+      display: none
+  
+  &-footer
+    margin-top: 1.75em
+    padding: 0 24em
+
+    +sm
+      display: flex
+      flex-direction: column
+      align-items: center
+      width: 50%
+      padding: .5em 1em
+      background-color: rgba(63,107,51,0.1)
+
+    +xs
+      width: 100%
+
+    &-title
+      font-size: 2.4em
+      font-weight: 400
+      text-transform: uppercase
+      letter-spacing: .5em
+
+      text-align: center
+
+      +sm
+        order: -2
+        font-size: 2em      
+
+    &__label
+      font-size: 1.9em
+      color: #777
+      font-weight: 700
+
+      +sm
+        order: -1
+        font-size: 2.5em
+
+      b
+        color: #3f6b33
+  
+  &-content
+    display: flex
+    padding: 1em 0
+    margin: 0 -2.5em
+
+    text-align: left
+
+    +sm
+      width: 100%
+      margin: 0
+    
+    +xs
+      flex-direction: column
+      align-items: flex-start
+
+    &--centered
+      align-items: center
+
+    &-title
+      display: inline-flex
+      flex-wrap: wrap
+      justify-content: center
+      margin-bottom: .5em
+
+      color: #777
+      font-size: 3.6em
+      font-weight: 700
+      text-transform: uppercase
+      text-align: center
+      
+      position: relative
+
+      +sm
+        
+
+      +xs
+        width: 100%
+        text-align: center
+
+      &::before,
+      &::after
+        content: ''
+        display: block
+        width:   10em
+        height: 0.2em
+        background-color: $mainColor
+        position: absolute
+        top: 50%
+        transform: translate(0, -50%)
+
+        font-size: .27em
+
+        +sm
+          display: none
+
+      &::before
+        left:  -14em
+
+      &::after
+        right: -14em
+
+  &-row
+    width: 100%
+    min-height: 4.5em
+    margin-bottom: 1em
+    display: flex
+    justify-content: space-between
+    align-items: baseline
+
+    &:last-of-type
+      margin-bottom: 0
+
+      +sm
+        margin-bottom: 1em
+  
+  &-l,
+  &-r
+    width: 100%
+
+    font-size: 1.255rem
+
+  &-l
+    +sm
+      margin-top: .1em
+
+  &-r
+    margin-left: 1em
+
+    text-align: right
+    color: #777
+    font-weight: bold
+
+    +lg
+      width: 140%
+    
+    +md
+      width: 100%
+
+    +sm
+      width: 100%
+      display: inline-flex
+      flex-wrap: wrap
+      
+    
+    +xs
+      justify-content: flex-end
+
+    .ant-input
+      width: 4em
+
+      text-align: center
+
+      +md
+        width: 100%
+      
+      +xs
+        width: 4em
+        // font-size: .8em
+
+    &-suffix
+      display: inline-block
+      min-width: 4.5em
+
+      text-align: left
+
+      +sm
+        min-width: auto
+        // width: 100%
+      
+      +xs
+        min-width: 4.5em
+
+      &__separator
+        margin: 0 .3em
+
+  &__input-long
+    width: 4rem
+
+.save-modal
+  border-radius: 1.5em
+
+  &__input
+    &-label
+      color: #999
+      padding-left: .75em
+
+.card
+  padding: 1em
+  box-shadow: 0 0 1.75em rgba(0,0,0,0.1)
+
+  &--column
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+  &--secondary
+    background-color: rgba(#4859b4, .1)
+    box-shadow: none
+
+.labeled-select
+
+  +xs
+    font-size: 1.25em
+
+  &__label
+    display: block
+    margin-bottom: 0.75em
+
+    color: rgba(white, .8)
+    font-size: .95em
+    letter-spacing: .08em
+    text-transform: uppercase
+
+    &--hidden
+      display: none
+
+  .ant-select
+    width: 15em
+
+    color: white !important
+    font-size: 1.6em
+
+    &-selection
+      background: rgba(white, .4) !important
+
+    &-arrow
+      color: inherit !important
+
+// TODO: extract into component style.scss
+.value
+  font-weight: bold
+  color: $accentColor
+  white-space: nowrap
+
+  &--neutral
+    color: #777
+  
+  &--negative
+    color: $dangerColor
+
+/* ant */
+.ant
+  &-input
+    &.error
+      $error-color: $dangerColor
+
+      border-color: $error-color !important
+
+      &:focus
+        box-shadow: 0 0 0 2px rgba($error-color, .45)
+
+      &:hover
+        border-color: $error-color
+
+  &-tooltip-inner
+    text-align: center
+  
+  &-select-search__field
+    box-shadow: none !important
+
+/* anychart */
+.anychart
+
+  &-credits
+    display: none
+
+  &-tooltip
+    width: 18rem
+
+.xs-only
+  display: none
+
+  +xs
+    display: block

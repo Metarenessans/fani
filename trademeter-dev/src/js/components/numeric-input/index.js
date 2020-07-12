@@ -148,6 +148,7 @@ export default class NumericInput extends React.Component {
         visible={errMsg.length > 0}
       >
         <Input
+          inputMode="tel"
           placeholder={0}
           {...this.props}
           className={this.className.concat(errMsg.length ? " error" : "")}

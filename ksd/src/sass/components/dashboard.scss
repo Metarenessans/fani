@@ -3,6 +3,29 @@
 
   margin-top: 3em;
 
+  .ant-select {
+    font-size: 1em;
+
+    &-selection {
+      &--single {
+        height: 1.945em;
+        font-size: 1em;
+        // height: 2.2em;
+      }
+
+      &__rendered {
+        line-height: 1.945em;
+        padding-top: 0em;
+      }
+    }
+  }
+
+  .ant-input {
+    font-size: 1em;
+    height: 1.945em;
+    padding-top: .2em;
+  }
+
   &__loading {
     font-size: 2em;
 
@@ -15,8 +38,6 @@
     margin-bottom: 1.5em;
     display: flex;
     align-items: center;
-
-    font-weight: bold;
     
     @include sm {
       flex-wrap: wrap;
@@ -43,7 +64,7 @@
 
   &-col {
     flex-grow: 1;
-    flex-basis: 100%;
+    flex-basis: 90%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -52,11 +73,17 @@
     line-height: 1.2;
 
     &--wide {
-      flex-basis: 150%;
+      flex-basis: 200%;
+    }
+    
+    &--semiwide {
+      flex-basis: 120%;
     }
 
     @include sm {
       flex-basis: (100% / 5);
+      flex-shrink: 0;
+      width: (100% / 5);
 
       &:nth-child(5) ~ * {
         background-color: #f7fbff !important;
@@ -98,7 +125,7 @@
         
         #{$root}-key {
           position: relative;
-          top: .5em;
+          top: 0;
         }
         
         #{$root}-val {
@@ -111,6 +138,8 @@
   &-key {
     display: none;
     margin-bottom: .5em;
+
+    font-weight: bold;
 
     @include xs {
       display: block;
@@ -140,6 +169,11 @@
       padding: 0.35em .35em;
       justify-content: flex-start;
     }
+
+    &--wrap {
+      display: flex;
+      flex-wrap: wrap;
+    }
   }
 
   &__input {
@@ -147,7 +181,7 @@
   }
 
   &__select {
-    width: 5.5rem !important;
+    // width: 5.5rem !important;
 
     &--wide {
       width: 100% !important;

@@ -1,0 +1,74 @@
+$fonts: "../fonts/";
+
+// Roboto Regular
+@font-face {
+  font-family: 'Roboto';
+  src:
+    local('Roboto'),
+    local('Roboto-Regular'),
+    url($fonts + 'Roboto/Regular/Roboto-Regular.woff2') format('woff2'),
+    url($fonts + 'Roboto/Regular/Roboto-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+// =============
+// Circe Regular
+// =============
+@font-face {
+  font-family: 'Circe';
+  src: 
+    local('Circe'),
+    local('Circe-Regular'),
+    url($fonts + 'Circe/Regular/Circe-Regular.woff2') format('woff2'),
+    url($fonts + 'Circe/Regular/Circe-Regular.woff')  format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+// =============
+// Circe Light
+// =============
+@font-face {
+  font-family: 'Circe';
+  src: 
+    local('Circe'),
+    local('Circe-Light'),
+    url($fonts + 'Circe/Light/Circe-Light.woff2') format('woff2'),
+    url($fonts + 'Circe/Light/Circe-Light.woff')  format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+// ==========
+// Circe Bold
+// ==========
+@font-face {
+  font-family: 'Circe';
+  src: 
+    local('Circe Bold'),
+    local('Circe-Bold'),
+    url($fonts + 'Circe/Bold/Circe-Bold.woff2') format('woff2'),
+    url($fonts + 'Circe/Bold/Circe-Bold.woff')  format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+// ===============
+// Circe ExtraBold
+// ===============
+@font-face {
+  font-family: 'Circe';
+  src: 
+    local('Circe ExtraBold'),
+    local('Circe-ExtraBold'),
+    url($fonts + 'Circe/ExtraBold/Circe-ExtraBold.woff2') format('woff2'),
+    url($fonts + 'Circe/ExtraBold/Circe-ExtraBold.woff')  format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}

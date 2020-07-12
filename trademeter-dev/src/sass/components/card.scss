@@ -1,0 +1,28 @@
+.card {
+  padding: 1em;
+  box-shadow: 0 0 1.75em rgba(black, .1);
+
+  &--column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &--secondary {
+    position: relative;
+    z-index: 0;
+    box-shadow: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      opacity: .1;
+      left: 0;
+      top:  0;
+      width:  100%;
+      height: 100%;
+      background-color: var( --primary-color );
+    }
+  }
+}

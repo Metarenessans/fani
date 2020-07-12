@@ -1,0 +1,57 @@
+.custom-btn {
+  background: none;
+  justify-content: center;
+  height: auto;
+  min-width: 14.5em;
+  padding: .7em .5em;
+  padding-top: .8em;
+  border-radius: 2em;
+  border: 0.1em solid currentColor;
+
+  color: $mainColor;
+  font-family: inherit;
+  font-size: 1em;
+  line-height: 1;
+  font-weight: 400;
+  text-transform: uppercase;
+
+  &:focus {
+    border: 0.1em solid currentColor;
+    background: none;
+    box-shadow: 0 0 0 0.3em rgba($mainColor, 0.45);
+
+    color: $mainColor;
+  }
+
+  &:hover {
+    border: 0.1em solid $mainColor;
+    background: $mainColor;
+    box-shadow: 0 0 0 .1em rgba($mainColor,0.2);
+
+    color: white;
+  }
+  
+  &--filled {
+    border: 0.1em solid $mainColor;
+    background: $mainColor;
+
+    color: white;
+
+    &:hover,
+    &:focus {
+      border: 0.1em solid $mainColor;
+      background: $mainColor;
+
+      color: white;
+    }
+  }
+
+  &--secondary {
+    color: white;
+
+    &:focus,
+    &:hover {
+      color: white
+    }
+  }
+}

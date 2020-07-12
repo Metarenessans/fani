@@ -1,0 +1,60 @@
+.custom-btn {
+  background: none;
+  justify-content: center;
+  height: auto;
+  min-width: 14.5em;
+  padding: .7em .5em;
+  padding-top: .8em;
+  border-radius: 2em;
+  border: 1px solid currentColor;
+
+  color: $mainColor;
+  font-family: inherit;
+  font-size: 1em;
+  line-height: 1;
+  font-weight: 400;
+  text-transform: uppercase;
+
+  &:focus {
+    border: 1px solid currentColor;
+    background: none;
+    box-shadow: none;
+
+    color: $mainColor;
+  }
+
+  &:hover {
+    border: 1px solid $mainColor;
+    background: $mainColor;
+    box-shadow: 
+      0 0 0 1px rgba($mainColor, 0.6),
+      0 0 0 2px rgba($mainColor, 0.2);
+
+    color: white;
+  }
+  
+  &--filled {
+    border: 1px solid $mainColor;
+    background: $mainColor;
+
+    color: white;
+
+    &:hover,
+    &:focus {
+      border: 1px solid $mainColor;
+      background: $mainColor;
+
+      color: white;
+    }
+  }
+
+  &--secondary {
+    color: white;
+
+    &:focus,
+    &:hover {
+      color: white;
+      // box-shadow: none;
+    }
+  }
+}

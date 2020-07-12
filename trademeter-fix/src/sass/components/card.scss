@@ -1,0 +1,15 @@
+.card {
+  padding: 1em;
+  box-shadow: 0 0 1.75em rgba(black, .1);
+
+  &--column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &--secondary {
+    background-color: rgba($mainColor, .1);
+    box-shadow: none;
+  }
+}

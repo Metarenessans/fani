@@ -1,6 +1,9 @@
-$fonts: "../dist/fonts/";
+/* Fonts */
 
-// Roboto Regular
+$fonts: '../fonts/';
+
+/* Roboto Regular */
+
 @font-face {
   font-family: 'Roboto';
   src:
@@ -13,9 +16,8 @@ $fonts: "../dist/fonts/";
   font-display: swap;
 }
 
-// =============
-// Circe Regular
-// =============
+/* Circe Regular */
+
 @font-face {
   font-family: 'Circe';
   src: 
@@ -28,9 +30,8 @@ $fonts: "../dist/fonts/";
   font-display: swap;
 }
 
-// =============
-// Circe Light
-// =============
+/* Circe Light */
+
 @font-face {
   font-family: 'Circe';
   src: 
@@ -43,9 +44,8 @@ $fonts: "../dist/fonts/";
   font-display: swap;
 }
 
-// ==========
-// Circe Bold
-// ==========
+/* Circe Bold */
+
 @font-face {
   font-family: 'Circe';
   src: 
@@ -58,9 +58,8 @@ $fonts: "../dist/fonts/";
   font-display: swap;
 }
 
-// ===============
-// Circe ExtraBold
-// ===============
+/* Circe ExtraBold */
+
 @font-face {
   font-family: 'Circe';
   src: 

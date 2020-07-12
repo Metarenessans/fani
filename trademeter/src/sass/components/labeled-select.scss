@@ -1,0 +1,34 @@
+.labeled-select {
+  @include xs() {
+    font-size: 1.25em
+  }
+  
+  &__label {
+    display: block;
+    margin-bottom: 0.75em;
+  
+    color: rgba(white, .8);
+    font-size: .95em;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  
+    &--hidden {
+      display: none;
+    }
+  }
+  
+  .ant-select {
+    width: 15em;
+  
+    color: white !important;
+    font-size: 1.6em;
+  
+    &-selection {
+      background: rgba(white, .4) !important
+    }
+  
+    &-arrow {
+      color: inherit !important
+    }
+  }
+}

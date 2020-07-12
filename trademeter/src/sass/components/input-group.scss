@@ -1,0 +1,67 @@
+.input-group {
+  display: flex;
+  flex-direction: column;
+  width: 20em;
+
+  @include sm() {
+    width: 100%;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: .5em;
+
+    @include font("Roboto");
+    font-size: 1.6em;
+
+    @include xs() {
+      font-size: 2.2em;
+    }
+
+    &--centered {
+      text-align: center;
+
+      @include xs() {
+        text-align: left
+      }
+    }
+  }
+
+  &__input {
+    text-align: center;
+
+    @include xs() {
+      text-align: left
+    }
+
+    &.error {
+      $error-color: $dangerColor;
+
+      border-color: $error-color !important;
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba($error-color, .45)
+      }
+
+      &:hover {
+        border-color: $error-color;
+      }
+
+      .ant-input {
+        border-color: inherit;
+
+        &:focus {
+          box-shadow: 0 0 0 2px rgba($error-color, .45);
+        }
+
+        &:hover {
+          border-color: $error-color;
+        }
+      }
+
+      .ant-input-suffix {
+        pointer-events: none;
+      }
+    }
+  }
+}

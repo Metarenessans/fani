@@ -31,8 +31,10 @@ h1.ant-typography
     color: $dangerColor
 
 .custom-btn
+  justify-content: center
   height: auto
-  padding: .7em 4em
+  min-width: 14.5em
+  padding: .7em .5em
   padding-top: .8em
   border-radius: 2em
   border: 0.1em solid currentColor
@@ -40,7 +42,7 @@ h1.ant-typography
 
   color: $mainColor
   font-family: inherit
-  font-size: 1.6em
+  font-size: 1em
   line-height: 1
   font-weight: 400
   text-transform: uppercase
@@ -48,14 +50,14 @@ h1.ant-typography
   &:focus
     border: 0.1em solid currentColor
     background: none
-    box-shadow: 0 0 0 2px rgba($mainColor,0.2)
+    box-shadow: 0 0 0 0.3em rgba($mainColor, 0.45)
 
     color: $mainColor
 
   &:hover
     border: 0.1em solid $mainColor
     background: $mainColor
-    box-shadow: 0 0 0 2px rgba($mainColor,0.2)
+    box-shadow: 0 0 0 .1em rgba($mainColor,0.2)
 
     color: white
   
@@ -149,9 +151,12 @@ h1.ant-typography
     text-align: center
 
   &-th
-    width:  1%
+    // width:  1%
     height: 3.5em
     border-bottom: .2em solid #eee
+
+    &:last-of-type
+      min-width: 2em
 
     &--small
       font-size: .8em
@@ -170,7 +175,7 @@ h1.ant-typography
     height: auto
     padding: .1em
 
-    font-size: 1.2em
+    font-size: 1em
     line-height: 1
     text-align: center
 
@@ -182,6 +187,97 @@ h1.ant-typography
   flex-direction: column
 
   &--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
+    width: auto
+    flex-direction: row
+    align-items: center
+
+    #{$parent}__label
+      margin-right: .5em
+      margin-bottom: 0
+
+    #{$parent}__input
+      width: 9rem
+
+  +sm
+    width: 100%&--fluid
     width: auto
     flex-direction: row
     align-items: center
@@ -276,6 +372,43 @@ h1.ant-typography
     background-color: rgba(#4859b4, .1)
     box-shadow: none
 
+.no-wrap
+  white-space: nowrap
+
+.x-button
+  display: inline-flex
+  background: none
+  border: none
+  padding: 0
+  border-radius: 50%
+  width:  1em
+  height: 1em
+  opacity: .4
+
+  cursor: pointer
+
+  transform: scale(.85)
+  transition: transform .15s ease-in-out
+  will-change: transform
+
+  user-select: none
+
+  &:hover
+    transform: scale(1)
+    background-color: rgba(black, .2)
+    opacity: 1
+
+    color: lighten($dangerColor, 5)
+  
+  span
+    position: absolute
+    line-height: 0
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    margin-top: .1em
+
+
 /* ant */ 
 .ant
   &-select-search__field
@@ -303,6 +436,9 @@ h1.ant-typography
     font-size: .95em
     letter-spacing: .08em
     text-transform: uppercase
+
+  .ant-input
+    background: rgba(white, .4) !important
 
   .ant-select
     width: 15em

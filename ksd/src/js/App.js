@@ -7,11 +7,9 @@ import {
   Button,
   Tooltip,
   Radio,
-  Switch,
   Typography,
-  Progress,
-  Statistic,
   Spin,
+  Input,
 } from 'antd/es'
 
 import {
@@ -27,99 +25,16 @@ import $ from "jquery"
 import round   from "./round";
 import formatNumber from "./formatNumber"
 
-import Info         from "./Components/Info/Info"
-import NumericInput from "./Components/NumericInput"
-import CustomSlider from "./Components/CustomSlider/CustomSlider"
-import DashboardRow from "./Components/DashboardRow"
+import Info                from "./Components/Info/Info"
+import NumericInput        from "./Components/NumericInput"
+import CustomSlider        from "./Components/CustomSlider/CustomSlider"
+import DashboardRow        from "./Components/DashboardRow"
+import {Dialog, dialogAPI} from "./Components/dialog"
 
 const { Option } = Select;
 const { Title } = Typography;
 
 import "../sass/main.sass"
-
-var chart2, chartData, chartData2, scale, scaleStart, scaleEnd;
-
-function Value(props) {
-  var format = props.format || ( (val) => val );
-  var val = props.children;
-  var classList = ["value"].concat(props.className);
-
-  if (val === 0) {
-    classList.push("value--neutral");
-  }
-  else if (val < 0) {
-    classList.push("value--negative");
-  }
-
-  return (
-    <span className={classList.join(" ").trim()}>{ format(val) }</span>
-  )
-}
-
-function extRate(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 0, dayoffirstpayload = 0) {
-
-  ///////////////////////////////////////////
-
-  // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1) )
-  // Возвращает: Минимальная доходность в день
-
-  // точность в процентах от итоговой суммы
-  var delataMaxPercent = 0.1;
-
-  // максимальное количество итераций
-  var iterMax = 250;
-
-  var showday = [];
-
-  ///////////////////////////////////////////
-  function ff(rate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment = 1, dayoffirstpayload = 1) {
-    var res = present;
-    var p1 = dayoffirstpayment;
-    var p2 = dayoffirstpayload;
-    rate += 1;
-
-    for (var x = 0; x < periods; x++) {
-      res = res * rate;
-      p1--; p2--;
-      if (!p2) { p2 = payloadper; res += payload; }
-      if (!p1) { p1 = paymentper; res -= payment; }
-    }
-    return res;
-  }
-  function ff2(rate, periods, present, payment) {
-    var k1 = (1 + rate) ** periods;
-    return present * k1 + payment * (k1 - 1) / rate;
-  }
-
-  var deltaMax = future * delataMaxPercent / 100;
-  var guess = (((future + periods * (payment)) / present) ** (1 / periods)) - 1;
-  var guess2 = (periods * payment) ** (1 / (periods * 2)) - 1;
-
-  var delta = guess;
-
-  var rate = guess;
-  var minrate = 0;
-  var maxrate = 0;
-
-  var current = ff(rate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload);
-
-  while (((current > (future + deltaMax)) || (current < future)) && (iterMax > 0)) {
-    current = ff(rate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload);
-    if (current > (future + deltaMax)) {
-
-      maxrate = rate;
-      rate = minrate + (maxrate - minrate) / 2;
-    }
-    if (current < future) {
-
-      minrate = rate;
-      if (maxrate === 0) rate = rate * 2;
-      else rate = minrate + (maxrate - minrate) * 2;
-    }
-    iterMax--;
-  }
-  return rate;
-}
 
 // HTML Elemets
 var $body;
@@ -142,6 +57,42 @@ class App extends React.Component {
       rowsNumber: 1,
 
       tools: [],
+      customTools: [],
+      propsToShowArray: [
+        "shortName",
+        "stepPrice",
+        "priceStep",
+        "guaranteeValue",
+        "price",
+        "adr1",
+        "adr2"
+      ],
+      toolTemplate: {
+        code:            "",
+        shortName:       "",
+        name:            "",
+        stepPrice:       0,
+        priceStep:       1,
+        price:           1,
+        averageProgress: 0,
+        guaranteeValue:  1,
+        currentPrice:    1,
+        lotSize:         0,
+        dollarRate:      0,
+        adr1:            1,
+        adr2:            1,
+
+        isFuters: false,
+
+        points: [
+          [70,  70],
+          [156, 55],
+          [267, 41],
+          [423, 27],
+          [692, 13],
+          [960, 7 ],
+        ]
+      },
       readyTools: [
         this._parseTool("  1 000 000   	РТС	RIM0	108 060 ₽	32 582,22 ₽	10 ₽	14,9175 ₽	10%	  3   	3956	2701	3000"),
         this._parseTool("  1 000 000   	Brent	BRK0	$21,84	8 267,74 ₽	$0,01	7,4587 ₽	10%	  12   	1,55	1,17	1"),
@@ -176,8 +127,9 @@ class App extends React.Component {
     var len = s.length;
     return {
       code:       s[2],
-      adr:        [_number(s[len - 2]), _number(s[len - 3])],
-      planIncome:  _number(s[len - 1]),
+      adr1:       _number(s[len - 3]),
+      adr2:       _number(s[len - 2]),
+      planIncome: _number(s[len - 1]),
     }; 
   }
 
@@ -212,71 +164,120 @@ class App extends React.Component {
     $(".js-close-modal").click(e => this.closeModal());
   }
 
-  componentDidMount() {
-    $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
-      success: (res) => {
-        let data = JSON.parse(res).data;
-        // console.log(data);
+  unpackTools(tools) {
+    return new Promise((resolve, reject) => {
 
-        var t = [];
-        for (let tool of data) {
-          if (tool.price == 0 || !tool.volume) {
-            continue;
+      if (!tools || tools.length == 0) {
+        reject("\"tools\" is not an array or it's simply empty!", tools);
+      }
+  
+      var t = [];
+      for (let tool of tools) {
+        if (tool.price == 0 || !tool.volume) {
+          continue;
+        }
+
+        var obj = {
+          code:             tool.code      || "code",
+          name:             tool.fullName  || tool.shortName,
+          shortName:        tool.shortName || tool.shortName,
+          stepPrice:       +tool.stepPrice || 0,
+          priceStep:       +tool.priceStep || 0,
+          average:         +tool.average   || 0,
+          guaranteeValue:  +tool.guarantee || 0,
+
+          currentMarketPrice: 19051,
+          price:             +tool.price || 0,
+          adr1: 3956,
+          adr2: 2701,
+        };
+
+        // Check if we already have pre-written tool
+        var found = false;
+        for (var _t of this.state.readyTools) {
+          if (_t.code.slice(0, 2) === obj.code.slice(0, 2)) {
+            
+            Object.assign(obj, Object.assign(_t, { code: obj.code }));
+
+            found = true;
+            break;
           }
+        }
 
-          console.log(tool);
-
-          var obj = {
-            code:             tool.code      || "code",
-            name:             tool.fullName  || tool.shortName,
-            shortName:        tool.shortName || tool.shortName,
-            stepPrice:       +tool.stepPrice || 0,
-            priceStep:       +tool.priceStep || 0,
-            average:         +tool.average   || 0,
-            guaranteeValue:  +tool.guarantee || 0,
-
-            currentMarketPrice: 19051,
-            price:             +tool.price || 0,
-            adr:                [3956, 2701],
+        // We didn't find the tool in pre-written tools
+        if (!found) {
+          
+          var substitute = {
+            planIncome: round(obj.price / 10, 2),
+            adr1: round(obj.price / 5,  4),
+            adr2: round(obj.price / 10, 4),
           };
+          Object.assign(obj, substitute);
 
-          // Check if we already have pre-written tool
-          var found = false;
-          for (var _t of this.state.readyTools) {
-            if (_t.code.slice(0, 2) === obj.code.slice(0, 2)) {
-              
-              Object.assign(obj, Object.assign(_t, { code: obj.code }));
-
-              found = true;
-              break;
-            }
-          }
-
-          // We didn't find the tool in pre-written tools
-          if (!found) {
-
-            Object.assign(obj, {
-              planIncome: round(obj.price / 10, 2),
-              adr: [obj.price * 0.1, obj.price * 0.05]
-            });
-
-          }
-
-          t.push(obj);
         }
 
-        if (t.length > 0) {
-          let { tools } = this.state;
-          tools = tools.concat(t.sort((a, b) => a.code > b.code));
+        console.log(obj);
+        
+        t.push(obj);
+      }
 
-          this.setState({ tools });
-        }
-      },
-      error: (err) => console.error(err)
+      if (t.length > 0) {
+        let { tools } = this.state;
+        tools = tools.concat(t.sort((a, b) => a.code > b.code));
+
+        this.setState({ tools }, resolve);
+      }
+      
+      resolve();
     });
+  }
 
+  fetchTools() {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
+        success: res => {
+          var data = JSON.parse(res).data;
+          resolve(data);
+        },
+        error: (err) => reject(err),
+      });
+    })
+  }
+
+  fetchDepoStart() {
+    return new Promise((resolve, reject) => {
+      console.log("Fetching depoStart!");
+      $.ajax({
+        url: "/local/php_interface/s1/ajax/?method=getInvestorInfo",
+        success: res => {
+          var parsed = JSON.parse(res);
+          var depo = Number(parsed.data.deposit);
+          resolve(depo);
+        },
+        error: err => reject(err)
+      });
+    });
+  }
+
+  componentDidMount() {
     this.bindEvents();
+    
+    this.fetchTools()
+      .then(tools => this.unpackTools(tools))
+      .catch(err => console.log(err));
+
+    this.fetchDepoStart()
+      .then(depo => {
+        depo = depo || 10000;
+        this.setState({ depo });
+      })
+      .catch(err => console.log(err));
+  }
+
+  getTools() {
+    const { tools, customTools } = this.state;
+    return [].concat(tools).concat(customTools)
   }
 
   render() {
@@ -296,13 +297,7 @@ class App extends React.Component {
                       <a href="#" target="_blank">Главная</a>
                     </li>
                     <li className="breadcrumbs-item">
-                      <a href="#" target="_blank">Календарь событий</a>
-                    </li>
-                    <li className="breadcrumbs-item">
-                      <a href="#" target="_blank">Отчетность</a>
-                    </li>
-                    <li className="breadcrumbs-item">
-                      <a href="#" target="_blank">Калькулятор дивидендов</a>
+                      <a href="#" target="_blank">Калькулятор сравнительной доходности</a>
                     </li>
                   </ul>
                 </nav>
@@ -326,15 +321,19 @@ class App extends React.Component {
                   </Select>
                 </label>
 
-                <label className="main-top__strategy labeled-select">
-                  <span className="labeled-select__label main-top__strategy-label">
-                    Сохраненная стратегия
-                  </span>
-                  <Select value={0}>
-                    <Option key={0} value={0}>SavedStrategy_1</Option>
-                    <Option key={1} value={1}>SavedStrategy_2</Option>
-                  </Select>
-                </label>
+                {
+                  false && (
+                    <label className="main-top__strategy labeled-select">
+                      <span className="labeled-select__label main-top__strategy-label">
+                        Сохраненная стратегия
+                      </span>
+                      <Select value={0}>
+                        <Option key={0} value={0}>SavedStrategy_1</Option>
+                        <Option key={1} value={1}>SavedStrategy_2</Option>
+                      </Select>
+                    </label>
+                  )
+                }
                 
                 <Radio.Group
                   className="tabs"
@@ -360,15 +359,22 @@ class App extends React.Component {
                   </Radio>
                 </Radio.Group>
 
-                <Button 
-                  className="custom-btn custom-btn--secondary main-top__save" 
-                  onClick={() => alert("It works!")}
-                >
-                  Сохранить в профиль
-                </Button>
+                {
+                  false && (
+                    <Button 
+                      className="custom-btn custom-btn--secondary main-top__save" 
+                      onClick={() => alert("It works!")}
+                    >
+                      Сохранить в профиль
+                    </Button>
+                  )
+                }
 
                 <Tooltip title="Настройки">
-                  <button className="settings-button js-open-modal main-top__icon">
+                  <button 
+                    className="settings-button js-open-modal main-top__icon"
+                    onClick={e => dialogAPI.open("dialog1", e.target)}
+                  >
                     <span className="visually-hidden">Открыть конфиг</span>
                     <SettingFilled className="settings-button__icon" />
                   </button>
@@ -397,7 +403,7 @@ class App extends React.Component {
                           mode={this.state.mode}
                           depo={this.state.depo}
                           percentage={this.state.percentage}
-                          tools={this.state.tools} 
+                          tools={this.getTools()} 
                         />
       
                       )
@@ -433,154 +439,151 @@ class App extends React.Component {
         </main>
         {/* /.main */}
 
-        <div className="m">
-          <div className="m-content">
-            <div className="config config-ksd card">
+        <Dialog
+          id="dialog1"
+          className=""
+          okContent="Добавить"
+          onOk={e => {
+            var { toolTemplate, customTools, propsToShowArray } = this.state;
 
-              <label className="input-group input-group--fluid config-ksd__depo">
-                <span className="input-group__label">Размер депозита:</span>
-                <NumericInput 
-                  className="input-group__input"
-                  defaultValue={this.state.depo}
-                  format={formatNumber}
-                  min={10000}
-                  max={Infinity}
-                  onBlur={val => {
-                    const { depo } = this.state;
-                    if (val == depo) {
-                      return;
-                    }
+            var template = Object.assign({}, toolTemplate);
+            var tool = template;
+            propsToShowArray.map((prop, index) => {
+              tool[prop] = (index === 0) ? "Инструмент" : toolTemplate[prop];
+            });
+            tool.planIncome = round(tool.price / 10, 2);
 
-                    this.setState({ depo: val });
-                  }}
-                />
-              </label>              
-
-
-              <Title className="config__title" level={2} style={{ textAlign: "center" }}>
-                Инструменты
-              </Title>
-              {/* <h2 className="config__title">Настройка инструментов</h2> */}
-
-              <div className="config-table-wrap js-nice-scroll">
-                {
-                  this.state.tools.length > 0
-                    ? (
-                      <table className="table">
-                        <thead className="table-header">
-                          <tr className="table-tr">
-                            <th className="config-th table-th">Инструмент</th>
-                            <th className="config-th table-th">Цена шага</th>
-                            <th className="config-th table-th">Шаг цены</th>
-                            <th className="config-th table-th">ГО</th>
-                            <th className="config-th table-th">Текущая цена</th>
-                            <th className="config-th table-th">
-                              <Info tooltip="Средний ход (пунктов) за год с учетом аномальных движений">
-                                ADR1
-                              </Info>
-                            </th>
-                            <th className="config-th table-th">
-                              <Info tooltip="Средний ход (пунктов) за год без учета аномальных движений">
-                                ADR2
-                              </Info>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="table-body">
-                          {
-                            this.state.tools.sort((a, b) => a.code > b.code).map((tool, i) =>
-                              <tr className="config-tr js-config-row" key={i}>
-                                <td
-                                  className="table-td"
-                                  style={{ width: "15em" }}
-                                  key={0}
-                                >
-                                  {tool.code}
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={1}
-                                >
-                                  {tool.stepPrice}
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={2}
-                                >
-                                  {tool.priceStep}
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={3}
-                                >
-                                  {tool.guaranteeValue}
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={4}
-                                >
-                                  {tool.price}
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={5}
-                                >
-                                  <NumericInput 
-                                    defaultValue={tool.adr[0]}
-                                    min={0}
-                                    max={Infinity}
-                                    format={formatNumber}
-                                    onBlur={val => {
-                                      var { tools } = this.state;
-                                      var tool = tools[i];
-                                      tool.adr[0] = val;
-                                      this.setState({ tools });
-                                    }}
-                                  />
-                                </td>
-                                
-                                <td
-                                  className="table-td"
-                                  style={{ width: "9em" }}
-                                  key={6}
-                                >
-                                  <NumericInput
-                                    defaultValue={tool.adr[1]}
-                                    min={0}
-                                    max={Infinity}
-                                    format={formatNumber}
-                                    onBlur={val => {
-                                      var { tools } = this.state;
-                                      var tool = tools[i];
-                                      tool.adr[1] = val;
-                                      this.setState({ tools });
-                                    }}
-                                  />
-                                </td>
-                              </tr>
-                            )
-                          }
-                        </tbody>
-                      </table>
-                    )
-                    : null
+            customTools.push(tool);
+            this.setState({ customTools }, () => {
+              $(".config-table-wrap").scrollTop(9999);
+            });
+          }}
+          cancelContent="Закрыть"
+        >
+          <label className="input-group input-group--fluid config-ksd__depo">
+            <span className="input-group__label">Размер депозита:</span>
+            <NumericInput
+              className="input-group__input"
+              key={this.state.depo}
+              defaultValue={this.state.depo}
+              format={formatNumber}
+              min={10000}
+              max={Infinity}
+              onBlur={val => {
+                const { depo } = this.state;
+                if (val == depo) {
+                  return;
                 }
-              </div>
-              {/* /.config-talbe-wrap */}
-            </div>
-            {/* /.config */}
+
+                this.setState({ depo: val });
+              }}
+            />
+          </label>
+
+          <div className="config-table-wrap">
+            <table className="table">
+              <thead className="table-header">
+                <tr className="table-tr">
+                  <th className="config-th table-th">Инструмент</th>
+                  <th className="config-th table-th">Цена шага</th>
+                  <th className="config-th table-th">Шаг цены</th>
+                  <th className="config-th table-th">ГО</th>
+                  <th className="config-th table-th">Текущая цена</th>
+                  <th className="config-th table-th">
+                    <Info tooltip="Средний ход (пунктов) за год с учетом аномальных движений">
+                      ADR1
+                    </Info>
+                  </th>
+                  <th className="config-th table-th">
+                    <Info tooltip="Средний ход (пунктов) за год без учета аномальных движений">
+                      ADR2
+                    </Info>
+                  </th>
+                  <th className="config-th table-th"></th>
+                </tr>
+              </thead>
+              <tbody className="table-body">
+                {
+                  this.state.tools.map((tool, index) =>
+                    <tr className="config-tr" key={index}>
+                      {
+                        this.state.propsToShowArray.map((prop, i) =>
+                          <td
+                            className="table-td"
+                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
+                            key={i}>
+                            {tool[prop]}
+                          </td>
+                        )
+                      }
+                    </tr>
+                  )
+                }
+                {(() => {
+                  var onBlur = (val, index, prop) => {
+                    var { customTools } = this.state;
+                    customTools[index][prop] = val;
+                    this.setState({ customTools });
+                  };
+
+                  return this.state.customTools.map((tool, index) =>
+                    <tr className="config-tr" key={index}>
+                      {
+                        this.state.propsToShowArray.map((prop, i) =>
+                          <td
+                            className="table-td"
+                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
+                            key={i}>
+                            {
+                              i === 0 ? (
+                                <Input
+                                  defaultValue={tool[prop]}
+                                  onBlur={e => onBlur(e.target.value, index, prop)}
+                                  onKeyDown={e => {
+                                    if (
+                                      [
+                                        13, // Enter
+                                        27  // Escape
+                                      ].indexOf(e.keyCode) > -1
+                                    ) {
+                                      e.target.blur();
+                                      onBlur(e.target.value, index, prop);
+                                    }
+                                  }}
+                                />
+                              )
+                                : (
+                                  <NumericInput
+                                    defaultValue={tool[prop]}
+                                    onBlur={val => onBlur(val, index, prop)}
+                                  />
+                                )
+                            }
+                          </td>
+                        )
+                      }
+                      <td className="table-td" key={index}>
+                        <Tooltip title="Удалить">
+                          <button
+                            className="x-button config__delete"
+                            aria-label="Удалить"
+                            onClick={e => {
+                              var { customTools } = this.state;
+                              customTools.splice(index, 1);
+                              this.setState({ customTools });
+                            }}>
+                            <span>&times;</span>
+                          </button>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  )
+                })()}
+              </tbody>
+            </table>
           </div>
-        </div>
+          {/* /.config-talbe-wrap */}
+        </Dialog>
 
       </div>
     );

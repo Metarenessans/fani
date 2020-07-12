@@ -4,6 +4,7 @@ import { Input, Tooltip, Select } from 'antd/es'
 
 import NumericInput from "../Components/NumericInput"
 import CustomSelect from "../Components/CustomSelect/CustomSelect"
+
 import round from "../round"
 import formatNumber from "../formatNumber"
 
@@ -57,6 +58,19 @@ export default class DashboardRow extends React.Component {
     return this.getTool().price * 0.2;
   }
 
+  getToolName(tool = {}) {
+    var name = "";
+    if (tool.shortName) {
+      name += `${tool.shortName}`;
+    }
+    if (tool.code) {
+      name += ` (${tool.code})`;
+    }
+
+    return name;
+  }
+
+
   render() {
     const { selectedToolIndex, percentage } = this.state;
     const { mode, depo, tools } = this.props;
@@ -64,6 +78,7 @@ export default class DashboardRow extends React.Component {
     const blackSwan = this.getBlackSwan();
 
     var planIncome = this.getPlanIncome();
+    console.log(planIncome);
 
     var contracts = Math.floor( depo * (percentage / 100) / this.getTool().guaranteeValue );
     
@@ -71,7 +86,7 @@ export default class DashboardRow extends React.Component {
     var incomePercentage = (income / depo) * 100;
     var risk = 
       contracts 
-      * this.getTool().adr[1] 
+      * this.getTool().adr1
       / this.getTool().priceStep
       * this.getTool().stepPrice 
       / depo 
@@ -100,7 +115,9 @@ export default class DashboardRow extends React.Component {
             >
               {                
                 tools.map((tool, index) =>
-                  <Option key={index} value={index} title={tool.name}>{ tool.code }</Option>
+                  <Option key={index} value={index} title={tool.name}>
+                    { this.getToolName(tool) }
+                  </Option>
                 )
               }
             </Select>
@@ -109,9 +126,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">Цена / ГО</span>
-          <span className="dashboard-val">
-            { formatNumber(this.getTool().price) } /<br/>
-            { formatNumber(this.getTool().guaranteeValue) }
+          <span className="dashboard-val dashboard-val--wrap">
+            <span className="no-wrap">{formatNumber(this.getTool().price)}</span>
+            &nbsp;/&nbsp;
+            <span className="no-wrap">{formatNumber(this.getTool().guaranteeValue)}</span>
           </span>
         </div>
         {/* col */}
@@ -155,7 +173,7 @@ export default class DashboardRow extends React.Component {
           </span>
         </div>
         {/* col */}
-        <div className="dashboard-col dashboard-col--wide">
+        <div className="dashboard-col dashboard-col--semiwide">
           <span className="dashboard-key">Руб.</span>
           <span className="dashboard-val">
             { formatNumber( round(income, 2) ) } руб.
