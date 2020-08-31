@@ -1,9 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 
-import { Slider } from 'antd/es'
+import { Slider, Tooltip } from 'antd/es'
 
-import "./style.sass"
+import croppNumber from "../../utils/cropp-number"
+
+import "./style.scss"
 
 export default class CustomSlider extends React.Component {
   constructor(props) {
@@ -27,7 +29,8 @@ export default class CustomSlider extends React.Component {
   }
 
   render() {
-    const { value } = this.props;
+    var { value, precision } = this.props;
+    precision = precision || 0;
 
     return (
       <div className="custom-slider">
@@ -38,9 +41,11 @@ export default class CustomSlider extends React.Component {
           defaultValue={value}
           onChange={e => this.onChange(e)}
         />
-        <span className="custom-slider__value">
-          { this.filter( value ) }
-        </span>
+        <Tooltip title={this.filter( croppNumber(value, 7) )}>
+          <span className="custom-slider__value">
+            { this.filter( croppNumber(value, precision) ) }
+          </span>
+        </Tooltip>
       </div>
     )
   }

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import { Tooltip } from 'antd/es'
 
 import formatBigNumbers from "../utils/format";
-import formatNumber from "../utils/formatNumber"
+import formatNumber     from "../utils/format-number"
 
 export default function BigNumber(props) {
   var { val, format } = props;

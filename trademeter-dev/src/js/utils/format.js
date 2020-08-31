@@ -1,21 +1,25 @@
 import round from "./round"
 
-export default function format(labelValue) {
-  return Math.abs(Number(labelValue)) >= 1.0e+12
+export default function format(val) {
 
-    ? round(Math.abs(Number(labelValue)) / 1.0e+12, 2) + " трлн"
-
-    : Math.abs(Number(labelValue)) >= 1.0e+9
-
-      ? round(Math.abs(Number(labelValue)) / 1.0e+9, 2) + " млрд"
-      // Six Zeroes for Millions 
-      : Math.abs(Number(labelValue)) >= 1.0e+6
-
-        ? round(Math.abs(Number(labelValue)) / 1.0e+6, 2) + " млн"
-        // Three Zeroes for Thousands
-        : Math.abs(Number(labelValue)) >= 1.0e+3
-
-          ? round(Math.abs(Number(labelValue)) / 1.0e+3, 2) + " тыс"
-
-          : Math.abs(Number(labelValue));
+  let sup = 1;
+  let suffix = "";
+  if (val >= 1.0e+12) {
+    sup = 1.0e+12;
+    suffix = "трлн";
+  }
+  else if (val >= 1.0e+9) {
+    val = 1.0e+9;
+    suffix = "млрд";
+  }
+  else if (val >= 1.0e+6) {
+    val = 1.0e+6;
+    suffix = "млн";
+  }
+  else if (val >= 1.0e+3) {
+    val = 1.0e+3;
+    suffix = "тыс";
+  }
+  
+  return val = round(Math.abs(val) / sup, 2).toExponential(2).slice(0, 4) + " " + suffix;
 }

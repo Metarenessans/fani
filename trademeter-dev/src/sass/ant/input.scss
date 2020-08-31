@@ -10,11 +10,12 @@
   position: relative;
   display: inline-block;
   width: 100%;
-  height: 2.2rem;
+  height: 1.6em;
   padding: 0.2em .6em;
-  padding-top: .3em;
+  padding-top: .2em;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 1.1255rem;
+  // font-size: 1.1255rem;
+  font-size: 2em;
   line-height: 1.5;
   background-color: #fff;
   background-image: none;
@@ -345,7 +346,7 @@ textarea.ant-input {
   margin: 0;
   padding: 0;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
+  // font-size: 14px;
   font-variant: tabular-nums;
   line-height: 1.5;
   list-style: none;
@@ -375,7 +376,8 @@ textarea.ant-input {
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
-  font-size: 1.1255rem;
+  // font-size: 1.1255rem;
+  font-size: 2em;
   color: rgba(0, 0, 0, 0.65);
   line-height: 0;
   -webkit-transform: translateY(-50%);
@@ -391,16 +393,17 @@ textarea.ant-input {
   cursor: not-allowed;
 }
 .ant-input-affix-wrapper .ant-input-prefix {
-  left: 12px;
+  left: .5em;
 }
 .ant-input-affix-wrapper .ant-input-suffix {
-  right: 12px;
+  right: .5em;
+  margin-top: .1em;
 }
 .ant-input-affix-wrapper .ant-input:not(:first-child) {
-  padding-left: 30px;
+  padding-left: 1.6em;
 }
 .ant-input-affix-wrapper .ant-input:not(:last-child) {
-  padding-right: 30px;
+  padding-right: 1.6em;
 }
 .ant-input-affix-wrapper.ant-input-affix-wrapper-input-with-clear-btn .ant-input:not(:last-child) {
   padding-right: 49px;

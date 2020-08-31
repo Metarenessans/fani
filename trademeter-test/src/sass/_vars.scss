@@ -1,0 +1,28 @@
+$primary-color:         #4859b4;
+$primary-color-light:   lighten($primary-color, 15);
+$primary-color-lighter: lighten($primary-color, 5);
+
+$accent-color: #3f6b33;
+
+$success-color: #52c41a;
+
+$danger-color:             #f5222d;
+$danger-color-transparent: rgba($danger-color, .45);
+
+:root {
+  --bg-color:                 white;
+
+  --primary-color:            #{$primary-color};
+  --primary-color-lighter:    #{$primary-color-light};
+  --primary-color-light:      #{$primary-color-lighter};
+
+  --accent-color:             #{$accent-color};
+  --success-color:            #{$success-color};
+  --contrast-color:           #dcae1d;
+
+  --danger-color:             #{$danger-color};
+  --danger-color-transparent: #{$danger-color-transparent};
+
+  --outline-width: 1px;
+  --focus-outline-width: calc(var(--outline-width) * 1);
+}

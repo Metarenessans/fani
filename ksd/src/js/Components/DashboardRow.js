@@ -2,11 +2,14 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { Input, Tooltip, Select } from 'antd/es'
 
-import NumericInput from "../Components/NumericInput"
-import CustomSelect from "../Components/CustomSelect/CustomSelect"
+import NumericInput from "../components/numeric-input"
+import CustomSelect from "../components/custom-select"
+import CrossButton  from "../components/cross-button"
 
-import round from "../round"
-import formatNumber from "../formatNumber"
+import isEqual        from "../utils/is-equal"
+import round          from "../utils/round"
+import formatNumber   from "../utils/format-number"
+import fractionLength from "../utils/fraction-length"
 
 const { Option } = Select;
 
@@ -14,27 +17,54 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      // Загрузка депо%
-      percentage: 10,
+    const { mode, depo, tools, onChange } = this.props;
+    let { percentage, selectedToolName, planIncome } = this.props;
 
-      selectedToolIndex: 0,
-      planIncome:        null
+    this.state = {
+      percentage,
+      selectedToolName,
+      planIncome
     };
   }
 
   getTool() {
-    const { selectedToolIndex } = this.state;
-    const { tools } = this.props;
-    return tools[selectedToolIndex];
+    const { tools, selectedToolName } = this.props;
+
+    let selectedToolIndex = 0;
+    if (selectedToolName != null) {
+      for (let i = 0; i < tools.length; i++) {
+        let tool = tools[i];
+        if (tool.shortName === selectedToolName) {
+          selectedToolIndex = i;
+          break;
+        }
+      }
+    }
+
+    return tools[selectedToolIndex] || {
+      code: "",
+      shortName: "",
+      name: "",
+      stepPrice: 0,
+      priceStep: 1,
+      price: 1,
+      averageProgress: 0,
+      guaranteeValue: 1,
+      currentPrice: 1,
+      lotSize: 0,
+      dollarRate: 0,
+      adr1: 1,
+      adr2: 1,
+
+      isFuters: false,
+    };
   }
 
   getPlanIncome() {
-    const { mode } = this.props;
-    var planIncome = this.getTool().planIncome;
-    if (this.state.planIncome) {
-      planIncome = this.state.planIncome;
-    }
+    const { mode, item } = this.props;
+    const currentTool = this.getTool();
+    var planIncome = item.planIncome != null ? item.planIncome : currentTool.planIncome;
+    // console.log(item.planIncome, currentTool.planIncome);
 
     if (mode > 0) {
       var m;
@@ -70,29 +100,109 @@ export default class DashboardRow extends React.Component {
     return name;
   }
 
+  update() {
+
+  }
 
   render() {
-    const { selectedToolIndex, percentage } = this.state;
-    const { mode, depo, tools } = this.props;
+    let { selectedToolName, percentage, item } = this.props;
+    const {
+      index,
+      sortProp,
+      sortDESC,
+      mode,
+      depo,
+      tools,
+      onSort,
+      onChange,
+      onUpdate,
+      onDelete,
+    } = this.props;
 
+    selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].shortName;
+
+    const currentTool = this.getTool();
     const blackSwan = this.getBlackSwan();
 
     var planIncome = this.getPlanIncome();
-    console.log(planIncome);
 
-    var contracts = Math.floor( depo * (percentage / 100) / this.getTool().guaranteeValue );
+    var contracts = Math.floor( depo * (percentage / 100) / currentTool.guaranteeValue );
     
-    var income = contracts * planIncome / this.getTool().priceStep * this.getTool().stepPrice;
+    var income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
     var incomePercentage = (income / depo) * 100;
+    var loadingPercentage = round((incomePercentage / percentage) * 100, 3);
     var risk = 
       contracts 
-      * this.getTool().adr1
-      / this.getTool().priceStep
-      * this.getTool().stepPrice 
+      * currentTool.adr1
+      / currentTool.priceStep
+      * currentTool.stepPrice 
       / depo 
       * 100;
     if (mode > 0) {
-      risk = contracts * planIncome / this.getTool().priceStep * this.getTool().stepPrice / depo * 100;
+      risk = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice / depo * 100;
+    }
+
+    var freeMoney = 100 - (percentage + risk);
+
+    const itemUpdated = {
+      percentage,
+      // ГО
+      guaranteeValue: currentTool.guaranteeValue,
+      // Контракты
+      contracts,
+      // Ход
+      planIncome,
+      // Руб
+      income,
+      // К депо
+      incomePercentage,
+      // К загрузке
+      loadingPercentage,
+      // Риск
+      risk,
+      // Свободно
+      freeMoney,
+      // Имя инструмента
+      selectedToolName,
+    };
+
+    if (!isEqual(itemUpdated, item)) {
+      // console.log(itemUpdated, item);
+      onUpdate(itemUpdated);
+    }
+
+    const SortButton = function(props) {
+      const className = "dashboard-key__sort-toggle";
+      const prop = props.prop;
+      return (
+        <div className="dashboard-key__sort-toggle-wrap">
+          <button 
+            className={
+              []
+                .concat(className)
+                .concat(prop === sortProp && sortDESC != null ? "active" : "")
+                .concat(
+                  prop === sortProp && (sortDESC != null && !sortDESC) 
+                    ? "reversed" 
+                    : ""
+                )
+                .join(" ")
+                .trim()
+            }
+            onClick={e => {
+              let val;
+              if (sortDESC == null) {
+                val = true;
+              }
+              else {
+                val = sortDESC ? !sortDESC : undefined;
+              }
+  
+              onSort(prop, val);
+            }}
+          ></button>
+        </div>
+      );
     }
 
     return (
@@ -101,21 +211,20 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
-            <Select 
+            <Select
+              key={selectedToolName}
               className="dashboard__select dashboard__select--wide" 
-              value={selectedToolIndex}
+              value={selectedToolName}
               showSearch
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              onChange={selectedToolIndex => {
-                this.setState({ selectedToolIndex })
-              }}
+              onChange={selectedToolName => onChange("selectedToolName", selectedToolName)}
             >
               {                
                 tools.map((tool, index) =>
-                  <Option key={index} value={index} title={tool.name}>
+                  <Option key={index} value={tool.shortName} title={tool.name}>
                     { this.getToolName(tool) }
                   </Option>
                 )
@@ -125,7 +234,10 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Цена / ГО</span>
+          <span className="dashboard-key">
+            Цена / ГО
+            <SortButton prop="guaranteeValue" />
+          </span>
           <span className="dashboard-val dashboard-val--wrap">
             <span className="no-wrap">{formatNumber(this.getTool().price)}</span>
             &nbsp;/&nbsp;
@@ -137,12 +249,14 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-key">Загрузка</span>
           <span className="dashboard-val">
             <CustomSelect
+              key={percentage}
               className="dashboard__select"
-              optionsDefault={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
+              options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
               formatOption={val => val + "%"}
               min={1}
               max={100}
-              onChange={val => this.setState({ percentage: val })}
+              value={percentage}
+              onChange={val => onChange("percentage", val)}
             />
           </span>
         </div>
@@ -157,19 +271,21 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">Ход</span>
           <span className="dashboard-val">
-            {
-              mode == 0
+            {(() => {
+              const fraction = fractionLength(currentTool.priceStep);
+
+              return mode == 0
                 ? (
-                  <NumericInput 
-                    key={this.getTool().code}
-                    className="dashboard__input" 
-                    defaultValue={this.getPlanIncome()}
-                    format={val => formatNumber( round(val, 4) )}
-                    onBlur={val => this.setState({ planIncome: val })}
+                  <NumericInput
+                    key={Math.random()}
+                    className="dashboard__input"
+                    defaultValue={planIncome}
+                    format={val => formatNumber((val).toFixed(fraction))}
+                    onBlur={val => onChange("planIncome", val)}
                   />
                 )
-                : formatNumber(round(this.getPlanIncome(), 2))
-            }
+                : formatNumber((planIncome).toFixed(fraction)) 
+            })()}
           </span>
         </div>
         {/* col */}
@@ -181,16 +297,22 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">К депо</span>
+          <span className="dashboard-key">
+            К депо
+            <SortButton prop="incomePercentage" />
+          </span>
           <span className="dashboard-val">
             { round(incomePercentage, 2) }%
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">К загрузке </span>
+          <span className="dashboard-key">
+            К загрузке
+            <SortButton prop="loadingPercentage" />
+          </span>
           <span className="dashboard-val">
-            { round((incomePercentage / percentage) * 100, 2) }%
+            { round(loadingPercentage, 2) }%
           </span>
         </div>
         {/* col */}
@@ -204,10 +326,17 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col">
           <span className="dashboard-key">Свободно</span>
           <span className="dashboard-val">
-            { round(100 - (percentage + risk), 2) }%
+            { round(freeMoney, 2) }%
           </span>
         </div>
         {/* col */}
+
+        {index > 0 &&
+          <CrossButton 
+            className="dashboard-row__delete"
+            onClick={e => onDelete(index)}
+          />
+        }
 
       </div>
     )

@@ -16,14 +16,15 @@
   <!-- Icon -->
   <link rel="icon" type="image/png" href="favicon.png">
   <!-- Include CSS -->
-  <!-- <link rel="stylesheet" href="dist/css/style.css"> -->
 </head>
 <body>
   <noscript>You need to enable JavaScript to run this app</noscript>
   <div id="root"></div>
 
-  <script src="https://cdn.anychart.com/releases/8.7.1/js/anychart-bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
-  <script src="dist/main.min.js"></script>
+  <script src="build/js/anychart-bundle.min.js"></script>
+  <script src="build/js/jstat.min.js"></script>
+
+  <script type="module" src="build/index-es6.js"></script>
+  <script nomodule src="build/index.js"></script>
 </body>
 </html>

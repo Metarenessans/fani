@@ -116,17 +116,22 @@ export default class NumericInput extends React.Component {
     var { placeholder } = this.props;
 
     if (placeholder && value === "") {
-      return;
+      // return;
     }
 
-    var val = this.parse(value);
-    if (isNaN( val )) {
-      val = 0;
+    let val = value;
+    if (val) {
+      val = this.parse(value);
+      if (isNaN(val)) {
+        val = 0;
+      }
+
+      val = Number(val);
     }
 
     this.setState({ value: this.format(val) });
     if (this.props.onBlur) {
-      this.props.onBlur(Number(val));
+      this.props.onBlur(val);
     }
   }
 
@@ -148,6 +153,7 @@ export default class NumericInput extends React.Component {
         visible={errMsg.length > 0}
       >
         <Input
+          inputMode="tel"
           placeholder={0}
           {...this.props}
           className={this.className.concat(errMsg.length ? " error" : "")}

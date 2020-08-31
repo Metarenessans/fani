@@ -20,9 +20,9 @@
   &-top
     position: relative
     z-index: 2
-    background: var( --primary-color ) url("dist/img/pattern.png") center / 115em
+    background: var( --primary-color )
     box-shadow: 0 1.1em 2.1em rgba(0,0,0,.15)
-    padding: 3em 0
+    padding: 2em 0 2.5em
 
     color: white
     text-align: center
@@ -43,6 +43,8 @@
       font-size: 1.6em
 
       > *
+        min-width: 16em
+
         +xs
           width: 100%
 

@@ -1,0 +1,120 @@
+.iterations {
+  position: relative;
+  width:  100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  &-list {
+    --space: .8em;
+
+    height: 12.8em;
+    overflow-y: scroll;
+    padding: .75em 1em 1.75em;
+    margin: 0;
+
+    @include sm() {
+      height:    14.4em;
+      padding: .75em 1em 3.25em;
+    }
+    
+    @include xs() {
+      height:    15.4em;
+      padding: .75em 1em 3.75em;
+      font-size: 1.25em;
+    }
+
+    &-item {
+      position: relative;
+
+      margin-bottom: var(--space);
+      display: flex;
+      align-items: center;
+      // justify-content: space-between;
+
+      font-weight: 400;
+
+      --fz: 1.8em;
+
+      @include xs() {
+        --fz: 2em;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &__number {
+        display: inline-block;
+        margin-right: .5em;
+
+        font-size: var(--fz);
+      }
+      
+      &__separator {
+        display: inline-block;
+        margin: 0 1em;
+
+        font-size: var(--fz);
+      }
+
+      &__delete {
+        position: absolute;
+        top:     0;
+        right:  -0.125em;
+        font-size: 2.5em;
+        color: inherit !important;
+      }
+      
+      &__input {
+        $input-width: 5.3em;
+
+        &-left {
+          width: initial;
+          text-align: right;
+          
+          .ant-input,
+          .ant-input-suffix {
+            font-size: var(--fz);
+            color: var(--accent-color) !important;
+          }
+
+          .ant-input {
+            width: $input-width;
+          }
+        }
+        
+        &-right {
+          width: $input-width;
+
+          font-size: var(--fz);
+        }
+
+      }
+
+    }
+  }
+
+  &-button {
+    position: absolute;
+    z-index: 2;
+    left:   0;
+    bottom: 0;
+    width: 100%;
+    border: none;
+    background: var(--primary-color);
+    padding: .5em 2em;
+
+    color: #fff;
+    font-family: "Roboto";
+    font-size: 1em;
+    font-weight: 700;
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    @include xs() {
+      font-size: 1.4em;
+    }
+  }
+}

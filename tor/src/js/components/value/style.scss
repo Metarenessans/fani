@@ -1,7 +1,5 @@
-@import "../../../sass/vars";
-
 .value {
-  color: $accentColor;
+  color: var( --accent-color );
   font-weight: bold;
   white-space: nowrap;
 
@@ -10,6 +8,6 @@
   }
   
   &--negative {
-    color: $dangerColor;
+    color: var( --danger-color );
   }
 }

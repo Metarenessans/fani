@@ -19,43 +19,58 @@ import {
   ArrowDownOutlined,
   QuestionCircleFilled,
   LoadingOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
 
-import $ from "jquery"
-import round   from "./round";
-import formatNumber from "./formatNumber"
+import $            from "jquery"
+import {ajax}       from "jquery"
+import params       from "./utils/params"
+import round        from "./utils/round";
+import formatNumber from "./utils/format-number"
+import typeOf       from "./utils/type-of"
+import promiseWhile from "./utils/promise-while"
 
-import Info                from "./Components/Info/Info"
-import NumericInput        from "./Components/NumericInput"
-import CustomSlider        from "./Components/CustomSlider/CustomSlider"
-import DashboardRow        from "./Components/DashboardRow"
-import {Dialog, dialogAPI} from "./Components/dialog"
+import Info                from "./components/Info/Info"
+import Stack               from "./components/stack"
+import CrossButton         from "./components/cross-button"
+import NumericInput        from "./components/numeric-input"
+import CustomSlider        from "./components/custom-slider"
+import DashboardRow        from "./components/DashboardRow"
+import SelfValidateInput   from "./components/sefl-validate-input"
+import {Dialog, dialogAPI} from "./components/dialog"
 
 const { Option } = Select;
 const { Title } = Typography;
 
-import "../sass/main.sass"
+import "../sass/style.sass"
 
-// HTML Elemets
-var $body;
-var $modal;
+const dev = true;
 
 class App extends React.Component {
 
   constructor(props) {
     super(props);
 
-    // Данные из адресной строки
-    // ...
+    this.initial = {
 
-    this.state = {
+      data: [{ percentage: 10 }],
+
       // Режим
       mode: 0,
       //Размер депозита
       depo: 1000000,
+      
+    };
 
-      rowsNumber: 1,
+    this.state = Object.assign({
+      id:                 null,
+      saved:              false,
+      saves:              [],
+      currentSaveIndex:   0,
 
+      sortProp:  null,
+      sortDESC:  true,
+      
       tools: [],
       customTools: [],
       propsToShowArray: [
@@ -68,29 +83,29 @@ class App extends React.Component {
         "adr2"
       ],
       toolTemplate: {
-        code:            "",
-        shortName:       "",
-        name:            "",
-        stepPrice:       0,
-        priceStep:       1,
-        price:           1,
+        code: "",
+        shortName: "",
+        name: "",
+        stepPrice: 0,
+        priceStep: 1,
+        price: 1,
         averageProgress: 0,
-        guaranteeValue:  1,
-        currentPrice:    1,
-        lotSize:         0,
-        dollarRate:      0,
-        adr1:            1,
-        adr2:            1,
+        guaranteeValue: 1,
+        currentPrice: 1,
+        lotSize: 0,
+        dollarRate: 0,
+        adr1: 1,
+        adr2: 1,
 
         isFuters: false,
 
         points: [
-          [70,  70],
+          [70, 70],
           [156, 55],
           [267, 41],
           [423, 27],
           [692, 13],
-          [960, 7 ],
+          [960, 7],
         ]
       },
       readyTools: [
@@ -115,7 +130,101 @@ class App extends React.Component {
         this._parseTool("  1 000 000   	СберБанкП	SPM0	17 360 ₽	4 569,88 ₽	1 ₽	1,0000 ₽	10%	  21   	813	560	450"),
         this._parseTool("  1 000 000   	НЛМК	NMM0	12 369 ₽	3 311,61 ₽	1 ₽	1,0000 ₽	10%	  30   	505	432	300"),
       ]
-    };
+    }, JSON.parse(JSON.stringify( this.initial )));
+  }
+
+  componentDidMount() {
+    this.bindEvents();
+
+    if (dev) {
+      this.fetchTools()
+        .then(tools => this.unpackTools(tools))
+        .catch(err => console.log(err));
+      return;
+    }
+
+    const checkIfAuthorized = () => {
+      return new Promise((resolve, reject) => {
+        this.sendRequest("getAuthInfo")
+          .then(res => {
+            if (res.authorized) {
+              this.fetchTools()
+                .then(tools => this.unpackTools(tools))
+                .catch(err => console.log(err));
+
+              this.fetchDepoStart()
+                .then(depo => this.setState({ depo: depo || 10000 }))
+                .catch(err => console.log(err));
+
+              this.fetchSaves()
+                .then(saves => {
+                  if (saves.length) {
+                    const pure = params.get("pure") === "true";
+                    if (!pure) {
+                      let found = false;
+                      console.log(saves);
+
+                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+                        p = p.then(_ => new Promise(resolve => {
+                          const save = saves[index];
+                          const id = save.id;
+                          this.fetchSaveById(id)
+                            .then(save => {
+                              const corrupt = !this.validateSave(save);
+                              if (!corrupt && !found) {
+                                found = true;
+                                // Try to load it
+                                this.extractSave(Object.assign(save, { id }));
+                                this.setState({ currentSaveIndex: index + 1 });
+                              }
+
+                              saves[index].corrupt = corrupt;
+                              this.setState({ saves });
+                              resolve();
+                            });
+                        }));
+                      }
+                    }
+                  }
+                  else {
+                    console.log("No saves found!");
+                  }
+
+                  this.setState({ saves });
+                })
+                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+
+              resolve();
+            }
+            else {
+              reject();
+            }
+          })
+          .catch(() => reject())
+      })
+    }
+
+    promiseWhile(false, i => !i, () => {
+      return new Promise(resolve => {
+        checkIfAuthorized()
+          .then(() => resolve(true))
+          .catch(() => {
+            console.log("getAuthInfo failed! I'll try again in a second");
+            setTimeout(() => {
+              resolve(false);
+            }, 1000);
+          });
+      });
+    });
+  }
+
+  showMessageDialog(msg = "") {
+    console.log(`%c${msg}`, "background: #222; color: #bada55");
+    if (!dev) {
+      this.setState({ errorMessage: msg }, () => {
+        dialogAPI.open("dialog-msg");
+      });
+    }
   }
 
   _parseTool(s) {
@@ -133,35 +242,8 @@ class App extends React.Component {
     }; 
   }
 
-  openModal() {
-    $modal.addClass("visible");
-     $body.addClass("scroll-disabled");
-  }
-
-  closeModal() {
-    $modal.removeClass("visible");
-     $body.removeClass("scroll-disabled");
-  }
-
   bindEvents() {
-    $body  = $(document.body);
-    $modal = $(".m");
-
-    $body.on("keydown", e => {
-      // Esc
-      if (e.keyCode == 27) {
-        this.closeModal();
-      }
-    });
-
-    $modal.click(e => {
-      if ($(e.target).is($modal)) {
-        this.closeModal();
-      }
-    });
-
-    $(".js-open-modal").click(e => this.openModal());
-    $(".js-close-modal").click(e => this.closeModal());
+    
   }
 
   unpackTools(tools) {
@@ -170,7 +252,7 @@ class App extends React.Component {
       if (!tools || tools.length == 0) {
         reject("\"tools\" is not an array or it's simply empty!", tools);
       }
-  
+
       var t = [];
       for (let tool of tools) {
         if (tool.price == 0 || !tool.volume) {
@@ -196,34 +278,45 @@ class App extends React.Component {
         var found = false;
         for (var _t of this.state.readyTools) {
           if (_t.code.slice(0, 2) === obj.code.slice(0, 2)) {
+
+            if (obj.code.startsWith("MNU")) {
+              // console.log('!!!');
+            }
             
-            Object.assign(obj, Object.assign(_t, { code: obj.code }));
+            obj = Object.assign(obj, Object.assign(_t, { code: obj.code }));
 
             found = true;
             break;
           }
         }
 
+        if (obj.code.startsWith("MNU")) {
+          // console.log(obj);
+        }
+
         // We didn't find the tool in pre-written tools
         if (!found) {
+
           
-          var substitute = {
+          let substitute = {
             planIncome: round(obj.price / 10, 2),
-            adr1: round(obj.price / 5,  4),
-            adr2: round(obj.price / 10, 4),
+            adr1:       round(obj.price / 5,  4),
+            adr2:       round(obj.price / 10, 4),
           };
-          Object.assign(obj, substitute);
+
+          obj = Object.assign(obj, substitute);
 
         }
 
-        console.log(obj);
-        
+        // console.log(obj);
         t.push(obj);
       }
 
       if (t.length > 0) {
+        // console.log(t);
         let { tools } = this.state;
-        tools = tools.concat(t.sort((a, b) => a.code > b.code));
+        const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
+        tools = tools.concat(sorted);
 
         this.setState({ tools }, resolve);
       }
@@ -232,15 +325,245 @@ class App extends React.Component {
     });
   }
 
+  packSave() {
+    let { depo, sortProp, sortDESC, mode, data, customTools } = this.state;
+
+    const json = {
+      static: {
+        depo,
+        sortProp,
+        sortDESC,
+        mode,
+        data,
+        customTools,
+        current_date: "#"
+      },
+    };
+
+    console.log("Save packed!", json);
+    return json;
+  }
+
+  validateSave(save) {
+    return true;
+  }
+
+  extractSave(save) {
+    const onError = e => {
+      this.showMessageDialog(String(e));
+
+      const { saves, currentSaveIndex } = this.state;
+      if (saves[currentSaveIndex - 1]) {
+        console.log(saves, currentSaveIndex - 1);
+        saves[currentSaveIndex - 1].corrupt = true;
+        this.setState({ saves });
+      }
+    };
+
+    const {
+      depoEnd,
+      defaultPassiveIncomeTools,
+    } = this.state;
+
+    let staticParsed;
+
+    let state = {};
+    let failed = false;
+
+    try {
+
+      staticParsed = JSON.parse(save.data.static);
+      staticParsed.data.map(item => {
+        delete item.selectedToolCode;
+        return item;
+      });
+
+      console.log("staticParsed", staticParsed);
+
+      let m = staticParsed.mode;
+      if (typeOf(m) === "array") {
+        m = Number(m[0]);
+      }
+
+      state.mode = m;
+      state.sortProp = staticParsed.sortProp || null;
+      state.sortDESC = staticParsed.sortDESC || true;
+      state.depo = staticParsed.depo || this.state.depo;
+      state.data = staticParsed.data;
+      state.customTools = staticParsed.customTools || [];
+
+      state.id = save.id;
+      state.saved = true;
+    }
+    catch (e) {
+      failed = true;
+      state = {
+        id: save.id,
+        saved: true
+      };
+
+      onError(e);
+    }
+
+    this.setState(state, () => console.log(this.state));
+  }
+
+  reset() {
+    return new Promise(resolve => this.setState(JSON.parse(JSON.stringify(this.initial)), () => resolve()))
+  }
+
+  save(name = "") {
+    return new Promise((resolve, reject) => {
+      if (!name) {
+        reject("Name is empty!");
+      }
+
+      const json = this.packSave();
+      const data = {
+        name,
+        static: JSON.stringify(json.static),
+      };
+
+      this.sendRequest("addKsdSnapshot", "POST", data)
+        .then(res => {
+          console.log(res);
+
+          let id = Number(res.id);
+          if (id) {
+            console.log("Saved with id = ", id);
+            this.setState({ id }, () => resolve(id));
+          }
+          else {
+            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
+          }
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  update(name = "") {
+    const { id } = this.state;
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        reject("id must be present!");
+      }
+
+      const json = this.packSave();
+      const data = {
+        id,
+        name,
+        static: JSON.stringify(json.static),
+      };
+      this.sendRequest("updateKsdSnapshot", "POST", data)
+        .then(res => {
+          console.log("Updated!", res);
+          resolve();
+        })
+        .catch(err => console.log(err));
+    })
+  }
+
+  delete(id = 0) {
+    console.log(`Deleting id: ${id}`);
+
+    return new Promise((resolve, reject) => {
+      this.sendRequest("deleteKsdSnapshot", "POST", { id })
+        .then(() => {
+          let {
+            id,
+            saves,
+            saved,
+            changed,
+            currentSaveIndex,
+          } = this.state
+
+          saves.splice(currentSaveIndex - 1, 1);
+
+          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
+
+          if (saves.length > 0) {
+            id = saves[currentSaveIndex - 1].id;
+            this.fetchSaveById(id)
+              .then(save => this.extractSave(Object.assign(save, { id })))
+              .then(() => this.setState({ id }))
+              .catch(err => this.showMessageDialog(err));
+          }
+          else {
+            this.reset()
+              .catch(err => this.showMessageDialog(err));
+
+            saved = changed = false;
+          }
+
+          this.setState({
+            saves,
+            saved,
+            changed,
+            currentSaveIndex,
+          }, resolve);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  sendRequest(url = "", method = "GET", data = {}) {
+    return new Promise((resolve, reject) => {
+      console.log(`Sending ${url} request...`);
+      ajax({
+        url: `https://fani144.ru/local/php_interface/s1/ajax/?method=${url}`,
+        method,
+        data,
+        success: res => {
+          const parsed = JSON.parse(res);
+          if (parsed.error) {
+            reject(parsed.message);
+          }
+
+          resolve(parsed);
+        },
+        error: err => reject(err)
+      });
+    });
+  }
+
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      this.sendRequest("getKsdSnapshots")
+        .then(res => {
+          const savesSorted = res.data.sort((a, b) => a.dateCreate < b.dateCreate);
+          const saves = savesSorted.map(save => ({
+            name: save.name,
+            id:   save.id,
+          }));
+          resolve(saves);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  fetchSaveById(id) {
+    return new Promise((resolve, reject) => {
+      if (typeof id === "number") {
+        console.log("Trying to fetch id:" + id);
+        this.sendRequest("getKsdSnapshot", "GET", { id })
+          .then(res => resolve(res))
+          .catch(err => reject(err));
+      }
+      else {
+        reject("id must be a number!", id);
+      }
+    });
+  }
+
   fetchTools() {
     return new Promise((resolve, reject) => {
       $.ajax({
         url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
         success: res => {
-          var data = JSON.parse(res).data;
+          const data = JSON.parse(res).data;
           resolve(data);
         },
-        error: (err) => reject(err),
+        error: err => reject(err),
       });
     })
   }
@@ -260,30 +583,27 @@ class App extends React.Component {
     });
   }
 
-  componentDidMount() {
-    this.bindEvents();
-    
-    this.fetchTools()
-      .then(tools => this.unpackTools(tools))
-      .catch(err => console.log(err));
-
-    this.fetchDepoStart()
-      .then(depo => {
-        depo = depo || 10000;
-        this.setState({ depo });
-      })
-      .catch(err => console.log(err));
-  }
-
   getTools() {
     const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools)
+    return [].concat(tools).concat(customTools);
+  }
+
+  getTitle() {
+    const { saves, currentSaveIndex, id } = this.state;
+    let title = "КСД";
+
+    if (id && saves[currentSaveIndex - 1]) {
+      title = saves[currentSaveIndex - 1].name;
+    }
+
+    return title;
   }
 
   render() {
+    const { mode, sortProp, sortDESC } = this.state;
+
     return (
       <div className="page">
-        {/* <Header /> */}
 
         <main className="main">
 
@@ -291,94 +611,142 @@ class App extends React.Component {
             <div className="container">
               <div className="main-top-wrap">
 
-                <nav className="breadcrumbs main-top__breadcrumbs">
-                  <ul className="breadcrumbs-list">
-                    <li className="breadcrumbs-item">
-                      <a href="#" target="_blank">Главная</a>
-                    </li>
-                    <li className="breadcrumbs-item">
-                      <a href="#" target="_blank">Калькулятор сравнительной доходности</a>
-                    </li>
-                  </ul>
-                </nav>
+                {/* Select */}
+                {(() => {
+                  const { saves, currentSaveIndex } = this.state;
 
-                <Title className="main__h1" level={1}>
-                  Калькулятор сравнительной доходности
-                </Title>
-
-                <label className="main-top__mode-select labeled-select">
-                  <span className="labeled-select__label main-top__mode-select-label">
-                    Ход цены
-                  </span>
-                  <Select 
-                    value={0}
-                    onSelect={val => this.setState({ mode: val })}
-                  >
-                    <Option key={0} value={0}>Произвольный</Option>
-                    <Option key={1} value={1}>Повышенный</Option>
-                    <Option key={2} value={2}>Аномальный</Option>
-                    <Option key={3} value={3}>Черный лебедь</Option>
-                  </Select>
-                </label>
-
-                {
-                  false && (
-                    <label className="main-top__strategy labeled-select">
-                      <span className="labeled-select__label main-top__strategy-label">
-                        Сохраненная стратегия
+                  return (dev || saves.length > 0) && (
+                    <label className="labeled-select main-top__select stack-exception">
+                      <span className="labeled-select__label labeled-select__label--hidden">
+                        Сохраненный калькулятор
                       </span>
-                      <Select value={0}>
-                        <Option key={0} value={0}>SavedStrategy_1</Option>
-                        <Option key={1} value={1}>SavedStrategy_2</Option>
+                      <Select
+                        value={currentSaveIndex}
+                        onSelect={val => {
+                          const { saves } = this.state;
+
+                          this.setState({ currentSaveIndex: val });
+
+                          if (val === 0) {
+                            this.reset()
+                              .catch(err => console.warn(err));
+                          }
+                          else {
+                            const id = saves[val - 1].id;
+                            this.fetchSaveById(id)
+                              .then(save => this.extractSave(Object.assign(save, { id })))
+                              .catch(err => this.showMessageDialog(err));
+                          }
+
+                        }}>
+                        <Option key={0} value={0}>Не выбрано</Option>
+                        {saves.map((save, index) =>
+                          <Option key={index + 1} value={index + 1}>
+                            {save.name}
+                            {save.corrupt && (
+                              <WarningOutlined style={{
+                                marginLeft: ".25em",
+                                color: "var(--danger-color)"
+                              }}/>
+                            )}
+                          </Option>
+                        )}
                       </Select>
                     </label>
                   )
-                }
-                
-                <Radio.Group
-                  className="tabs"
-                  name="radiogroup"
-                  defaultValue={0}
-                  onChange={e => this.setState({ mode: e.target.value })}
-                >
-                  <Radio className="tabs__label tabs__label--1" value={0}>
-                    Произвольный
-                    <span className="prefix">ход цены</span>
-                  </Radio>
-                  <Radio className="tabs__label tabs__label--1" value={1}>
-                    Повышенный
-                    <span className="prefix">ход цены</span>
-                  </Radio>
-                  <Radio className="tabs__label tabs__label--1" value={2}>
-                    Аномальный
-                    <span className="prefix">ход цены</span>
-                  </Radio>
-                  <Radio className="tabs__label tabs__label--2" value={3}>
-                    Черный лебедь
-                    <span className="prefix">ход цены</span>
-                  </Radio>
-                </Radio.Group>
+                })()}
 
-                {
-                  false && (
-                    <Button 
-                      className="custom-btn custom-btn--secondary main-top__save" 
-                      onClick={() => alert("It works!")}
-                    >
-                      Сохранить в профиль
-                    </Button>
-                  )
-                }
+                <Stack>
 
-                <Tooltip title="Настройки">
-                  <button 
-                    className="settings-button js-open-modal main-top__icon"
-                    onClick={e => dialogAPI.open("dialog1", e.target)}
+                  <div className="page__title-wrap">
+                    <h1 className="page__title">
+                      { this.getTitle() }
+                      { (dev || this.state.id) && (
+                        <CrossButton
+                          className="main-top__remove"
+                          onClick={e => dialogAPI.open("dialog4", e.target)}/>
+                      )}
+                    </h1>
+                  </div>
+
+                  <Radio.Group
+                    className="tabs"
+                    key={mode}
+                    defaultValue={mode}
+                    name="radiogroup"
+                    onChange={e => this.setState({ mode: e.target.value, changed: true })}
                   >
-                    <span className="visually-hidden">Открыть конфиг</span>
-                    <SettingFilled className="settings-button__icon" />
-                  </button>
-                </Tooltip>
+                    <Radio className="tabs__label tabs__label--1" value={0}>
+                      Произвольный
+                      <span className="prefix">ход цены</span>
+                    </Radio>
+                    <Radio className="tabs__label tabs__label--1" value={1}>
+                      Повышенный
+                      <span className="prefix">ход цены</span>
+                    </Radio>
+                    <Radio className="tabs__label tabs__label--1" value={2}>
+                      Аномальный
+                      <span className="prefix">ход цены</span>
+                    </Radio>
+                    <Radio className="tabs__label tabs__label--2" value={3}>
+                      Черный лебедь
+                      <span className="prefix">ход цены</span>
+                    </Radio>
+                  </Radio.Group>
+
+                  <div className="main-top__footer">
+
+                    <Button 
+                      className={
+                        [
+                          "custom-btn",
+                          "custom-btn--secondary",
+                          "main-top__save",
+                        ]
+                          .concat(this.state.changed ? "main-top__new" : "")
+                          .join(" ")
+                          .trim()
+                      }
+                      onClick={e => {
+                        const { saved, changed } = this.state;
+
+                        if (saved && changed) {
+                          this.update(this.getTitle());
+                          this.setState({ changed: false });
+                        }
+                        else {
+                          dialogAPI.open("dialog1", e.target);
+                        }
+
+                      }}>
+                      { (this.state.saved && !this.state.changed) ? "Изменить" : "Сохранить" }
+                    </Button>
+                    
+                    {
+                      this.state.saves.length > 0 ? (
+                        <a
+                          className="custom-btn custom-btn--secondary main-top__save"
+                          href="#pure=true" 
+                          target="_blank"
+                        >
+                          Добавить новый
+                        </a>
+                      )
+                      : null
+                    }
+
+                  </div>
+
+                  <Tooltip title="Настройки">
+                    <button
+                      className="settings-button js-open-modal main-top__settings"
+                      onClick={e => dialogAPI.open("dialog3", e.target)}
+                    >
+                      <span className="visually-hidden">Открыть конфиг</span>
+                      <SettingFilled className="settings-button__icon" />
+                    </button>
+                  </Tooltip>
+                </Stack>
 
               </div>
               {/* /.main-top-wrap */}
@@ -392,39 +760,74 @@ class App extends React.Component {
             <div className="container">
 
               <div className="dashboard">
+                {(() => {
+                  let data = this.state.data;
+                  if (sortProp != null && sortDESC != null) {
+                    console.log(sortProp, sortDESC);
+                    data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
+                  }
 
-                {
-                  this.state.tools.length > 0
-                    ? (
-                      new Array(this.state.rowsNumber).fill(0).map((item, index) => 
-      
-                        <DashboardRow 
-                          key={index}
-                          mode={this.state.mode}
-                          depo={this.state.depo}
-                          percentage={this.state.percentage}
-                          tools={this.getTools()} 
-                        />
-      
+                  return (
+                    this.state.tools.length > 0
+                      ? (
+                        data.map((item, index) =>
+                          <DashboardRow
+                            key={index + Math.random()}
+                            item={item}
+                            index={index}
+                            sortProp={sortProp}
+                            sortDESC={sortDESC}
+                            mode={this.state.mode}
+                            depo={this.state.depo}
+                            percentage={item.percentage}
+                            selectedToolName={item.selectedToolName}
+                            planIncome={item.planIncome}
+                            tools={this.getTools()}
+                            onSort={(sortProp, sortDESC) => {
+                              if (sortProp !== this.state.sortProp) {
+                                sortDESC = true;
+                              }
+                              this.setState({ sortProp, sortDESC })
+                            }}
+                            onUpdate={state => {
+                              const { data } = this.state;
+                              data[index] = state;
+                              this.setState({ data });
+                            }}
+                            onChange={(prop, val) => {
+                              const { data } = this.state;
+                              data[index][prop] = val;
+                              this.setState({ data, changed: true });
+                            }}
+                            onDelete={index => {
+                              const { data } = this.state;
+                              data.splice(index, 1);
+                              this.setState({ data })
+                            }}
+                          />
+                        )
                       )
-                    )
-                    : (
-                      <span className="dashboard__loading">
-                        <Spin 
-                          className="dashboard__loading-icon" 
-                          indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                        Подождите, инструменты загружаются...
-                      </span>
-                    )
-                }
-
-
+                      : (
+                        <span className="dashboard__loading">
+                          <Spin
+                            className="dashboard__loading-icon"
+                            indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
+                            />
+                          Подождите, инструменты загружаются...
+                        </span>
+                      )
+                  );
+                })()}
               </div>
 
               <footer className="main__footer">
 
                 <Button className="custom-btn main__save"
-                  onClick={() => this.setState({ rowsNumber: this.state.rowsNumber + 1 })}>
+                  onClick={() => {
+                    const { data } = this.state;
+                    data.push({ percentage: 10 });
+                    this.setState({ data })
+                  }}>
                   <PlusOutlined aria-label="Добавить" />
                   инструмент
                 </Button>
@@ -439,28 +842,251 @@ class App extends React.Component {
         </main>
         {/* /.main */}
 
+        {(() => {
+          let { saves, id } = this.state;
+          let namesTaken = saves.slice().map(save => save.name);
+          let name = (id) ? this.getTitle() : "Новое сохранение";
+
+          function validate(str = "") {
+            str = str.trim();
+
+            let errors = [];
+
+            let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
+            if (str.length < 3) {
+              errors.push("Имя должно содержать не меньше трех символов!");
+            }
+            else if (test) {
+              errors.push(`Нельзя использовать символ "${test[0]}"!`);
+            }
+            if (!id) {
+              if (namesTaken.indexOf(str) > -1) {
+                errors.push(`Сохранение с таким именем уже существует!`);
+              }
+            }
+
+            return errors;
+          }
+
+          class ValidatedInput extends React.Component {
+
+            constructor(props) {
+              super(props);
+
+              let { defaultValue } = props;
+
+              this.state = {
+                error: "",
+                value: defaultValue || ""
+              }
+            }
+
+            vibeCheck() {
+              const { validate } = this.props;
+              let { value } = this.state;
+
+              let errors = validate(value);
+              this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+              return errors;
+            }
+
+            render() {
+              const { validate, label } = this.props;
+              const { value, error } = this.state;
+
+              return (
+                <label className="save-modal__input-wrap">
+                  {
+                    label
+                      ? <span className="save-modal__input-label">{label}</span>
+                      : null
+                  }
+                  <Input
+                    className={
+                      ["save-modal__input"]
+                        .concat(error ? "error" : "")
+                        .join(" ")
+                        .trim()
+                    }
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    value={value}
+                    maxLength={20}
+                    onChange={e => {
+                      let { value } = e.target;
+                      let { onChange } = this.props;
+
+                      this.setState({ value });
+
+                      if (onChange) {
+                        onChange(value);
+                      }
+                    }}
+                    onKeyDown={e => {
+                      // Enter
+                      if (e.keyCode === 13) {
+                        let { value } = e.target;
+                        let { onBlur } = this.props;
+
+                        let errors = validate(value);
+                        if (errors.length === 0) {
+                          if (onBlur) {
+                            onBlur(value);
+                          }
+                        }
+
+                        this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                      }
+                    }}
+                    onBlur={() => {
+                      this.vibeCheck();
+                    }} />
+
+                  <span className={
+                    ["save-modal__error"]
+                      .concat(error ? "visible" : "")
+                      .join(" ")
+                      .trim()
+                  }>
+                    {error}
+                  </span>
+                </label>
+              )
+            }
+          }
+
+          let onConfirm = () => {
+            let { id, data, currentDay, saves, currentSaveIndex } = this.state;
+
+            if (id) {
+              this.update(name)
+                .then(() => {
+                  saves[currentSaveIndex - 1].name = name;
+                  this.setState({
+                    saves,
+                    changed: false,
+                  })
+                })
+                .catch(err => this.showMessageDialog(err));
+            }
+            else {
+              const onResolve = (id) => {
+                let index = saves.push({ id, name });
+                console.log(saves);
+
+                this.setState({
+                  data,
+                  saves,
+                  saved: true,
+                  changed: false,
+                  currentSaveIndex: index,
+                });
+              };
+
+              this.save(name)
+                .then(onResolve)
+                .catch(err => this.showMessageDialog(err));
+
+              if (dev) {
+                onResolve();
+              }
+            }
+          }
+
+          let inputJSX = (
+            <ValidatedInput
+              label="Название сохранения"
+              validate={validate}
+              defaultValue={name}
+              onChange={val => name = val}
+              onBlur={() => { }} />
+          );
+          let modalJSX = (
+            <Dialog
+              id="dialog1"
+              className="save-modal"
+              title={"Сохранение"}
+              onConfirm={() => {
+                if (validate(name).length) {
+                  console.error(validate(name)[0]);
+                }
+                else {
+                  onConfirm();
+                  return true;
+                }
+              }}
+            >
+              {inputJSX}
+            </Dialog>
+          );
+
+          return modalJSX;
+        })()}
+        {/* Save Popup */}
+
         <Dialog
-          id="dialog1"
+          id="dialog4"
+          title="Удаление трейдометра"
+          confirmText={"Удалить"}
+          onConfirm={() => {
+            const { id } = this.state;
+            this.delete(id)
+              .then(() => console.log("Deleted!"))
+              .catch(err => console.warn(err));
+            return true;
+          }}
+        >
+          Вы уверены, что хотите удалить {this.getTitle()}?
+        </Dialog>
+        {/* Delete Popup */}
+
+        <Dialog
+          id="dialog3"
           className=""
-          okContent="Добавить"
-          onOk={e => {
+          confirmText="Добавить"
+          onConfirm={e => {
             var { toolTemplate, customTools, propsToShowArray } = this.state;
+
+            const nameExists = (value, tools) => {
+              let found = 0;
+              console.log(value, tools);
+              for (const tool of tools) {
+                if (value === tool.shortName) {
+                  found++;
+                }
+              }
+
+              return found > 1;
+            };
 
             var template = Object.assign({}, toolTemplate);
             var tool = template;
             propsToShowArray.map((prop, index) => {
-              tool[prop] = (index === 0) ? "Инструмент" : toolTemplate[prop];
+              tool[prop] = toolTemplate[prop];
+              if (index === 0) {
+                const suffix = customTools.length + 1;
+                tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`;
+              }
             });
+
             tool.planIncome = round(tool.price / 10, 2);
 
             customTools.push(tool);
+
+            while (nameExists(tool.shortName, this.getTools())) {
+              const end = tool.shortName.match(/\d+$/g)[0];
+              tool.shortName = tool.shortName.replace(end, Number(end) + 1);
+            }
+
             this.setState({ customTools }, () => {
               $(".config-table-wrap").scrollTop(9999);
             });
           }}
-          cancelContent="Закрыть"
+          cancelText="Закрыть"
         >
-          <label className="input-group input-group--fluid config-ksd__depo">
+          <label className="input-group input-group--fluid ksd-config__depo">
             <span className="input-group__label">Размер депозита:</span>
             <NumericInput
               className="input-group__input"
@@ -475,7 +1101,7 @@ class App extends React.Component {
                   return;
                 }
 
-                this.setState({ depo: val });
+                this.setState({ depo: val, changed: true });
               }}
             />
           </label>
@@ -520,9 +1146,27 @@ class App extends React.Component {
                   )
                 }
                 {(() => {
+                  const nameExists = (value, tools) => {
+                    let found = 0;
+                    for (const tool of tools) {
+                      if (value === tool.shortName) {
+                        found++;
+                      }
+                    }
+
+                    return found > 1;
+                  };
+
                   var onBlur = (val, index, prop) => {
-                    var { customTools } = this.state;
+                    var { customTools, tools } = this.state;
                     customTools[index][prop] = val;
+                    if (prop === "shortName") {
+                      while (nameExists(customTools[index][prop], this.getTools())) {
+                        const end = customTools[index][prop].match(/\d+$/g)[0];
+                        customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
+                      }
+                    }
+
                     this.setState({ customTools });
                   };
 
@@ -534,38 +1178,52 @@ class App extends React.Component {
                             className="table-td"
                             style={{ width: (prop == "shortName") ? "15em" : "9em" }}
                             key={i}>
-                            {
-                              i === 0 ? (
-                                <Input
+                            {(() => {
+                              const valid = true;
+
+                              return i === 0 ? (
+                                <div style={{ position: "relative" }}>
+                                  <Input
+                                    key={tool[prop] + Math.random()}
+                                    className={tool["error"] != null ? "error" : ""}
+                                    defaultValue={tool[prop]}
+                                    onBlur={e => onBlur(e.target.value, index, prop)}
+                                    onKeyDown={e => {
+                                      if (
+                                        [
+                                          13, // Enter
+                                          27  // Escape
+                                        ].indexOf(e.keyCode) > -1
+                                      ) {
+                                        e.target.blur();
+                                        onBlur(e.target.value, index, prop);
+                                      }
+                                    }}
+                                  />
+                                  <span style={{
+                                    position:  "absolute",
+                                    left:      "0",
+                                    top:       "100%",
+                                    color:     "var(--danger-color)",
+                                    fontSize:  ".7em",
+                                    textAlign: "center"
+                                  }}>{tool["error"]}</span>
+                                </div>
+                              )
+                              : (
+                                <NumericInput
                                   defaultValue={tool[prop]}
-                                  onBlur={e => onBlur(e.target.value, index, prop)}
-                                  onKeyDown={e => {
-                                    if (
-                                      [
-                                        13, // Enter
-                                        27  // Escape
-                                      ].indexOf(e.keyCode) > -1
-                                    ) {
-                                      e.target.blur();
-                                      onBlur(e.target.value, index, prop);
-                                    }
-                                  }}
+                                  onBlur={val => onBlur(val, index, prop)}
                                 />
                               )
-                                : (
-                                  <NumericInput
-                                    defaultValue={tool[prop]}
-                                    onBlur={val => onBlur(val, index, prop)}
-                                  />
-                                )
-                            }
+                            })()}
                           </td>
                         )
                       }
                       <td className="table-td" key={index}>
                         <Tooltip title="Удалить">
                           <button
-                            className="x-button config__delete"
+                            className="cross-button config__delete"
                             aria-label="Удалить"
                             onClick={e => {
                               var { customTools } = this.state;
@@ -584,6 +1242,21 @@ class App extends React.Component {
           </div>
           {/* /.config-talbe-wrap */}
         </Dialog>
+
+        {(() => {
+          const { errorMessage } = this.state;
+          return (
+            <Dialog
+              id="dialog-msg"
+              title="Сообщение"
+              hideConfirm={true}
+              cancelText="ОК"
+            >
+              {errorMessage}
+            </Dialog>
+          )
+        })()}
+        {/* Error Popup */}
 
       </div>
     );

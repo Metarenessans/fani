@@ -10,30 +10,30 @@ var bodyHTML = document.createElement(null);
 
 var dialogAPI = {};
 
-dialogAPI.getFocusableDescendants = function(element) {
+dialogAPI.getFocusableDescendants = element => {
   return element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
 }
 
-dialogAPI.focusFirstDescendant = function(element) {
-  var focusable = dialogAPI.getFocusableDescendants(element);
+dialogAPI.focusFirstDescendant = element => {
+  const focusable = dialogAPI.getFocusableDescendants(element);
   focusable[0].focus();
 }
 
-dialogAPI.focusLastDescendant = function(element) {
-  var focusable = dialogAPI.getFocusableDescendants(element);
+dialogAPI.focusLastDescendant = element => {
+  const focusable = dialogAPI.getFocusableDescendants(element);
   focusable[focusable.length - 1].focus();
 }
 
-dialogAPI.getCurrentDialog = function() {
+dialogAPI.getCurrentDialog = () => {
   return document.querySelector(".dialog:not([hidden])");
 }
 
-dialogAPI.trapFocus = function(event) {
+dialogAPI.trapFocus = event => {
   event.stopPropagation();
 
-  var dialogHTML = dialogAPI.getCurrentDialog();
-  var dialogContentHTML = dialogHTML.querySelector(".dialog-content");
-  var focusable = dialogAPI.getFocusableDescendants(dialogContentHTML);
+  const dialogHTML = dialogAPI.getCurrentDialog();
+  const dialogContentHTML = dialogHTML.querySelector(".dialog-content");
+  const focusable = dialogAPI.getFocusableDescendants(dialogContentHTML);
 
   if (dialogContentHTML.contains(event.target)) {
     dialogHTML.lastFocus = event.target;
@@ -49,8 +49,8 @@ dialogAPI.trapFocus = function(event) {
   }
 }
 
-dialogAPI.handleEscape = function(event) {
-  var key = event.which || event.keyCode;
+dialogAPI.handleEscape = (event) => {
+  const key = event.which || event.keyCode;
 
   if (key === 27) {
     dialogAPI.close();
@@ -58,19 +58,19 @@ dialogAPI.handleEscape = function(event) {
   }
 }
 
-dialogAPI.handleClick = function(event) {
+dialogAPI.handleClick = event => {
   if (event.target == dialogAPI.getCurrentDialog()) {
     dialogAPI.close();
   }
 }
 
-dialogAPI.open = function(dialogID, initiator) {
-  var dialogHTML = document.getElementById(dialogID);
+dialogAPI.open = (dialogID, initiator) => {
+  const dialogHTML = document.getElementById(dialogID);
   if (!dialogHTML) {
     return;
   }
   // Remember initiator
-  dialogHTML.initiator = initiator;
+  dialogHTML.initiator = initiator ? initiator : document.activeElement;
   // Show dialog
   dialogHTML.removeAttribute("hidden");
   // Focus first descendent
@@ -87,8 +87,8 @@ dialogAPI.open = function(dialogID, initiator) {
   document.addEventListener("click", dialogAPI.handleClick);
 }
 
-dialogAPI.close = function() {
-  var dialogHTML = dialogAPI.getCurrentDialog();
+dialogAPI.close = () => {
+  const dialogHTML = dialogAPI.getCurrentDialog();
   if (!dialogHTML) {
     return;
   }
@@ -99,7 +99,9 @@ dialogAPI.close = function() {
   // Release focus
   document.removeEventListener("focus", dialogAPI.trapFocus, true);
   // Return focus to initiator
-  dialogHTML.initiator.focus();
+  if (dialogHTML.initiator) {
+    dialogHTML.initiator.focus();
+  }
 }
 
 // TODO: accessible close button that is visible only when focused
@@ -114,10 +116,10 @@ class Dialog extends React.Component {
     }
   }
 
-  onOk() {
-    const { onOk } = this.props;
-    if (onOk) {
-      if (onOk()) {
+  onConfirm() {
+    const { onConfirm } = this.props;
+    if (onConfirm) {
+      if (onConfirm()) {
         dialogAPI.close();
       }
     }
@@ -146,10 +148,19 @@ class Dialog extends React.Component {
   }
 
   render() {
-    var { id, className, title, hideFooter, okContent, cancelContent } = this.props;
+    let {
+      id,
+      className,
+      title,
+      hideFooter,
+      confirmText,
+      hideConfirm,
+      cancelText,
+      hideCancel,
+    } = this.props;
     className = className || "";
 
-    var blockClass = "dialog";
+    const blockClass = "dialog";
 
     return (
       <div
@@ -158,7 +169,7 @@ class Dialog extends React.Component {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        hidden="true"
+        hidden={true}
         onClick={e => {
           if (e.target.classList.contains(blockClass)) {
             this.onClose();
@@ -184,17 +195,24 @@ class Dialog extends React.Component {
 
                   <div className={`${blockClass}-footer-wrap`}>
                     <footer className={`${blockClass}-footer`}>
-                      <Button
-                        className="custom-btn"
-                        onClick={() => this.onCancel()}>
-                        {cancelContent ? cancelContent : "Отмена"}
-                      </Button>
-                      <Button
-                        className="custom-btn custom-btn--filled"
-                        type="primary"
-                        onClick={() => this.onOk()}>
-                        {okContent ? okContent : "Сохранить"}
-                      </Button>
+
+                      {!hideCancel && (
+                        <Button
+                          className="custom-btn"
+                          onClick={() => this.onCancel()}>
+                          {cancelText ? cancelText : "Отмена"}
+                        </Button>
+                      )}
+
+                      {!hideConfirm && (
+                        <Button
+                          className="custom-btn custom-btn--filled"
+                          type="primary"
+                          onClick={() => this.onConfirm()}>
+                          {confirmText ? confirmText : "Сохранить"}
+                        </Button>
+                      )}
+
                     </footer>
                   </div>
 

@@ -33,7 +33,10 @@ import params          from "./utils/params";
 import num2str         from "./utils/num2str"
 import formatNumber    from "./utils/format-number";
 import extRate         from "./utils/rate";
+import rateRequired    from "./utils/rate-required";
 import fallbackBoolean from "./utils/fallback-boolean";
+import typeOf          from "./utils/type-of";
+import promiseWhile    from "./utils/promise-while";
 
 import Stack        from "./components/stack"
 import CrossButton  from "./components/cross-button"
@@ -47,7 +50,8 @@ import { Dialog, dialogAPI } from "./components/dialog"
 
 let chartData, chartData2, scale, scaleStart, scaleEnd;
 const version = "0.2";
-const dev = false;
+
+const dev = true;
 const chartVisible = true;
 
 export default class App extends React.Component {
@@ -84,7 +88,6 @@ export default class App extends React.Component {
 
       // Торговых дней
       days: [ days, days ],
-      offset: 0,
       paginatorSelectedIndex: 0,
 
       // Текущий день
@@ -135,7 +138,10 @@ export default class App extends React.Component {
     };
 
     this.state = Object.assign({
-      data: [],
+      ready: false,
+
+      data:     [],
+      realData: {},
 
       changed:            false,
       saved:              false,
@@ -270,9 +276,13 @@ export default class App extends React.Component {
       currentPassiveIncomeToolIndex: [-1, -1],
       // Пассивный доход в месяц
       passiveIncomeMonthly: [0, 0],
-      pitError: "",
+      pitError:     "",
       errorMessage: "",
     }, this.initial);
+
+    if (dev) {
+      this.state.saves = [{ id: 0, name: "test" }];
+    }
 
     this.state.data = this.buildData(this.state.days[this.state.mode]);
   }
@@ -283,56 +293,109 @@ export default class App extends React.Component {
       this.createChart();
     }
 
-    // this.bindEvents();
+    if (dev) {
+      this.fetchTools()
+        .then(tools => this.unpackTools(tools))
+        .then(() => this.updateDepoPersentageStart())
+        .catch(err => console.log(err));
+      return;
+    }
 
-    this.fetchDepoStart()
-      .then(depo => {
-        let { depoStart, depoEnd } = this.state;
+    const checkIfAuthorized = () => {
+      return new Promise((resolve, reject) => {
+        this.sendRequest("getAuthInfo")
+          .then(res => {
+            if (res.authorized) {
+              this.fetchDepoStart()
+                .then(depo => {
+                  let { depoStart, depoEnd } = this.state;
 
-        // TODO: simplify
-        depo = depo || 10000;
-        depo = (depo > 10000) ? depo : 10000;
-        depoStart[0] = depo;
-        depoStart[1] = depo;
-        if (depo >= depoEnd) {
-          depoEnd = depo * 2;
-        }
+                  // TODO: simplify
+                  depo = depo || 10000;
+                  depo = (depo > 10000) ? depo : 10000;
+                  depoStart[0] = depo;
+                  depoStart[1] = depo;
+                  if (depo >= depoEnd) {
+                    depoEnd = depo * 2;
+                  }
 
-        return new Promise(resolve => {
-          this.setState({ depoStart, depoEnd }, () => resolve());
-        })
+                  return new Promise(resolve => {
+                    this.setState({ depoStart, depoEnd }, () => resolve());
+                  })
+                })
+                .then(() => this.recalc())
+                .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
+
+              this.fetchTools()
+                .then(tools => this.unpackTools(tools))
+                .then(() => this.updateDepoPersentageStart())
+                .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`));
+
+              this.fetchSaves()
+                .then(saves => {
+                  if (saves.length) {
+                    const pure = params.get("pure") === "true";
+                    if (!pure) {
+                      let found = false;
+                      // Check if each save is corrupt
+                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+                        p = p.then(_ => new Promise(resolve => {
+                          const save = saves[index];
+                          const id = save.id;
+                          this.fetchSaveById(id)
+                            .then(save => {
+                              const corrupt = !this.validateSave(save);
+                              if (!corrupt && !found) {
+                                found = true;
+                                // Try to load it
+                                this.extractSave(Object.assign(save, { id }));
+                                this.setState({ currentSaveIndex: index + 1 });
+                              }
+
+                              saves[index].corrupt = corrupt;
+                              this.setState({ saves });
+                              resolve();
+                            });
+                        }));
+                      }
+                    }
+                  }
+                  else {
+                    console.log("No saves found!");
+                  }
+
+                  this.setState({ saves });
+                })
+                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+
+              resolve();
+            }
+            else {
+              reject();
+            }
+          })
+          .catch(() => reject())
       })
-      .then(() => this.recalc())
-      .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
+    }
 
-    this.fetchTools()
-      .then(tools => this.unpackTools(tools))
-      .then(() => this.updateDepoPersentageStart())
-      .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`));
+    promiseWhile(false, i => !i, () => {
+      return new Promise(resolve => {
+        checkIfAuthorized()
+          .then(() => resolve(true))
+          .catch(() => {
+            console.log("getAuthInfo failed! I'll try again in a second");
+            setTimeout(() => {
+              resolve(false);
+            }, 1000);
+          });
+      });
+    });
 
-    this.fetchSaves()
-      .then(saves => {        
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            const id = saves[0].id; // last save's id
-            this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
-              .then(() => this.setState({ currentSaveIndex: 1 }))
-              .catch(err => this.showMessageDialog(`Не удалось получить дефолтный инстурмент! ${err}`));
+  }
 
-            // Check if each save is corrupt
-            console.log('Checking if each save is corrupt');
-            saves.map(save => save.corrupt = this.validateSave(save));
-          }
-        }
-        else {
-          console.log("No saves found!");
-        }
-
-        this.setState({ saves });
-      })
-      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+  // TODO: test
+  setStatePromise(state = {}) {
+    return new Promise(resolve => this.setState(state, () => resolve()))
   }
 
   createChart() {
@@ -577,8 +640,8 @@ export default class App extends React.Component {
         currentDay:                    currentDay, 
         days:                          [ days[0], days[1] ],
         minDailyIncome:                [
-          round(this.getMinDailyIncome(0), 3),
-          round(this.getMinDailyIncome(1), 3)
+          round(this.getRate(0), 3),
+          round(this.getRate(1), 3)
         ],
         payment:                       [ withdrawal[0], withdrawal[1] ],
         paymentInterval:               [ withdrawalInterval[0], withdrawalInterval[1] ],
@@ -602,6 +665,7 @@ export default class App extends React.Component {
           pmt: item.payment,
           pld: item.payload,
           i:   item.iterations,
+          il:  item.iterationsList,
           c:   item.changed,
           pi: (() => {
             let val = data[index].depoEnd;
@@ -617,8 +681,6 @@ export default class App extends React.Component {
     };
 
     console.log("Save packed!", json);
-    console.log("Dynamic:", json.dynamic);
-    console.log("Dynamic length:", JSON.stringify(json.dynamic).length);
     return json;
   }
 
@@ -627,12 +689,10 @@ export default class App extends React.Component {
 
     try {
       
-      const staticParsed = JSON.parse(save.data.static);
-      const dynamicParsed = JSON.parse(save.data.dynamic);
       
-      if (Number(staticParsed.version) < Number(version)) {
-        throw new Error();
-      }
+      // if (Number(staticParsed.version) < Number(version)) {
+      //   throw new Error();
+      // }
       
     }
     catch (e) {
@@ -648,7 +708,6 @@ export default class App extends React.Component {
 
       const { saves, currentSaveIndex } = this.state;
       if (saves[currentSaveIndex - 1]) {
-        console.log(saves, currentSaveIndex - 1);
         saves[currentSaveIndex - 1].corrupt = true;
         this.setState({ saves });
       }
@@ -659,58 +718,136 @@ export default class App extends React.Component {
       defaultPassiveIncomeTools,
     } = this.state;
 
-    let _static;
-    let _dynamic;
+    let staticParsed;
+    let dynamicParsed;
 
     let state = {};
     let failed = false;
 
+    let currentDay = 1;
+
     try {
       
-      _static = JSON.parse(save.data.static);
-      _dynamic = JSON.parse(save.data.dynamic);
+      staticParsed = JSON.parse(save.data.static);
+      dynamicParsed = JSON.parse(save.data.dynamic);
+
+      // console.log("staticParsed", staticParsed);
+      // console.log("dynamicParsed", dynamicParsed);
       
-      if (Number(_static.version) < Number(version)) {
-        throw new Error();
+      let m = staticParsed.mode;
+      if (typeOf(m) === "array") {
+        m = Number(m[0]);
+      }
+
+      state.mode = m;
+
+      state.depoStart = staticParsed.depoStart;
+      if (typeOf(state.depoStart) !== "array") {
+        const temp = state.depoStart; 
+        state.depoStart = this.initial.depoStart.slice();
+        state.depoStart[m] = Number(temp);
+      }
+
+      state.depoEnd = staticParsed.depoEnd;
+      if (typeOf(state.depoEnd) === "array") {
+        state.depoEnd = (m === 0) ? Math.round(state.depoEnd[m]) : depoEnd;
+      }
+      else if (typeOf(state.depoEnd) === "number") {
+        state.depoEnd = Math.round(state.depoEnd);
+      }
+
+      currentDay = staticParsed.currentDay;
+      if (typeOf(currentDay) === "array") {
+        currentDay = currentDay[m];
+      }
+
+      state.days = staticParsed.days;
+      if (typeOf(state.days) !== "array") {
+        const temp = state.days;
+        state.days = this.initial.days.slice();
+        state.days[m] = Number(temp);
+      }
+
+      state.incomePersantageCustom = staticParsed.minDailyIncome;
+      if (typeOf(state.incomePersantageCustom) === "array") {
+        state.incomePersantageCustom = state.incomePersantageCustom[1];
+      }
+
+      state.withdrawal = staticParsed.payment;
+      if (typeOf(state.withdrawal) !== "array") {
+        const temp = state.withdrawal;
+        state.withdrawal = this.initial.withdrawal.slice();
+        state.withdrawal[m] = Number(temp);
+      }
+
+      state.withdrawalInterval = staticParsed.paymentInterval;
+      if (typeOf(state.withdrawalInterval) !== "array") {
+        const temp = state.withdrawalInterval;
+        state.withdrawalInterval = this.initial.withdrawalInterval.slice();
+        state.withdrawalInterval[m] = Number(temp);
+      }
+
+      state.payload = staticParsed.payload;
+      if (typeOf(state.payload) !== "array") {
+        const temp = state.payload;
+        state.payload = this.initial.payload.slice();
+        state.payload[m] = Number(temp);
       }
       
-      let m = _static.mode;
+      state.payloadInterval = staticParsed.payloadInterval;
+      if (typeOf(state.payloadInterval) !== "array") {
+        const temp = state.payloadInterval;
+        state.payloadInterval = this.initial.payloadInterval.slice();
+        state.payloadInterval[m] = Number(temp);
+      }
 
-      state.mode                          = m;
-      state.depoStart                     = _static.depoStart;
-      state.depoEnd                       = m == 0 ? _static.depoEnd[m] : depoEnd;
-      state.currentDay                    = _static.currentDay;
-      state.days                          = _static.days;
-      state.incomePersantageCustom        = _static.minDailyIncome[1];
-      state.withdrawal                    = _static.payment;
-      state.withdrawalInterval            = _static.paymentInterval;
-      state.payload                       = _static.payload;
-      state.payloadInterval               = _static.payloadInterval;
-      state.passiveIncomeMonthly          = _static.passiveIncome      || 0;
-      state.customTools                   = _static.customTools        || [];
-      state.passiveIncomeTools            = _static.passiveIncomeTools || defaultPassiveIncomeTools;
-      state.currentPassiveIncomeToolIndex = _static.currentPassiveIncomeToolIndex || -1;
-      state.currentToolIndex              = _static.currentToolIndex || 0;
+      state.passiveIncomeMonthly = staticParsed.passiveIncome || [0, 0];
+      if (typeOf(state.passiveIncomeMonthly) !== "array") {
+        const temp = state.passiveIncomeMonthly;
+        state.passiveIncomeMonthly = this.initial.passiveIncomeMonthly.slice();
+        state.passiveIncomeMonthly[m] = Number(temp);
+      }
+
+      state.customTools        = staticParsed.customTools        || [];
+      state.passiveIncomeTools = staticParsed.passiveIncomeTools || defaultPassiveIncomeTools;
+
+      state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
+      if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
+        const temp = state.currentPassiveIncomeToolIndex;
+        state.currentPassiveIncomeToolIndex = this.initial.currentPassiveIncomeToolIndex.slice();
+        state.currentPassiveIncomeToolIndex[m] = Number(temp);
+      }
+
+      state.currentToolIndex = staticParsed.currentToolIndex || 0;
+
+      state.currentDay = 1;
+      state.data     = this.buildData(state.days[m]);
+      state.realData = [];
 
       state.id = save.id;
       state.saved = true;
     }
     catch (e) {
+      // console.log("Failed!");
+
       failed = true;
       state = {
         id: save.id,
         saved: true
       };
 
-      onError(`Формат сохранения устарел. Пожалуйста, попробуйте другое сохранение`);
+      // onError(`Формат сохранения устарел. Пожалуйста, попробуйте другое сохранение`);
+      onError(e);
     }
 
+    // console.log(state);
     this.setState(state, () => {
       if (!failed) {
         this.updateData(state.days[state.mode], true)
-          .then(() => this.overrideData(_dynamic))
+          .then(() => this.overrideData(dynamicParsed))
           .then(() => this.updateData(state.days[state.mode], false))
           .then(() => this.updateChart())
+          .then(() => this.setState({ currentDay }))
           .catch(err => this.showMessageDialog(err));
       }
     });
@@ -751,7 +888,6 @@ export default class App extends React.Component {
       withdrawalInterval,
       payloadInterval,
       depoPersentageStart,
-      iterations,
     } = this.state;
 
     data[i] = data[i] || {};
@@ -780,7 +916,7 @@ export default class App extends React.Component {
       customIncome = data[i].customIncome;
     }
 
-    const scaleInitial = round(this.getMinDailyIncome(), 3);
+    const scaleInitial = round(this.getRate(), 3);
     let _scale  = scaleInitial;
     if (!rebuild && data && data[i] && data[i].scale != null) {
       _scale = data[i].scale;
@@ -832,7 +968,7 @@ export default class App extends React.Component {
 
     let res = {
       day:                i + 1,
-      scale:              _scale,
+      scale:              (!rebuild && data && data[i] && data[i].scale != null) ? data[i].scale : undefined,
       depoStartTest,
       depoStart:          _depoStart,
       depoStartPlan:      _depoStartPlan,
@@ -846,9 +982,16 @@ export default class App extends React.Component {
       contractsStart:     _contractsStart,
       pointsForIteration: _pointsForIteracion,
 
-      iterations: data[i].iterations || iterations,
-      payment:    data[i].payment,
-      payload:    data[i].payload,
+      iterations:     data[i].iterations,
+      iterationsList: (!rebuild && data && data[i] && data[i].iterationsList != null) ? data[i].iterationsList : [],
+      payment:        data[i].payment,
+      payload:        data[i].payload,
+
+      scaleChanged:        data[i].scaleChanged,
+      paymentChanged:      data[i].paymentChanged,
+      payloadChanged:      data[i].payloadChanged,
+      customIncomeChanged: data[i].customIncomeChanged,
+      iterationsChanged:   data[i].iterationsChanged,
 
       collapsed: fallbackBoolean(collapsed, true),
       saved:     fallbackBoolean(saved,     false),
@@ -868,31 +1011,52 @@ export default class App extends React.Component {
 
   updateData(length = 0, rebuild) {
     return new Promise(resolve => {
+      let { mode, days, realData } = this.state;
       const data = this.buildData(length, rebuild);
-      this.setState({ data }, () => resolve());
+      if (rebuild) {
+        realData = {};
+      }
+
+      this.setState({ data, realData, days }, () => resolve());
     })
   }
 
   overrideData(override = []) {
-    const { data } = this.state;
-    
+    const { data, realData } = this.state;
+
     return new Promise(resolve => {
       for (let i = 0; i < override.length; i++) {
         let item = override[i];
-        const d = item.d - 1;
+        let d = (item.day != null) ? item.day : item.d;
 
-        data[d].day             = d + 1;
-        data[d].scale           = item.s;
-        data[d].customIncome    = item.ci;
-        data[d].payment         = item.pmt;
-        data[d].payload         = item.pld;
-        data[d].iterations      = item.i;
-        data[d].changed         = item.c;
-        data[d].passiveIncome   = item.pi;
-        data[d].directUnloading = item.du;
+        if (!realData[d]) {
+          realData[d] = {};
+        }  
+
+        const scale = item.scale != null ? item.scale : item.s;
+        data[d - 1].scale = scale;
+        realData[d].scale = scale;
+
+        const payment = item.payment != null ? item.payment : item.pmt;
+        data[d - 1].payment = payment;
+        realData[d].payment = payment;
+
+        const payload = item.payload != null ? item.payload : item.pld;
+        data[d - 1].payload = payload;
+        realData[d].payload = payload;
+
+        data[d - 1].day = d;
+        data[d - 1].customIncome    = item.customIncome    != null ? item.customIncome    : item.ci;
+        data[d - 1].iterations      = item.iterations      != null ? item.iterations      : item.i;
+        data[d - 1].iterationsList  = item.iterationsList  != null ? item.iterationsList  : item.il;
+        data[d - 1].changed         = item.changed         != null ? item.changed         : item.c;
+        data[d - 1].passiveIncome   = item.passiveIncome   != null ? item.passiveIncome   : item.pi;
+        data[d - 1].directUnloading = item.directUnloading != null ? item.directUnloading : item.du;
       }
 
-      this.setState({ data }, () => resolve());
+      // console.log(realData);
+
+      this.setState({ data, realData }, () => resolve());
     })
   }
 
@@ -955,6 +1119,10 @@ export default class App extends React.Component {
     }
     persentage = +(persentage / 100);
 
+    if (persentage > .3) {
+      return ["", "Слишком большая доходность!"];
+    }
+
     let err = ["Слишком большой вывод!", "Слишком маленькая доходность!"];
 
     if (mode == 0) {
@@ -996,7 +1164,6 @@ export default class App extends React.Component {
 
   validatePayment(value, frequency) {
     const max = this.getMaxPaymentValue(frequency);
-    console.log(max);
     
     if (value > max) {
       return "Слишком большой вывод";
@@ -1062,7 +1229,6 @@ export default class App extends React.Component {
             name: save.name,
             id:   save.id,
           }));
-          console.log("Fetched all the saves:", saves);
           resolve(saves);
         })
         .catch(err => reject(err));
@@ -1072,7 +1238,6 @@ export default class App extends React.Component {
   fetchSaveById(id) {
     return new Promise((resolve, reject) => {
       if (typeof id === "number") {
-        console.log("Trying to fetch id:" + id);
         this.sendRequest("getTrademeterSnapshot", "GET", { id })
           .then(res => resolve(res))
           .catch(err => reject(err));
@@ -1080,12 +1245,6 @@ export default class App extends React.Component {
       else {
         reject("id must be a number!", id);
       }
-    });
-  }
-
-  setStatePromise(state = {}) {
-    return new Promise(resolve => {
-      this.setState(state, () => resolve());
     });
   }
 
@@ -1120,11 +1279,9 @@ export default class App extends React.Component {
 
       this.sendRequest("addTrademeterSnapshot", "POST", data)
         .then(res => {
-          console.log(res);
-
           let id = Number(res.id);
           if (id) {
-            console.log("Saved with id = ", id);
+            // console.log("Saved with id = ", id);
             this.setState({ id }, () => resolve(id));
           }
           else {
@@ -1225,7 +1382,7 @@ export default class App extends React.Component {
   /**
    * @returns {number} минимальная доходность в день
    */
-  getMinDailyIncome(mode) {
+  getRate(mode) {
     const {
       depoEnd,
       payloadInterval,
@@ -1297,16 +1454,25 @@ export default class App extends React.Component {
     const { data, depoStart, depoEnd } = this.state;
     mode = mode || this.state.mode;
 
-    return (mode === 0)
-      ? depoEnd
-      : depoStart[1] + data
-        .map(d => d.incomePlan)
-        .reduce((prev, curr) => prev + curr);
+    if (mode === 0) {
+      return depoEnd;
+    }
+    else {
+      let depo = depoStart[mode];
+      if (data.length) {
+        depo += data.map(d => d.incomePlan).reduce((prev, curr) => prev + curr);
+      }
+      return depo;
+    }
   }
 
   getPointsForIteration() {
     let { data, directUnloading, iterations } = this.state;
     iterations = iterations || 1;
+
+    if (!data.length) {
+      return iterations;
+    }
 
     let pointsForIteration = data[0].pointsForIteration / iterations;
     if (!directUnloading && (iterations * 2) >= 100) {
@@ -1316,7 +1482,7 @@ export default class App extends React.Component {
     pointsForIteration = Math.max(pointsForIteration, 1);
 
     if (isNaN(pointsForIteration)) {
-      pointsForIteration = 1;
+      pointsForIteration = iterations;
     }
 
     return roundUp(pointsForIteration);
@@ -1333,7 +1499,7 @@ export default class App extends React.Component {
     return title;
   }
 
-  getIncomeTools() {
+  getTools() {
     const { tools, customTools } = this.state;
     return []
       .concat(tools)
@@ -1346,7 +1512,25 @@ export default class App extends React.Component {
       .concat(passiveIncomeTools)
   }
 
+  getPayment(d) {
+    const { mode, withdrawal, withdrawalInterval } = this.state;
+    return (d !== 0 && d % withdrawalInterval[mode] == 0)
+      ? withdrawal[mode]
+      : 0 
+  }
+
+  getPayload(d) {
+    const { mode, payload, payloadInterval } = this.state;
+    return (d !== 0 && d % payloadInterval[mode] == 0)
+      ? payload[mode]
+      : 0 
+  }
+
   render() {
+    if (!this.state.data.length) {
+      return;
+    }
+
     return (
       <div className="page">
 
@@ -1386,15 +1570,6 @@ export default class App extends React.Component {
 
                         }}>
                         <Option key={0} value={0}>Не выбрано</Option>
-                        {dev && (
-                          <Option key={1} value={1}>
-                            Битый
-                            <WarningOutlined style={{
-                              marginLeft: ".25em",
-                              color: "var(--danger-color)"
-                            }} />
-                          </Option>
-                        )}
                         {saves.map((save, index) =>
                           <Option key={index + 1} value={index + 1}>
                             {save.name}
@@ -1537,13 +1712,17 @@ export default class App extends React.Component {
                       unsigned="true"
                       onBlur={val => {
                         let depoStart = [...this.state.depoStart];
-                        const { mode } = this.state
+                        const { mode } = this.state;
 
-                        if (val == depoStart[mode]) {
+                        if (val === depoStart[mode]) {
                           return;
                         }
 
-                        depoStart[mode] = val == 0 ? 1 : val;
+                        if (val === "") {
+                          val = 10000;
+                        }
+
+                        depoStart[mode] = Number(val);
                         this.setState({ depoStart }, this.recalc)
                       }}
                       onChange={(e, val) => {
@@ -1586,8 +1765,12 @@ export default class App extends React.Component {
                               currentPassiveIncomeToolIndex,
                             } = this.state;
                             
-                            if (val == depoEnd) {
+                            if (val === depoEnd) {
                               return;
+                            }
+
+                            if (val === "") {
+                              val = this.state.depoStart[this.state.mode];
                             }
 
                             let passiveIncomeMonthly = this.state.passiveIncomeMonthly;
@@ -1597,10 +1780,7 @@ export default class App extends React.Component {
                               passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                             }
 
-                            this.setState({
-                              depoEnd: val == 0 ? 1 : val,
-                              passiveIncomeMonthly
-                            }, this.recalc);
+                            this.setState({ depoEnd: val, passiveIncomeMonthly }, this.recalc);
                           }}
                           format={formatNumber}
                         />
@@ -1612,11 +1792,26 @@ export default class App extends React.Component {
                         <NumericInput
                           key={this.state.days[this.state.mode] + this.state.incomePersantageCustom}
                           disabled={this.state.saved}
+                          max={30}
                           className="input-group__input"
                           defaultValue={this.state.incomePersantageCustom}
                           placeholder={(this.state.minDailyIncome).toFixed(3)}
                           unsigned="true"
                           onBlur={val => {
+                            const { days, withdrawal, depoStart, mode } = this.state;
+
+                            let persentage = +val;
+                            if (isNaN(persentage)) {
+                              persentage = undefined;
+                            }
+
+                            let errMessages = this.checkFn(withdrawal[mode], depoStart[mode], days[mode], persentage);
+
+                            if (mode == 1) {
+                              this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                            }
+                            this.withdrawalInput.setErrorMsg(errMessages[0]);
+
                             this.setState({
                               incomePersantageCustom: val
                             }, () => {
@@ -1734,6 +1929,15 @@ export default class App extends React.Component {
                           passiveIncomeMonthly,
                           currentPassiveIncomeToolIndex,
                         } = this.state;
+
+                        if (val === passiveIncomeMonthly[mode]) {
+                          return;
+                        }
+
+                        if (val === "") {
+                          val = 0;
+                        }
+
                         let pitError = currentPassiveIncomeToolIndex[mode] < 0
                           ? "Выберете инструмент пассивного дохода"
                           : "";
@@ -1855,24 +2059,33 @@ export default class App extends React.Component {
                         <label className="input-group">
                           <span className="input-group__label">Вывод</span>
                           <NumericInput
-                            key={this.state.mode + this.state.withdrawal[this.state.mode]}
+                            key={this.state.mode + this.state.withdrawal[this.state.mode] + Math.random()}
                             disabled={this.state.saved}
                             className="input-group__input"
                             defaultValue={this.state.withdrawal[this.state.mode]}
                             round="true"
                             unsigned="true"
                             format={formatNumber}
+                            min={0}
                             max={
                               this.state.mode == 0
                                 ? this.state.depoStart[this.state.mode] * 0.15
                                 : this.state.depoStart[this.state.mode] * (this.state.incomePersantageCustom / 100)
                             }
                             onBlur={val => {
-                              this.setWithdrawal(val);
-
                               const { mode } = this.state;
                               let depoStart = this.state.depoStart[mode];
                               let days = this.state.days[mode];
+
+                              if (val === this.state.withdrawal[mode]) {
+                                return;
+                              }
+
+                              if (val === "") {
+                                val = 0;
+                              }
+
+                              this.setWithdrawal(val);
 
                               let errMessages = this.checkFn(val, depoStart, days);
                               this.withdrawalInput.setErrorMsg(errMessages[0]);
@@ -1927,9 +2140,15 @@ export default class App extends React.Component {
                         onChange={value => {
                           let { mode, withdrawalInterval } = this.state;
 
+                          // if (value === withdrawalInterval) {
+                          //   return;
+                          // }
+                          
                           const frequency = value;
                           const payment = this.state.withdrawal[this.state.mode];
+                                                    
                           const paymentOverflowMsg = this.validatePayment(payment, frequency);
+
                           if (paymentOverflowMsg) {
                             this.withdrawalInput.setErrorMsg(paymentOverflowMsg);
                           }
@@ -1949,16 +2168,26 @@ export default class App extends React.Component {
                     <label className="input-group">
                       <span className="input-group__label">Пополнение</span>
                       <NumericInput
-                        key={this.state.mode + this.state.payload[this.state.mode]}
+                        key={this.state.mode + this.state.payload[this.state.mode] + Math.random()}
                         disabled={this.state.saved}
                         className="input-group__input"
                         defaultValue={this.state.payload[this.state.mode]}
                         round="true"
                         unsigned="true"
                         format={formatNumber}
-                        max={Infinity}
+                        min={0}
+                        max={99999999}
                         onBlur={val => {
                           let { mode, payload } = this.state;
+
+                          if (val === payload[mode]) {
+                            return;
+                          }
+
+                          if (val === "") {
+                            val = 0;
+                          }
+                          
                           payload[mode] = val;
 
                           this.setState({ payload }, this.recalc);
@@ -2012,7 +2241,7 @@ export default class App extends React.Component {
               if (days[mode] > withdrawalInterval[mode]) {
                 // Вывод
                 paymentTotal = new Array( +Math.floor(days[mode] / withdrawalInterval[mode]) )
-                  .fill(withdrawal[mode])
+                  .fill(withdrawal[mode] - withdrawal[mode] * 0.18)
                   .reduce((prev, curr) => prev + curr);
               }
 
@@ -2032,7 +2261,7 @@ export default class App extends React.Component {
                       Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
                     </h2>
                     <p className="stats-subtitle">
-                      <BigNumber val={Math.round( this.getDepoEnd() )} format={formatNumber} />
+                      <BigNumber val={Math.round(this.getDepoEnd())} format={formatNumber} />
                     </p>
 
                     <footer className="stats-footer">
@@ -2053,7 +2282,11 @@ export default class App extends React.Component {
 
                               return (
                                 <Value>
-                                  <BigNumber val={val} threshold={1e9} suffix="%" />
+                                  <BigNumber 
+                                    val={val} 
+                                    format={formatNumber} 
+                                    threshold={1e9} 
+                                    suffix="%" />
                                 </Value>
                               )
                             })()
@@ -2068,10 +2301,8 @@ export default class App extends React.Component {
                         <div className="stats-val">
                           {
                             (() => {
-                              let val = this.getMinDailyIncome() 
-                                / (iterations * (directUnloading ? 1 : 2))
-                              
-                              return <Value format={val => val.toFixed(3) + "%"}>{ val }</Value>
+                              const val = this.getRate() / (iterations * (directUnloading ? 1 : 2));
+                              return <Value format={val => +val.toFixed(3) + "%"}>{val}</Value>
                             })()
                           }
                         </div>
@@ -2085,7 +2316,7 @@ export default class App extends React.Component {
                       <span aria-label="Минимальная">Мин.</span> доходность в день
                     </h2>
                     <p className="stats-subtitle">
-                      <BigNumber val={round( this.getMinDailyIncome(), 3 )} threshold={1e9} suffix="%" />
+                      <BigNumber val={round( this.getRate(), 3 )} threshold={1e9} suffix="%" />
                     </p>
 
                     <footer className="stats-footer">
@@ -2102,7 +2333,7 @@ export default class App extends React.Component {
                                   ? "-"
                                   : null
                               }
-                              <Value format={formatNumber}>{ paymentTotal }</Value>
+                              <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
                             </div>
                           </Col>
                          )
@@ -2122,7 +2353,7 @@ export default class App extends React.Component {
                                   ? "+"
                                   : null
                               }
-                              <Value format={formatNumber}>{ payloadTotal }</Value>
+                              <Value format={formatNumber}>{ Math.round(payloadTotal) }</Value>
                             </div>
                           </Col>
                         )
@@ -2243,7 +2474,7 @@ export default class App extends React.Component {
 
                         let toFind = this.state.depoPersentageStart;
 
-                        let tools = this.getIncomeTools();
+                        let tools = this.getTools();
                         
                         let step = round(tools[currentToolIndex].guaranteeValue / depoStart[mode] * 100, 1);
                         if (step > 100) {
@@ -2276,7 +2507,7 @@ export default class App extends React.Component {
                           this.updateData(days[mode])
                         });
                       }}
-                      disabled={this.getIncomeTools().length == 0}
+                      disabled={this.getTools().length == 0}
                       showSearch
                       optionFilterProp="children"
                       filterOption={(input, option) =>
@@ -2385,7 +2616,7 @@ export default class App extends React.Component {
                   <Col className="section4-col">
                     <header className="section4-header section4-header--first">
                       <CustomSelect
-                        key={this.state.currentDay}
+                        key={this.state.currentDay + Math.random()}
                         className="section4__day-select"
                         options={
                           new Array(days).fill(0).map((val, index) => index + 1)
@@ -2405,7 +2636,7 @@ export default class App extends React.Component {
                         </div>
                         <div className="section4-r">
                           {
-                            formatNumber(Math.round(data[currentDay - 1].depoStartReal))
+                            formatNumber(Math.round(data[currentDay - 1] && (data[currentDay - 1].depoStartReal || 0)))
                             +
                             ` (${ round(depoPersentageStart, 3) }%)`
                           }
@@ -2504,7 +2735,9 @@ export default class App extends React.Component {
                           <Switch
                             className="switch__input"
                             defaultChecked={this.state.directUnloading}
-                            onChange={val => this.setState({ directUnloading: val }, this.recalc)}
+                            onChange={directUnloading => this.setState({ directUnloading }, () => {
+                              this.recalc(false);
+                            })}
                           />
                         </label>
                       </header>
@@ -2557,23 +2790,56 @@ export default class App extends React.Component {
                         До цели
                       </header>
                       {(() => {
+                        const {
+                          mode,
+                          realData,
+                          payloadInterval,
+                          withdrawalInterval,
+                        } = this.state;
+
+                        const depoStart = this.state.depoStart[mode];
+                        const withdrawal = this.state.withdrawal[mode];
+                        const payload = this.state.payload[mode];
+                        const days = this.state.days[mode];
                         
-                        function getPeriods(present, future, rate) {
+                        function getPeriods(rate, present, future, payment, paymentper, payload, payloadper, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}) {
 
-                          ///////////////////////////////////////////
+                          // ( Ставка, Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням  )
+                          // Возвращает: Дней до цели
+                          const rateRounded = round(rate * 100, 3);
 
-                          // ( Начальный депозит, Целевой депозит, Ставка )
-                          // Возвращает: Количество дней
+                          var res = present;
+                          var p1 = dayoffirstpayment;
+                          var p2 = dayoffirstpayload;
+                          var x = 0;
+                          rate += 1;
+                          payment = payment * (1 + comission);
 
-                          let dart = future / present;
-                          let rex = 1 + rate / 100;
-                          rex = Math.log(rex);
-                          let res = Math.log(dart) / rex;
+                          while (res < future) {
+                            if (realdata[x] !== undefined) {
 
-                          return res;
+                              realdata[x].scale   = realdata[x].scale != null ? realdata[x].scale : rateRounded;
+                              realdata[x].payload = realdata[x].payload != null ? realdata[x].payload : 0;
+                              realdata[x].payment = realdata[x].payment != null ? realdata[x].payment : 0;
 
+                              res = res * (1 + (realdata[x].scale / 100));
+                              p1--; p2--;
+                              res += realdata[x].payload;
+                              res -= realdata[x].payment;
+                              if (!p2) { p2 = payloadper; }
+                              if (!p1) { p1 = paymentper; }
+                            } else {
+                              res = res * rate;
+                              p1--; p2--;
+                              if (!p2) { p2 = payloadper; res += payload; }
+                              if (!p1) { p1 = paymentper; res -= payment; }
+                            }
+                            x++;
+                          }
+                          return x;
                         }
 
+                        const rate = this.getRate();
                         let sum   = 0;
                         let total = 0;
                         let avg   = 0;
@@ -2582,23 +2848,52 @@ export default class App extends React.Component {
                         for (let dataItem of data) {
                           if (dataItem.changed) {
                             atLeastOneChanged = true;
-                            sum += dataItem.scale;
+                            sum += (dataItem.scale != null) ? dataItem.scale : rate;
+                            total++;
                           }
                           else {
-                            sum += this.getMinDailyIncome();
+                            // sum += rate;
                           }
-                          total++;
                         }
 
                         if (total > 0 && (sum / total) != 0) {
                           avg = sum / total;
                         }
                         else {
-                          avg = round( this.getMinDailyIncome(), 3 );  
+                          avg = round(rate, 3);  
                         }
 
+                        const periods = getPeriods(
+                          rate / 100,
+                          depoStart,
+                          this.getDepoEnd(),
+                          withdrawal,
+                          withdrawalInterval[mode],
+                          payload,
+                          payloadInterval[mode],
+                          withdrawalInterval[mode],
+                          payloadInterval[mode],
+                          0,
+                          realData
+                        );
+                        // console.log(
+                        //   rate / 100,
+                        //   depoStart,
+                        //   depoEnd,
+                        //   withdrawal,
+                        //   withdrawalInterval[mode],
+                        //   payload,
+                        //   payloadInterval[mode],
+                        //   withdrawalInterval[mode],
+                        //   payloadInterval[mode],
+                        //   0,
+                        //   realData,
+                        //   "=",
+                        //   periods
+                        // );
+
                         let realDaysLeft = atLeastOneChanged
-                          ? roundUp( getPeriods(this.getDepoStart(), this.getDepoEnd(), avg) )
+                          ? roundUp( periods )
                           : days;
                         let difference = -(days - realDaysLeft);
                         let persentage = (currentDay) / (days + difference) * 100;
@@ -2630,31 +2925,86 @@ export default class App extends React.Component {
                               }
                             </div>
 
-                            {(() => {
-                              if (total > 0) {
-                                let visible = round(avg, 3) < round(this.getMinDailyIncome(), 3);
+                            <Stack className="section4__stats">
+                              {(() => {
+                                if (total > 0) {
+                                  let visible = round(avg, 3) < round(this.getRate(), 3);
+
+                                  return (
+                                    <Statistic
+                                      title={
+                                        <span>
+                                          средняя<br />
+                                          <span aria-label="доходность">дох-ть</span>
+                                        </span>
+                                      }
+                                      value={round(avg, 3)}
+                                      valueStyle={{
+                                        color: `var( ${visible ? "--danger-color" : "--success-color"} )`
+                                      }}
+                                      prefix={
+                                        visible ? <ArrowDownOutlined /> : <ArrowUpOutlined />
+                                      }
+                                      suffix="%"
+                                    />
+                                  );
+                                }
+
+                              })()}
+
+                              {(() => {
+                                const {
+                                  mode,
+                                  realData,
+                                  payloadInterval,
+                                  withdrawalInterval,
+                                } = this.state;
+
+                                const depoStart = this.state.depoStart[mode];
+                                const withdrawal = this.state.withdrawal[mode];
+                                const payload = this.state.payload[mode];
+                                const days = this.state.days[mode];
+
+                                let value = rateRequired(
+                                  depoStart,
+                                  this.getDepoEnd(),
+                                  withdrawal,
+                                  withdrawalInterval[mode],
+                                  payload,
+                                  payloadInterval[mode],
+                                  days,
+                                  withdrawalInterval[mode],
+                                  payloadInterval[mode],
+                                  0,
+                                  realData
+                                ) * 100;
+
+                                const rate = this.getRate();
+                                if (Math.abs(rate - value) < .0008) {
+                                  value = round(rate, 3);
+                                }
 
                                 return (
                                   <Statistic
                                     title={
                                       <span>
-                                        средняя<br />
+                                        рекомендуемая<br />
                                         <span aria-label="доходность">дох-ть</span>
                                       </span>
                                     }
-                                    value={ round( avg, 3 ) }
+                                    value={ round(value, 3) }
                                     valueStyle={{
-                                      color: `var( ${visible ? "--danger-color" : "--success-color"} )`
+                                      color: `var( ${value < 0 ? "--danger-color" : "--success-color"} )`
                                     }}
                                     prefix={
-                                      visible ? <ArrowDownOutlined /> : <ArrowUpOutlined />
+                                      value < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />
                                     }
                                     suffix="%"
                                   />
                                 );
-                              }
+                              })()}
+                            </Stack>
 
-                            })()}
                           </div>
                         )
                       })()}
@@ -2669,31 +3019,108 @@ export default class App extends React.Component {
             {(() => {
               const {
                 data,
-                mode,
+                realData,
                 currentDay,
-                withdrawalInterval,
-                payloadInterval,
                 directUnloading,
                 passiveIncomeTools,
                 currentPassiveIncomeToolIndex
               } = this.state;
 
-              let iterations = Math.min(
-                this.state.iterations * (directUnloading ? 1 : 2),
-                100
-              );
+              let iterations = Math.min(this.state.iterations * (directUnloading ? 1 : 2), 100);
+
+              const rate  = this.getRate();
+              const scale = (data[currentDay - 1].scale != null) ? data[currentDay - 1].scale : 0;
+
+              const getIterationsList = () => {
+                if (!data[currentDay - 1].iterationsList) {
+                  return;
+                }
+
+                return data[currentDay - 1].iterationsList.filter(v => v.percent != null || v.income != null);
+              };
+
+              const getRealRate = () => {
+                let value = scale;
+
+                if (data[currentDay - 1].customIncome != null) {
+                  value = data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest * 100;
+                }
+
+                const iterationsList = getIterationsList();
+                if (iterationsList && iterationsList.length) {
+                  value = iterationsList.map(el => el.percent).reduce((prev, curr) => prev + curr);
+                }
+
+                return value;
+              };
+
+              const getRealIncome = () => {
+                let value = Math.round(data[currentDay - 1].depoStart * (round(scale, 3) / 100));
+
+                if (data[currentDay - 1].customIncome != null) {
+                  value = data[currentDay - 1].customIncome;
+                }
+
+                const iterationsList = getIterationsList();
+                if (iterationsList && iterationsList.length) {
+                  value = iterationsList.map(el => el.income).reduce((prev, curr) => prev + curr);
+                }
+
+                value += data[currentDay - 1].payload ? data[currentDay - 1].payload : 0;
+                value -= data[currentDay - 1].payment ? data[currentDay - 1].payment : 0;
+                return value;
+              };
+
+              const isChanged = dayData => {
+                let changed = false;
+                for (const p of ["scale", "customIncome", "payment", "payload", "iterations"]) {
+                  changed = changed || (dayData[p] != null);
+                }
+                return changed;
+              };
 
               const placeholder = "—";
               const onBlur = (prop, val) => {
-                let { data, currentDay } = this.state;
+                if (val === "") {
+                  val = undefined;
+                }
+                
+                if (!data[currentDay - 1][`${prop}Changed`]) {
+                  data[currentDay - 1][`${prop}Changed`] = true;
+                }
+
+                if (!realData[currentDay]) {
+                  realData[currentDay] = {};
+                }
+
+                realData[currentDay][prop] = val;
+
+                if (prop === "customIncome") {
+                  let scale = val;
+                  if (val) {
+                    scale = (val / data[currentDay - 1].depoStartTest) * 100;
+                  }
+
+                  data[currentDay - 1].scale = scale;
+                  realData[currentDay].scale = scale;
+                }
+
+                // console.log(realData[currentDay]);
 
                 data[currentDay - 1][prop] = val;
-                data[currentDay - 1].changed = true;
-                this.setState({ data }, () => {
+
+                // Если заполнен хотя бы один инпут, то считаем, что день изменен 
+                const changed = isChanged(data[currentDay - 1]);
+                data[currentDay - 1].changed = (!val) ? changed : true;
+
+                // console.log(data[currentDay - 1]);
+
+                this.setState({ data, realData }, () => {
                   const { days, mode } = this.state;
                   this.updateData(days[mode], false)
                     .then(() => this.updateChart());
                 });
+
               };
 
               return (
@@ -2732,10 +3159,11 @@ export default class App extends React.Component {
                         const day = (page * 5) + index + 1;
                         const title = `Выбрать день номер ${day}`;
 
-                        let success = el.scale >= round(this.getMinDailyIncome(), 3);
+                        let success = el.scale >= round(rate, 3);
                         let failed = el.scale <= 0;
+                        
                         if (el.customIncome != null) {
-                          success = el.customIncome >= el.incomeReal;
+                          success = el.customIncome >= data[currentDay - 1].incomeReal;
                           failed = el.customIncome <= 0;
                         }
 
@@ -2762,32 +3190,21 @@ export default class App extends React.Component {
                     : (
                       <span className="section5-content-title">
                         {(() => {
-                          let value = data[currentDay - 1].scale;
-                          if (data[currentDay - 1].customIncome != null) {
-                            value = data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest * 100;
-                          }
+                          const value = getRealRate();
 
                           return (
                             data[currentDay - 1].changed
-                              ? <Value format={val => formatNumber(round(val, 3))}>
-                                  {value}
-                                </Value>
+                              ? <Value format={val => formatNumber(round(val, 3))}>{value}</Value>
                               : "—"
                           )
                         })()}
                         &nbsp;/&nbsp;
-                        { round(this.getMinDailyIncome(), 3) }
+                        { round(rate, 3) }
                         &nbsp;
                         <span>
                           (
                           {(() => {
-                            let value = Math.round(
-                              data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100)
-                            );
-
-                            if (data[currentDay - 1].customIncome != null) {
-                              value = data[currentDay - 1].customIncome;
-                            }
+                            const value = getRealIncome();
 
                             return data[currentDay - 1].changed
                               ? (
@@ -2878,7 +3295,7 @@ export default class App extends React.Component {
                   >
                     <div className="section5-content">
 
-                      <Col className="section5-col">
+                      <Col className="card section5-col">
                         <div className="section5-row">
                           <div className="section5-l">
                             <span aria-label="Доходность">Дох-ть</span> за день
@@ -2886,15 +3303,19 @@ export default class App extends React.Component {
                           <div className="section5-r">
                             {(() => {
                               const prop = "scale";
-                              const value = round(data[currentDay - 1][prop], 3);
-                              const disabled = data[currentDay - 1].customIncome != null;
+                              const value = data[currentDay - 1][prop];
+
+                              const iterationsList = getIterationsList();
+                              const disabled = 
+                                data[currentDay - 1].customIncome != null || 
+                                (iterationsList && iterationsList.length);
                               return (
                                 <NumericInput
-                                  key={value}
+                                  key={value + Math.random()}
                                   disabled={disabled}
                                   defaultValue={
-                                    data[currentDay - 1].changed && !disabled 
-                                      ? value 
+                                    data[currentDay - 1].changed && value != null
+                                      ? round(value, 3) 
                                       : ""
                                   }
                                   placeholder={placeholder}
@@ -2905,7 +3326,7 @@ export default class App extends React.Component {
                             })()}
                             <span className="section5-r-suffix">
                               <span className="section5-r-suffix__separator">/</span>
-                              {round(this.getMinDailyIncome(), 3)}%
+                              {round(this.getRate(), 3)}%
                             </span>
                           </div>
                         </div>
@@ -2919,8 +3340,13 @@ export default class App extends React.Component {
                               const value = data[currentDay - 1][prop];
                               return (
                                 <NumericInput
-                                  key={value}
-                                  defaultValue={data[currentDay - 1].changed ? value : ""}
+                                  key={value + Math.random()}
+                                  defaultValue={
+                                    data[currentDay - 1].changed && value != null
+                                      ? value
+                                      : ""
+                                  }
+                                  round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
                                   onBlur={val => onBlur(prop, val)}
@@ -2930,9 +3356,7 @@ export default class App extends React.Component {
                             <span className="section5-r-suffix">
                               <span className="section5-r-suffix__separator">/</span>
                               {
-                                (currentDay !== 0 && currentDay % withdrawalInterval[mode] == 0)
-                                  ? formatNumber( this.state.withdrawal[mode] )
-                                  : 0
+                                formatNumber(this.getPayment(currentDay))
                               }
                             </span>
                           </div>
@@ -2949,8 +3373,13 @@ export default class App extends React.Component {
                               const value = data[currentDay - 1][prop];
                               return (
                                 <NumericInput
-                                  key={value}
-                                  defaultValue={data[currentDay - 1].changed ? value : ""}
+                                  key={value + Math.random()}
+                                  defaultValue={
+                                    data[currentDay - 1].changed && value != null 
+                                      ? value 
+                                      : ""
+                                  }
+                                  round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
                                   onBlur={val => onBlur(prop, val)}
@@ -2960,9 +3389,7 @@ export default class App extends React.Component {
                             <span className="section5-r-suffix">
                               <span className="section5-r-suffix__separator">/</span>
                               {
-                                (currentDay !== 0 && currentDay % payloadInterval[mode] == 0)
-                                  ? formatNumber(this.state.payload[mode])
-                                  : 0
+                                formatNumber(this.getPayload(currentDay))
                               }
                             </span>
                           </div>
@@ -2970,29 +3397,41 @@ export default class App extends React.Component {
                         {/* /.row */}
                       </Col>
 
-                      <Col className="section5-col">
+                      <Col className="card section5-col">
                         <div className="section5-row">
                           <div className="section5-l">
-                            <span aria-lang="Доходность">Дох-ть</span>
+                            <span aria-label="Доходность">Дох-ть</span>
                             {" "}
                             в
                             {" "}
-                            <span aria-lang="рублях">руб.</span>
+                            <span aria-label="рублях">руб.</span>
                           </div>
                           <div className="section5-r">
                             {(() => {
                               const prop = "customIncome";
-                              const value = data[currentDay - 1][prop];
-                              const disabled = data[currentDay - 1].changed && value == null;
+                              let value = data[currentDay - 1][prop];
+
+                              const iterationsList = getIterationsList();
+                              const disabled = 
+                                (data[currentDay - 1].changed &&
+                                 data[currentDay - 1].scale != null &&
+                                 value == null) || 
+                                (iterationsList && iterationsList.length);
+
+                              if (value == null) {
+                                value = getRealIncome();
+                              }
+
                               return (
                                 <NumericInput
-                                  key={value}
+                                  key={value + Math.random()}
                                   disabled={disabled}
                                   defaultValue={
-                                    data[currentDay - 1].changed && !disabled 
+                                    data[currentDay - 1].changed && value != null
                                       ? value
                                       : ""
                                   }
+                                  round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
                                   onBlur={val => onBlur(prop, val)}
@@ -3017,8 +3456,13 @@ export default class App extends React.Component {
                               const value = data[currentDay - 1][prop];
                               return (
                                 <NumericInput
-                                  key={value}
-                                  defaultValue={data[currentDay - 1].changed ? value : ""}
+                                  key={value + Math.random()}
+                                  defaultValue={
+                                    value != null
+                                      ? value
+                                      : ""
+                                  }
+                                  round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
                                   onBlur={val => onBlur(prop, val)}
@@ -3061,16 +3505,18 @@ export default class App extends React.Component {
                         {/* /.row */}
                       </Col>
 
-                      <Col className="section5-col section5-col--centered">
-                        {(() => {
+                      <Col className="card section5-col section5-col--no-padding">
+                        {/* {(() => {
                           let percentage = round(
-                            data[currentDay - 1].scale / (round( this.getMinDailyIncome(), 3 )) * 100,
+                            data[currentDay - 1].scale / (round( this.getRate(), 3 )) * 100,
                             2
                           );
 
                           if (data[currentDay - 1].customIncome != null) {
                             percentage = round(
-                              data[currentDay - 1].customIncome / data[currentDay - 1].incomeReal * 100,
+                              data[currentDay - 1].customIncome / 
+                              Math.round(data[currentDay - 1].incomeReal)
+                              * 100,
                               2
                             );
                           }
@@ -3105,18 +3551,139 @@ export default class App extends React.Component {
                               }
                             />
                           ) 
-                        })()}
+                        })()} */}
+
+                        <div className="iterations">
+                          <ol className="iterations-list">
+                            {(() => {
+                              const onChange = (iterationsList = []) => {
+                                const iterations = iterationsList.filter(v => v.percent != null || v.income != null);
+
+                                let scale;
+                                let iterationsLength;
+                                if (iterations.length) {
+                                  scale = iterations.map(el => el.percent).reduce((prev, curr) => prev + curr);
+                                  iterationsLength = iterations.length
+                                }
+
+                                data[currentDay - 1].scale = scale;
+                                if (!realData[currentDay]) {
+                                  realData[currentDay] = {};
+                                }
+                                realData[currentDay].scale = scale;
+                                data[currentDay - 1].iterations = iterationsLength;
+                                
+                                const changed = isChanged(data[currentDay - 1]);
+                                data[currentDay - 1].changed = changed;
+
+                                this.setState({ data, realData }, () => {
+                                  const { days, mode } = this.state;
+                                  this.updateData(days[mode], false)
+                                    .then(() => this.updateChart());
+                                });
+                              };
+
+                              const iterationsList = data[currentDay - 1].iterationsList;
+
+                              return iterationsList && iterationsList
+                                .map((listItem, index) =>
+                                  <li key={index} className="iterations-list-item">
+                                    <span className="iterations-list-item__number">
+                                      {index + 1}.
+                                    </span>
+                                    <NumericInput
+                                      className="iterations-list-item__input-left"
+                                      key={Math.random()}
+                                      defaultValue={listItem.percent != null ? listItem.percent : ""}
+                                      suffix="%"
+                                      format={formatNumber}
+                                      onBlur={val => {
+                                        // if (val === "") {
+                                        //   val = 0;
+                                        // }
+
+                                        if (!data[currentDay - 1].iterationsList[index]) {
+                                          data[currentDay - 1].iterationsList[index] = {};
+                                        }
+                                        
+                                        let income;
+                                        let percent;
+                                        if (val !== "") {
+                                          income  = Math.round(data[currentDay - 1].depoStart * (val / 100));
+                                          percent = val;
+                                        }
+                                        
+                                        data[currentDay - 1].iterationsList[index].income  = income;
+                                        data[currentDay - 1].iterationsList[index].percent = percent;
+                                        this.setState({ data });
+                                        onChange(data[currentDay - 1].iterationsList);
+                                      }}
+                                    />
+                                    <span className="iterations-list-item__separator">
+                                      /
+                                  </span>
+                                    <NumericInput
+                                      className="iterations-list-item__input-right"
+                                      key={Math.random()}
+                                      defaultValue={listItem.income != null ? listItem.income : ""}
+                                      format={formatNumber}
+                                      round="true"
+                                      onBlur={val => {
+                                        // if (val === "") {
+                                        //   val = 0;
+                                        // }
+
+                                        if (!data[currentDay - 1].iterationsList[index]) {
+                                          data[currentDay - 1].iterationsList[index] = {};
+                                        }
+
+                                        let income;
+                                        let percent;
+                                        if (val !== "") {
+                                          income  = val;
+                                          percent = round((val / data[currentDay - 1].depoStart) * 100, 3);
+                                        }
+
+                                        data[currentDay - 1].iterationsList[index].income  = income;
+                                        data[currentDay - 1].iterationsList[index].percent = percent;
+                                        this.setState({ data });
+                                        onChange(data[currentDay - 1].iterationsList);
+                                      }}
+                                    />
+                                    <CrossButton 
+                                      className="iterations-list-item__delete"
+                                      onClick={e => {
+                                        data[currentDay - 1].iterationsList.splice(index, 1);
+                                        this.setState({ data });
+                                        onChange(data[currentDay - 1].iterationsList);
+                                      }}
+                                    />
+                                  </li>
+                                )
+                            })()}
+                          </ol>
+                          <button 
+                            className="iterations-button" 
+                            aria-label="Добавить итерацию"
+                            onClick={() => {
+                              data[currentDay - 1].iterationsList.push(0);
+                              this.setState({ data }, () => {
+                                const list = document.querySelector(".iterations-list");
+                                list.scrollTop = 9999;
+                              });
+                            }}
+                          >
+                            + итерация
+                          </button>
+                        </div>
                       </Col>
 
                     </div>
                     {/* /.section5-content */}
 
                     {(() => {
-                      let income  = data[currentDay - 1].depoStart * (data[currentDay - 1].scale / 100);
-                      if (data[currentDay - 1].customIncome != null) {
-                        income = data[currentDay - 1].customIncome;
-                      }
-                      let percent = income / data[currentDay - 1].incomeReal;
+                      const income = getRealIncome();
+                      let percent = income / Math.round(data[currentDay - 1].incomeReal);
                       if (income <= 0) {
                         percent = 0;
                       }
@@ -3131,7 +3698,8 @@ export default class App extends React.Component {
                           <h3 className="section5-footer-title">Дневная цель</h3>
 
                           {(() => {
-                            const real = income;
+                            let real = getRealIncome();
+
                             const plan = data[currentDay - 1].incomeReal;
 
                             return (
@@ -3187,7 +3755,8 @@ export default class App extends React.Component {
                             <h4 className="section5-footer__label-title">Депозит:</h4>
                             {" "}
                             {(() => {
-                              const value = data[currentDay - 1].depoStartTest + income;
+                              const value = data[currentDay - 1].depoStartTest + getRealIncome();
+
                               return (
                                 data[currentDay - 1].changed
                                   ? (
@@ -3247,10 +3816,8 @@ export default class App extends React.Component {
             else if (test) {
               errors.push(`Нельзя использовать символ "${test[0]}"!`);
             }
-            if (!id) {
-              if (namesTaken.indexOf(str) > -1) {
-                errors.push(`Сохранение с таким именем уже существует!`);
-              }
+            if (namesTaken.indexOf(str) > -1) {
+              errors.push(`Сохранение с таким именем уже существует!`);
             }
 
             return errors;
@@ -3368,7 +3935,6 @@ export default class App extends React.Component {
                 }
 
                 let index = saves.push({ id, name });
-                console.log(saves);
                 
                 this.setState({
                   data,
@@ -3427,13 +3993,34 @@ export default class App extends React.Component {
           onConfirm={() => {
             let { toolTemplate, customTools, propsToShowArray } = this.state;
 
+            const nameExists = (value, tools) => {
+              let found = 0;
+              for (const tool of tools) {
+                if (value === tool.shortName) {
+                  found++;
+                }
+              }
+
+              return found > 1;
+            };
+
             let template = Object.assign({}, toolTemplate);
             let tool = template;
             propsToShowArray.map((prop, index) => {
-              tool[prop] = (index === 0) ? "Инструмент" : 0;
+              tool[prop] = toolTemplate[prop];
+              if (index === 0) {
+                const suffix = customTools.length + 1;
+                tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`;
+              }
             });
 
             customTools.push(tool);
+            
+            while (nameExists(tool.shortName, this.getTools())) {
+              const end = tool.shortName.match(/\d+$/g)[0];
+              tool.shortName = tool.shortName.replace(end, Number(end) + 1);
+            }
+
             this.setState({ customTools }, () => {
               document.querySelector(".config-table-wrap").scrollTop = 99999;
             });
@@ -3479,9 +4066,27 @@ export default class App extends React.Component {
                       )
                     }
                     {(() => {
+                      const nameExists = (value, tools) => {
+                        let found = 0;
+                        for (const tool of tools) {
+                          if (value === tool.shortName) {
+                            found++;
+                          }
+                        }
+
+                        return found > 1;
+                      };
+
                       let onBlur = (val, index, prop) => {
                         let { customTools } = this.state;
                         customTools[index][prop] = val;
+                        if (prop === "shortName") {
+                          while (nameExists(customTools[index][prop], this.getTools())) {
+                            const end = customTools[index][prop].match(/\d+$/g)[0];
+                            customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
+                          }
+                        }
+                        
                         this.setState({ customTools });
                       };
 
