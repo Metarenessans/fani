@@ -4,7 +4,6 @@
     position: relative;
     display: inline-block;
     margin: 0;
-    margin-bottom: .75em;
 
     color: inherit;
     font-size: 4em;
@@ -14,6 +13,11 @@
 
     @include sm() {
       padding: 0 1em;
+    }
+
+    &-wrap {
+      position: relative;
+      display: inline-block;
     }
   }
 }

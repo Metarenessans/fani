@@ -769,13 +769,6 @@ class App extends React.Component {
                               * currentTool.stepPrice 
                               / depo
                               * 100;
-                            console.log(
-                              contracts
-                              ,planIncome
-                              ,currentTool.priceStep
-                              ,currentTool.stepPrice
-                              ,depo
-                            );
                             return `${formatNumber(round(risk, 1))}%`
                           })()}
                         </span>
@@ -786,7 +779,7 @@ class App extends React.Component {
                           {(() => {
                             const income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
 
-                            const ratio = income / depo;
+                            const ratio = income / depo * 100;
                             let suffix = round(ratio, 2);
                             if (suffix > 0) {
                               suffix = "+" + suffix;

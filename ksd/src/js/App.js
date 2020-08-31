@@ -44,7 +44,7 @@ const { Title } = Typography;
 
 import "../sass/style.sass"
 
-const dev = true;
+const dev = false;
 
 class App extends React.Component {
 

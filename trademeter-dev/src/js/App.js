@@ -1588,15 +1588,15 @@ export default class App extends React.Component {
 
                 <Stack>
 
-                  <h1 className="page__title">
-                    { this.getTitle() }
+                  <div className="page__title-wrap">
+                    <h1 className="page__title">{ this.getTitle() }</h1>
 
-                    { (dev || this.state.id) && (
+                    {(dev || this.state.id) && (
                       <CrossButton
                         className="main-top__remove"
                         onClick={e => dialogAPI.open("dialog4", e.target)}/>
                     )}
-                  </h1>
+                  </div>
 
                   <Radio.Group
                     key={this.state.mode}
