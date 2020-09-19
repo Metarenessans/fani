@@ -1,255 +1,186 @@
 import React from "react"
 import {
-  Row,
-  Col,
-  Select,
   Button,
-  Tooltip,
-  Radio,
-  Switch,
+  Col,
+  Input,
   Progress,
+  Row,
+  Select,
   Statistic,
-  Input
+  Switch,
+  Tooltip,
 } from "antd/es"
 const { Option } = Select;
 
 import {
-  SettingFilled,
-  ArrowUpOutlined,
   ArrowDownOutlined,
+  ArrowUpOutlined,
   QuestionCircleFilled,
+  SettingFilled,
   WarningOutlined,
 } from "@ant-design/icons"
 
 import "core-js/features/promise"
-// import "whatwg-fetch"
+import { merge } from "lodash";
+import { cloneDeep as clone } from "lodash";
+import objToPlainText from "object-plain-string";
+
+import { ajax } from "jquery";
+import round               from "./utils/round";
+import roundUp             from "./utils/round-up";
+import params              from "./utils/params";
+import num2str             from "./utils/num2str"
+import formatNumber        from "./utils/format-number";
+import extRate             from "./utils/rate";
+import rateRecommended     from "./utils/rate-recommended";
+import fallbackBoolean     from "./utils/fallback-boolean";
+import typeOf              from "./utils/type-of";
+import promiseWhile        from "./utils/promise-while";
+import { Tools, template } from "./tools";
+
+import BigNumber    from "./components/BigNumber"
+import Config       from "./components/config";
+import CrossButton  from "./components/cross-button"
+import CustomSelect from "./components/custom-select"
+import CustomSlider from "./components/custom-slider"
+import NumericInput from "./components/numeric-input"
+import Speedometer  from "./components/riskometer"
+import Stack        from "./components/stack"
+import Value        from "./components/value"
+import Header       from "./components/header";
+import ModeToggle   from "./components/mode-toggle";
+import { Dialog, dialogAPI } from "./components/dialog"
 
 import "../sass/style.sass"
 
-import { ajax } from "jquery";
-import round           from "./utils/round";
-import roundUp         from "./utils/round-up";
-import params          from "./utils/params";
-import num2str         from "./utils/num2str"
-import formatNumber    from "./utils/format-number";
-import extRate         from "./utils/rate";
-import rateRequired    from "./utils/rate-required";
-import fallbackBoolean from "./utils/fallback-boolean";
-import typeOf          from "./utils/type-of";
-import promiseWhile    from "./utils/promise-while";
+let chartData, chartData2, chartData3, scale, scaleStart, scaleEnd;
+let lastRealData = {};
+let saveToDonwload;
 
-import Stack        from "./components/stack"
-import CrossButton  from "./components/cross-button"
-import BigNumber    from "./components/BigNumber"
-import Value        from "./components/value"
-import NumericInput from "./components/numeric-input"
-import CustomSlider from "./components/custom-slider"
-import CustomSelect from "./components/custom-select"
-import Speedometer  from "./components/riskometer"
-import { Dialog, dialogAPI } from "./components/dialog"
-
-let chartData, chartData2, scale, scaleStart, scaleEnd;
-const version = "0.2";
-
-const dev = true;
 const chartVisible = true;
 
 export default class App extends React.Component {
-
+  
   constructor(props) {
     super(props);
 
-    // Данные из адресной строки
+    // Считываем значения из адресной строки
     const depoStart = Number( params.get("start") ) || 1000000;
     const depoEnd   = Number( params.get("end") )   || 3000000;
     const mode      = Number( params.get("mode") )  || 0;
     const days      = Number( params.get("days") )  || 260;
+    
+    /**
+     * Дефолтный стейт
+     */
+    this.initialState = {
 
-    this.initial = {
-      saved: false,
-      // Начальный депозит
-      depoStart: [ depoStart, depoStart ],
-
-      // Целевой депозит
-      depoEnd,
-
-      // Доходность в день
-      incomePersantageCustom: 1,
-
-      // Сумма на вывод
-      withdrawal: [ 0, 0 ],
-      // Частота вывода
-      withdrawalInterval: [20, 20],
-
-      // Сумма на пополнение
-      payload: [ 0, 0 ],
-      // Частота пополнения
-      payloadInterval: [20, 20],
-
-      // Торговых дней
-      days: [ days, days ],
-      paginatorSelectedIndex: 0,
-
-      // Текущий день
-      currentDay: 1,
-
-      // Процент депозита на вход в сделку
-      depoPersentageStart: 10,
-
-      // Количество итераций в день
-      iterations: 10,
-
-      // Минимальная доходность в день
-      minDailyIncome: 45,
-
-      incomePersantageDaily: 0,
-
-      customTools: [],
-      currentToolIndex:   0,
-      isSafe: true,
-      directUnloading: true,
-
-      passiveIncomeTools: [
-        {
-          name: "ОФЗ 26214",
-          rate: 4.99,
-        },
-        {
-          name: "ОФЗ 26205",
-          rate: 5.78,
-        },
-        {
-          name: "ОФЗ 26217",
-          rate: 5.99,
-        },
-        {
-          name: "ОФЗ 26209",
-          rate: 6.26,
-        },
-        {
-          name: "ОФЗ 26220",
-          rate: 6.41,
-        },
-      ],
-      customPassiveIncomeTools: [],
-      currentPassiveIncomeToolIndex: [-1, -1],
-      // Пассивный доход в месяц
-      passiveIncomeMonthly: [0, 0],
-    };
-
-    this.state = Object.assign({
-      ready: false,
-
-      data:     [],
+      // TODO: в идеале realData не нужна, все значения из факта можно хранить в data
       realData: {},
-
-      changed:            false,
-      saved:              false,
-      saves:              [],
-      currentSaveIndex:   0,
-
-      // Режим
-      mode,
-      prevMode: mode,
-
-      // Начальный депозит
+      
+      /**
+       * Начальный депозит
+       * @type {Array<Number>}
+       */
       depoStart: [ depoStart, depoStart ],
-
-      // Целевой депозит
+      
+      /**
+       * Целевой депозит
+       * @type {Number}
+       */
       depoEnd,
+      
+      /**
+       * Торговых дней
+       * @type {Array<Number>}
+       */
+      days: [days, days],
+      
+      /**
+       * Индекс режима расчета целевого депо
+       * 
+       * 0 - от желаемой суммы
+       * 
+       * 1 - от желаемой доходности
+       */
+      mode,
 
-      // Доходность в день
+      // TODO: rename to "customRate"
+      /**
+       * Доходность в день (используется только во второй вкладке вместо rate)
+       */
       incomePersantageCustom: 1,
 
-      // Сумма на вывод
-      withdrawal: [ 0, 0 ],
-      // Частота вывода
-      withdrawalInterval: [20, 20],
-
-      // Сумма на пополнение
-      payload: [ 0, 0 ],
-      // Частота пополнения
-      payloadInterval: [20, 20],
-
-      // Торговых дней
-      days: [ days, days ],
-
-      // Текущий день
-      currentDay: 1,
-
-      // Процент депозита на вход в сделку
-      depoPersentageStart: 10,
-
-      // Количество итераций в день
-      iterations: 10,
-
       // Минимальная доходность в день
+      // TODO: удалить и использовать вместо нее incomePersantageCustom, тк по факту это одно и то же
       minDailyIncome: 45,
 
-      incomePersantageDaily: 0,
+      // TODO: reaname to payment
+      /**
+       * Вывод
+       */
+      withdrawal: [ 0, 0 ],
+      
+      /**
+       * Частота вывода
+       */
+      withdrawalInterval: [20, 20],
 
+      /**
+       * Пополнение
+       */
+      payload: [ 0, 0 ],
+
+      /**
+       * Частота пополнения
+       */
+      payloadInterval: [20, 20],
+
+      
+      // TODO: rename into something that makes more sense
+      /**
+       * Индекс текущей выбранной страницы в секции "результат"
+       * Используется как оффсет
+       */
+      paginatorSelectedIndex: 0,
+      
+      /**
+       * Номер текущиго дня (начиная с 1)
+       * 
+       * Если, к примеру, у нас 260 дней, то последний день тоже будет равен 260
+       */
+      currentDay: 1,
+
+      /**
+       * Процент депозита на вход в сделку
+       */
+      depoPersentageStart: 10,
+
+      /**
+       * Количество итераций в день
+       */
+      iterations: 10,
+
+      // -----
       // Tools
-      propsToShowArray: [
-        "shortName",
-        "stepPrice",
-        "priceStep",
-        "averageProgress",
-        "guaranteeValue",
-        "currentPrice",
-        "lotSize",
-        "dollarRate"
+      // -----
+      toolsInfo: [
+        { name: "Инструмент",   prop: "shortName"       },
+        { name: "Цена шага",    prop: "stepPrice"       },
+        { name: "Шаг цены",     prop: "priceStep"       },
+        { name: "Средний ход",  prop: "averageProgress" },
+        { name: "ГО",           prop: "guaranteeValue"  },
+        { name: "Текущая цена", prop: "currentPrice"    },
+        { name: "Размер лота",  prop: "lotSize"         },
+        { name: "Курс доллара", prop: "dollarRate"      },
       ],
-      toolTemplate: {
-        code:            "",
-        shortName:       "",
-        name:            "",
-        stepPrice:       0,
-        priceStep:       0,
-        averageProgress: 0,
-        guaranteeValue:  0,
-        currentPrice:    0,
-        lotSize:         0,
-        dollarRate:      0,
-
-        isFuters: false,
-
-        points: [
-          [70,  70],
-          [156, 55],
-          [267, 41],
-          [423, 27],
-          [692, 13],
-          [960, 7 ],
-        ]
-      },
       tools: [],
       customTools: [],
-      currentToolIndex:   0,
-      isSafe: true,
-      directUnloading: true,
-
-      defaultPassiveIncomeTools: [
-        {
-          name: "ОФЗ 26214",
-          rate: 4.99,
-        },
-        {
-          name: "ОФЗ 26205",
-          rate: 5.78,
-        },
-        {
-          name: "ОФЗ 26217",
-          rate: 5.99,
-        },
-        {
-          name: "ОФЗ 26209",
-          rate: 6.26,
-        },
-        {
-          name: "ОФЗ 26220",
-          rate: 6.41,
-        },
-      ],
+      currentToolCode: "",
+      
+      // --------------------
+      // Passive income tools
+      // --------------------
       passiveIncomeTools: [
         {
           name: "ОФЗ 26214",
@@ -274,11 +205,63 @@ export default class App extends React.Component {
       ],
       customPassiveIncomeTools: [],
       currentPassiveIncomeToolIndex: [-1, -1],
+
       // Пассивный доход в месяц
       passiveIncomeMonthly: [0, 0],
-      pitError:     "",
+
+      // -----
+      // Сейвы
+      // -----
+
+      /**
+       * Идентификатор сохранения
+       */
+      id: null,
+
+      // -----
+      // Flags
+      // -----
+      saved: false,
+      changed: false,
+
+      daysInOrder: true,
+      directUnloading: true,
+
+      // TODO: remove?
+      isSafe: true,
+
+      // ------
+      // Ошибки
+      // ------
+
+      // TODO: удалить, тк теперь ошибку и инпута можно вывести внутри onChange
+      pitError: "",
+
       errorMessage: "",
-    }, this.initial);
+    };
+
+    this.state = merge(
+      clone(this.initialState),
+      // Здесь находятся только те дефолтные значения, которые не должны сбрасываться
+      {
+        /**
+         * Массив с данными для каждого дня
+         * @type {Array<{}>}
+         */
+        data: [],
+        
+        /**
+         * Массив с сохранениям
+         * @type {Array<{}>}
+         */
+        saves: [],
+        
+        /**
+         * Индекс текущего сохранения
+         */
+        currentSaveIndex: 0,
+      }
+    );
 
     if (dev) {
       this.state.saves = [{ id: 0, name: "test" }];
@@ -288,16 +271,15 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
+    this.bindEvents();
 
     if (chartVisible) {
       this.createChart();
     }
 
     if (dev) {
-      this.fetchTools()
-        .then(tools => this.unpackTools(tools))
-        .then(() => this.updateDepoPersentageStart())
-        .catch(err => console.log(err));
+      this.fetchTools();
+      setTimeout(() => this.loadFakeSave(), 1500);
       return;
     }
 
@@ -306,68 +288,6 @@ export default class App extends React.Component {
         this.sendRequest("getAuthInfo")
           .then(res => {
             if (res.authorized) {
-              this.fetchDepoStart()
-                .then(depo => {
-                  let { depoStart, depoEnd } = this.state;
-
-                  // TODO: simplify
-                  depo = depo || 10000;
-                  depo = (depo > 10000) ? depo : 10000;
-                  depoStart[0] = depo;
-                  depoStart[1] = depo;
-                  if (depo >= depoEnd) {
-                    depoEnd = depo * 2;
-                  }
-
-                  return new Promise(resolve => {
-                    this.setState({ depoStart, depoEnd }, () => resolve());
-                  })
-                })
-                .then(() => this.recalc())
-                .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
-
-              this.fetchTools()
-                .then(tools => this.unpackTools(tools))
-                .then(() => this.updateDepoPersentageStart())
-                .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`));
-
-              this.fetchSaves()
-                .then(saves => {
-                  if (saves.length) {
-                    const pure = params.get("pure") === "true";
-                    if (!pure) {
-                      let found = false;
-                      // Check if each save is corrupt
-                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-                        p = p.then(_ => new Promise(resolve => {
-                          const save = saves[index];
-                          const id = save.id;
-                          this.fetchSaveById(id)
-                            .then(save => {
-                              const corrupt = !this.validateSave(save);
-                              if (!corrupt && !found) {
-                                found = true;
-                                // Try to load it
-                                this.extractSave(Object.assign(save, { id }));
-                                this.setState({ currentSaveIndex: index + 1 });
-                              }
-
-                              saves[index].corrupt = corrupt;
-                              this.setState({ saves });
-                              resolve();
-                            });
-                        }));
-                      }
-                    }
-                  }
-                  else {
-                    console.log("No saves found!");
-                  }
-
-                  this.setState({ saves });
-                })
-                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
-
               resolve();
             }
             else {
@@ -376,21 +296,172 @@ export default class App extends React.Component {
           })
           .catch(() => reject())
       })
-    }
+    };
 
+    let counter = 0;
     promiseWhile(false, i => !i, () => {
       return new Promise(resolve => {
+        counter++;
         checkIfAuthorized()
-          .then(() => resolve(true))
+          .then(() => {
+            this.fetchInitialData();
+            resolve(true);
+          })
           .catch(() => {
-            console.log("getAuthInfo failed! I'll try again in a second");
-            setTimeout(() => {
-              resolve(false);
-            }, 1000);
+            if (counter >= 10) {
+              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
+              resolve(true);
+            }
+            else {
+              setTimeout(() => resolve(false), 1000);
+            }
           });
       });
     });
+  }
 
+  loadFakeSave() {
+    let { saves } = this.state;
+    let save = {
+      error: false,
+      data: {
+        id: 567,
+        name: 'Testovy trademeter',
+        dateCreate: 1600359585,
+        static: '{"depoStart":[1000000,1000000],"depoEnd":[3000000,null],"currentDay":8,"days":[260,260],"minDailyIncome":[0.2,1],"payment":[1000,0],"paymentInterval":[10,20],"payload":[20000,0],"payloadInterval":[5,20],"passiveIncome":[14450,0],"passiveIncomeTools":[{"name":"ОФЗ 26214","rate":4.99},{"name":"ОФЗ 26205","rate":5.78},{"name":"ОФЗ 26217","rate":5.99},{"name":"ОФЗ 26209","rate":6.26},{"name":"ОФЗ 26220","rate":6.41}],"currentPassiveIncomeToolIndex":[1,-1],"mode":0,"customTools":[],"currentToolCode":"AFZ0","current_date":"#"}',
+        dynamic: '[{"d":1,"s":2,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":2,"s":0.1,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":3,"s":-1,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":4,"s":3,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":5,"s":1,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":6,"s":0.2,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":7,"s":0.2,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":8,"s":0.2,"il":[],"c":true,"pi":0,"du":true}]',
+      },
+      id: 567,
+    };
+
+    const index = 0;
+    this.extractSave(save);
+    this.setState({ currentSaveIndex: index + 1 });
+
+    saves[index] = {
+      id: save.data.id,
+      name: save.data.name,
+      corrupt: false
+    };
+    this.setState({ saves });
+  }
+
+  // ----------
+  // Fetch
+  // ----------
+
+  // Fetching everithing we need to start working
+  fetchInitialData() {
+    this.fetchInvestorInfo();
+    this.fetchTools();
+
+    this.fetchSaves()
+      .then(saves => {
+        if (saves.length) {
+          const pure = params.get("pure") === "true";
+          if (!pure) {
+            let found = false;
+            // Check if each save is corrupt
+            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+              p = p.then(_ => new Promise(resolve => {
+                const save = saves[index];
+                const id = save.id;
+                this.fetchSaveById(id)
+                  .then(save => {
+                    const corrupt = !this.validateSave(save);
+                    if (!corrupt && !found) {
+                      found = true;
+                      // Try to load it
+                      this.extractSave(Object.assign(save, { id }));
+                      this.setState({ currentSaveIndex: index + 1 });
+                    }
+
+                    saves[index].corrupt = corrupt;
+                    this.setState({ saves });
+                    resolve();
+                  });
+              }));
+            }
+          }
+        }
+        else {
+          console.log("No saves found!");
+        }
+
+        this.setState({ saves });
+      })
+      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+  }
+
+  fetchTools() {
+    this.sendRequest("getFutures")
+      .then(res => new Promise(resolve => resolve(res.data)))
+      .then(tools => Tools.parse(tools))
+      .then(tools => this.state.tools.concat(tools))
+      .then(tools => tools.sort((a, b) => a.shortName.localeCompare(b.shortName)))
+      .then(tools => new Promise(resolve => this.setState({ tools }, resolve)))
+      .then(() => this.updateDepoPersentageStart())
+      .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`))
+
+    // this.sendRequest("getTrademeterInfo")
+    //   .then(res => new Promise(resolve => resolve(res.data)))
+    //   .then(tools => Tools.parse(tools))
+    //   .then(tools => this.state.tools.concat(tools))
+    //   .then(tools => tools.sort((a, b) => a.shortName.localeCompare(b.shortName)))
+    //   .then(tools => new Promise(resolve => this.setState({ tools }, resolve)))
+    //   .then(() => this.updateDepoPersentageStart())
+    //   .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`))
+  }
+
+  fetchInvestorInfo() {
+    this.sendRequest("getInvestorInfo")
+      .then(res => {
+        const { status, skill, deposit } = res.data;
+        return new Promise(resolve => this.setState({ status, skill }, () => resolve(deposit)));
+      })
+      .then(depo => {
+        let { depoStart, depoEnd } = this.state;
+
+        // TODO: simplify
+        depo = depo || 10000;
+        depo = (depo > 10000) ? depo : 10000;
+        depoStart[0] = depo;
+        depoStart[1] = depo;
+        if (depo >= depoEnd) {
+          depoEnd = depo * 2;
+        }
+
+        return new Promise(resolve => this.setState({ depoStart, depoEnd }, resolve));
+      })
+      .then(() => this.recalc())
+      .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
+  }
+
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      this.sendRequest("getTrademeterSnapshots")
+        .then(res => {
+          const saves = res.data.map(save => ({
+            name: save.name,
+            id: save.id,
+          }));
+          resolve(saves);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  fetchSaveById(id) {
+    return new Promise((resolve, reject) => {
+      if (typeof id === "number") {
+        this.sendRequest("getTrademeterSnapshot", "GET", { id })
+          .then(res => resolve(res))
+          .catch(err => reject(err));
+      }
+      else {
+        reject("id must be a number!", id);
+      }
+    });
   }
 
   // TODO: test
@@ -406,20 +477,7 @@ export default class App extends React.Component {
       const { mode, days } = this.state;
       let data = [...this.state.data];
 
-      // data
-      chartData = anychart.data.set(
-        new Array(days[mode]).fill().map((v, i) => ({
-          x:     String(i + 1),
-          value: data[i].depoEndPlan
-        }))
-      );
-
-      chartData2 = anychart.data.set(
-        new Array(days[mode]).fill().map((v, i) => ({
-          x:     String(i + 1),
-          value: data[i].depoEnd
-        }))
-      );
+      this.updateChart(true);
 
       // set chart type
       let chart = anychart.line();
@@ -429,7 +487,14 @@ export default class App extends React.Component {
           this.setCurrentDay(e.pointIndex + 1);
         }
       });
-      chart.tooltip().titleFormat(e => `День: ${Number(e.x)}`);
+      chart.tooltip().titleFormat(e => {
+        let index = e.x;
+        if (index == null) {
+          index = e.points[0].index + 1;
+        }
+
+        return `День: ${Number(index)}`;
+      });
 
       // set data
       let series = chart.line(chartData);
@@ -443,12 +508,38 @@ export default class App extends React.Component {
             <rect x="0" y="0" width="10" height="10" />
           </svg>
         `;
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+        return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
       });
 
       // Line color
       series.normal().stroke({
         color: "#87d068",
+        thickness: "5%"
+      });
+
+      let series3 = chart.line(chartData3);
+      series3.name("Рекомендуемый рост депо");
+      series3.tooltip().displayMode("separated");
+      series3.tooltip().useHtml(true);
+      series3.tooltip().format(e => {
+        const lastFilledDay = this.getLastFilledDayNumber() - 1;
+        if (e.index > lastFilledDay) {
+          let svg = `
+            <svg viewBox="0 0 10 10" width="1em" height="1em" 
+                 fill="#c46d1a" style="position: relative; top: 0.1em">
+              <rect x="0" y="0" width="10" height="10" />
+            </svg>
+          `;
+
+          return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
+        }
+        else return `<span class="empty-tooltip-row"></span>`;
+      });
+
+      // Line color
+      series3.normal().stroke({
+        color: "#c46d1a",
+        dash: '3 5',
         thickness: "5%"
       });
 
@@ -464,7 +555,7 @@ export default class App extends React.Component {
           </svg>
         `;
 
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+        return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
       });
 
       // Line color
@@ -535,6 +626,108 @@ export default class App extends React.Component {
     });
   }
 
+  updateChart(isInit = false) {
+    if (!chartVisible) {
+      return;
+    }
+
+    const { days, daysInOrder, mode, realData } = this.state;
+    const data = [...this.state.data];
+    if (data.length !== days[mode]) {
+      return;
+    }
+
+    // План
+    const planData = new Array(days[mode]).fill().map((v, i) => ({
+      x:     String(i + 1),
+      value: data[i].depoEndPlan
+    }));
+    if (isInit) {
+      chartData2 = anychart.data.set(planData);
+    }
+    else {
+      chartData2.data(planData);
+    }
+
+    // Факт
+    // ~~
+    const factDays = this.getFilledDays();
+    const factArray = [];
+    let factData = [];
+    if (daysInOrder) {
+      if (factDays.length) {
+        factArray[0] = data[0].depoStartTest + this.getRealIncome(1);
+        for (let i = 1; i < factDays.length; i++) {
+          factArray[i] = factArray[i - 1] + this.getRealIncome(i + 1, data, factArray[i - 1]);
+        }
+  
+        factData = factArray.map((value, index) => {
+          return {
+            x: String(index + 1),
+            value: value
+          }
+        });
+      }
+    }
+    else {
+      factData = new Array(days[mode]).fill().map((v, i) => ({
+        x:     String(i + 1),
+        // value: data[i].depoEnd
+        value: data[i].depoStartTest + this.getRealIncome(i + 1)
+      }));
+    }
+
+    if (isInit) {
+      chartData = anychart.data.set(factData);
+    }
+    else {
+      chartData.data(factData);
+    }
+
+    // Рекоммендуемый план
+    let recommendData = [];
+    // Не отрисовываем, если мы все это время шли по плану
+    // const followingPlan = daysInOrder && factDays.every(day => realData[day].scale == rate);
+    if (factDays.length) {
+      const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
+
+      const rateRecommended = this.getRateRecommended();
+
+      const factLastDay = this.getLastFilledDayNumber() - 1;
+      recommendData = new Array(days[mode] - factLastDay).fill(0);
+      recommendData[0] = factArray[factArray.length - 1];
+
+      for (let i = 1; i < recommendData.length; i++) {
+        recommendData[i] = recommendData[i - 1] + (recommendData[i - 1] * rateRecommended / 100);
+
+        if ((factLastDay + i + 1) % withdrawalInterval[mode] == 0) {
+          recommendData[i] -= withdrawal[mode];
+        }
+        
+        if ((factLastDay + i + 1) % payloadInterval[mode] == 0) {
+          recommendData[i] += payload[mode];
+        }
+      }
+
+      recommendData = recommendData.map((value, index) => {
+        return {
+          x:     String(factLastDay + index + 1),
+          value: value
+        }
+      });
+    }
+
+    if (isInit) {
+      chartData3 = anychart.data.set(recommendData);
+    }
+    else {
+      if (!daysInOrder) {
+        recommendData = null;
+      }
+      chartData3.data(recommendData);
+    }
+  }
+
   showMessageDialog(msg = "") {
     console.log(`%c${msg}`, "background: #222; color: #bada55");
     if (!dev) {
@@ -548,7 +741,7 @@ export default class App extends React.Component {
     const { mode, days, currentDay, data } = this.state;
 
     return new Promise((resolve, reject) => {
-      let depoPersentageStart = this.getCurrentTool().guaranteeValue / data[currentDay - 1].depoStart * 100;
+      let depoPersentageStart = this.getCurrentTool().guaranteeValue / data[currentDay - 1].depoStartTest * 100;
       this.setState({ depoPersentageStart }, () => {
         this.updateData(days[mode], false)
           .then(resolve)
@@ -556,62 +749,6 @@ export default class App extends React.Component {
       });
     });
 
-  }
-
-  unpackTools(tools) {
-    let { toolTemplate } = this.state;
-
-    return new Promise((resolve, reject) => {
-
-      if (!tools || tools.length === 0) {
-        reject(`"tools" is not an array or it's simply empty!`, tools);
-      }
-  
-      let t = [];
-      for (let tool of tools) {
-        if (tool.price == 0 || !tool.volume) {
-          continue;
-        }
-
-        let template = Object.assign({}, toolTemplate);
-  
-        let obj = Object.assign(template, {
-          code:             tool.code            || "code",
-          shortName:        tool.shortName       || "shortName",
-          name:             tool.fullName        || "fullName",
-          stepPrice:       +tool.stepPrice       || 0,
-          priceStep:       +tool.priceStep       || 0,
-          averageProgress: +tool.averageProgress || 0,
-          guaranteeValue:  +tool.guarantee       || 0,
-          currentPrice:    +tool.price           || 0,
-          lotSize:         +tool.lotVolume       || 0,
-          dollarRate:      +tool.dollarRate      || 0,
-  
-          isFuters: true,
-  
-          points: [
-            [70,  70],
-            [156, 55],
-            [267, 41],
-            [423, 27],
-            [692, 13],
-            [960, 7 ],
-          ]
-        });
-        t.push(obj);
-      }
-      
-      if (t.length > 0) {
-        let { tools } = this.state;
-        tools = tools.concat(t);
-  
-        this.setState({ tools }, resolve);
-      }
-      else {
-        resolve();
-      }
-
-    });
   }
 
   packSave() {
@@ -626,7 +763,6 @@ export default class App extends React.Component {
       withdrawalInterval,
       payloadInterval,
       directUnloading,
-      currentToolIndex,
       customTools,
       passiveIncomeTools,
       currentPassiveIncomeToolIndex,
@@ -634,7 +770,6 @@ export default class App extends React.Component {
 
     const json = {
       static: {
-        version,
         depoStart:                     [ this.getDepoStart(0), this.getDepoStart(1) ],
         depoEnd:                       [ this.getDepoEnd(0), mode == 1 ? this.getDepoEnd(1) : null ],
         currentDay:                    currentDay, 
@@ -652,7 +787,7 @@ export default class App extends React.Component {
         currentPassiveIncomeToolIndex: [ currentPassiveIncomeToolIndex[0], currentPassiveIncomeToolIndex[1] ],
         mode:                          mode,
         customTools:                   customTools,
-        currentToolIndex:              currentToolIndex,
+        currentToolCode:               this.getCurrentTool().code,
         current_date:                  "#"
       },
       dynamic: data
@@ -688,12 +823,6 @@ export default class App extends React.Component {
     let valid = true;
 
     try {
-      
-      
-      // if (Number(staticParsed.version) < Number(version)) {
-      //   throw new Error();
-      // }
-      
     }
     catch (e) {
       valid = false;
@@ -703,6 +832,8 @@ export default class App extends React.Component {
   }
 
   extractSave(save) {
+    saveToDonwload = clone(save);
+
     const onError = e => {
       this.showMessageDialog(String(e));
 
@@ -713,10 +844,7 @@ export default class App extends React.Component {
       }
     };
 
-    const {
-      depoEnd,
-      defaultPassiveIncomeTools,
-    } = this.state;
+    const { depoEnd } = this.state;
 
     let staticParsed;
     let dynamicParsed;
@@ -731,9 +859,13 @@ export default class App extends React.Component {
       staticParsed = JSON.parse(save.data.static);
       dynamicParsed = JSON.parse(save.data.dynamic);
 
-      // console.log("staticParsed", staticParsed);
-      // console.log("dynamicParsed", dynamicParsed);
-      
+      if (dev) {
+        console.log("staticParsed", staticParsed);
+        console.log("dynamicParsed", dynamicParsed);
+      }
+
+      const initialState = clone(this.initialState);
+
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
         m = Number(m[0]);
@@ -744,7 +876,7 @@ export default class App extends React.Component {
       state.depoStart = staticParsed.depoStart;
       if (typeOf(state.depoStart) !== "array") {
         const temp = state.depoStart; 
-        state.depoStart = this.initial.depoStart.slice();
+        state.depoStart = initialState.depoStart;
         state.depoStart[m] = Number(temp);
       }
 
@@ -764,7 +896,7 @@ export default class App extends React.Component {
       state.days = staticParsed.days;
       if (typeOf(state.days) !== "array") {
         const temp = state.days;
-        state.days = this.initial.days.slice();
+        state.days = initialState.days;
         state.days[m] = Number(temp);
       }
 
@@ -776,49 +908,53 @@ export default class App extends React.Component {
       state.withdrawal = staticParsed.payment;
       if (typeOf(state.withdrawal) !== "array") {
         const temp = state.withdrawal;
-        state.withdrawal = this.initial.withdrawal.slice();
+        state.withdrawal = initialState.withdrawal;
         state.withdrawal[m] = Number(temp);
       }
 
       state.withdrawalInterval = staticParsed.paymentInterval;
       if (typeOf(state.withdrawalInterval) !== "array") {
         const temp = state.withdrawalInterval;
-        state.withdrawalInterval = this.initial.withdrawalInterval.slice();
+        state.withdrawalInterval = initialState.withdrawalInterval;
         state.withdrawalInterval[m] = Number(temp);
       }
 
       state.payload = staticParsed.payload;
       if (typeOf(state.payload) !== "array") {
         const temp = state.payload;
-        state.payload = this.initial.payload.slice();
+        state.payload = initialState.payload;
         state.payload[m] = Number(temp);
       }
       
       state.payloadInterval = staticParsed.payloadInterval;
       if (typeOf(state.payloadInterval) !== "array") {
         const temp = state.payloadInterval;
-        state.payloadInterval = this.initial.payloadInterval.slice();
+        state.payloadInterval = initialState.payloadInterval;
         state.payloadInterval[m] = Number(temp);
       }
 
       state.passiveIncomeMonthly = staticParsed.passiveIncome || [0, 0];
       if (typeOf(state.passiveIncomeMonthly) !== "array") {
         const temp = state.passiveIncomeMonthly;
-        state.passiveIncomeMonthly = this.initial.passiveIncomeMonthly.slice();
+        state.passiveIncomeMonthly = initialState.passiveIncomeMonthly;
         state.passiveIncomeMonthly[m] = Number(temp);
       }
 
       state.customTools        = staticParsed.customTools        || [];
-      state.passiveIncomeTools = staticParsed.passiveIncomeTools || defaultPassiveIncomeTools;
+      state.passiveIncomeTools = staticParsed.passiveIncomeTools || initialState.passiveIncomeTools;
 
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
         const temp = state.currentPassiveIncomeToolIndex;
-        state.currentPassiveIncomeToolIndex = this.initial.currentPassiveIncomeToolIndex.slice();
+        state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
         state.currentPassiveIncomeToolIndex[m] = Number(temp);
       }
 
-      state.currentToolIndex = staticParsed.currentToolIndex || 0;
+      // В старых сейвах указан currentToolIndex (number)
+      state.currentToolCode = staticParsed.currentToolCode;
+      if (staticParsed.currentToolIndex != null) {
+        state.currentToolIndex = staticParsed.currentToolIndex || 0;
+      }
 
       state.currentDay = 1;
       state.data     = this.buildData(state.days[m]);
@@ -840,17 +976,42 @@ export default class App extends React.Component {
       onError(e);
     }
 
-    // console.log(state);
     this.setState(state, () => {
       if (!failed) {
         this.updateData(state.days[state.mode], true)
           .then(() => this.overrideData(dynamicParsed))
           .then(() => this.updateData(state.days[state.mode], false))
           .then(() => this.updateChart())
-          .then(() => this.setState({ currentDay }))
+          .then(() => this.setCurrentDay(currentDay))
           .catch(err => this.showMessageDialog(err));
       }
     });
+  }
+
+  extractRealData(dynamic) {
+    let realData = {};
+
+    return new Promise(resolve => {
+      for (let i = 0; i < dynamic.length; i++) {
+        let item = dynamic[i];
+        let d = (item.day != null) ? item.day : item.d;
+
+        if (!realData[d]) {
+          realData[d] = {};
+        }
+
+        const scale = item.scale != null ? item.scale : item.s != null ? item.s : 0;
+        realData[d].scale = scale;
+
+        const payment = item.payment != null ? item.payment : item.pmt != null ? item.pmt : 0;
+        realData[d].payment = payment;
+
+        const payload = item.payload != null ? item.payload : item.pld != null ? item.pld : 0;
+        realData[d].payload = payload;
+      }
+
+      resolve(realData);
+    })
   }
 
   parseTool(str) {
@@ -883,8 +1044,10 @@ export default class App extends React.Component {
 
   createDayData(daysArray, i, rebuild) {
     let {
+      currentDay,
       mode,
       data,
+      realData,
       withdrawalInterval,
       payloadInterval,
       depoPersentageStart,
@@ -897,17 +1060,51 @@ export default class App extends React.Component {
     let payload     = this.state.payload[mode];
     let currentTool = this.getCurrentTool();
 
-    // Calculating depoStart
-    let _depoStart = depoStart;
-    let depoStartTest = depoStart;
+    let { collapsed, saved, changed } = !rebuild ? data[i] : {
+      collapsed: true,
+      saved:     false,
+      changed:   false
+    };
+
+    const rate = this.getRate();
+    const rateRecommended = this.getRateRecommended({ realData });
+    let _scale = rate;
+    if (!rebuild && data && data[i] && data[i].scale != null) {
+      _scale = data[i].scale;
+    }
+
+    let rateFallback = rateRecommended;
+    if (Object.keys(realData).length) {
+      const currentRealData = realData[i + 1];
+      // Заполнен факт
+      if (currentRealData && Object.keys(currentRealData).length && Object.keys(currentRealData).map(prop => currentRealData[prop]).filter(val => val != null).length) {
+        // В плане на день данные о дне должны остаться неизменными
+        rateFallback = rate;
+
+        rebuild = false;
+        changed = true;
+        data[i].scale   = currentRealData.scale;
+        data[i].payment = currentRealData.payment;
+        data[i].payload = currentRealData.payload;
+      }
+    }
+
+    let _depoStart     = depoStart;
+    let  depoStartTest = depoStart;
     if (i > 0) {
-      _depoStart = depoStartTest = daysArray[i - 1].depoEnd;
+      // _depoStart = depoStartTest = daysArray[i - 1].depoEnd;
+      // _depoStart = depoStartTest = daysArray[i - 1].depoStartTest + this.getRealIncome(i, daysArray, daysArray[i - 1].depoStartTest, null, 0);
+
+      // Доход предыдущего дня
+      let income = this.getRealIncome(i, daysArray, daysArray[i - 1].depoStartTest, null, rate);
+      _depoStart = depoStartTest = daysArray[i - 1].depoStartTest + income;
     }
 
     let _depoStartPlan = depoStart;
     if (i > 0) {
       _depoStartPlan = daysArray[i - 1].depoEndPlan;
     }
+
 
     let _depoStartReal = _depoStart * (depoPersentageStart / 100);
 
@@ -916,15 +1113,10 @@ export default class App extends React.Component {
       customIncome = data[i].customIncome;
     }
 
-    const scaleInitial = round(this.getRate(), 3);
-    let _scale  = scaleInitial;
-    if (!rebuild && data && data[i] && data[i].scale != null) {
-      _scale = data[i].scale;
-    }
-
+    let goal = depoStartTest * (rate / 100 );
     let _income     = (_depoStart * _scale) / 100;
-    let _incomePlan = (_depoStartPlan * scaleInitial) / 100;
-    let _incomeReal = (_depoStart * scaleInitial) / 100;
+    let _incomePlan = (_depoStartPlan * rate) / 100;
+    let _incomeReal = (_depoStart * rate) / 100;
     
     if (!rebuild && customIncome != null) {
       _income = customIncome;
@@ -958,18 +1150,13 @@ export default class App extends React.Component {
       _contractsStart = 1;
     }
 
-    let _pointsForIteracion = _incomeReal / currentTool.stepPrice / _contractsStart;
-
-    let { collapsed, saved, changed } = !rebuild ? data[i] : {
-      collapsed: true,
-      saved:     false,
-      changed:   false
-    };
+    let _pointsForIteracion = goal / currentTool.stepPrice / _contractsStart;
 
     let res = {
       day:                i + 1,
       scale:              (!rebuild && data && data[i] && data[i].scale != null) ? data[i].scale : undefined,
       depoStartTest,
+      goal,
       depoStart:          _depoStart,
       depoStartPlan:      _depoStartPlan,
       depoStartReal:      _depoStartReal,
@@ -994,6 +1181,7 @@ export default class App extends React.Component {
       iterationsChanged:   data[i].iterationsChanged,
 
       collapsed: fallbackBoolean(collapsed, true),
+      // collapsed: false,
       saved:     fallbackBoolean(saved,     false),
       changed:   fallbackBoolean(changed,   false)
     };
@@ -1011,7 +1199,7 @@ export default class App extends React.Component {
 
   updateData(length = 0, rebuild) {
     return new Promise(resolve => {
-      let { mode, days, realData } = this.state;
+      let { days, realData } = this.state;
       const data = this.buildData(length, rebuild);
       if (rebuild) {
         realData = {};
@@ -1024,6 +1212,24 @@ export default class App extends React.Component {
   overrideData(override = []) {
     const { data, realData } = this.state;
 
+    const isConsequent = arr => {
+      if (arr.length == 0) {
+        return true;
+      }
+
+      if (arr[0] != 1) {
+        return false;
+      }
+
+      for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i + 1] - arr[i] != 1) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
     return new Promise(resolve => {
       for (let i = 0; i < override.length; i++) {
         let item = override[i];
@@ -1033,15 +1239,15 @@ export default class App extends React.Component {
           realData[d] = {};
         }  
 
-        const scale = item.scale != null ? item.scale : item.s;
+        const scale = item.scale != null ? item.scale : item.s != null ? item.s : 0;
         data[d - 1].scale = scale;
         realData[d].scale = scale;
 
-        const payment = item.payment != null ? item.payment : item.pmt;
+        const payment = item.payment != null ? item.payment : item.pmt != null ? item.pmt : 0;
         data[d - 1].payment = payment;
         realData[d].payment = payment;
 
-        const payload = item.payload != null ? item.payload : item.pld;
+        const payload = item.payload != null ? item.payload : item.pld != null ? item.pld : 0;
         data[d - 1].payload = payload;
         realData[d].payload = payload;
 
@@ -1054,38 +1260,9 @@ export default class App extends React.Component {
         data[d - 1].directUnloading = item.directUnloading != null ? item.directUnloading : item.du;
       }
 
-      // console.log(realData);
-
-      this.setState({ data, realData }, () => resolve());
+      const daysInOrder = isConsequent(Object.keys(realData).map(value => Number(value)));
+      this.setState({ data, realData, daysInOrder }, () => resolve());
     })
-  }
-
-  updateChart() {
-    if (!chartVisible) {
-      return;
-    }
-
-    const { days, mode } = this.state;
-    const data  = [...this.state.data];
-    if (data.length !== days[mode]) {
-      return;
-    }
-
-    // append data
-    chartData2.data(
-      new Array(days[mode]).fill().map((v, i) => ({
-        x:     String(i + 1),
-        value: data[i].depoEndPlan
-      }))
-    );
-
-    chartData.data(
-      new Array(days[mode]).fill().map((v, i) => ({
-        x:     String(i + 1),
-        value: data[i].depoEnd
-      }))
-    );
-
   }
 
   bindEvents() {
@@ -1095,6 +1272,19 @@ export default class App extends React.Component {
         this.setState({ mode });
       });
     }
+
+    window.addEventListener("keyup", e => {
+      if (e.ctrlKey && e.shiftKey && e.keyCode == 191) {
+        const file = new Blob([objToPlainText(saveToDonwload)], { type: 'text/plain' });
+        
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(file);
+        link.setAttribute('download', "easter_egg.txt");
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+    });
   }
 
   recalc(rebuild = true) {
@@ -1199,60 +1389,11 @@ export default class App extends React.Component {
     });
   }
 
-  fetchTools() {
-    return new Promise((resolve, reject) => {
-      this.sendRequest("getFutures")
-        .then(res => {
-          const tools = res.data;
-          resolve(tools);
-        })
-        .catch(err => reject(err));
-    })
-  }
-
-  fetchDepoStart() {
-    return new Promise((resolve, reject) => {
-      this.sendRequest("getInvestorInfo")
-        .then(res => {
-          const depo = Number(res.data.deposit);
-          resolve(depo);
-        })
-        .catch(err => reject(err));
-    })
-  }
-
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-      this.sendRequest("getTrademeterSnapshots")
-        .then(res => {
-          const saves = res.data.map(save => ({
-            name: save.name,
-            id:   save.id,
-          }));
-          resolve(saves);
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  fetchSaveById(id) {
-    return new Promise((resolve, reject) => {
-      if (typeof id === "number") {
-        this.sendRequest("getTrademeterSnapshot", "GET", { id })
-          .then(res => resolve(res))
-          .catch(err => reject(err));
-      }
-      else {
-        reject("id must be a number!", id);
-      }
-    });
-  }
-
   // API
 
   reset() {
     return new Promise(resolve => {
-      this.setState(this.initial, () => {
+      this.setState(clone(this.initialState), () => { // TODO: do we need this callback at all?
         // Check if depoStart is more than depoEnd
         let { mode, depoStart, depoEnd } = this.state;
         if (depoStart[mode] >= depoEnd) {
@@ -1281,7 +1422,6 @@ export default class App extends React.Component {
         .then(res => {
           let id = Number(res.id);
           if (id) {
-            // console.log("Saved with id = ", id);
             this.setState({ id }, () => resolve(id));
           }
           else {
@@ -1379,6 +1519,61 @@ export default class App extends React.Component {
   // Getters
   // ==================
 
+  getLastFilledDay() {
+    const { realData } = this.state;
+    let lastFilledDay = Object.keys(realData)
+      .map(prop => realData[prop])
+      .filter(day => 
+        day != null &&
+        Object.keys(day).length &&
+        Object.keys(day)
+          .map(prop => day[prop])
+          .filter(value => value != null)
+          .length
+      )
+      .pop();
+
+    if (!lastFilledDay) {
+      lastFilledDay = 0;
+    }
+
+    return lastFilledDay;
+  }
+
+  getFilledDays() {
+    const { realData } = this.state;
+    let arr = [];
+    for (let n of Object.keys(realData).map(value => Number(value))) {
+      if (
+        realData[n] &&
+        Object.keys(realData[n])
+          .map(prop => realData[n][prop])
+          .filter(value => value != null)
+          .length
+      ) {
+        arr.push(n);
+      }
+    }
+    return arr;
+  }
+
+  getLastFilledDayNumber() {
+    const { realData } = this.state;
+    let number = 0;
+    for (let n of Object.keys(realData).map(value => Number(value))) {
+      if (
+        realData[n] &&
+        Object.keys(realData[n])
+          .map(prop => realData[n][prop])
+          .filter(value => value != null)
+          .length
+      ) {
+        number = n;
+      }
+    }
+    return number;
+  }
+
   /**
    * @returns {number} минимальная доходность в день
    */
@@ -1412,17 +1607,119 @@ export default class App extends React.Component {
       incomePersantageCustom
     ]
 
-    return rate[mode];
+    return round(rate[mode], 3);
+  }
+
+  getRateRecommended(options = {}) {
+    const {
+      mode,
+      payloadInterval,
+      withdrawalInterval,
+    } = this.state;
+
+    const depoStart  = this.state.depoStart[mode];
+    const withdrawal = this.state.withdrawal[mode];
+    const payload    = this.state.payload[mode];
+    const days       = this.state.days[mode];
+
+    const rate = this.getRate();
+
+    let realData = clone(options.realData || this.state.realData);
+    realData = Object.keys(realData)
+      .map(prop => realData[prop])
+      // Удаляем все пустые ячейки
+      // За пустые ячейки считаются пустой объект {}
+      // И объект, в котором все поля равны null или undefined
+      .filter(data =>
+        Object.keys(data).length &&
+        Object.keys(data).map(prop => data[prop]).every(val => val != null)
+      )
+      .map(item => {
+        item.scale = (item.scale != null ? item.scale : rate) / 100;
+        item.payment = item.payment != null ? item.payment : 0;
+        item.payload = item.payload != null ? item.payload : 0;
+        return item;
+      })
+
+    let value = rateRecommended(
+      depoStart,
+      this.getDepoEnd(),
+      withdrawal,
+      withdrawalInterval[mode],
+      payload,
+      payloadInterval[mode],
+      days,
+      withdrawalInterval[mode],
+      payloadInterval[mode],
+      0,
+      realData
+    ) * 100;
+
+    if (Math.abs(rate - value) < .0008) {
+      value = rate;
+    }
+
+    return value;
+  }
+
+  /**
+   * Возвращает все инструменты в одном массиве 
+   * (полученные с бэка и кастомные)
+   */
+  getTools() {
+    const { tools, customTools } = this.state;
+    return [].concat(tools).concat(customTools);
+  }
+
+  getToolIndexByCode(code) {
+    const tools = this.getTools();
+    if (!code || !tools.length) {
+      return 0;
+    }
+
+    // Проблема: выбранный инструмент в конце месяца может пропасть из списка
+    // -- нужно подставлять следующий по алфавиту, то есть был ...9.20, стал 10.20
+    let alike = {};
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+      if (tool.code == code) {
+        return i;
+      }
+
+      // Мы нашли инструмент, код которого начинается с тех же 2ух символов
+      // if (tool.code.toLowerCase().slice(0, 2) == code.toLowerCase().slice(0, 2)) {
+      //   console.log("you look like me! sweet", tool);
+      //   alike[i] = tool;
+      // }
+    }
+
+    // У нас есть список инструментов с похожими кодами, теперь надо найти след по алфавиту
+
+    return Object.keys(alike).pop() || 0;
+  }
+
+  getCurrentToolIndex() {
+    let { currentToolCode, currentToolIndex } = this.state;
+    const tools = this.getTools();
+    // Обратная совместимость для сейвов, где указан только currentSaveIndex
+    if (currentToolIndex != null) {
+      // Если индекс выбранного инструмента превышает кол-во инструментов
+      // -- выбираем последний возможный инструмент
+      return Math.min(currentToolIndex, tools.length - 1);
+    }
+    return this.getToolIndexByCode(currentToolCode);
   }
 
   /**
    * Получить выбранный торговый инструмент
    */
   getCurrentTool() {
-    const { tools, currentToolIndex } = this.state;
-    return tools[currentToolIndex] || 
-      // Fallback
-      this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
+    // TODO: simplify or delete
+    const fallbackTool = this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`)
+
+    const tools = this.getTools();
+    return tools[this.getCurrentToolIndex()] || fallbackTool;
   }
 
   getToolName(tool = {}) {
@@ -1467,16 +1764,16 @@ export default class App extends React.Component {
   }
 
   getPointsForIteration() {
-    let { data, directUnloading, iterations } = this.state;
+    let { data, directUnloading, iterations, currentDay } = this.state;
     iterations = iterations || 1;
 
     if (!data.length) {
       return iterations;
     }
 
-    let pointsForIteration = data[0].pointsForIteration / iterations;
+    let pointsForIteration = data[currentDay - 1].pointsForIteration / iterations;
     if (!directUnloading && (iterations * 2) >= 100) {
-      pointsForIteration = (data[0].pointsForIteration * 2) / 100;
+      pointsForIteration = (data[currentDay - 1].pointsForIteration * 2) / 100;
     }
 
     pointsForIteration = Math.max(pointsForIteration, 1);
@@ -1499,17 +1796,9 @@ export default class App extends React.Component {
     return title;
   }
 
-  getTools() {
-    const { tools, customTools } = this.state;
-    return []
-      .concat(tools)
-      .concat(customTools);
-  }
-
   getPassiveIncomeTools() {
     const { passiveIncomeTools } = this.state;
-    return []
-      .concat(passiveIncomeTools)
+    return passiveIncomeTools;
   }
 
   getPayment(d) {
@@ -1526,171 +1815,171 @@ export default class App extends React.Component {
       : 0 
   }
 
+  getIterationsList(day, data) {
+    if (data == null) {
+      data = this.state.data;
+    }
+    
+    const { currentDay } = this.state;
+    if (day == null) {
+      day = currentDay;
+    }
+
+    if (!data[day - 1].iterationsList) {
+      return;
+    }
+
+    return data[day - 1].iterationsList.filter(v => v.percent != null || v.income != null);
+  }
+
+  getRealIncome(day, data, depoStart, rate, fallbackRate = this.getRate()) {
+    if (data == null) {
+      data = this.state.data;
+    }
+    
+    const { realData, currentDay } = this.state;
+    if (day == null) {
+      day = currentDay;
+    }
+    if (depoStart == null) {
+      depoStart = data[day - 1].depoStart;
+    }
+    
+    const scale = rate != null 
+      ? rate 
+      : (data[day - 1].scale != null) 
+        ? data[day - 1].scale 
+        : fallbackRate;
+
+    let value = Math.round(depoStart * round(scale, 3) / 100);
+
+    if (data[day - 1].customIncome != null) {
+      value = data[day - 1].customIncome;
+    }
+
+    const iterationsList = this.getIterationsList(day, data);
+    if (iterationsList && iterationsList.length) {
+      value = iterationsList.map(el => el.income).reduce((prev, curr) => prev + curr);
+    }
+
+    value += realData[day] && realData[day].payload != null ? realData[day].payload : 0;
+    value -= realData[day] && realData[day].payment != null ? realData[day].payment : 0;
+
+    // value += data[day - 1].payload ? data[day - 1].payload : 0;
+    // value -= data[day - 1].payment ? data[day - 1].payment : 0;
+    return value;
+  }
+
   render() {
     if (!this.state.data.length) {
       return;
     }
+
+    let {
+      mode,
+      data,
+      realData,
+      saved,
+      currentDay
+    } = this.state; 
+
+    const getNthDayRealIncome = day => {
+      const { data, realData } = this.state;
+      let factArray = [];
+      factArray[0] = data[0].depoStartTest + this.getRealIncome(1, null, null, null, 0);
+      for (let i = 1; i < Object.keys(realData).length; i++) {
+        factArray[i] = factArray[i - 1] + this.getRealIncome(i + 1, data, factArray[i - 1], null, 0);
+        if (i == day - 1) {
+          return factArray[i];
+        }
+      }
+
+      return factArray[0];
+    };
 
     return (
       <div className="page">
 
         <main className="main">
 
-          <div className="main-top">
-            <div className="container">
-              <div className="main-top-wrap">
+          <Header
+            id={this.state.id}
+            title={this.getTitle()}
+            changed={this.state.changed}
+            saved={this.state.saved}
+            saves={this.state.saves}
+            currentSaveIndex={this.state.currentSaveIndex}
+            onSaveChange={val => {
+              const { saves } = this.state;
 
-                {/* Select */}
-                {(() => {
-                  const { saves, currentSaveIndex } = this.state;
+              this.setState({ currentSaveIndex: val });
 
-                  return (dev || saves.length > 0) && (
-                    <label className="labeled-select main-top__select stack-exception">
-                      <span className="labeled-select__label labeled-select__label--hidden">
-                        Сохраненный трейдометр
-                      </span>
-                      <Select
-                        value={currentSaveIndex}
-                        onSelect={val => {
-                          const { saves } = this.state;
+              if (val === 0) {
+                this.reset()
+                  .then(() => this.recalc())
+                  .catch(err => console.warn(err));
+              }
+              else {
+                const id = saves[val - 1].id;
+                this.fetchSaveById(id)
+                  .then(save => this.extractSave(Object.assign(save, { id })))
+                  .catch(err => this.showMessageDialog(err));
+              }
+            }}
+            onSave={e => {
+              const { saved, changed } = this.state;
 
-                          this.setState({ currentSaveIndex: val });
+              if (saved && changed) {
+                this.update(this.getTitle());
+                this.setState({ changed: false });
+              }
+              else {
+                dialogAPI.open("dialog1", e.target);
+              }
+            }}
+          >
+            <ModeToggle
+              mode={mode}
+              saved={saved}
+              onChange={mode => {
+                let { data, realData, currentDay } = this.state;
+                // TODO: looks weird. simplify it?
+                let days = this.state.days[mode];
+                let state = {};
 
-                          if (val === 0) {
-                            this.reset()
-                              .then(() => this.recalc())
-                              .catch(err => console.warn(err));
-                          }
-                          else {
-                            const id = saves[val - 1].id;
-                            this.fetchSaveById(id)
-                              .then(save => this.extractSave(Object.assign(save, { id })))
-                              .catch(err => this.showMessageDialog(err));
-                          }
+                if (Object.keys(lastRealData).length) {
+                  const tempRealData = clone(realData);
+                  realData = clone(lastRealData);
+                  lastRealData = clone(tempRealData);
+                }
+                else {
+                  lastRealData = clone(realData);
+                  realData = {};
+                }
 
-                        }}>
-                        <Option key={0} value={0}>Не выбрано</Option>
-                        {saves.map((save, index) =>
-                          <Option key={index + 1} value={index + 1}>
-                            {save.name}
-                            {save.corrupt && (
-                              <WarningOutlined style={{
-                                marginLeft: ".25em",
-                                color: "var(--danger-color)"
-                              }}/>
-                            )}
-                          </Option>
-                        )}
-                      </Select>
-                    </label>
-                  )
-                })()}
+                // В новой вкладке меньше дней, чем в предыдущей
+                if (days < data.length) {
+                  // Текущий день больше, чем макс кол-во дней в новой вкладке
+                  if (currentDay > days) {
+                    // Текущий день становится последним
+                    currentDay = days;
+                    Object.assign(state, { currentDay });
+                  }
+                }
 
-                <Stack>
 
-                  <div className="page__title-wrap">
-                    <h1 className="page__title">{ this.getTitle() }</h1>
+                this.setState(Object.assign(state, { mode, realData }), () => {
+                  // TODO: вернуть?
+                  // params.set("mode", value);
 
-                    {(dev || this.state.id) && (
-                      <CrossButton
-                        className="main-top__remove"
-                        onClick={e => dialogAPI.open("dialog4", e.target)}/>
-                    )}
-                  </div>
-
-                  <Radio.Group
-                    key={this.state.mode}
-                    className="tabs"
-                    name="radiogroup"
-                    defaultValue={this.state.mode}
-                    onChange={e => {
-                      let { value } = e.target;
-                      let { data, mode } = this.state;
-                      let days = this.state.days[value];
-                      let state = {};
-
-                      if (days > data.length) {
-                        const data = this.buildData(days);
-                        Object.assign(state, { data });
-                      }
-
-                      let currentDay = this.state.currentDay;
-                      if (currentDay > days) {
-                        currentDay = days;
-                        Object.assign(state, { currentDay });
-                      }
-
-                      this.setState(Object.assign(state, {
-                        prevMode: mode,
-                        mode: value,
-                      }), () => {
-                        params.set("mode", value);
-                        this.recalc();
-                      });
-                    }}
-                  >
-                    <span className="tabs__centerline"></span>
-                    <Radio className="tabs__label tabs__label--1" value={0}>
-                      <span className="prefix">Расчет</span>
-                      от желаемой суммы
-                    </Radio>
-                    <Radio className="tabs__label tabs__label--2" value={1}>
-                      <span className="prefix">Расчет</span>
-                      от желаемой доходности
-                    </Radio>
-                  </Radio.Group>
-
-                  <div className="main-top__footer">
-
-                    <Button 
-                      className={
-                        [
-                          "custom-btn",
-                          "custom-btn--secondary",
-                          "main-top__save",
-                        ]
-                          .concat(this.state.changed ? "main-top__new" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      onClick={e => {
-                        const { saved, changed } = this.state;
-
-                        if (saved && changed) {
-                          this.update(this.getTitle());
-                          this.setState({ changed: false });
-                        }
-                        else {
-                          dialogAPI.open("dialog1", e.target);
-                        }
-
-                      }}>
-                      { (this.state.saved && !this.state.changed) ? "Изменить" : "Сохранить" }
-                    </Button>
-                    
-                    {
-                      this.state.saves.length > 0 ? (
-                        <a
-                          className="custom-btn custom-btn--secondary main-top__save"
-                          href="#pure=true" 
-                          target="_blank"
-                        >
-                          Добавить новый
-                        </a>
-                      )
-                      : null
-                    }
-
-                  </div>
-
-                </Stack>
-
-              </div>
-              {/* /.main-top-wrap */}
-            </div>
-            {/* /.container */}
-          </div>
-          {/* /.main-top */}
+                  // TODO: optimize because this.recalc() already uses this.updateChart()
+                  this.recalc()
+                    .then(() => this.setState({ realData }))
+                    .then(() => this.updateChart());
+                });
+              }}
+            />
+          </Header>
 
           <div className="container">
             <section className="controls">
@@ -1989,7 +2278,7 @@ export default class App extends React.Component {
                         <button
                           aria-label="Инструменты"
                           className="settings-button controls__tool-select-icon"
-                          onClick={e => dialogAPI.open("dialog3", e.target)}>
+                          onClick={e => dialogAPI.open("passive-income-config", e.target)}>
                           <SettingFilled className="settings-button__icon" />
                         </button>
                       </Tooltip>
@@ -2059,7 +2348,7 @@ export default class App extends React.Component {
                         <label className="input-group">
                           <span className="input-group__label">Вывод</span>
                           <NumericInput
-                            key={this.state.mode + this.state.withdrawal[this.state.mode] + Math.random()}
+                            key={this.state.withdrawal[this.state.mode]}
                             disabled={this.state.saved}
                             className="input-group__input"
                             defaultValue={this.state.withdrawal[this.state.mode]}
@@ -2139,10 +2428,6 @@ export default class App extends React.Component {
                         max={2600}
                         onChange={value => {
                           let { mode, withdrawalInterval } = this.state;
-
-                          // if (value === withdrawalInterval) {
-                          //   return;
-                          // }
                           
                           const frequency = value;
                           const payment = this.state.withdrawal[this.state.mode];
@@ -2168,7 +2453,7 @@ export default class App extends React.Component {
                     <label className="input-group">
                       <span className="input-group__label">Пополнение</span>
                       <NumericInput
-                        key={this.state.mode + this.state.payload[this.state.mode] + Math.random()}
+                        key={this.state.payload[this.state.mode]}
                         disabled={this.state.saved}
                         className="input-group__input"
                         defaultValue={this.state.payload[this.state.mode]}
@@ -2178,7 +2463,9 @@ export default class App extends React.Component {
                         min={0}
                         max={99999999}
                         onBlur={val => {
-                          let { mode, payload } = this.state;
+                          let { mode, days, payload, payloadInterval } = this.state;
+                          const depoEnd = this.getDepoEnd();
+                          const periodicity = days[mode] / payloadInterval[mode];
 
                           if (val === payload[mode]) {
                             return;
@@ -2191,9 +2478,6 @@ export default class App extends React.Component {
                           payload[mode] = val;
 
                           this.setState({ payload }, this.recalc);
-                        }}
-                        onChange={() => {
-                          
                         }}
                       />
                     </label>
@@ -2210,7 +2494,7 @@ export default class App extends React.Component {
                         min={1}
                         max={2600}
                         onChange={value => {
-                          let { mode, payloadInterval } = this.state;
+                          let { mode, days, payload, payloadInterval } = this.state;
                           payloadInterval[mode] = value;
                           this.setState({ payloadInterval }, this.recalc);
                         }}
@@ -2380,14 +2664,19 @@ export default class App extends React.Component {
                     </span>
 
                     {(() => {
-                      let step = 
-                        this.getCurrentTool().guaranteeValue / this.state.depoStart[this.state.mode] * 100;
+                      const { mode, depoStart, depoPersentageStart } = this.state;
+                      const tools = this.getTools();
+                      let step = this.getCurrentTool().guaranteeValue / data[currentDay - 1].depoStartTest * 100;
                       if (step > 100) {
-                        for (let i = 0; i < this.state.tools.length; i++) {
-                          let s = this.state.tools[i].guaranteeValue / this.state.depoStart[this.state.mode] * 100;
+                        console.warn('step is more than 100');
+                        for (let i = 0; i < tools.length; i++) {
+                          let s = tools[i].guaranteeValue / depoStart[mode] * 100;
                           if (s < 100) {
-                            
-                            this.setState({ currentToolIndex: i });
+                            this.setState({
+                              currentToolCode: tools[i].code,
+                              // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
+                              currentToolIndex: null,
+                            });
                             step = s;
                             break;
                           }
@@ -2397,11 +2686,11 @@ export default class App extends React.Component {
 
                       return (
                         <CustomSlider
-                          value={this.state.depoPersentageStart}
+                          value={depoPersentageStart}
                           min={min}
                           max={100}
                           step={step}
-                          precision={1}
+                          precision={2}
                           filter={val => val + "%"}
                           onChange={val => {
                             const { mode, days } = this.state;
@@ -2462,24 +2751,25 @@ export default class App extends React.Component {
                         <button
                           aria-label="Инструменты"
                           className="settings-button section3-icon"
-                          onClick={e => dialogAPI.open("dialog2", e.target)}>
+                          onClick={e => dialogAPI.open("config", e.target)}>
                           <SettingFilled className="settings-button__icon" />
                         </button>
                       </Tooltip>
                     </header>
                     <Select
-                      value={this.state.currentToolIndex}
+                      value={this.getCurrentToolIndex()}
                       onChange={currentToolIndex => {
                         const { depoStart, days, mode } = this.state;
-
-                        let toFind = this.state.depoPersentageStart;
-
                         let tools = this.getTools();
-                        
-                        let step = round(tools[currentToolIndex].guaranteeValue / depoStart[mode] * 100, 1);
+                        const currentTool = tools[currentToolIndex]; 
+
+                        // Искомое значение на ползунке, к котором мы хотим прижаться
+                        let toFind = this.state.depoPersentageStart;
+                        let step = currentTool.guaranteeValue / data[currentDay - 1].depoStartTest * 100;
                         if (step > 100) {
+                          // Тут ищем инстурмент, с которым нам хватит на 1 контракт
                           for (let i = 0; i < tools.length; i++) {
-                            let s = tools[i].guaranteeValue / this.state.depoStart[this.state.mode] * 100;
+                            let s = tools[i].guaranteeValue / depoStart[mode] * 100;
                             if (s < 100) {
                               this.setState({ currentToolIndex: i });
                               step = s;
@@ -2488,13 +2778,16 @@ export default class App extends React.Component {
                           }
                         }
 
+                        // Определяю кол-во шагов
                         let rangeLength = Math.floor(100 / step);
                         if (rangeLength < 1 || rangeLength == Infinity) {
                           rangeLength = 1;
                           console.warn("Range length is out of bounds!");
                         }
+                        // Заполняю массив шагами типа 0.2, 0.4, 0.6 итд
                         let range = new Array(rangeLength).fill(0).map((val, i) => step * (i + 1));
 
+                        // Пытаюсь найти ближайшее значение к предыдущему значеню ползунка "процент депозита на вход в сделку"
                         let depoPersentageStart = range.reduce(function (prev, curr) {
                           return (Math.abs(curr - toFind) < Math.abs(prev - toFind) ? curr : prev);
                         });
@@ -2503,8 +2796,14 @@ export default class App extends React.Component {
                         depoPersentageStart = Math.max(depoPersentageStart, step);
                         depoPersentageStart = Math.min(depoPersentageStart, 100);
 
-                        this.setState({ currentToolIndex, depoPersentageStart }, () => {
+                        this.setState({ 
+                          currentToolCode: currentTool.code,
+                          // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
+                          currentToolIndex: null,
+                          depoPersentageStart
+                        }, () => {
                           this.updateData(days[mode])
+                            .then(() => this.updateDepoPersentageStart())
                         });
                       }}
                       disabled={this.getTools().length == 0}
@@ -2627,8 +2926,11 @@ export default class App extends React.Component {
                         max={days}
                         onChange={value => this.setCurrentDay(value)}
                       />
-                      /{days}
+                      /
+                      {" "}
+                      {days}
                     </header>
+                    
                     <div className="section4-content section4__content1 card">
                       <div className="section4-row">
                         <div className="section4-l">
@@ -2636,7 +2938,7 @@ export default class App extends React.Component {
                         </div>
                         <div className="section4-r">
                           {
-                            formatNumber(Math.round(data[currentDay - 1] && (data[currentDay - 1].depoStartReal || 0)))
+                            formatNumber(Math.round(data[currentDay - 1].depoStartTest * (depoPersentageStart / 100)))
                             +
                             ` (${ round(depoPersentageStart, 3) }%)`
                           }
@@ -2649,12 +2951,9 @@ export default class App extends React.Component {
                         </div>
                         <div className="section4-r">
                           {(() => {
-                            return (
-                              formatNumber(Math.round(
-                                data[currentDay - 1].depoStartTest +
-                                data[currentDay - 1].incomeReal
-                              ))
-                            )
+                            let value = data[currentDay - 1].depoStartTest + data[currentDay - 1].goal;
+
+                            return formatNumber(Math.round(value));
                           })()}
                         </div>
                       </div>
@@ -2775,9 +3074,7 @@ export default class App extends React.Component {
                           </div>
                           <div className="section4-r">
                             {
-                              formatNumber(
-                                Math.round(data[currentDay - 1].incomeReal)
-                              )
+                              formatNumber(Math.round(data[currentDay - 1].goal))
                             }
                           </div>
                         </div>
@@ -2793,6 +3090,7 @@ export default class App extends React.Component {
                         const {
                           mode,
                           realData,
+                          daysInOrder,
                           payloadInterval,
                           withdrawalInterval,
                         } = this.state;
@@ -2803,7 +3101,7 @@ export default class App extends React.Component {
                         const days = this.state.days[mode];
                         
                         function getPeriods(rate, present, future, payment, paymentper, payload, payloadper, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}) {
-
+                          realdata = JSON.parse(JSON.stringify(realdata));
                           // ( Ставка, Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням  )
                           // Возвращает: Дней до цели
                           const rateRounded = round(rate * 100, 3);
@@ -2818,7 +3116,7 @@ export default class App extends React.Component {
                           while (res < future) {
                             if (realdata[x] !== undefined) {
 
-                              realdata[x].scale   = realdata[x].scale != null ? realdata[x].scale : rateRounded;
+                              realdata[x].scale   = realdata[x].scale   != null ? realdata[x].scale   : rateRounded;
                               realdata[x].payload = realdata[x].payload != null ? realdata[x].payload : 0;
                               realdata[x].payment = realdata[x].payment != null ? realdata[x].payment : 0;
 
@@ -2876,21 +3174,6 @@ export default class App extends React.Component {
                           0,
                           realData
                         );
-                        // console.log(
-                        //   rate / 100,
-                        //   depoStart,
-                        //   depoEnd,
-                        //   withdrawal,
-                        //   withdrawalInterval[mode],
-                        //   payload,
-                        //   payloadInterval[mode],
-                        //   withdrawalInterval[mode],
-                        //   payloadInterval[mode],
-                        //   0,
-                        //   realData,
-                        //   "=",
-                        //   periods
-                        // );
 
                         let realDaysLeft = atLeastOneChanged
                           ? roundUp( periods )
@@ -2953,36 +3236,8 @@ export default class App extends React.Component {
                               })()}
 
                               {(() => {
-                                const {
-                                  mode,
-                                  realData,
-                                  payloadInterval,
-                                  withdrawalInterval,
-                                } = this.state;
-
-                                const depoStart = this.state.depoStart[mode];
-                                const withdrawal = this.state.withdrawal[mode];
-                                const payload = this.state.payload[mode];
-                                const days = this.state.days[mode];
-
-                                let value = rateRequired(
-                                  depoStart,
-                                  this.getDepoEnd(),
-                                  withdrawal,
-                                  withdrawalInterval[mode],
-                                  payload,
-                                  payloadInterval[mode],
-                                  days,
-                                  withdrawalInterval[mode],
-                                  payloadInterval[mode],
-                                  0,
-                                  realData
-                                ) * 100;
-
-                                const rate = this.getRate();
-                                if (Math.abs(rate - value) < .0008) {
-                                  value = round(rate, 3);
-                                }
+                                const value = this.getRateRecommended();
+                                const valid = value >= rate;
 
                                 return (
                                   <Statistic
@@ -2992,12 +3247,18 @@ export default class App extends React.Component {
                                         <span aria-label="доходность">дох-ть</span>
                                       </span>
                                     }
-                                    value={ round(value, 3) }
+                                    value={round(value, 3)}
+                                    // formatter={node =>
+                                    //   // TODO: подставить значение из рекомендованного графика
+                                    //   <Tooltip title={<span>Рекомендуется заработать<br /> {2} руб.</span>}>
+                                    //     {node}
+                                    //   </Tooltip>
+                                    // }
                                     valueStyle={{
-                                      color: `var( ${value < 0 ? "--danger-color" : "--success-color"} )`
+                                      color: `var( ${valid ? "--success-color" : "--danger-color"} )`
                                     }}
                                     prefix={
-                                      value < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />
+                                      valid ? <ArrowUpOutlined /> : <ArrowDownOutlined />
                                     }
                                     suffix="%"
                                   />
@@ -3020,6 +3281,7 @@ export default class App extends React.Component {
               const {
                 data,
                 realData,
+                daysInOrder,
                 currentDay,
                 directUnloading,
                 passiveIncomeTools,
@@ -3028,46 +3290,22 @@ export default class App extends React.Component {
 
               let iterations = Math.min(this.state.iterations * (directUnloading ? 1 : 2), 100);
 
+              const lastFilledDay = this.getLastFilledDayNumber();
               const rate  = this.getRate();
-              const scale = (data[currentDay - 1].scale != null) ? data[currentDay - 1].scale : 0;
-
-              const getIterationsList = () => {
-                if (!data[currentDay - 1].iterationsList) {
-                  return;
-                }
-
-                return data[currentDay - 1].iterationsList.filter(v => v.percent != null || v.income != null);
-              };
-
+              const rateRecommended  = this.getRateRecommended();
+              
               const getRealRate = () => {
-                let value = scale;
-
+                let value = (data[currentDay - 1].scale != null) ? data[currentDay - 1].scale : 0;
+                
                 if (data[currentDay - 1].customIncome != null) {
                   value = data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest * 100;
                 }
-
-                const iterationsList = getIterationsList();
+                
+                const iterationsList = this.getIterationsList();
                 if (iterationsList && iterationsList.length) {
                   value = iterationsList.map(el => el.percent).reduce((prev, curr) => prev + curr);
                 }
 
-                return value;
-              };
-
-              const getRealIncome = () => {
-                let value = Math.round(data[currentDay - 1].depoStart * (round(scale, 3) / 100));
-
-                if (data[currentDay - 1].customIncome != null) {
-                  value = data[currentDay - 1].customIncome;
-                }
-
-                const iterationsList = getIterationsList();
-                if (iterationsList && iterationsList.length) {
-                  value = iterationsList.map(el => el.income).reduce((prev, curr) => prev + curr);
-                }
-
-                value += data[currentDay - 1].payload ? data[currentDay - 1].payload : 0;
-                value -= data[currentDay - 1].payment ? data[currentDay - 1].payment : 0;
                 return value;
               };
 
@@ -3081,12 +3319,9 @@ export default class App extends React.Component {
 
               const placeholder = "—";
               const onBlur = (prop, val) => {
+                console.log(prop, val);
                 if (val === "") {
                   val = undefined;
-                }
-                
-                if (!data[currentDay - 1][`${prop}Changed`]) {
-                  data[currentDay - 1][`${prop}Changed`] = true;
                 }
 
                 if (!realData[currentDay]) {
@@ -3097,24 +3332,27 @@ export default class App extends React.Component {
 
                 if (prop === "customIncome") {
                   let scale = val;
-                  if (val) {
+                  if (val != null) {
                     scale = (val / data[currentDay - 1].depoStartTest) * 100;
                   }
 
                   data[currentDay - 1].scale = scale;
                   realData[currentDay].scale = scale;
                 }
-
-                // console.log(realData[currentDay]);
+                else if (prop === "scale") {
+                  if (val != null) {
+                    data[currentDay - 1].customIncome = Math.round(data[currentDay - 1].depoStartTest * val / 100);
+                  }
+                }
 
                 data[currentDay - 1][prop] = val;
-
+                
                 // Если заполнен хотя бы один инпут, то считаем, что день изменен 
                 const changed = isChanged(data[currentDay - 1]);
-                data[currentDay - 1].changed = (!val) ? changed : true;
+                data[currentDay - 1].changed = !val ? changed : true;
 
-                // console.log(data[currentDay - 1]);
-
+                // console.log(data[currentDay - 1], realData[currentDay]);
+                
                 this.setState({ data, realData }, () => {
                   const { days, mode } = this.state;
                   this.updateData(days[mode], false)
@@ -3122,6 +3360,21 @@ export default class App extends React.Component {
                 });
 
               };
+
+              const ArrowRight = props => {
+                const reversed = Boolean(props.reversed);
+                return (
+                  <svg 
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+                    style={{ transform: `scaleX(${reversed ? 1 : -1})` }}
+                    fill="currentColor"
+                  >
+                    <defs/>
+                    <path d="M492 236H68.4l70.2-69.8a20 20 0 10-28.2-28.4L5.9 241.8a20 20 0 000 28.4l104.5 104a20 20 0 0028.2-28.4L68.4 276H492a20 20 0 100-40z"/>
+                  </svg>
+                );
+              }
 
               return (
                 <section className="section5">
@@ -3132,7 +3385,7 @@ export default class App extends React.Component {
                       disabled={currentDay == 1} 
                       data-type="link"
                       onClick={() => this.setCurrentDay(currentDay - 1)}>
-                      <span aria-hidden="true">&lt;&lt; </span>
+                      <ArrowRight reversed />
                       Предыдущий день
                     </button>
 
@@ -3143,7 +3396,7 @@ export default class App extends React.Component {
                       data-type="link"
                       onClick={() => this.setCurrentDay(currentDay + 1)}>
                       Следующий день
-                      <span aria-hidden="true"> &gt;&gt;</span>
+                      <ArrowRight />
                     </button>
                   </div>
 
@@ -3159,13 +3412,17 @@ export default class App extends React.Component {
                         const day = (page * 5) + index + 1;
                         const title = `Выбрать день номер ${day}`;
 
-                        let success = el.scale >= round(rate, 3);
-                        let failed = el.scale <= 0;
+                        const income = this.getRealIncome(day, data, null, null, 0);
+                        let success = income >= Math.round(data[day - 1].goal);
+                        let failed = income <= 0;
+
+                        // let success = el.scale >= round(rate, 3);
+                        // let failed = el.scale <= 0;
                         
-                        if (el.customIncome != null) {
-                          success = el.customIncome >= data[currentDay - 1].incomeReal;
-                          failed = el.customIncome <= 0;
-                        }
+                        // if (el.customIncome != null) {
+                        //   success = el.customIncome >= Math.trunc(data[day - 1].goal);
+                        //   failed = el.customIncome <= 0;
+                        // }
 
                         return (
                           <button
@@ -3189,22 +3446,24 @@ export default class App extends React.Component {
                     ? null
                     : (
                       <span className="section5-content-title">
-                        {(() => {
-                          const value = getRealRate();
+                        <span>
+                          {(() => {
+                            const value = getRealRate();
 
-                          return (
-                            data[currentDay - 1].changed
-                              ? <Value format={val => formatNumber(round(val, 3))}>{value}</Value>
-                              : "—"
-                          )
-                        })()}
-                        &nbsp;/&nbsp;
-                        { round(rate, 3) }
+                            return (
+                              data[currentDay - 1].changed
+                                ? <Value format={val => formatNumber(round(val, 3))}>{value}</Value>
+                                : "—"
+                            )
+                          })()}
+                          &nbsp;/&nbsp;
+                          { round(rate, 3) }
+                        </span>
                         &nbsp;
                         <span>
                           (
                           {(() => {
-                            const value = getRealIncome();
+                            const value = this.getRealIncome(null, null, null, null, 0);
 
                             return data[currentDay - 1].changed
                               ? (
@@ -3216,7 +3475,7 @@ export default class App extends React.Component {
                           })()}
                           {" "}/{" "}
                           {
-                            "+" + formatNumber(Math.round(data[currentDay - 1].incomeReal))
+                            "+" + formatNumber(Math.round(data[currentDay - 1].goal))
                           }
                           )
                         </span>
@@ -3230,18 +3489,23 @@ export default class App extends React.Component {
                       disabled={currentDay <= 5}
                       data-type="link"
                       onClick={() => this.setCurrentDay(currentDay - 5)}>
-                      <span aria-hidden="true">&lt;&lt; </span>
+                      <ArrowRight reversed />
                       Предыдущая неделя
                     </button>
 
                     <Button
                       className={
-                        "section5__save custom-btn"
+                        []
+                          .concat("section5__save")
+                          .concat(daysInOrder && (currentDay > lastFilledDay + 1) ? "section5__save--hidden" : "")
+                          .concat("custom-btn")
                           .concat(
                             (data[currentDay - 1].changed || !data[currentDay - 1].collapsed)
-                              ? " custom-btn--filled"
+                              ? "custom-btn--filled"
                               : ""
                           )
+                          .join(" ")
+                          .trim()
                       }
                       role="button"
                       aria-expanded={!data[currentDay - 1].collapsed}
@@ -3283,7 +3547,7 @@ export default class App extends React.Component {
                       data-type="link"
                       onClick={() => this.setCurrentDay(currentDay + 5)}>
                       Следующая неделя
-                      <span aria-hidden="true"> &gt;&gt;</span>
+                      <ArrowRight />
                     </button>
 
                   </div>
@@ -3303,12 +3567,12 @@ export default class App extends React.Component {
                           <div className="section5-r">
                             {(() => {
                               const prop = "scale";
-                              const value = data[currentDay - 1][prop];
+                              let value = data[currentDay - 1][prop];
+                              if (value == null) {
+                                value = (data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest) * 100;
+                              }
 
-                              const iterationsList = getIterationsList();
-                              const disabled = 
-                                data[currentDay - 1].customIncome != null || 
-                                (iterationsList && iterationsList.length);
+                              const disabled = false;
                               return (
                                 <NumericInput
                                   key={value + Math.random()}
@@ -3326,7 +3590,7 @@ export default class App extends React.Component {
                             })()}
                             <span className="section5-r-suffix">
                               <span className="section5-r-suffix__separator">/</span>
-                              {round(this.getRate(), 3)}%
+                              {round(rate, 3)}%
                             </span>
                           </div>
                         </div>
@@ -3338,6 +3602,7 @@ export default class App extends React.Component {
                             {(() => {
                               const prop = "payment";
                               const value = data[currentDay - 1][prop];
+                              const max = Math.trunc(data[currentDay - 1].depoStartTest * .8);
                               return (
                                 <NumericInput
                                   key={value + Math.random()}
@@ -3349,7 +3614,21 @@ export default class App extends React.Component {
                                   round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
-                                  onBlur={val => onBlur(prop, val)}
+                                  onChange={(e, val, jsx) => {
+                                    let errMsg = "";
+                                    if (Number(val) >= max) {
+                                      errMsg = "Вывод не может превышать 80% от текущего депозита";
+                                    }
+                                    jsx.setState({ errMsg });
+                                  }}
+                                  onBlur={val => {
+                                    if (val) {
+                                      if (Number(val) >= max) {
+                                        val = max;
+                                      }
+                                    }
+                                    onBlur(prop, typeof val == "string" ? val : Number(val));
+                                  }}
                                 />
                               );
                             })()}
@@ -3371,6 +3650,7 @@ export default class App extends React.Component {
                             {(() => {
                               const prop = "payload";
                               const value = data[currentDay - 1][prop];
+                              const max = Math.trunc(this.getDepoEnd() - data[currentDay - 1].depoStartTest);
                               return (
                                 <NumericInput
                                   key={value + Math.random()}
@@ -3382,7 +3662,21 @@ export default class App extends React.Component {
                                   round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
-                                  onBlur={val => onBlur(prop, val)}
+                                  onChange={(e, val, jsx) => {
+                                    let errMsg = "";
+                                    if (val >= max) {
+                                      errMsg = "Пополнение не может превышать разницу между текущим и целевым депозитом";
+                                    }
+                                    jsx.setState({ errMsg });
+                                  }}
+                                  onBlur={val => {
+                                    if (val) {
+                                      if (Number(val) >= max) {
+                                        val = max;
+                                      }
+                                    }
+                                    onBlur(prop, typeof val == "string" ? val : Number(val));
+                                  }}
                                 />
                               )
                             })()}
@@ -3410,17 +3704,12 @@ export default class App extends React.Component {
                             {(() => {
                               const prop = "customIncome";
                               let value = data[currentDay - 1][prop];
-
-                              const iterationsList = getIterationsList();
-                              const disabled = 
-                                (data[currentDay - 1].changed &&
-                                 data[currentDay - 1].scale != null &&
-                                 value == null) || 
-                                (iterationsList && iterationsList.length);
-
                               if (value == null) {
-                                value = getRealIncome();
+                                value = Math.round(data[currentDay - 1].depoStartTest * data[currentDay - 1].scale / 100);
                               }
+                                
+                              const min = -data[currentDay - 1].depoStartTest;
+                              const disabled = false;
 
                               return (
                                 <NumericInput
@@ -3434,7 +3723,21 @@ export default class App extends React.Component {
                                   round="true"
                                   placeholder={placeholder}
                                   format={formatNumber}
-                                  onBlur={val => onBlur(prop, val)}
+                                  onChange={(e, val, jsx) => {
+                                    let errMsg = "";
+                                    if (val <= min && mode == 0) {
+                                      errMsg = "Нельзя вывести больше, чем депозит на начало дня";
+                                    }
+                                    jsx.setState({ errMsg });
+                                  }}
+                                  onBlur={val => {
+                                    if (val) {
+                                      if (mode == 0) {
+                                        val = Math.max(Number(val), min + 1);
+                                      }
+                                    }
+                                    onBlur(prop, typeof val == "string" ? val : Number(val));
+                                  }}
                                 />
                               )
                             })()}
@@ -3682,25 +3985,22 @@ export default class App extends React.Component {
                     {/* /.section5-content */}
 
                     {(() => {
-                      const income = getRealIncome();
-                      let percent = income / Math.round(data[currentDay - 1].incomeReal);
+                      const income = this.getRealIncome(null, null, null, null, 0);;
+                      let percent = income / Math.round(data[currentDay - 1].goal);
                       if (income <= 0) {
                         percent = 0;
                       }
 
-                      const depoEnd = Math.round(
-                        data[currentDay - 1].depoStartTest +
-                        data[currentDay - 1].incomeReal
-                      );
+                      const depoEnd = Math.round(data[currentDay - 1].depoStartTest + data[currentDay - 1].goal);
 
                       return (
                         <footer className="section5-footer">
                           <h3 className="section5-footer-title">Дневная цель</h3>
 
                           {(() => {
-                            let real = getRealIncome();
+                            let real = income;
 
-                            const plan = data[currentDay - 1].incomeReal;
+                            const plan = data[currentDay - 1].goal;
 
                             return (
                               <div className="section5-footer-subtitle">
@@ -3755,7 +4055,7 @@ export default class App extends React.Component {
                             <h4 className="section5-footer__label-title">Депозит:</h4>
                             {" "}
                             {(() => {
-                              const value = data[currentDay - 1].depoStartTest + getRealIncome();
+                              const value = getNthDayRealIncome(currentDay);
 
                               return (
                                 data[currentDay - 1].changed
@@ -3957,7 +4257,7 @@ export default class App extends React.Component {
 
           let inputJSX = (
             <ValidatedInput
-              label="Введите название тредометра"
+              label="Введите название сохранения"
               validate={validate}
               defaultValue={name}
               onChange={val => name = val}
@@ -3986,268 +4286,33 @@ export default class App extends React.Component {
         })()}
         {/* Save Popup */}
 
-        <Dialog
-          id="dialog2"
+        <Config
+          id="config"
           title="Инструменты"
-          confirmText="Добавить"
-          onConfirm={() => {
-            let { toolTemplate, customTools, propsToShowArray } = this.state;
-
-            const nameExists = (value, tools) => {
-              let found = 0;
-              for (const tool of tools) {
-                if (value === tool.shortName) {
-                  found++;
-                }
-              }
-
-              return found > 1;
-            };
-
-            let template = Object.assign({}, toolTemplate);
-            let tool = template;
-            propsToShowArray.map((prop, index) => {
-              tool[prop] = toolTemplate[prop];
-              if (index === 0) {
-                const suffix = customTools.length + 1;
-                tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`;
-              }
-            });
-
-            customTools.push(tool);
-            
-            while (nameExists(tool.shortName, this.getTools())) {
-              const end = tool.shortName.match(/\d+$/g)[0];
-              tool.shortName = tool.shortName.replace(end, Number(end) + 1);
-            }
-
-            this.setState({ customTools }, () => {
-              document.querySelector(".config-table-wrap").scrollTop = 99999;
-            });
-          }}
-          cancelText="Закрыть"
-        >
-          <div className="config-table-wrap">
-            {(() => {
-              const { tools, customTools, propsToShowArray } = this.state;
-              
-              return (
-                <table className="table">
-                  <thead className="table-header">
-                    <tr className="table-tr">
-                      <th className="config-th table-th">Инструмент</th>
-                      <th className="config-th table-th">Цена шага</th>
-                      <th className="config-th table-th">Шаг цены</th>
-                      <th className="config-th table-th">Средний ход</th>
-                      <th className="config-th table-th">ГО</th>
-                      <th className="config-th table-th">Текущая цена</th>
-                      <th className="config-th table-th">Размер лота</th>
-                      <th className="config-th table-th">Курс доллара</th>
-                      {customTools && customTools.length ? (
-                        <th className="config-th table-th"></th>
-                      ) : null}
-                    </tr>
-                  </thead>
-                  <tbody className="table-body">
-                    {
-                      tools && tools.map((tool, index) =>
-                        <tr className="config-tr" key={index}>
-                          {
-                            this.state.propsToShowArray.map((prop, i) =>
-                              <td
-                                className="table-td"
-                                style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                                key={i}>
-                                {tool[prop]}
-                              </td>
-                            )
-                          }
-                        </tr>
-                      )
-                    }
-                    {(() => {
-                      const nameExists = (value, tools) => {
-                        let found = 0;
-                        for (const tool of tools) {
-                          if (value === tool.shortName) {
-                            found++;
-                          }
-                        }
-
-                        return found > 1;
-                      };
-
-                      let onBlur = (val, index, prop) => {
-                        let { customTools } = this.state;
-                        customTools[index][prop] = val;
-                        if (prop === "shortName") {
-                          while (nameExists(customTools[index][prop], this.getTools())) {
-                            const end = customTools[index][prop].match(/\d+$/g)[0];
-                            customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
-                          }
-                        }
-                        
-                        this.setState({ customTools });
-                      };
-
-                      return customTools && customTools.map((tool, index) =>
-                        <tr className="config-tr" key={index}>
-                          {
-                            propsToShowArray.map((prop, i) =>
-                              <td
-                                className="table-td"
-                                style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                                key={i}>
-                                {
-                                  i === 0 ? (
-                                    <Input
-                                      defaultValue={tool[prop]}
-                                      onBlur={e => onBlur(e.target.value, index, prop)}
-                                      onKeyDown={e => {
-                                        if (
-                                          [
-                                            13, // Enter
-                                            27  // Escape
-                                          ].indexOf(e.keyCode) > -1
-                                        ) {
-                                          e.target.blur();
-                                          onBlur(e.target.value, index, prop);
-                                        }
-                                      }}
-                                    />
-                                  )
-                                    : (
-                                      <NumericInput
-                                        defaultValue={tool[prop]}
-                                        onBlur={val => onBlur(val, index, prop)}
-                                      />
-                                    )
-                                }
-                              </td>
-                            )
-                          }
-                          <td className="table-td" key={index}>
-                            <Tooltip title="Удалить">
-                              <button
-                                className="config__delete cross-button"
-                                aria-label="Удалить"
-                                onClick={() => {
-                                  let { customTools } = this.state;
-                                  customTools.splice(index, 1);
-                                  this.setState({ customTools });
-                                }}>
-                                <span>&times;</span>
-                              </button>
-                            </Tooltip>
-                          </td>
-                        </tr>
-                      )
-                    })()}
-                  </tbody>
-                </table>
-              )
-            })()}
-          </div>
-          {/* /.config-talbe-wrap */}
-        </Dialog>
+          template={template}
+          tools={this.state.tools}
+          toolsInfo={this.state.toolsInfo}
+          customTools={this.state.customTools}
+          onChange={customTools => this.setState({ customTools })}
+        />
         {/* Инструменты */}
 
-        <Dialog
-          id="dialog3"
-          className="pi-dialog"
-          title={"Инструменты пассивного дохода"}
-          confirmText="Добавить"
-          onConfirm={() => {
-            let { passiveIncomeTools } = this.state;
-
-            let tool = {
-              name: "Инструмент",
-              rate: 0
-            };
-            passiveIncomeTools.push(tool);
-            this.setState({ passiveIncomeTools }, () => {
-              document.querySelector(".config-table-wrap").scrollTop = 99999;
-            });
+        <Config
+          id="passive-income-config"
+          title="Инструменты пассивного дохода"
+          template={{
+            name: "Инструмент",
+            rate: 0
           }}
-          cancelText="Закрыть"
-        >
-          <div className="config-table-wrap">
-            <table className="table">
-              <thead className="table-header">
-                <tr className="table-tr">
-                  <th className="config-th table-th pi-dialog-th">Название</th>
-                  <th className="config-th table-th pi-dialog-th">Ставка</th>
-                  <th className="config-th table-th pi-dialog-th"></th>
-                </tr>
-              </thead>
-              <tbody className="table-body">
-                {(() => {
-                  let onBlur = (val, index, prop) => {
-                    let { passiveIncomeTools } = this.state;
-                    passiveIncomeTools[index][prop] = val;
-                    this.setState({ passiveIncomeTools });
-                  };
-
-                  return this.getPassiveIncomeTools().map((tool, index) =>
-                    <tr className="config-tr" key={index}>
-                      {
-                        ["name", "rate"].map((prop, i) =>
-                          <td
-                            className="table-td"
-                            style={{ width: (prop === "name") ? "15em" : "9em" }}
-                            key={i}>
-                            {
-                              i === 0 ? (
-                                <Input
-                                  defaultValue={tool[prop]}
-                                  onBlur={e => onBlur(e.target.value, index, prop)}
-                                  onKeyDown={e => {
-                                    if (
-                                      [
-                                        13, // Enter
-                                        27  // Escape
-                                      ].indexOf(e.keyCode) > -1
-                                    ) {
-                                      e.target.blur();
-                                      onBlur(e.target.value, index, prop);
-                                    }
-                                  }}
-                                />
-                              )
-                              : (
-                                <NumericInput
-                                  defaultValue={tool[prop]}
-                                  onBlur={val => onBlur(val, index, prop)}
-                                />
-                              )
-                            }
-                          </td>
-                        )
-                      }
-                      {this.getPassiveIncomeTools().length > 1 && (
-                        <td className="table-td" key={index}>
-                          <Tooltip title="Удалить">
-                            <button
-                              className="cross-button config__delete"
-                              aria-label="Удалить"
-                              onClick={() => {
-                                let { passiveIncomeTools } = this.state;
-                                passiveIncomeTools.splice(index, 1);
-                                this.setState({ passiveIncomeTools });
-                              }}>
-                              <span>&times;</span>
-                            </button>
-                          </Tooltip>
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })()}
-              </tbody>
-            </table>
-          </div>
-          {/* /.config-talbe-wrap */}
-        </Dialog>
+          tools={[]}
+          currentToolIndex={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+          toolsInfo={[
+            { name: "Название", prop: "name", defaultValue: "Инструмент" },
+            { name: "Ставка",   prop: "rate", defaultValue: 0            },
+          ]}
+          customTools={this.state.passiveIncomeTools}
+          onChange={passiveIncomeTools => this.setState({ passiveIncomeTools })}
+        />
         {/* Инструменты пассивного дохода */}
         
         <Dialog

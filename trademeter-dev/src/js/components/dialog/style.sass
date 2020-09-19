@@ -33,8 +33,9 @@
   cursor: pointer
 
   &-content
+    position: relative
     background: white
-    max-width: 110em
+    max-width: 70em
     min-width: 40em
 
     font-size: 1.6em
@@ -45,13 +46,22 @@
       min-width: auto
       max-width: 100%
   
+  &__close
+    position: absolute
+    right: .1em
+    top:   .1em
+
+    font-size: 3em
+    color: black
+  
   &__title
+    padding-right: 1.25em
     margin: 0
-    margin-bottom: .75em
+    margin-bottom: .5em
 
     font-size: 2.2em
     font-weight: 300
-    line-height: 1
+    line-height: .65em
 
     +sm
       text-align: center

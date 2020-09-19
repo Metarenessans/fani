@@ -20,7 +20,9 @@ import round          from "./utils/round";
 import formatNumber   from "./utils/format-number"
 import typeOf         from "./utils/type-of"
 import fractionLength from "./utils/fraction-length"
+import promiseWhile   from "./utils/promise-while"
 
+import { Tools }           from "./tools"
 import Info                from "./components/Info/Info"
 import Stack               from "./components/stack"
 import CustomSlider        from "./components/custom-slider"
@@ -32,7 +34,7 @@ const { Option } = Select;
 
 import "../sass/style.sass"
 
-const dev = false;
+const dev = true;
 
 class App extends React.Component {
 
@@ -98,14 +100,56 @@ class App extends React.Component {
   componentDidMount() {
     this.bindEvents();
 
-    this.fetchTools()
-      .then(tools => this.unpackTools(tools))
-      .then(() => this.updatePriceRange(this.getCurrentTool()))
-      .catch(err => console.log(err));
+    if (dev) {
+      this.fetchTools();
+      return;
+    }
 
-    this.fetchDepoStart()
-      .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => console.log(err));
+    const checkIfAuthorized = () => {
+      return new Promise((resolve, reject) => {
+        this.sendRequest("getAuthInfo")
+          .then(res => {
+            if (res.authorized) {
+              resolve();
+            }
+            else {
+              reject();
+            }
+          })
+          .catch(() => reject())
+      })
+    }
+
+    let counter = 0;
+    promiseWhile(false, i => !i, () => {
+      return new Promise(resolve => {
+        counter++;
+        checkIfAuthorized()
+          .then(() => {
+            this.fetchInitialData();
+            resolve(true);
+          })
+          .catch(() => {
+            if (counter >= 10) {
+              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
+              resolve(true);
+            }
+            else {
+              setTimeout(() => resolve(false), 1000);
+            }
+          });
+      });
+    });
+  }
+
+  // ----------
+  // Fetch
+  // ----------
+
+  // Fetching everithing we need to start working
+  fetchInitialData() {
+    this.fetchInvestorInfo();
+    this.fetchTools();
 
     this.fetchSaves()
       .then(saves => {
@@ -118,7 +162,7 @@ class App extends React.Component {
             for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
               p = p.then(_ => new Promise(resolve => {
                 const save = saves[index];
-                const id   = save.id;
+                const id = save.id;
                 this.fetchSaveById(id)
                   .then(save => {
                     const corrupt = !this.validateSave();
@@ -144,6 +188,55 @@ class App extends React.Component {
         this.setState({ saves });
       })
       .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+  }
+
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      this.sendRequest("getMtsSnapshots")
+        .then(res => {
+          const savesSorted = res.data.sort((a, b) => a.dateCreate < b.dateCreate);
+          const saves = savesSorted.map(save => ({
+            name: save.name,
+            id: save.id,
+          }));
+          resolve(saves);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  fetchSaveById(id) {
+    return new Promise((resolve, reject) => {
+      if (typeof id === "number") {
+        console.log("Trying to fetch id:" + id);
+        this.sendRequest("getMtsSnapshot", "GET", { id })
+          .then(res => resolve(res))
+          .catch(err => reject(err));
+      }
+      else {
+        reject("id must be a number!", id);
+      }
+    });
+  }
+
+  fetchTools() {
+    this.sendRequest("getFutures")
+      .then(res => new Promise(resolve => resolve(res.data)))
+      .then(tools => Tools.parse(tools))
+      .then(tools => this.state.tools.concat(tools))
+      .then(tools => tools.sort((a, b) => a.shortName.localeCompare(b.shortName)))
+      .then(tools => new Promise(resolve => this.setState({ tools }, resolve)))
+      .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`))
+  }
+
+  fetchInvestorInfo() {
+    this.sendRequest("getInvestorInfo")
+      .then(res => {
+        const { status, skill, deposit } = res.data;
+        return new Promise(resolve => this.setState({ status, skill }, () => resolve(deposit)));
+      })
+      .then(depo => this.setState({ depo: depo || 10000 }))
+      .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
   }
 
   updatePriceRange(tool) {
@@ -239,8 +332,9 @@ class App extends React.Component {
       
       if (t.length > 0) {
         let { tools } = this.state;
-        tools = tools.concat(t);
-  
+        const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
+        tools = tools.concat(sorted);
+
         this.setState({ tools }, resolve);
       }
       else {
@@ -280,7 +374,6 @@ class App extends React.Component {
         this.setState({ saves });
       }
     };
-
 
     let staticParsed;
 
@@ -429,63 +522,6 @@ class App extends React.Component {
           }
 
           resolve(parsed);
-        },
-        error: err => reject(err)
-      });
-    });
-  }
-
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-      this.sendRequest("getMtsSnapshots")
-        .then(res => {
-          const savesSorted = res.data.sort((a, b) => a.dateCreate < b.dateCreate);
-          const saves = savesSorted.map(save => ({
-            name: save.name,
-            id:   save.id,
-          }));
-          resolve(saves);
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  fetchSaveById(id) {
-    return new Promise((resolve, reject) => {
-      if (typeof id === "number") {
-        console.log("Trying to fetch id:" + id);
-        this.sendRequest("getMtsSnapshot", "GET", { id })
-          .then(res => resolve(res))
-          .catch(err => reject(err));
-      }
-      else {
-        reject("id must be a number!", id);
-      }
-    });
-  }
-
-  fetchTools() {
-    return new Promise((resolve, reject) => {
-      $.ajax({
-        url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
-        success: res => {
-          var data = JSON.parse(res).data;
-          resolve(data);
-        },
-        error: (err) => reject(err),
-      });
-    })
-  }
-
-  fetchDepoStart() {
-    return new Promise((resolve, reject) => {
-      console.log("Fetching depoStart!");
-      $.ajax({
-        url: "/local/php_interface/s1/ajax/?method=getInvestorInfo",
-        success: res => {
-          var parsed = JSON.parse(res);
-          var depo = Number(parsed.data.deposit);
-          resolve(depo);
         },
         error: err => reject(err)
       });

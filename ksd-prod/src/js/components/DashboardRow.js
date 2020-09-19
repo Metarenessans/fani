@@ -6,8 +6,10 @@ import NumericInput from "../components/numeric-input"
 import CustomSelect from "../components/custom-select"
 import CrossButton  from "../components/cross-button"
 
-import round        from "../utils/round"
-import formatNumber from "../utils/format-number"
+import isEqual        from "../utils/is-equal"
+import round          from "../utils/round"
+import formatNumber   from "../utils/format-number"
+import fractionLength from "../utils/fraction-length"
 
 const { Option } = Select;
 
@@ -59,11 +61,16 @@ export default class DashboardRow extends React.Component {
   }
 
   getPlanIncome() {
-    const { mode } = this.props;
-    var planIncome = this.getTool().planIncome;
-    if (this.props.planIncome) {
-      planIncome = this.props.planIncome;
-    }
+    const { mode, item } = this.props;
+    const currentTool = this.getTool();
+    var planIncome = currentTool.planIncome;
+    // console.log(planIncome);
+
+    // if (item.planIncome !== this.props.planIncome) {
+    //   planIncome = this.props.planIncome;
+    // }
+
+    planIncome = this.getBlackSwan() / 8;
 
     if (mode > 0) {
       var m;
@@ -99,6 +106,10 @@ export default class DashboardRow extends React.Component {
     return name;
   }
 
+  update() {
+
+  }
+
   render() {
     let { selectedToolName, percentage, item } = this.props;
     const {
@@ -116,24 +127,25 @@ export default class DashboardRow extends React.Component {
 
     selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].shortName;
 
+    const currentTool = this.getTool();
     const blackSwan = this.getBlackSwan();
 
     var planIncome = this.getPlanIncome();
 
-    var contracts = Math.floor( depo * (percentage / 100) / this.getTool().guaranteeValue );
+    var contracts = Math.floor( depo * (percentage / 100) / currentTool.guaranteeValue );
     
-    var income = contracts * planIncome / this.getTool().priceStep * this.getTool().stepPrice;
+    var income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
     var incomePercentage = (income / depo) * 100;
     var loadingPercentage = (incomePercentage / percentage) * 100;
     var risk = 
       contracts 
-      * this.getTool().adr1
-      / this.getTool().priceStep
-      * this.getTool().stepPrice 
+      * currentTool.adr1
+      / currentTool.priceStep
+      * currentTool.stepPrice 
       / depo 
       * 100;
     if (mode > 0) {
-      risk = contracts * planIncome / this.getTool().priceStep * this.getTool().stepPrice / depo * 100;
+      risk = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice / depo * 100;
     }
 
     var freeMoney = 100 - (percentage + risk);
@@ -141,11 +153,11 @@ export default class DashboardRow extends React.Component {
     const itemUpdated = {
       percentage,
       // ГО
-      guaranteeValue: this.getTool().guaranteeValue,
+      guaranteeValue: currentTool.guaranteeValue,
       // Контракты
       contracts,
       // Ход
-      planIncome: this.getPlanIncome(),
+      planIncome,
       // Руб
       income,
       // К депо
@@ -160,26 +172,7 @@ export default class DashboardRow extends React.Component {
       selectedToolName,
     };
 
-    const isEqual = (o1, o2) => {
-      for (var p in o1) {
-        if (o1.hasOwnProperty(p)) {
-          if (o1[p] !== o2[p]) {
-            return false;
-          }
-        }
-      }
-      for (var p in o2) {
-        if (o2.hasOwnProperty(p)) {
-          if (o1[p] !== o2[p]) {
-            return false;
-          }
-        }
-      }
-      return true;
-    };
-
     if (!isEqual(itemUpdated, item)) {
-      console.log('not equal!', itemUpdated, item);
       onUpdate(itemUpdated);
     }
 
@@ -187,19 +180,33 @@ export default class DashboardRow extends React.Component {
       const className = "dashboard-key__sort-toggle";
       const prop = props.prop;
       return (
-        <button 
-          className={
-            []
-              .concat(className)
-              .concat(prop === sortProp ? "active" : "")
-              .concat(prop === sortProp && !sortDESC ? "reversed" : "")
-              .join(" ")
-              .trim()
-          }
-          onClick={e => onSort(prop, !sortDESC)}
-        >
-          &gt;
-        </button>
+        <div className="dashboard-key__sort-toggle-wrap">
+          <button 
+            className={
+              []
+                .concat(className)
+                .concat(prop === sortProp && sortDESC != null ? "active" : "")
+                .concat(
+                  prop === sortProp && (sortDESC != null && !sortDESC) 
+                    ? "reversed" 
+                    : ""
+                )
+                .join(" ")
+                .trim()
+            }
+            onClick={e => {
+              let val;
+              if (sortDESC == null) {
+                val = true;
+              }
+              else {
+                val = sortDESC ? !sortDESC : undefined;
+              }
+  
+              onSort(prop, val);
+            }}
+          ></button>
+        </div>
       );
     }
 
@@ -269,19 +276,22 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">Ход</span>
           <span className="dashboard-val">
-            {
-              mode == 0
+            {(() => {
+              const fraction = fractionLength(currentTool.priceStep);
+              // console.log(currentTool.priceStep, fraction);
+
+              return mode == 0
                 ? (
-                  <NumericInput 
-                    key={this.getPlanIncome()}
-                    className="dashboard__input" 
-                    defaultValue={this.getPlanIncome()}
-                    format={val => formatNumber( round(val, 4) )}
+                  <NumericInput
+                    key={Math.random()}
+                    className="dashboard__input"
+                    defaultValue={planIncome}
+                    format={val => formatNumber((val).toFixed(fraction))}
                     onBlur={val => onChange("planIncome", val)}
                   />
                 )
-                : formatNumber(round(this.getPlanIncome(), 2))
-            }
+                : formatNumber((planIncome).toFixed(fraction)) 
+            })()}
           </span>
         </div>
         {/* col */}

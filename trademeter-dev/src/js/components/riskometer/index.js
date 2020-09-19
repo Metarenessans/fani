@@ -31,7 +31,6 @@ function draw(data) {
     : val < (100 / 3 * 2)
       ? color[1]
       : color[2];
-  console.log(val, stroke);
 
   chart.annotation().arc({
     start: [0, 1],
@@ -291,7 +290,6 @@ export default class Speedometer extends React.Component {
     this.setState({ value: p_out[4] * 100 }, this.createShape);
 
     window.addEventListener("resize", e => {
-      // console.log("redrawing riskometer");
       this.updateShape();
     });
   }

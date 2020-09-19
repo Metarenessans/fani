@@ -494,12 +494,9 @@ body
     &--first
       text-align: right
 
-      // +sm
-      //   text-align: left
-      //   padding-left: 7em
-
       +xs
         padding-left: 0
+        padding-top: .7em
         text-align: right
 
   &__content1
@@ -543,18 +540,31 @@ body
     font-weight: bold
 
   &__day-select
+    position: relative;
+    top: -.12em;
+    width: 3.5em !important
     margin-right: .15em
-    width: 3.4em !important
 
     font-size: 1em
+
+    +sm
+      width: 4em !important
 
     .ant-select
 
       &-arrow
         right: 0.2em
+        top:   1.4em
+
+        font-size: .6em
+
+        +sm
+          top:   1.4em
 
       &-search__field
         text-align: right
+        line-height: 1em !important
+        padding-top: .2em
 
       &-selection
         border: none
@@ -566,10 +576,15 @@ body
           box-shadow: none
 
         &__rendered
-          margin-right: .75em
+          margin-right: .85em
           margin-left:  0
+          height: 100%
+
+          +sm
+            margin-right: .9em
 
         &-selected-value
+          padding-top: .12em
           float: right
 
           +font("Circe", bold)
@@ -610,6 +625,10 @@ body
 
   &__stats
     --space: 0.85em !important
+
+    .ant-statistic
+      &-title
+        font-weight: normal
 
 .section5
   display: flex
@@ -740,6 +759,8 @@ body
       padding: 0 !important
 
   button[data-type="link"]
+    display: flex
+    align-items: center
     background: none
     border: none
     padding: 0
@@ -759,6 +780,10 @@ body
       color: #bbb
 
       cursor: not-allowed
+
+    svg
+      margin: .3em
+      width: 1.15em
 
   &-controls
     display: flex
@@ -785,6 +810,7 @@ body
       width: 100%
     
     +xs
+      align-items: center
       position: relative
       padding-top: 6.5em
 
@@ -1059,7 +1085,7 @@ body
 
     .ant-input
       height: 1.9em
-      line-height: inherit
+      line-height: 1.65em
 
       font-size: 1em
       text-align: center
@@ -1138,7 +1164,9 @@ body
   height: 58em
 
 /* anychart */
-
+.empty-tooltip-row + br
+  display: none
+  
 .anychart
 
   &-credits

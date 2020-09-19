@@ -28,6 +28,7 @@ import params       from "./utils/params"
 import round        from "./utils/round";
 import formatNumber from "./utils/format-number"
 import typeOf       from "./utils/type-of"
+import promiseWhile from "./utils/promise-while"
 
 import Info                from "./components/Info/Info"
 import Stack               from "./components/stack"
@@ -67,7 +68,7 @@ class App extends React.Component {
       saves:              [],
       currentSaveIndex:   0,
 
-      sortProp:  "guaranteeValue",
+      sortProp:  null,
       sortDESC:  true,
       
       tools: [],
@@ -135,51 +136,86 @@ class App extends React.Component {
   componentDidMount() {
     this.bindEvents();
 
-    this.fetchTools()
-      .then(tools => this.unpackTools(tools))
-      .catch(err => console.log(err));
+    if (dev) {
+      this.fetchTools()
+        .then(tools => this.unpackTools(tools))
+        .catch(err => console.log(err));
+      return;
+    }
 
-    this.fetchDepoStart()
-      .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => console.log(err));
+    const checkIfAuthorized = () => {
+      return new Promise((resolve, reject) => {
+        this.sendRequest("getAuthInfo")
+          .then(res => {
+            if (res.authorized) {
+              this.fetchTools()
+                .then(tools => this.unpackTools(tools))
+                .catch(err => console.log(err));
 
-    this.fetchSaves()
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            let found = false;
-            console.log(saves);
+              this.fetchDepoStart()
+                .then(depo => this.setState({ depo: depo || 10000 }))
+                .catch(err => console.log(err));
 
-            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-              p = p.then(_ => new Promise(resolve => {
-                const save = saves[index];
-                const id   = save.id;
-                this.fetchSaveById(id)
-                  .then(save => {
-                    const corrupt = !this.validateSave(save);
-                    if (!corrupt && !found) {
-                      found = true;
-                      // Try to load it
-                      this.extractSave(Object.assign(save, { id }));
-                      this.setState({ currentSaveIndex: index + 1 });
+              this.fetchSaves()
+                .then(saves => {
+                  if (saves.length) {
+                    const pure = params.get("pure") === "true";
+                    if (!pure) {
+                      let found = false;
+                      console.log(saves);
+
+                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+                        p = p.then(_ => new Promise(resolve => {
+                          const save = saves[index];
+                          const id = save.id;
+                          this.fetchSaveById(id)
+                            .then(save => {
+                              const corrupt = !this.validateSave(save);
+                              if (!corrupt && !found) {
+                                found = true;
+                                // Try to load it
+                                this.extractSave(Object.assign(save, { id }));
+                                this.setState({ currentSaveIndex: index + 1 });
+                              }
+
+                              saves[index].corrupt = corrupt;
+                              this.setState({ saves });
+                              resolve();
+                            });
+                        }));
+                      }
                     }
+                  }
+                  else {
+                    console.log("No saves found!");
+                  }
 
-                    saves[index].corrupt = corrupt;
-                    this.setState({ saves });
-                    resolve();
-                  });
-              }));
+                  this.setState({ saves });
+                })
+                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+
+              resolve();
             }
-          }
-        }
-        else {
-          console.log("No saves found!");
-        }
-
-        this.setState({ saves });
+            else {
+              reject();
+            }
+          })
+          .catch(() => reject())
       })
-      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+    }
+
+    promiseWhile(false, i => !i, () => {
+      return new Promise(resolve => {
+        checkIfAuthorized()
+          .then(() => resolve(true))
+          .catch(() => {
+            console.log("getAuthInfo failed! I'll try again in a second");
+            setTimeout(() => {
+              resolve(false);
+            }, 1000);
+          });
+      });
+    });
   }
 
   showMessageDialog(msg = "") {
@@ -242,30 +278,42 @@ class App extends React.Component {
         var found = false;
         for (var _t of this.state.readyTools) {
           if (_t.code.slice(0, 2) === obj.code.slice(0, 2)) {
+
+            if (obj.code.startsWith("MNU")) {
+              console.log('!!!');
+            }
             
-            Object.assign(obj, Object.assign(_t, { code: obj.code }));
+            obj = Object.assign(obj, Object.assign(_t, { code: obj.code }));
 
             found = true;
             break;
           }
         }
 
+        if (obj.code.startsWith("MNU")) {
+          console.log(obj);
+        }
+
         // We didn't find the tool in pre-written tools
         if (!found) {
+
           
-          var substitute = {
+          let substitute = {
             planIncome: round(obj.price / 10, 2),
-            adr1: round(obj.price / 5,  4),
-            adr2: round(obj.price / 10, 4),
+            adr1:       round(obj.price / 5,  4),
+            adr2:       round(obj.price / 10, 4),
           };
-          Object.assign(obj, substitute);
+
+          obj = Object.assign(obj, substitute);
 
         }
 
+        // console.log(obj);
         t.push(obj);
       }
 
       if (t.length > 0) {
+        // console.log(t);
         let { tools } = this.state;
         const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
         tools = tools.concat(sorted);
@@ -338,7 +386,7 @@ class App extends React.Component {
       }
 
       state.mode = m;
-      state.sortProp = staticParsed.sortProp || "guaranteeValue";
+      state.sortProp = staticParsed.sortProp || null;
       state.sortDESC = staticParsed.sortDESC || true;
       state.depo = staticParsed.depo || this.state.depo;
       state.data = staticParsed.data;
@@ -537,7 +585,7 @@ class App extends React.Component {
 
   getTools() {
     const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools)
+    return [].concat(tools).concat(customTools);
   }
 
   getTitle() {
@@ -553,6 +601,8 @@ class App extends React.Component {
 
   render() {
     const { mode, sortProp, sortDESC } = this.state;
+
+    console.log(this.state.data);
 
     return (
       <div className="page">
@@ -620,22 +670,6 @@ class App extends React.Component {
                       )}
                     </h1>
                   </div>
-
-                  <label className="main-top__mode-select labeled-select">
-                    <span className="labeled-select__label main-top__mode-select-label">
-                      Ход цены
-                    </span>
-                    <Select
-                      key={mode}
-                      value={mode}
-                      onSelect={val => this.setState({ mode: val, changed: true })}
-                    >
-                      <Option key={0} value={0}>Произвольный</Option>
-                      <Option key={1} value={1}>Повышенный</Option>
-                      <Option key={2} value={2}>Аномальный</Option>
-                      <Option key={3} value={3}>Черный лебедь</Option>
-                    </Select>
-                  </label>
 
                   <Radio.Group
                     className="tabs"
@@ -728,15 +762,19 @@ class App extends React.Component {
             <div className="container">
 
               <div className="dashboard">
+                {(() => {
+                  let data = this.state.data;
+                  if (sortProp != null && sortDESC != null) {
+                    console.log(sortProp, sortDESC);
+                    data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
+                  }
 
-                {
-                  this.state.tools.length > 0
-                    ? (
-                      this.state.data
-                        .sort((l, r) => sortDESC ? l[sortProp] - r[sortProp] : r[sortProp] - l[sortProp])
-                        .map((item, index) => 
-                          <DashboardRow 
-                            key={index}
+                  return (
+                    this.state.tools.length > 0
+                      ? (
+                        data.map((item, index) =>
+                          <DashboardRow
+                            key={index + Math.random()}
                             item={item}
                             index={index}
                             sortProp={sortProp}
@@ -748,6 +786,9 @@ class App extends React.Component {
                             planIncome={item.planIncome}
                             tools={this.getTools()}
                             onSort={(sortProp, sortDESC) => {
+                              if (sortProp !== this.state.sortProp) {
+                                sortDESC = true;
+                              }
                               this.setState({ sortProp, sortDESC })
                             }}
                             onUpdate={state => {
@@ -766,18 +807,19 @@ class App extends React.Component {
                               this.setState({ data })
                             }}
                           />
+                        )
                       )
-                    )
-                    : (
-                      <span className="dashboard__loading">
-                        <Spin 
-                          className="dashboard__loading-icon" 
-                          indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                        Подождите, инструменты загружаются...
-                      </span>
-                    )
-                }
-
+                      : (
+                        <span className="dashboard__loading">
+                          <Spin
+                            className="dashboard__loading-icon"
+                            indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
+                            />
+                          Подождите, инструменты загружаются...
+                        </span>
+                      )
+                  );
+                })()}
 
               </div>
 

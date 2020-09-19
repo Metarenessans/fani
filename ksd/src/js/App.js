@@ -75,6 +75,7 @@ class App extends React.Component {
       customTools: [],
       propsToShowArray: [
         "shortName",
+        "code",
         "stepPrice",
         "priceStep",
         "guaranteeValue",
@@ -140,6 +141,11 @@ class App extends React.Component {
       this.fetchTools()
         .then(tools => this.unpackTools(tools))
         .catch(err => console.log(err));
+
+      setTimeout(() => {
+        this.loadFakeSave();
+      }, 1500);
+
       return;
     }
 
@@ -148,52 +154,6 @@ class App extends React.Component {
         this.sendRequest("getAuthInfo")
           .then(res => {
             if (res.authorized) {
-              this.fetchTools()
-                .then(tools => this.unpackTools(tools))
-                .catch(err => console.log(err));
-
-              this.fetchDepoStart()
-                .then(depo => this.setState({ depo: depo || 10000 }))
-                .catch(err => console.log(err));
-
-              this.fetchSaves()
-                .then(saves => {
-                  if (saves.length) {
-                    const pure = params.get("pure") === "true";
-                    if (!pure) {
-                      let found = false;
-                      console.log(saves);
-
-                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-                        p = p.then(_ => new Promise(resolve => {
-                          const save = saves[index];
-                          const id = save.id;
-                          this.fetchSaveById(id)
-                            .then(save => {
-                              const corrupt = !this.validateSave(save);
-                              if (!corrupt && !found) {
-                                found = true;
-                                // Try to load it
-                                this.extractSave(Object.assign(save, { id }));
-                                this.setState({ currentSaveIndex: index + 1 });
-                              }
-
-                              saves[index].corrupt = corrupt;
-                              this.setState({ saves });
-                              resolve();
-                            });
-                        }));
-                      }
-                    }
-                  }
-                  else {
-                    console.log("No saves found!");
-                  }
-
-                  this.setState({ saves });
-                })
-                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
-
               resolve();
             }
             else {
@@ -202,20 +162,101 @@ class App extends React.Component {
           })
           .catch(() => reject())
       })
-    }
+    };
 
+    let counter = 0;
     promiseWhile(false, i => !i, () => {
       return new Promise(resolve => {
+        counter++;
         checkIfAuthorized()
-          .then(() => resolve(true))
+          .then(() => {
+            this.fetchInitialData();
+            resolve(true);
+          })
           .catch(() => {
-            console.log("getAuthInfo failed! I'll try again in a second");
-            setTimeout(() => {
-              resolve(false);
-            }, 1000);
+            if (counter >= 10) {
+              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
+              resolve(true);
+            }
+            else {
+              setTimeout(() => resolve(false), 1000);
+            }
           });
       });
     });
+  }
+
+  loadFakeSave() {
+    let { saves } = this.state;
+    let save = {
+      data: {
+        dateCreate: 1595544839,
+        id: 20,
+        name: "Fresh KSD",
+        static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR - 9.20"},{"percentage":60,"selectedToolName":"BR - 1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN - 9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT - 9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"RVI - 9.20"}],"customTools":[],"current_date":"#"}`
+      },
+      error: false,
+      id: 20
+    };
+
+    const index = 0;
+    this.extractSave(save);
+    this.setState({ currentSaveIndex: index + 1 });
+
+    saves[index] = {
+      id: save.data.id,
+      name: save.data.name,
+      corrupt: false
+    };
+    this.setState({ saves });
+  }
+
+  fetchInitialData() {
+    this.fetchTools()
+      .then(tools => this.unpackTools(tools))
+      .catch(err => console.log(err));
+
+    this.fetchDepoStart()
+      .then(depo => this.setState({ depo: depo || 10000 }))
+      .catch(err => console.log(err));
+
+    this.fetchSaves()
+      .then(saves => {
+        if (saves.length) {
+          const pure = params.get("pure") === "true";
+          if (!pure) {
+            let found = false;
+            console.log(saves);
+
+            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+              p = p.then(_ => new Promise(resolve => {
+                const save = saves[index];
+                const id = save.id;
+                this.fetchSaveById(id)
+                  .then(save => {
+                    const corrupt = !this.validateSave(save);
+                    if (!corrupt && !found) {
+                      found = true;
+                      // Try to load it
+                      this.extractSave(Object.assign(save, { id }));
+                      this.setState({ currentSaveIndex: index + 1 });
+                    }
+
+                    saves[index].corrupt = corrupt;
+                    this.setState({ saves });
+                    resolve();
+                  });
+              }));
+            }
+          }
+        }
+        else {
+          console.log("No saves found!");
+        }
+
+        this.setState({ saves });
+      })
+      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
   }
 
   showMessageDialog(msg = "") {
@@ -255,8 +296,10 @@ class App extends React.Component {
 
       var t = [];
       for (let tool of tools) {
-        if (tool.price == 0 || !tool.volume) {
-          continue;
+        if (dev) {
+          if (tool.price == 0 || !tool.volume) {
+            continue;
+          }
         }
 
         var obj = {
@@ -277,31 +320,28 @@ class App extends React.Component {
         // Check if we already have pre-written tool
         var found = false;
         for (var _t of this.state.readyTools) {
-          if (_t.code.slice(0, 2) === obj.code.slice(0, 2)) {
+          if (_t.code.toLowerCase().slice(0, 2) === obj.code.toLowerCase().slice(0, 2)) {
 
-            if (obj.code.startsWith("MNU")) {
-              // console.log('!!!');
-            }
+            let code = obj.code;
             
-            obj = Object.assign(obj, Object.assign(_t, { code: obj.code }));
+            obj = Object.assign(obj, _t);
+            obj.code = code;
 
             found = true;
             break;
           }
         }
 
-        if (obj.code.startsWith("MNU")) {
-          // console.log(obj);
-        }
-
         // We didn't find the tool in pre-written tools
         if (!found) {
 
+          const blackSwan = obj.price * 0.2;
+          const adr2 = blackSwan / 10;
           
           let substitute = {
             planIncome: round(obj.price / 10, 2),
-            adr1:       round(obj.price / 5,  4),
-            adr2:       round(obj.price / 10, 4),
+            adr1:       round(adr2 * 1.5,  4),
+            adr2:       round(adr2, 4),
           };
 
           obj = Object.assign(obj, substitute);
@@ -313,10 +353,8 @@ class App extends React.Component {
       }
 
       if (t.length > 0) {
-        // console.log(t);
         let { tools } = this.state;
-        const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
-        tools = tools.concat(sorted);
+        tools = tools.concat(t).sort((a, b) => a.shortName.localeCompare(b.shortName));
 
         this.setState({ tools }, resolve);
       }
@@ -349,6 +387,8 @@ class App extends React.Component {
   }
 
   extractSave(save) {
+    console.log(save);
+
     const onError = e => {
       this.showMessageDialog(String(e));
 
@@ -378,7 +418,7 @@ class App extends React.Component {
         return item;
       });
 
-      console.log("staticParsed", staticParsed);
+      // console.log("staticParsed", staticParsed);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -763,7 +803,6 @@ class App extends React.Component {
                 {(() => {
                   let data = this.state.data;
                   if (sortProp != null && sortDESC != null) {
-                    console.log(sortProp, sortDESC);
                     data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
                   }
 
@@ -797,6 +836,9 @@ class App extends React.Component {
                             onChange={(prop, val) => {
                               const { data } = this.state;
                               data[index][prop] = val;
+                              if (prop == "selectedToolName") {
+                                data[index].planIncome = null;
+                              }
                               this.setState({ data, changed: true });
                             }}
                             onDelete={index => {
@@ -1044,6 +1086,7 @@ class App extends React.Component {
 
         <Dialog
           id="dialog3"
+          title="Инструменты"
           className=""
           confirmText="Добавить"
           onConfirm={e => {
@@ -1111,6 +1154,7 @@ class App extends React.Component {
               <thead className="table-header">
                 <tr className="table-tr">
                   <th className="config-th table-th">Инструмент</th>
+                  <th className="config-th table-th">Код</th>
                   <th className="config-th table-th">Цена шага</th>
                   <th className="config-th table-th">Шаг цены</th>
                   <th className="config-th table-th">ГО</th>

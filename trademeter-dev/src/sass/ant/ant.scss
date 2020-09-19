@@ -2511,10 +2511,11 @@ html {
   -moz-osx-font-smoothing: grayscale;
   position: absolute;
   top: 50%;
-  right: 11px;
-  margin-top: -6px;
+  right: 1em;
+  margin-top: -.45em;
   color: rgba(0, 0, 0, 0.25);
-  font-size: 12px;
+  // font-size: 12px;
+  font-size: .7em;
   line-height: 1;
   -webkit-transform-origin: 50% 50%;
       -ms-transform-origin: 50% 50%;
@@ -2642,6 +2643,7 @@ html {
 }
 .ant-select-selection--single .ant-select-selection__rendered {
   margin-right: 24px;
+  padding-top: .05em;
 }
 .ant-select-no-arrow .ant-select-selection__rendered {
   margin-right: 11px;
@@ -5020,10 +5022,10 @@ html {
 .ant-radio-group {
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
-  margin: 0;
+  // margin: 0;
   padding: 0;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
+  // font-size: 14px;
   font-variant: tabular-nums;
   line-height: 1.5;
   list-style: none;
@@ -5034,10 +5036,10 @@ html {
 .ant-radio-wrapper {
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
-  margin: 0;
+  // margin: 0;
   padding: 0;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
+  // font-size: 14px;
   font-variant: tabular-nums;
   line-height: 1.5;
   list-style: none;
@@ -5052,10 +5054,10 @@ html {
 .ant-radio {
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
-  margin: 0;
+  // margin: 0;
   padding: 0;
   color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
+  // font-size: 14px;
   font-variant: tabular-nums;
   line-height: 1.5;
   list-style: none;

@@ -1,12 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {
-  Button,
-} from 'antd/es'
+import { Button } from 'antd/es'
+
+import CrossButton from "../cross-button"
 
 import "./style.sass"
-
-var bodyHTML = document.createElement(null);
 
 var dialogAPI = {};
 
@@ -25,7 +23,8 @@ dialogAPI.focusLastDescendant = element => {
 }
 
 dialogAPI.getCurrentDialog = () => {
-  return document.querySelector(".dialog:not([hidden])");
+  const dialogs = document.querySelectorAll(".dialog:not([hidden])");
+  return dialogs[dialogs.length - 1];
 }
 
 dialogAPI.trapFocus = event => {
@@ -50,17 +49,17 @@ dialogAPI.trapFocus = event => {
 }
 
 dialogAPI.handleEscape = (event) => {
-  const key = event.which || event.keyCode;
+  // const key = event.which || event.keyCode;
 
-  if (key === 27) {
-    dialogAPI.close();
-    event.stopPropagation();
-  }
+  // if (key === 27) {
+  //   dialogAPI.closeLast();
+  //   event.stopPropagation();
+  // }
 }
 
 dialogAPI.handleClick = event => {
   if (event.target == dialogAPI.getCurrentDialog()) {
-    dialogAPI.close();
+    dialogAPI.closeLast();
   }
 }
 
@@ -84,11 +83,28 @@ dialogAPI.open = (dialogID, initiator) => {
   // Close dialog on Escape
   document.addEventListener("keyup", dialogAPI.handleEscape);
   // Close on click outside the dialog
-  document.addEventListener("click", dialogAPI.handleClick);
+  // document.addEventListener("click", dialogAPI.handleClick);
 }
 
-dialogAPI.close = () => {
+dialogAPI.closeLast = () => {
   const dialogHTML = dialogAPI.getCurrentDialog();
+  if (!dialogHTML) {
+    return;
+  }
+  // Hide dialog
+  dialogHTML.setAttribute("hidden", "");
+  // Enable scrolling
+  document.body.classList.remove("scroll-disabled");
+  // Release focus
+  document.removeEventListener("focus", dialogAPI.trapFocus, true);
+  // Return focus to initiator
+  if (dialogHTML.initiator) {
+    dialogHTML.initiator.focus();
+  }
+}
+
+dialogAPI.close = dialogID => {
+  const dialogHTML = document.getElementById(dialogID);;
   if (!dialogHTML) {
     return;
   }
@@ -116,11 +132,22 @@ class Dialog extends React.Component {
     }
   }
 
+  componentDidMount() {
+    window.addEventListener("keyup", event => {
+      const key = event.which || event.keyCode;
+
+      if (key === 27) {
+        this.onClose();
+        event.stopPropagation();
+      };
+    })
+  }
+
   onConfirm() {
     const { onConfirm } = this.props;
     if (onConfirm) {
       if (onConfirm()) {
-        dialogAPI.close();
+        dialogAPI.closeLast();
       }
     }
   }
@@ -130,20 +157,23 @@ class Dialog extends React.Component {
     var callback = onCancel || onClose;
     if (callback) {
       if (callback()) {
-        dialogAPI.close();
+        dialogAPI.closeLast();
       }
     }
     else {
-      dialogAPI.close();
+      dialogAPI.closeLast();
     }
   }
 
   onClose() {
-    const { onClose } = this.props
+    const { onClose } = this.props;
     if (onClose) {
       if (onClose()) {
-        dialogAPI.close()
+        dialogAPI.closeLast();
       }
+    }
+    else {
+      dialogAPI.closeLast();
     }
   }
 
@@ -152,10 +182,16 @@ class Dialog extends React.Component {
       id,
       className,
       title,
+
+      footer,
       hideFooter,
+
       confirmText,
+      confirmClass,
       hideConfirm,
+      
       cancelText,
+      cancelClass,
       hideCancel,
     } = this.props;
     className = className || "";
@@ -177,52 +213,45 @@ class Dialog extends React.Component {
         }}>
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${blockClass}-content`}>
-
           {
-
-            <div className={
-              ["card"]
-                .concat(className)
-                .join(" ")
-                .trim()
-            }>
+            <div className={["card"].concat(className).join(" ").trim()}>
               <h2 className={`${blockClass}__title`}>{title}</h2>
 
               {this.props.children}
 
-              {
-                !hideFooter && (
+              {footer 
+                ? footer
+                : !hideFooter && (
+                <div className={`${blockClass}-footer-wrap`}>
+                  <footer className={`${blockClass}-footer`}>
 
-                  <div className={`${blockClass}-footer-wrap`}>
-                    <footer className={`${blockClass}-footer`}>
+                    {!hideCancel && (
+                      <Button
+                        className={[].concat("custom-btn").concat(cancelClass).join(" ").trim()}
+                        onClick={() => this.onCancel()}>
+                        {cancelText ? cancelText : "Отмена"}
+                      </Button>
+                    )}
 
-                      {!hideCancel && (
-                        <Button
-                          className="custom-btn"
-                          onClick={() => this.onCancel()}>
-                          {cancelText ? cancelText : "Отмена"}
-                        </Button>
-                      )}
+                    {!hideConfirm && (
+                      <Button
+                        className="custom-btn custom-btn--filled"
+                        type="primary"
+                        onClick={() => this.onConfirm()}>
+                        {confirmText ? confirmText : "Сохранить"}
+                      </Button>
+                    )}
 
-                      {!hideConfirm && (
-                        <Button
-                          className="custom-btn custom-btn--filled"
-                          type="primary"
-                          onClick={() => this.onConfirm()}>
-                          {confirmText ? confirmText : "Сохранить"}
-                        </Button>
-                      )}
+                  </footer>
+                </div>
+              )}
 
-                    </footer>
-                  </div>
-
-                )
-              }
-
+              <CrossButton 
+                className={`${blockClass}__close`}
+                onClick={e => this.onClose()}
+              />
             </div>
-
           }
-
         </div>
         <div tabIndex="0" aria-hidden="true"></div>
       </div>

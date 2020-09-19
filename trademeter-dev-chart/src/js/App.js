@@ -508,14 +508,18 @@ export default class App extends React.Component {
       series3.tooltip().displayMode("separated");
       series3.tooltip().useHtml(true);
       series3.tooltip().format(e => {
-        let svg = `
-          <svg viewBox="0 0 10 10" width="1em" height="1em" 
-               fill="#c46d1a" style="position: relative; top: 0.1em">
-            <rect x="0" y="0" width="10" height="10" />
-          </svg>
-        `;
-
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+        const lastFilledDay = this.getLastFilledDayNumber();
+        if (e.index > lastFilledDay) {
+          let svg = `
+            <svg viewBox="0 0 10 10" width="1em" height="1em" 
+                 fill="#c46d1a" style="position: relative; top: 0.1em">
+              <rect x="0" y="0" width="10" height="10" />
+            </svg>
+          `;
+  
+          return `${svg} ${e.seriesName}: ${formatNumber(Math.floor(e.value))}`
+        }
+        else return `<span class="empty-tooltip-row"></span>`;
       });
 
       // Line color
@@ -986,7 +990,7 @@ export default class App extends React.Component {
       customIncome = data[i].customIncome;
     }
 
-    const scaleInitial = round(this.getRate(), 3);
+    const scaleInitial = this.getRate();
     let _scale  = scaleInitial;
     if (!rebuild && data && data[i] && data[i].scale != null) {
       _scale = data[i].scale;
@@ -1177,9 +1181,9 @@ export default class App extends React.Component {
     // Рекоммендуемый план
     let recommendData = [];
     if (factDays.length) {
-      const rateRecommended = round(this.getRateRecommended(), 3);
+      const rateRecommended = this.getRateRecommended();
 
-      const factLastDay = factDays[factDays.length - 1];
+      const factLastDay = this.getLastFilledDayNumber();
       recommendData = new Array(days[mode] - factLastDay).fill(0);
       recommendData[0] = data[factLastDay].depoEnd;
       for (let i = 1; i < recommendData.length; i++) {
@@ -1187,11 +1191,11 @@ export default class App extends React.Component {
       }
 
       recommendData = recommendData.map((value, index) => {
-          return {
-            x:     String(factLastDay + index + 1),
-            value: value
-          }
-        });
+        return {
+          x:     String(factLastDay + index + 1),
+          value: value
+        }
+      });
     }
 
     if (isInit) {
@@ -1492,6 +1496,12 @@ export default class App extends React.Component {
   // ==================
   // Getters
   // ==================
+
+  getLastFilledDayNumber() {
+    const { realData } = this.state;
+    const factDays = Object.keys(realData).map(value => Number(value));
+    return factDays[factDays.length - 1] - 1;
+  }
 
   /**
    * @returns {number} минимальная доходность в день
@@ -3153,7 +3163,6 @@ export default class App extends React.Component {
                 lastFilledDay = 0;
               }
               lastFilledDay = Number(lastFilledDay) + 1;
-              console.log(currentDay, lastFilledDay);
 
               const rate  = this.getRate();
               const scale = (data[currentDay - 1].scale != null) ? data[currentDay - 1].scale : 0;

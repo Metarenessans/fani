@@ -74,11 +74,6 @@
 
       transition: all .3s ease;
 
-      &:hover,
-      &:focus {
-        // right: -0.25em;
-      }
-
       @include sm() {
         right: -0.5em;
         top:   -0.5em;
@@ -146,6 +141,10 @@
 
       &:nth-child(2n) {
         align-items: flex-end;
+
+        @include xs() {
+          padding-right: 1em;
+        }
         
         #{$root}-key {
           position: relative;
@@ -171,35 +170,51 @@
       display: block;
       margin-bottom: 0;
       padding: 0 .35em;
+      // padding-right: .5em;
+      // margin-right: 1em;
       color: #777;
     }
 
     &__sort-toggle {
       position: absolute;
       right: -1.15em;
-      top:     .1em;
+      top:      .5em;
       transform: rotate(90deg);
       transform-origin: center;
-
+      width:  2rem;
+      height: 2rem;
+      
+      display: flex;
+      justify-content: center;
+      align-items: center;
       background: none;
       border: none;
       padding: 0;
       width:  1em;
       height: 1em;
 
+      border:      .5em solid transparent;
+      border-left: .5em solid currentColor;
+
+      font-size: .8em;
+
       cursor: pointer;
 
-      @include sm() {
-        right: -.65em;
+      @include xs() {
+        right: -0.8em;
       }
 
       &.active {
-        color: var(--primary-color);
-        font-weight: bold;
+        color: var(--contrast-color);
       }
-
+      
       &.reversed {
         transform: rotate(270deg);
+        top: -.1em;
+      }
+
+      &-wrap {
+        
       }
     }
   }

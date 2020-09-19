@@ -13,7 +13,7 @@ export default class CustomSelect extends React.Component {
 
     this.format = this.props.format || (value => value);
 
-    this.typing = "";
+    this.inputElement = null;
 
     this.state = {
       options: this.props.options || [],
@@ -59,8 +59,6 @@ export default class CustomSelect extends React.Component {
   onSelect(value, index) {
     const { options } = this.state;
 
-    this.typing = "";
-
     // Option exists
     if (options.indexOf(value) != -1) {
       this.setState({ index: options.indexOf(value) });
@@ -102,12 +100,20 @@ export default class CustomSelect extends React.Component {
         showSearch
         filterOption={false}
         style={{ width: "100%" }}
-        onSearch={e => {
-          this.typing = e;
+        onSearch={e => {}}
+        onBlur={e => {
+          var value = +this.inputValue;
+          if (!isNaN(value)) {
+            value = this.limitValue(value);
+            this.onSelect(value);
+          }
+
+          // TODO: remove?
+          this.inputElement = null;
         }}
-        onBlur={e => {}}
         onChange={(index, element) => {
-          if (this.typing) {
+          // Предотвращаем вызов this.onSelect() дважды
+          if (this.inputElement && this.inputElement.value) {
             return;
           }
           
@@ -117,6 +123,13 @@ export default class CustomSelect extends React.Component {
           this.onSelect(value, index);
         }}
         onInputKeyDown={e => {
+          if (!this.inputElement) {
+            this.inputElement = e.target;
+            this.inputElement.addEventListener("input", (event) => {
+              this.inputValue = event.target.value; 
+            })
+          }
+
           if (e.keyCode == 13 || e.keyCode == 27) {
             e.preventDefault();
             e.stopPropagation();
@@ -124,7 +137,6 @@ export default class CustomSelect extends React.Component {
             if (e.target.value) {
   
               var value = +e.target.value;
-              
               if (!isNaN(value)) {
                 value = this.limitValue(value);
                 this.onSelect(value);

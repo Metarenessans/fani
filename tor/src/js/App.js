@@ -48,7 +48,7 @@ const dev = false;
 
 class App extends React.Component {
 
-  constructor(props) {
+constructor(props) {
     super(props);
 
     this.initial = {
@@ -139,65 +139,6 @@ class App extends React.Component {
         this.sendRequest("getAuthInfo")
           .then(res => {
             if (res.authorized) {
-              this.fetchTools()
-                .then(tools => this.unpackTools(tools))
-                .catch(err => console.log(err))
-
-              this.fetchDepoStart()
-                .then(depo => {
-                  var { items } = this.state;
-
-                  if (!depo) {
-                    depo = this.state.depo;
-                  }
-                  else {
-                    for (const item of items) {
-                      item.drawdown = depo * .1;
-                    }
-                    console.log(items);
-                  }
-
-                  this.setState({ depo, items });
-                })
-                .catch(err => console.log(err));
-
-              this.fetchSaves()
-                .then(saves => {
-                  if (saves.length) {
-                    const pure = params.get("pure") === "true";
-                    if (!pure) {
-                      let found = false;
-                      console.log(saves);
-
-                      for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-                        p = p.then(_ => new Promise(resolve => {
-                          const save = saves[index];
-                          const id = save.id;
-                          this.fetchSaveById(id)
-                            .then(save => {
-                              const corrupt = !this.validateSave(save);
-                              if (!corrupt && !found) {
-                                found = true;
-                                // Try to load it
-                                this.extractSave(Object.assign(save, { id }));
-                                this.setState({ currentSaveIndex: index + 1 });
-                              }
-
-                              saves[index].corrupt = corrupt;
-                              this.setState({ saves });
-                              resolve();
-                            });
-                        }));
-                      }
-                    }
-                  }
-                  else {
-                    console.log("No saves found!");
-                  }
-
-                  this.setState({ saves });
-                })
-                .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
               resolve();
             }
             else {
@@ -206,20 +147,90 @@ class App extends React.Component {
           })
           .catch(() => reject())
       })
-    }
+    };
 
+    let counter = 0;
     promiseWhile(false, i => !i, () => {
       return new Promise(resolve => {
+        counter++;
         checkIfAuthorized()
-          .then(() => resolve(true))
+          .then(() => {
+            this.fetchInitialData();
+            resolve(true);
+          })
           .catch(() => {
-            console.log("getAuthInfo failed! I'll try again in a second");
-            setTimeout(() => {
-              resolve(false);
-            }, 1000);
+            if (counter >= 10) {
+              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
+              resolve(true);
+            }
+            else {
+              setTimeout(() => resolve(false), 1000);
+            }
           });
       });
     });
+  }
+
+  fetchInitialData() {
+    this.fetchTools()
+      .then(tools => this.unpackTools(tools))
+      .catch(err => console.log(err))
+
+    this.fetchDepoStart()
+      .then(depo => {
+        var { items } = this.state;
+
+        if (!depo) {
+          depo = this.state.depo;
+        }
+        else {
+          for (const item of items) {
+            item.drawdown = depo * .1;
+          }
+          console.log(items);
+        }
+
+        this.setState({ depo, items });
+      })
+      .catch(err => console.log(err));
+
+    this.fetchSaves()
+      .then(saves => {
+        if (saves.length) {
+          const pure = params.get("pure") === "true";
+          if (!pure) {
+            let found = false;
+            console.log(saves);
+
+            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
+              p = p.then(_ => new Promise(resolve => {
+                const save = saves[index];
+                const id = save.id;
+                this.fetchSaveById(id)
+                  .then(save => {
+                    const corrupt = !this.validateSave(save);
+                    if (!corrupt && !found) {
+                      found = true;
+                      // Try to load it
+                      this.extractSave(Object.assign(save, { id }));
+                      this.setState({ currentSaveIndex: index + 1 });
+                    }
+
+                    saves[index].corrupt = corrupt;
+                    this.setState({ saves });
+                    resolve();
+                  });
+              }));
+            }
+          }
+        }
+        else {
+          console.log("No saves found!");
+        }
+
+        this.setState({ saves });
+      })
+      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
   }
 
   unpackTools(tools) {
@@ -232,9 +243,9 @@ class App extends React.Component {
   
       var t = [];
       for (let tool of tools) {
-        if (tool.price == 0 || !tool.volume) {
-          continue;
-        }
+        // if (tool.price == 0 || !tool.volume) {
+        //   continue;
+        // }
   
         var obj = {
           code:      tool.code || "code",
@@ -253,8 +264,7 @@ class App extends React.Component {
   
       if (t.length > 0) {
         let { tools } = this.state;
-        const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
-        tools = tools.concat(sorted);
+        tools = tools.concat(t).sort((a, b) => a.shortName.localeCompare(b.shortName));
 
         this.setState({ tools }, resolve);
       }

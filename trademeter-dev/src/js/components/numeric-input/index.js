@@ -56,7 +56,7 @@ export default class NumericInput extends React.Component {
     if (regexp.test(value)) {
       this.setState({ value });
       if (onChange) {
-        onChange(e, value);
+        onChange(e, value, this);
       }
     }
   }
