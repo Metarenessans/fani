@@ -1,4 +1,3 @@
-@import "components/breadcrumbs"
 @import "components/dashboard"
 @import "components/tabs"
   
@@ -98,12 +97,13 @@
     
     &__settings
       position: absolute
-      right: 0
-      bottom: 1em
+      right:  0
+      bottom: .25em
 
       +sm
         position: static
-        margin-top: 1.5em
+        margin: 1.5em auto 0
+        
         font-size: 1.5em
 
       .settings-button__icon
@@ -112,8 +112,8 @@
     &__select
       position: absolute
       right: 0
-      top:   0
-      width: 15rem
+      top:   .5em
+      width: 20em
 
       color: white !important
 
@@ -180,6 +180,7 @@
           margin-right: 0
 
     &__left
+      align-items: stretch
       flex-shrink: 0
       width: 30%
 
@@ -191,6 +192,7 @@
 
     &__right
       flex-grow: 1
+      align-items: stretch
 
       +sm
         width: 48%
@@ -221,7 +223,14 @@
         font-size: 1.2em
         font-weight: 700
 
-        // color: #1b1b1b
+      .ant-input
+        width: 6.5em
+        
+        font-size: 1em
+        text-align: right
+
+        &-suffix
+          font-size: 1em
 
     &-options
       --gap: 1em
@@ -269,6 +278,7 @@
             display: flex
             justify-content: center
             align-items: center
+            text-transform: uppercase
 
             $ratio: 1.5
 
@@ -276,18 +286,18 @@
             height: (5em / $ratio)
             border-radius: (2.5em / $ratio)
             border: 0.15em solid currentColor
-            line-height: 1.2
+            line-height: 1em
             font-size: 1.4em
             text-align: center
 
             +sm
-              width:  6em
-              height: 3.5em
+              width:  7em
+              height: 3em
               border-radius: 2.75em
             
             +xs
               height: 3.2em
-              font-size: 2em
+              font-size: 1.8em
 
   &-save
     font-size: 1.5em

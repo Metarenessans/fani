@@ -1,0 +1,54 @@
+.table {
+  width: 100%;
+  max-width: 100%;
+  background-color: white;
+  border-collapse: collapse;
+
+  font-size: 1.6em;
+
+  &-title {
+    text-align: center;
+    font-size: 2.4em;
+    font-weight: bold;
+  }
+  
+  &-th,
+  &-td {
+    padding: 0.2em;
+    text-align: center;
+  }
+
+  &-th {
+    min-width: 5em;
+    height: 3em;
+    border-bottom: .2em solid #eee;
+
+    &--small {
+      font-size: .8em
+    }
+  }
+
+  &-td {
+    height: 4em;
+    word-break: break-word;
+
+    &-parent { 
+      position: relative
+    } 
+  }
+  
+  .ant-input {
+    // width:  4.1em;
+    width: 100%;
+    height: auto;
+    padding: .1em;
+
+    font-size: 1em;
+    line-height: 1;
+    text-align: center;
+
+    @include sm() {
+      width: 100%
+    }
+  }
+}

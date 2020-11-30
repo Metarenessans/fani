@@ -1,6 +1,4 @@
 const path = require("path");
-const fs = require("fs");
-
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const webpack = require("webpack");
 
@@ -9,8 +7,8 @@ module.exports = (env, options) => {
 
   const entry = "./src/js/index.js";
   const output = "index";
-  const devtool = prod ? false : "eval-sourcemap";
-  const publicPath = "build";
+  const devtool = prod ? "source-map" : "eval-sourcemap";
+  const publicPath = "public";
 
   // Rules
 
@@ -22,14 +20,13 @@ module.exports = (env, options) => {
       loader: "postcss-loader",
       options: {
         plugins: [
-          require("postcss-custom-properties"),
+          require("postcss-custom-properties")(),
           require("autoprefixer")({
             overrideBrowserslist: ["ie >= 8", "last 4 version"]
           }),
-          // require("postcss-combine-media-query"),
           require("postcss-csso"),
         ],
-        // sourceMap: true
+        sourceMap: true
       }
     },
     "resolve-url-loader",
@@ -37,7 +34,7 @@ module.exports = (env, options) => {
     {
       loader: "sass-loader",
       options: {
-        prependData: `$fonts: '../${prod ? "" : "build/"}fonts/';`,
+        prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
         webpackImporter: false,
         sassOptions: {
           publicPath: "./",
@@ -63,6 +60,11 @@ module.exports = (env, options) => {
     }
   };
 
+  const plugins = [
+    new webpack.DefinePlugin({ dev: !prod }),
+    new ExtractTextPlugin("css/style.css"),
+  ];
+
   const old = {
     entry,
     output: {
@@ -78,7 +80,10 @@ module.exports = (env, options) => {
           use: {
             loader: "babel-loader",
             options: {
-              presets: "env"
+              presets: [
+                "@babel/preset-env",
+                "@babel/preset-react"
+              ]
             }
           }
         },
@@ -87,7 +92,7 @@ module.exports = (env, options) => {
           use: prod
             ?
               ExtractTextPlugin.extract({
-                publicPath: "/build",
+                publicPath: "/public",
                 use: cssPipeline,
                 fallback: "style-loader",
               })
@@ -97,9 +102,7 @@ module.exports = (env, options) => {
         imageRule,
       ]
     },
-    plugins: [
-      new ExtractTextPlugin("css/style.css")
-    ]
+    plugins
   };
 
   const modern = {
@@ -119,15 +122,22 @@ module.exports = (env, options) => {
       rules: [
         {
           test: /\.js$/,
-          exclude: "/node_modules/",
-          use: "babel-loader",
+          exclude: /node_modules/,
+          use: {
+            loader: "babel-loader",
+            options: {
+              presets: [
+                "@babel/preset-react"
+              ]
+            }
+          }
         },
         {
           test: /\.s[ac]ss$/i,
           use: prod
             ?
               ExtractTextPlugin.extract({
-                publicPath: "/build",
+                publicPath: "/public",
                 use: cssPipeline,
                 fallback: "style-loader",
               })
@@ -137,10 +147,7 @@ module.exports = (env, options) => {
         imageRule,
       ]
     },
-    plugins: [
-      new ExtractTextPlugin("css/style.css"),
-      new webpack.DefinePlugin({ dev: !prod }),
-    ]
+    plugins
   };
 
   return [prod && old, modern].filter(value => !!value)

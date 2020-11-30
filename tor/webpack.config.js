@@ -1,20 +1,76 @@
 const path = require("path");
-
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const webpack = require("webpack");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
 
   const entry = "./src/js/index.js";
-  const devtool = prod ? false : "eval-sourcemap";
+  const output = "index";
+  const devtool = prod ? "source-map" : "eval-sourcemap";
+  const publicPath = "public";
+
+  // Rules
+
+  const cssPipeline = [
+    // Translates CSS into CommonJS
+    "css-loader?url=false",
+    // PostCSS
+    {
+      loader: "postcss-loader",
+      options: {
+        plugins: [
+          require("postcss-custom-properties")(),
+          require("autoprefixer")({
+            overrideBrowserslist: ["ie >= 8", "last 4 version"]
+          }),
+          require("postcss-csso"),
+        ],
+        sourceMap: true
+      }
+    },
+    "resolve-url-loader",
+    // Compiles Sass to CSS
+    {
+      loader: "sass-loader",
+      options: {
+        prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
+        webpackImporter: false,
+        sassOptions: {
+          publicPath: "./",
+          outputStyle: "expanded",
+        },
+      },
+    }
+  ];
+
+  const fontRule = {
+    test: /\.(woff|woff2|eot|ttf|otf)$/,
+    loader: "file-loader",
+    query: {
+      name: "[path][name].[ext]"
+    }
+  };
+
+  const imageRule = {
+    test: /\.(png|jpe?g|gif|webp)$/,
+    loader: "file-loader",
+    query: {
+      name: "[path][name].[ext]"
+    }
+  };
+
+  const plugins = [
+    new webpack.DefinePlugin({ dev: !prod }),
+    new ExtractTextPlugin("css/style.css"),
+  ];
 
   const old = {
     entry,
-    devtool: false,
     output: {
-      path: path.resolve(__dirname, "./build"),
-      filename: "index.js",
-      publicPath: "build/"
+      path: path.resolve(__dirname, publicPath),
+      filename: `${output}.js`,
+      publicPath
     },
     module: {
       rules: [
@@ -24,231 +80,75 @@ module.exports = (env, options) => {
           use: {
             loader: "babel-loader",
             options: {
-              presets: "env"
+              presets: [
+                "@babel/preset-env",
+                "@babel/preset-react"
+              ]
             }
           }
         },
         {
           test: /\.s[ac]ss$/i,
           use: prod
-            ? (
+            ?
               ExtractTextPlugin.extract({
+                publicPath: "/public",
+                use: cssPipeline,
                 fallback: "style-loader",
-                use: [
-                  // Translates CSS into CommonJS
-                  "css-loader?url=false",
-                  // Autoprefixer
-                  {
-                    loader: "postcss-loader",
-                    options: {
-                      plugins: [
-                        require("postcss-custom-properties"),
-                        require("autoprefixer")({
-                          overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                        }),
-                        // require("group-css-media-queries")
-                        require("postcss-csso"),
-                      ],
-                      // sourceMap: true
-                    }
-                  },
-                  {
-                    loader: "resolve-url-loader",
-                  },
-                  // Compiles Sass to CSS
-                  {
-                    loader: "sass-loader",
-                    options: {
-                      webpackImporter: false,
-                      sassOptions: {
-                        publicPath: "./",
-                        // outputStyle: "compressed",
-                      },
-                    },
-                  }
-                ],
-                publicPath: "/build"
               })
-            )
-            : (
-              [
-                // Creates `style` nodes from JS strings
-                "style-loader",
-                // Translates CSS into CommonJS
-                "css-loader?url=false",
-                // Autoprefixer
-                {
-                  loader: "postcss-loader",
-                  options: {
-                    plugins: [
-                      require("postcss-custom-properties"),
-                      require("autoprefixer")({
-                        overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                      }),
-                      // require("group-css-media-queries")
-                      // require("postcss-csso"),
-                    ],
-                    sourceMap: true
-                  }
-                },
-                {
-                  loader: "resolve-url-loader",
-                },
-                // Compiles Sass to CSS
-                {
-                  loader: "sass-loader",
-                  options: {
-                    webpackImporter: false,
-                    sassOptions: {
-                      // outputStyle: "compressed",
-                      publicPath: "./"
-                    },
-                  },
-                }
-              ]
-            )
+            : ["style-loader"].concat(cssPipeline)
         },
-        {
-          test: /\.(woff|woff2|eot|ttf|otf)$/,
-          loader: "file-loader",
-          query: {
-            name: "[path][name].[ext]"
-          }
-        },
-        {
-          test: /\.(png|jpe?g|gif|webp)$/,
-          loader: "file-loader",
-          query: {
-            name: "[path][name].[ext]"
-          }
-        },
+        fontRule,
+        imageRule,
       ]
     },
-    plugins: [
-      new ExtractTextPlugin("css/style.css")
-    ]
+    plugins
   };
 
   const modern = {
     entry,
     devtool,
     output: {
-      path: path.resolve(__dirname, "./build"),
-      filename: "index-es6.js",
-      publicPath: "build/"
+      path: path.resolve(__dirname, publicPath),
+      filename: `${output}-es6.js`,
+      publicPath
     },
     devServer: {
-      hot: true,
-      overlay: true,
       contentBase: path.join(__dirname, ""),
+      overlay: true,
+      hot: true,
     },
     module: {
       rules: [
         {
           test: /\.js$/,
-          exclude: "/node_modules/",
-          use: "babel-loader",
+          exclude: /node_modules/,
+          use: {
+            loader: "babel-loader",
+            options: {
+              presets: [
+                "@babel/preset-react"
+              ]
+            }
+          }
         },
         {
           test: /\.s[ac]ss$/i,
           use: prod
-            ? (
+            ?
               ExtractTextPlugin.extract({
+                publicPath: "/public",
+                use: cssPipeline,
                 fallback: "style-loader",
-                use: [
-                  // Translates CSS into CommonJS
-                  "css-loader?url=false",
-                  // Autoprefixer
-                  {
-                    loader: "postcss-loader",
-                    options: {
-                      plugins: [
-                        require("postcss-custom-properties"),
-                        require("autoprefixer")({
-                          overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                        }),
-                        // require("group-css-media-queries")
-                        require("postcss-csso"),
-                      ],
-                      // sourceMap: true
-                    }
-                  },
-                  {
-                    loader: "resolve-url-loader",
-                  },
-                  // Compiles Sass to CSS
-                  {
-                    loader: "sass-loader",
-                    options: {
-                      webpackImporter: false,
-                      sassOptions: {
-                        publicPath: "./",
-                        // outputStyle: "compressed",
-                      },
-                    },
-                  }
-                ],
-                publicPath: "/build"
               })
-            )
-            : (
-              [
-                // Creates `style` nodes from JS strings
-                "style-loader",
-                // Translates CSS into CommonJS
-                "css-loader?url=false",
-                // Autoprefixer
-                {
-                  loader: "postcss-loader",
-                  options: {
-                    plugins: [
-                      require("postcss-custom-properties"),
-                      require("autoprefixer")({
-                        overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                      }),
-                      // require("group-css-media-queries")
-                      // require("postcss-csso"),
-                    ],
-                    sourceMap: true
-                  }
-                },
-                {
-                  loader: "resolve-url-loader",
-                },
-                // Compiles Sass to CSS
-                {
-                  loader: "sass-loader",
-                  options: {
-                    webpackImporter: false,
-                    sassOptions: {
-                      // outputStyle: "compressed",
-                      publicPath: "./"
-                    },
-                  },
-                }
-              ]
-            )
+            : ["style-loader"].concat(cssPipeline)
         },
-        {
-          test: /\.(woff|woff2|eot|ttf|otf)$/,
-          loader: "file-loader",
-          query: {
-            name: "[path][name].[ext]"
-          }
-        },
-        {
-          test: /\.(png|jpe?g|gif|webp)$/,
-          loader: "file-loader",
-          query: {
-            name: "[path][name].[ext]"
-          }
-        },
+        fontRule,
+        imageRule,
       ]
     },
-    plugins: [
-      new ExtractTextPlugin("css/style.css")
-    ]
+    plugins
   };
 
-  return [old, modern]
+  return [prod && old, modern].filter(value => !!value)
 };

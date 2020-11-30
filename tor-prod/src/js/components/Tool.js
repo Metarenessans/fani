@@ -1,37 +1,26 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import {
-  Row,
-  Col,
   Select,
   Button,
   Tooltip,
-  Radio,
-  Input,
-  Switch,
-  Typography,
-  Tag
-} from "antd/es"
+  Switch} from "antd/es"
 
 import {
   SettingFilled,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  QuestionCircleFilled,
 } from '@ant-design/icons'
 
-import $ from "jquery"
+import { Tools, template } from "../../../../common/tools"
 
-import NumericInput from "./numeric-input"
-import Value        from "./value"
+import NumericInput from "../../../../common/components/numeric-input"
+import CustomSelect from "../../../../common/components/custom-select"
+import Value        from "../../../../common/components/value"
 import Info         from "./info"
 
-import formatNumber from "../utils/formatNumber"
-import round        from "../utils/round"
+import formatNumber from "../../../../common/utils/format-number"
+import round        from "../../../../common/utils/round"
+import num2str      from "../../../../common/utils/num2str"
 
 const { Option } = Select;
-const { Group } = Radio;
-const { Text } = Typography;
 
 export default class Item extends React.Component {
   constructor(props) {
@@ -59,7 +48,7 @@ export default class Item extends React.Component {
       stepPrice:       +arr[1] || 0,
       priceStep:       +arr[2] || 0,
       averageProgress: +arr[3] || 0,
-      guaranteeValue:  +arr[4] || 0,
+      guarantee:       +arr[4] || 0,
       currentPrice:    +arr[5] || 0,
       lotSize:         +arr[6] || 0,
       dollarRate:      +arr[7] || 0,
@@ -85,30 +74,18 @@ export default class Item extends React.Component {
     if (selectedToolName != null) {
       for (let i = 0; i < tools.length; i++) {
         let tool = tools[i];
-        if (tool.shortName === selectedToolName) {
+        if (tool.getSortProperty() === selectedToolName) {
           selectedToolIndex = i;
           break;
         }
       }
     }
 
-    return tools[selectedToolIndex] || 
-      this.parseTool(`Золото (GOLD-6.20)	7,72011	0,1000	70	12 723,89	1 637,4	1	1`);
+    return { ...tools[selectedToolIndex] } || { ...template };
   }
 
+  componentDidMount() {
 
-  componentDidMount() {}
-
-  getToolName(tool = {}) {
-    var name = "";
-    if (tool.shortName) {
-      name += `${tool.shortName}`;
-    }
-    if (tool.code) {
-      name += ` (${tool.code})`;
-    }
-
-    return name;
   }
 
   render() {
@@ -120,6 +97,7 @@ export default class Item extends React.Component {
       onChange,
       depo,
       data,
+      investorInfo,
     } = this.props;
 
     const drawdown           = this.state.drawdown;
@@ -130,20 +108,22 @@ export default class Item extends React.Component {
     const isLong             = data.isLong;
 
     let currentTool = this.getCurrentTool();
+    currentTool.update != null && currentTool.update(investorInfo);
+
     let selectedToolName = data.selectedToolName;
     if (selectedToolName == null && this.props.tools.length) {
-      selectedToolName = this.props.tools[0].shortName;
+      selectedToolName = this.props.tools[0].getSortProperty();
     }
 
-    let rubbles = contracts * currentTool.guaranteeValue;
+    let rubbles = contracts * currentTool.guarantee;
 
     var additionalLoading2 = data.additionalLoading2 || additionalLoading;
     var stepExpected2 = data.stepExpected2 || stepExpected;
 
     const freeMoney = depo - drawdown - rubbles;
     const pointsAgainst = drawdown / (contracts * currentTool.stepPrice);
-    const incomeExpected = ((depo * (additionalLoading / 100)) / currentTool.guaranteeValue) * (stepExpected / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected / currentTool.priceStep * currentTool.stepPrice);
-    const incomeExpected2 = ((depo * (additionalLoading2 / 100)) / currentTool.guaranteeValue) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice);
+    const incomeExpected = ((depo * (additionalLoading / 100)) / currentTool.guarantee) * (stepExpected / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+    const incomeExpected2 = ((depo * (additionalLoading2 / 100)) / currentTool.guarantee) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice);
 
     function AddButton(props) {
       var className = props.className || ""; 
@@ -156,7 +136,7 @@ export default class Item extends React.Component {
             .join(" ")
             .trim()
           }
-          onClick={e => {
+          onClick={() => {
             if (onCopy) {
               onCopy();
             }
@@ -172,7 +152,7 @@ export default class Item extends React.Component {
           <button
             className="tool__delete delete-btn"
             aria-label="Удалить"
-            onClick={e => {
+            onClick={() => {
               if (onDelete) {
                 onDelete();
               }
@@ -185,20 +165,6 @@ export default class Item extends React.Component {
 
           <div className="tool-header-top">
 
-            <label className="switch tool-header__long-short">
-              <Switch
-                className="switch__input"
-                key={isLong + Math.random()}
-                checkedChildren="LONG"
-                unCheckedChildren="SHORT"
-                defaultChecked={isLong}
-                onChange={val => {
-                  onChange("isLong", val);
-                }}
-              />
-              {/* <span className="switch__label">SHORT</span> */}
-            </label>
-
             <label className="tool-header__select">
               <span className="input-group__title search__title">Торговый инструмент</span>
               <Select
@@ -207,7 +173,6 @@ export default class Item extends React.Component {
                 disabled={this.props.tools.length == 0}
                 onChange={val => {
                   onChange("selectedToolName", val);
-                  // this.setState({ selectedToolIndex: val }, this.recalc)
                 }}
                 showSearch
                 optionFilterProp="children"
@@ -217,15 +182,12 @@ export default class Item extends React.Component {
                 style={{ width: "100%" }}
               >
                 {
-                  this.props.tools.length > 0 ? (
-                    this.props.tools
-                      .map((tool, index) => 
-                        <Option key={index} value={tool.shortName}>{this.getToolName(tool)}</Option>
-                      )
-                  ) 
-                  : (
-                    <Option key={0} value={0}>Загрузка...</Option>
-                  )
+                  this.props.tools
+                    .map((tool, index) => 
+                      <Option key={index} value={tool.getSortProperty()} title={tool.toString()}>
+                        {tool.toString()}
+                      </Option>
+                    )
                 }
               </Select>
             </label>
@@ -267,27 +229,42 @@ export default class Item extends React.Component {
               />
             </label>
 
-            {
-              index == 0 && (
-                <div className="tool-header-top-tail">
-                  <div className="tool-header-top-tail__wrap">
-                    <AddButton />
+            <div className="tool-header-top-tail">
+              <div className="tool-header-top-tail__wrap">
+                <AddButton />
 
-                    <Tooltip title="Настройки">
-                      <button
-                        className="settings-button tool-header__settings"
-                        onClick={e => {
-                          if (onOpenConfig) {
-                            onOpenConfig(e);
-                          }
-                        }}>
-                        <span className="visually-hidden">Открыть конфиг</span>
-                        <SettingFilled className="settings-button__icon" />
-                      </button>
-                    </Tooltip>
-                  </div>
-                </div>
-              )
+                <label className="switch tool-header__long-short">
+                  <Switch
+                    className="switch__input"
+                    key={isLong + Math.random()}
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    defaultChecked={isLong}
+                    onChange={val => {
+                      onChange("isLong", val);
+                    }}
+                  />
+                  {/* <span className="switch__label">SHORT</span> */}
+                </label>
+
+                {index == 0 && (
+                  <Tooltip title="Настройки">
+                    <button
+                      className="settings-button tool-header__settings"
+                      onClick={e => {
+                        if (onOpenConfig) {
+                          onOpenConfig(e);
+                        }
+                      }}>
+                      <span className="visually-hidden">Открыть конфиг</span>
+                      <SettingFilled className="settings-button__icon" />
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+            {
+              
             }
 
           </div>
@@ -300,7 +277,7 @@ export default class Item extends React.Component {
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + `%`}>
                     {(() => {
-                      var value = (drawdown + this.getCurrentTool().guaranteeValue * contracts) / depo * 100;
+                      var value = (drawdown + this.getCurrentTool().guarantee * contracts) / depo * 100;
                       return round(value, 1);
                     })()}
                   </Value>
@@ -326,7 +303,7 @@ export default class Item extends React.Component {
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + " руб."}>
                     {(() => {
-                      var value = depo - (drawdown + contracts * this.getCurrentTool().guaranteeValue);
+                      var value = depo - (drawdown + contracts * this.getCurrentTool().guarantee);
                       return round(value, 1);
                     })()}
                   </Value>
@@ -397,35 +374,36 @@ export default class Item extends React.Component {
 
                     <div className="tool-main-card-body__row">
 
-                      <label className="input-group">
-                        <span className="input-group__title input-group__title--left">
-                          Догрузка
-                        </span>
-                        <Select
-                          defaultValue={2}
-                          onChange={(_, i) => {
-                            const val = +i.props.children.match(/\d+/g)[0];
-                            onChange("additionalLoading", val);
-                            // this.setState({ additionalLoading: val }, this.recalc)
-                          }}
-                          style={{ width: "100%" }}
-                        >
-                          {
-                            [5].concat(
-                              new Array(7).fill(0).map((val, i) => 10 * (i + 1))
-                            )
-                              .map(val => val + "% от депо")
-                              .map((value, index) => (
-                                <Option key={index} value={index}>{value}</Option>
-                              ))
-                          }
-                        </Select>
-                      </label>
+                      <div className="tool-main-card-body-left">
+                        <label className="input-group">
+                          <span className="input-group__title input-group__title--left">
+                            Догрузка
+                          </span>
+                          <CustomSelect
+                            key={additionalLoading}
+                            options={
+                              [5].concat(new Array(7).fill(0).map((val, i) => 10 * (i + 1)))
+                            }
+                            format={val => val + "% от депо"}
+                            value={additionalLoading}
+                            min={1}
+                            max={100}
+                            onChange={value => onChange("additionalLoading", value)}
+                          />
+                        </label>
 
+                        <p className="tool-main-card-body-left__info">
+                          {(() => {
+                            const contracts = depo * (additionalLoading / 100) / currentTool.guarantee;
+                            return `${additionalLoading}% = ${formatNumber(round(contracts, 2))} контрактов`;
+                          })()}
+                        </p>
+                      </div>
+                      
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">Итераций</h3>
                         <span className="tool-main-card-body-pair-val">
-                          { formatNumber(iterations) }
+                          { formatNumber(round(iterations, 2)) }
                         </span>
                       </div>
 
@@ -433,25 +411,34 @@ export default class Item extends React.Component {
 
                     <div className="tool-main-card-body__row">
 
-                      <label className="input-group">
-                        <span className="input-group__title input-group__title--left">
-                          Ожидаемый ход (руб/$)
-                        </span>
-                        <NumericInput
-                          className="input-group__input"
-                          key={stepExpected}
-                          defaultValue={stepExpected}
-                          onBlur={val => {
-                            if (val == 0) {
-                              val = 0.1;
-                            }
+                      <div className="tool-main-card-body-left">
+                        <label className="input-group">
+                          <span className="input-group__title input-group__title--left">
+                            Ожидаемый ход (руб/$)
+                          </span>
+                          <NumericInput
+                            className="input-group__input"
+                            key={stepExpected}
+                            defaultValue={stepExpected}
+                            onBlur={val => {
+                              if (val == 0) {
+                                val = 0.1;
+                              }
 
-                            onChange("stepExpected", val);
-                            // this.setState({ stepExpected: val }, this.recalc)
-                          }}
-                          format={formatNumber}
-                        />
-                      </label>
+                              onChange("stepExpected", val);
+                              // this.setState({ stepExpected: val }, this.recalc)
+                            }}
+                            format={formatNumber}
+                          />
+                        </label>
+
+                        <p className="tool-main-card-body-left__info">
+                          {(() => {
+                            const steps = round(stepExpected / currentTool.priceStep, 2);
+                            return `${stepExpected} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                          })()}
+                        </p>
+                      </div>
 
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
@@ -459,7 +446,9 @@ export default class Item extends React.Component {
                           за итерацию
                         </h3>
                         <span className="tool-main-card-body-pair-val">
-                          <Value format={formatNumber}>{incomeForIteration}</Value>
+                          <Value format={val => formatNumber(round(val, 3))}>
+                            {incomeForIteration}
+                          </Value>
                         </span>
                       </div>
 
@@ -469,7 +458,7 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-pair tool-main-card-body-pair--mobile">
                         <h3 className="tool-main-card-body-pair-key">Итераций</h3>
                         <span className="tool-main-card-body-pair-val">
-                          { formatNumber(iterations) }
+                          { formatNumber(round(iterations, 2)) }
                         </span>
                       </div>
                     </div>
@@ -496,9 +485,7 @@ export default class Item extends React.Component {
               </header>
 
               {(() => {
-                var depo = Math.round(
-                  freeMoney - (incomeExpected2 ? incomeExpected2 : incomeExpected)
-                );
+                var deposit = Math.round(freeMoney - (incomeExpected2 ? incomeExpected2 : incomeExpected));
 
                 var loss = (
                   incomeExpected2
@@ -511,35 +498,37 @@ export default class Item extends React.Component {
 
                     <div className="tool-main-card-body__row">
 
-                      <label className="input-group">
-                        <span className="input-group__title input-group__title--left">
-                          Догрузка
-                        </span>
-                        <Select
-                          defaultValue={2}
-                          onChange={(_, i) => {
-                            const val = +i.props.children.match(/\d+/g)[0];
-                            onChange("additionalLoading2", val);
-                            // this.setState({ additionalLoading2: val }, this.recalc)
-                          }}
-                          style={{ width: "100%" }}
-                        >
-                          {
-                            [5].concat(
-                              new Array(7).fill(0).map((val, i) => 10 * (i + 1))
-                            )
-                              .map(val => val + "% от депо")
-                              .map((value, index) => (
-                                <Option key={index} value={index}>{value}</Option>
-                              ))
-                          }
-                        </Select>
-                      </label>
+                      <div className="tool-main-card-body-left">
+                        <label className="input-group">
+                          <span className="input-group__title input-group__title--left">
+                            Догрузка
+                          </span>
+                          <CustomSelect
+                            key={additionalLoading2}
+                            options={
+                              [5].concat(new Array(7).fill(0).map((val, i) => 10 * (i + 1)))
+                            }
+                            format={val => val + "% от депо"}
+                            value={additionalLoading2}
+                            min={1}
+                            max={100}
+                            onChange={value => onChange("additionalLoading2", value)}
+                          />
+                        </label>
+
+                        <p className="tool-main-card-body-left__info">
+                          {(() => {
+                            const contracts = depo * (additionalLoading2 / 100) / currentTool.guarantee;
+                            return `${additionalLoading2}% = ${formatNumber(round(contracts, 2))} контрактов`;
+                          })()}
+                        </p>
+                      </div>
+
 
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">Депозит</h3>
                         <span className="tool-main-card-body-pair-val">
-                          { formatNumber(depo) }
+                          { formatNumber(round(deposit, 2)) }
                         </span>
                       </div>
 
@@ -547,25 +536,35 @@ export default class Item extends React.Component {
 
                     <div className="tool-main-card-body__row">
 
-                      <label className="input-group">
-                        <span className="input-group__title input-group__title--left">
-                          Ожидаемый ход (руб/$)
-                        </span>
-                        <NumericInput
-                          className="input-group__input"
-                          key={stepExpected2 || stepExpected}
-                          defaultValue={stepExpected2 || stepExpected}
-                          onBlur={val => {
-                            if (val == 0) {
-                              val = 0.1;
-                            }
+                      <div className="tool-main-card-body-left">
+                        <label className="input-group">
+                          <span className="input-group__title input-group__title--left">
+                            Ожидаемый ход (руб/$)
+                          </span>
+                          <NumericInput
+                            className="input-group__input"
+                            key={stepExpected2 != null ? stepExpected2 : stepExpected}
+                            defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
+                            onBlur={val => {
+                              if (val == 0) {
+                                val = 0.1;
+                              }
 
-                            onChange("stepExpected2", val);
-                            // this.setState({ stepExpected2: val }, this.recalc)
-                          }}
-                          format={formatNumber}
-                        />
-                      </label>
+                              onChange("stepExpected2", val);
+                              // this.setState({ stepExpected2: val }, this.recalc)
+                            }}
+                            format={formatNumber}
+                          />
+                        </label>
+
+                        <p className="tool-main-card-body-left__info">
+                          {(() => {
+                            const steps = round((stepExpected2 != null ? stepExpected2 : stepExpected) / currentTool.priceStep, 2);
+                            return `${(stepExpected2 != null ? stepExpected2 : stepExpected)} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                          })()}
+                        </p>
+                      </div>
+
 
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
@@ -573,7 +572,7 @@ export default class Item extends React.Component {
                           на догрузку
                         </h3>
                         <span className="tool-main-card-body-pair-val">
-                          <Value format={formatNumber}>{loss}</Value>
+                          <Value format={val => formatNumber(round(val, 3))}>{loss}</Value>
                         </span>
                       </div>
 
@@ -583,7 +582,7 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-pair tool-main-card-body-pair--mobile">
                         <h3 className="tool-main-card-body-pair-key">Депозит</h3>
                         <span className="tool-main-card-body-pair-val">
-                          { formatNumber(depo) }
+                          { formatNumber(round(deposit, 2)) }
                         </span>
                       </div>
                     </div>

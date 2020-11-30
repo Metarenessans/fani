@@ -1,0 +1,10 @@
+let fakeSave =
+{
+    id: 606,
+    name: '500 000 пополнение',
+    dateCreate: 1601932098,
+    static: '{"depoStart":[1000000,1000000],"depoEnd":[30000000,null],"currentDay":15,"days":[50,260],"minDailyIncome":[0.55,1],"payment":[0,0],"paymentInterval":[20,20],"payload":[500000,0],"payloadInterval":[1,20],"passiveIncome":[0,0],"passiveIncomeTools":[{"name":"ОФЗ 26214","rate":4.99},{"name":"ОФЗ 26205","rate":5.78},{"name":"ОФЗ 26217","rate":5.99},{"name":"ОФЗ 26209","rate":6.26},{"name":"ОФЗ 26220","rate":6.41}],"currentPassiveIncomeToolIndex":[-1,-1],"mode":0,"customTools":[],"currentToolCode":"SiZ0","current_date":"#"}',
+    dynamic: '[{"d":1,"s":0,"ci":0,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":2,"s":0,"ci":0,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":3,"s":0,"ci":0,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":4,"s":0,"pmt":2900,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":5,"s":0.55,"ci":5484,"pmt":0,"pld":500000,"il":[],"c":true,"pi":0,"du":true},{"d":6,"s":0.55,"ci":8264,"pmt":0,"pld":500000,"il":[],"c":true,"pi":0,"du":true},{"d":7,"s":0.5500167093683859,"ci":11060,"pmt":0,"pld":500000,"il":[],"c":true,"pi":0,"du":true},{"d":8,"s":0.5,"ci":12610,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":9,"s":-0.0611556122308068,"ci":-1550,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":10,"s":-0.061193035206129724,"ci":-1550,"pmt":0,"pld":0,"il":[],"c":true,"pi":0,"du":true},{"d":11,"s":4.8326274048774245,"ci":122334,"pmt":0,"pld":450000,"il":[],"c":true,"pi":0,"du":true},{"d":12,"s":19.9,"ci":617647,"pld":500000,"il":[],"c":true,"pi":0,"du":true},{"d":13,"s":12.34,"ci":520921,"pld":5000000,"il":[],"c":true,"pi":0,"du":true},{"d":14,"s":24.6,"ci":2396611,"pld":500000,"il":[],"c":true,"pi":0,"du":true},{"d":15,"s":0.3223,"ci":40735,"pld":550000,"il":[],"c":true,"pi":0,"du":true}]',
+}
+
+export default fakeSave

@@ -127,7 +127,8 @@ export default class CustomSelect extends React.Component {
             this.inputElement = e.target;
             this.inputElement.addEventListener("input", (event) => {
               this.inputValue = event.target.value; 
-            })
+              this.props.onSearch(+this.inputValue);
+            });
           }
 
           if (e.keyCode == 13 || e.keyCode == 27) {

@@ -44,7 +44,7 @@
     
     @include sm {
       flex-wrap: wrap;
-      margin-bottom: 1.25em;
+      margin-bottom: 2em;
     }
 
     @include xs {
@@ -66,15 +66,25 @@
 
     &__delete {
       position: absolute;
-      right:    0em;
-      top:   0.25em;
+      right:  -0.6em;
+      top:     0.3em;
 
       font-size: 3em;
-      color: black;
+      color: black !important;
 
       transition: all .3s ease;
 
+      &.invisible {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
       @include sm() {
+        top: .52em;
+      }
+
+      @include xs() {
+        background-color: var(--danger-color-transparent) !important;
         right: -0.5em;
         top:   -0.5em;
       }
@@ -83,7 +93,8 @@
 
   &-col {
     flex-grow: 1;
-    flex-basis: 90%;
+    width: 5em;
+    // flex-basis: 90%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -91,12 +102,19 @@
     font-size: 1.6em;
     line-height: 1.2;
 
+    &--narrow {
+      width: 6em;
+      flex-shrink: 0;
+    }
+
     &--wide {
-      flex-basis: 200%;
+      width: 13em;
+      flex-shrink: 0;
     }
     
     &--semiwide {
-      flex-basis: 120%;
+      width: 8em;
+      flex-shrink: 0;
     }
 
     @include sm {
@@ -104,7 +122,7 @@
       flex-shrink: 0;
       width: (100% / 5);
 
-      &:nth-child(5) ~ * {
+      &:nth-child(5) ~ div {
         background-color: #f7fbff !important;
         padding: .35em 0;
         
@@ -125,7 +143,7 @@
 
       font-size: 1.85em;
 
-      &:nth-child(5) ~ * {
+      &:nth-child(5) ~ div {
         background-color: inherit !important;
         padding: 0;
         
@@ -141,11 +159,8 @@
 
       &:nth-child(2n) {
         align-items: flex-end;
+        padding-right: 1em !important;
 
-        @include xs() {
-          padding-right: 1em;
-        }
-        
         #{$root}-key {
           position: relative;
           top: 0;
@@ -153,6 +168,7 @@
         
         #{$root}-val {
           justify-content: flex-end;
+          padding-right: .3em !important;
         }
       }
     }
@@ -225,10 +241,11 @@
     justify-content: center;
     width: 100%;
     min-height: 3em;
-    padding: 0.35em;
+    padding: 0.35em .5em;
     background-color: #f4f7fb;
 
     text-align: center;
+    white-space: nowrap;
 
     @include sm {
       padding: 0.75em .35em;
@@ -247,15 +264,11 @@
   }
 
   &__input {
-    width: 100%;
+    // width: 7em;
   }
 
   &__select {
-    // width: 5.5rem !important;
-
-    &--wide {
-      width: 100% !important;
-    }
+    width: 100%;
   }
   
   &__input {

@@ -75,13 +75,13 @@
 
     &-selection {
       &--single {
-        height: 1.945em;
+        // height: 1.945em;
         // height: 2.2em;
       }
 
       &__rendered {
-        line-height: 1.945em;
-        padding-top: 0em;
+        // line-height: 1.945em;
+        // padding-top: 0em;
       }
     }
   }
@@ -100,7 +100,7 @@
     .ant-input {
       text-align: left;
       font-size: 1.4em;
-      height: 1.945em;
+      // height: 1.945em;
     }
     
   }
@@ -137,9 +137,10 @@
     }
 
     &__long-short {
-      position: absolute;
-      right: 4.5em;
-      top:     2em;
+      // margin: 0 !important;
+      // position: absolute;
+      // right: 1em;
+      // top: 2em;
 
       @include sm() {
         transform: scale(.75);
@@ -148,20 +149,31 @@
         margin: 0 !important;
       }
 
+      .switch__input {
+        margin-top: 0;
+      }
+
       button[role="switch"] {
         background: var(--danger-color);
         min-width: 6em;
 
         font-size: 1em;
+        font-family: inherit;
         
         &[aria-checked="true"] {
           background: var(--accent-color);
+        }
+
+        span {
+          font-family: inherit;
         }
       }
     }
 
     &__add-btn {
       font-size: .85em;
+      height: 2.5em;
+      line-height: 1em;
 
       @include sm() {
         display: none;
@@ -173,6 +185,8 @@
     }
 
     &__settings {
+      width:  2.2em;
+      height: 2.2em;
       font-size: .7em;
 
       @include sm() {
@@ -202,14 +216,16 @@
         flex-grow: 1;
         
         &__wrap {
+          // background: pink;
+          width: 25em;
           display: flex;
-          justify-content: flex-end;
+          justify-content: flex-start;
           align-items: center;
 
           font-size: 1.2em;
 
           > * + * {
-            margin-left: 10em;
+            margin-left: 3em;
 
             @include xs() {
               margin-left: 0;
@@ -374,18 +390,19 @@
       }
 
       &-body {
+        $m: .5em;
+        margin: -$m;
 
         &__row {
           display: flex;
+          justify-content: space-between;
           align-items: flex-end;
-
-          $m: 1em;
-          margin: -$m;
-          padding: .5em 0;
+          
+          margin: $m;
+          padding: .5em 0 2.35em;
 
           @include xs() {
             flex-wrap: wrap;
-            padding-top: 2em;
           }
 
           &--mobile {
@@ -398,17 +415,39 @@
           }
 
           > * {
-            width: 100%;
-            margin: $m;
+            width: calc(100% - 25em);
+
+            @include sm() {
+              width: calc(100% - 22em);
+            }
 
             @include xs() {
-
+              width: 100%;
             }
           }
         }
 
+        &-left {
+          position: relative;
+
+          &__info {
+            position: absolute;
+            left: 0;
+            top:  100%;
+            
+            margin: 0;
+            margin-top: .4em;
+
+            font-size: 1.2em;
+            color: #777;
+          }
+        }
+
         &-pair {
-          min-height: 3.25em;
+          position: relative;
+          top: .025em;
+
+          min-height: 2.75em;
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;

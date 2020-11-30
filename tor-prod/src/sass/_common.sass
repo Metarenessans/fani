@@ -82,6 +82,37 @@ body
       .ant-input
         font-size: 1em
 
+.save-modal
+  .dialog-content
+    max-width: 40em
+
+  &__error
+    display: block
+    min-height: 0
+    margin-top: .5em
+
+    font-size: .9em
+    color: var( --danger-color )
+
+    visibility: hidden
+    transition: min-height .2s ease-in
+
+    &.visible
+      min-height:  1.5em
+      visibility: visible
+
+  &__input
+    height: 2.2em
+    font-size: 1em !important
+    
+    &-wrap
+      font-size: 1.2em
+
+    &-label
+      padding-left: .6em
+      font-size: .8em
+      color: #999
+
 .delete-btn
   display: inline-flex
   background: none

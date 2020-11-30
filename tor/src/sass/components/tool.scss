@@ -75,19 +75,23 @@
 
     &-selection {
       &--single {
-        height: 1.945em;
+        // height: 1.945em;
         // height: 2.2em;
       }
 
       &__rendered {
-        line-height: 1.945em;
-        padding-top: 0em;
+        // line-height: 1.945em;
+        // padding-top: 0em;
       }
     }
   }
 
   .input-group {
     width: 15em;
+
+    @include sm {
+      width: calc(50% - 2em);
+    }
 
     &__title {
       display: block;
@@ -99,8 +103,10 @@
 
     .ant-input {
       text-align: left;
+      height: 2em;
+      line-height: 1em;
+      
       font-size: 1.4em;
-      height: 1.945em;
     }
     
   }
@@ -112,6 +118,7 @@
     &-key {
       margin: 0;
       font-size: 1em;
+      font-weight: normal;
     }
 
     &-val {
@@ -134,18 +141,28 @@
 
     &__select {
       width: 32em;
+
+      @include sm {
+        width: 22em;
+        width: calc(100% - 6em);
+      }
     }
 
     &__long-short {
-      position: absolute;
-      right: 4.5em;
-      top:     2em;
+      // margin: 0 !important;
+      // position: absolute;
+      // right: 1em;
+      // top: 2em;
 
       @include sm() {
-        transform: scale(.75);
-        right:  0;
-        top:    2.5em;
+        // transform: scale(.75);
+        // right:  0;
+        // top:    2.5em;
         margin: 0 !important;
+      }
+
+      .switch__input {
+        margin-top: 0;
       }
 
       button[role="switch"] {
@@ -166,7 +183,10 @@
     }
 
     &__add-btn {
+      height: 2.7em;
+
       font-size: .85em;
+      line-height: 1em;
 
       @include sm() {
         display: none;
@@ -178,12 +198,14 @@
     }
 
     &__settings {
+      width:  2.2em;
+      height: 2.2em;
       font-size: .7em;
 
       @include sm() {
         position: absolute;
-        right: .5em;
-        top:  6.2em;
+        right: 1.5em;
+        top:   6.7em;
       }
     }
 
@@ -207,14 +229,16 @@
         flex-grow: 1;
         
         &__wrap {
+          // background: pink;
+          width: 25em;
           display: flex;
-          justify-content: flex-end;
+          justify-content: flex-start;
           align-items: center;
 
           font-size: 1.2em;
 
           > * + * {
-            margin-left: 10em;
+            margin-left: 3em;
 
             @include xs() {
               margin-left: 0;
@@ -261,6 +285,7 @@
 
         @include xs() {
           justify-content: space-between;
+          // justify-content: center;
         }
 
         > * {
@@ -275,6 +300,8 @@
           @include sm() {
             width: 100%;
             padding: .25em 0;
+
+            font-size: 1.105em;
           }
          
         }
@@ -406,6 +433,10 @@
           > * {
             width: calc(100% - 25em);
 
+            @include sm() {
+              width: calc(100% - 22em);
+            }
+
             @include xs() {
               width: 100%;
             }
@@ -429,6 +460,8 @@
         }
 
         &-pair {
+          --font-size: 1.545em;
+
           position: relative;
           top: .025em;
 
@@ -440,8 +473,6 @@
 
           line-height: 1;
 
-          $fz: 1.445em;
-
           @include xs() {
             display: none;
 
@@ -452,12 +483,13 @@
           }
           
           &-key {
-            font-size: $fz;
             margin: 0;
+            font-size: var(--font-size);
+            font-weight: normal;
           }
           
           &-val {
-            font-size: $fz;
+            font-size: var(--font-size);
             font-weight: bold;
 
             @include xs() {

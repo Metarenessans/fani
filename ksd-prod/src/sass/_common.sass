@@ -721,6 +721,10 @@ body
   &__save
     font-size: 1.6em
 
+    &--hidden
+      visibility: hidden
+      pointer-events: none
+
   &-col
     margin: 0 0
     width: 33.333333%
@@ -1063,7 +1067,7 @@ body
 
     .ant-input
       height: 1.9em
-      line-height: inherit
+      line-height: inherit !important
 
       font-size: 1em
       text-align: center
@@ -1084,8 +1088,10 @@ body
     width: 4rem
 
 .save-modal
-  max-width: 40em
-  border-radius: 1.5em
+
+  .dialog-content
+    max-width: 40em
+    // border-radius: 1.5em
 
   &__error
     display: block

@@ -71,20 +71,6 @@
         // box-shadow: 0 0 0 0.1em var( --primary-color-lighter )
         // border: 1px solid white
 
-    &__remove
-      position: absolute
-      z-index: 0
-      right: -1.15em
-      top:     .02em
-      // font-size: 4em
-
-      +sm
-        position: absolute
-        left: initial
-        right: 0
-        top:   50%
-        transform: translateY(-50%) !important
-
     &__select
       position: absolute
       right: 0
@@ -123,6 +109,9 @@
 
   &-content
     padding: 3em 0
+
+    +xs
+      font-size: 1.35em
 
   &-save
     font-size: 1.5em

@@ -1,4 +1,5 @@
 import React from 'react'
+const { Provider, Consumer } = React.createContext();
 import ReactDOM from 'react-dom'
 import {
   Row,
@@ -10,6 +11,7 @@ import {
   Typography,
   Spin,
   Input,
+  Switch,
 } from 'antd/es'
 
 import {
@@ -22,241 +24,223 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
-import $            from "jquery"
-import {ajax}       from "jquery"
-import params       from "./utils/params"
-import round        from "./utils/round";
-import formatNumber from "./utils/format-number"
-import typeOf       from "./utils/type-of"
-import promiseWhile from "./utils/promise-while"
+import "../../../common/api/fetch";
 
-import Info                from "./components/Info/Info"
-import Stack               from "./components/stack"
-import CrossButton         from "./components/cross-button"
-import NumericInput        from "./components/numeric-input"
-import CustomSlider        from "./components/custom-slider"
-import DashboardRow        from "./components/DashboardRow"
-import SelfValidateInput   from "./components/sefl-validate-input"
-import {Dialog, dialogAPI} from "./components/dialog"
+import $                   from "jquery"
+import params              from "../../../common/utils/params"
+import round               from "../../../common/utils/round";
+import formatNumber        from "../../../common/utils/format-number"
+import typeOf              from "../../../common/utils/type-of"
+import promiseWhile        from "../../../common/utils/promise-while"
+import fractionLength      from "../../../common/utils/fraction-length"
+import readyTools          from "../../../common/adr.json"
+import { Tools, template } from "../../../common/tools"
 
-const { Option } = Select;
-const { Title } = Typography;
+import Info                  from "./components/Info/Info"
+import Header                from "./components/header"
+import CrossButton           from "../../../common/components/cross-button"
+import NumericInput          from "../../../common/components/numeric-input"
+import CustomSlider          from "../../../common/components/custom-slider"
+import Config                from "../../../common/components/config"
+import { Dialog, dialogAPI } from "../../../common/components/dialog"
+import Stack                 from "../../../common/components/stack"
+import DashboardRow          from "./components/DashboardRow"
+
+/* API */
+import fetch             from "../../../common/api/fetch"
+import { applyTools }    from "../../../common/api/fetch/tools"
+import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import fetchSavesFor     from "../../../common/api/fetch-saves"
+import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import "../sass/style.sass"
 
-const dev = false;
+const defaultToolData = {
+  percentage: 10,
+  selectedToolName: "SBER"
+};
 
 class App extends React.Component {
 
   constructor(props) {
     super(props);
 
-    this.initial = {
+    this.initialState = {
 
-      data: [{ percentage: 10 }],
+      id: null,
+
+      loading: false,
+
+      investorInfo: {
+        status: "KSUR",
+        type:   "LONG",
+      },
+      isLong: true,
+
+      data: [{ ...defaultToolData }],
 
       // Режим
       mode: 0,
       //Размер депозита
       depo: 1000000,
       
-    };
-
-    this.state = Object.assign({
-      id:                 null,
-      saved:              false,
-      saves:              [],
-      currentSaveIndex:   0,
+      customTools: [],
 
       sortProp:  null,
       sortDESC:  true,
+
+      saved: false,
       
-      tools: [],
-      customTools: [],
-      propsToShowArray: [
-        "shortName",
-        "code",
-        "stepPrice",
-        "priceStep",
-        "guaranteeValue",
-        "price",
-        "adr1",
-        "adr2"
-      ],
-      toolTemplate: {
-        code: "",
-        shortName: "",
-        name: "",
-        stepPrice: 0,
-        priceStep: 1,
-        price: 1,
-        averageProgress: 0,
-        guaranteeValue: 1,
-        currentPrice: 1,
-        lotSize: 0,
-        dollarRate: 0,
-        adr1: 1,
-        adr2: 1,
+      currentSaveIndex: 0,
+    };
 
-        isFuters: false,
+    this.state = {
+      ...this.initialState,
+      ...{
 
-        points: [
-          [70, 70],
-          [156, 55],
-          [267, 41],
-          [423, 27],
-          [692, 13],
-          [960, 7],
-        ]
+        tools: [],
+
+        saves: [],
+        
       },
-      readyTools: [
-        this._parseTool("  1 000 000   	РТС	RIM0	108 060 ₽	32 582,22 ₽	10 ₽	14,9175 ₽	10%	  3   	3956	2701	3000"),
-        this._parseTool("  1 000 000   	Brent	BRK0	$21,84	8 267,74 ₽	$0,01	7,4587 ₽	10%	  12   	1,55	1,17	1"),
-        this._parseTool("  1 000 000   	SI	SIM0	75 150 ₽	8 040,18 ₽	1 ₽	1,0000 ₽	10%	  12   	667	425	500"),
-        this._parseTool("  1 000 000   	Золото	GDM0	$1 733,30	12 375,49 ₽	$0,10	7,4587 ₽	10%	  8   	22,33	15,45	20"),
-        this._parseTool("  1 000 000   	СберБанк	SRM0	19 051 ₽	5 031,29 ₽	1 ₽	1,0000 ₽	10%	  19   	646	471	400"),
-        this._parseTool("  1 000 000   	Платина	PTM0	$779,00	13 446,33 ₽	$0,1	7,4587 ₽	10%	  7   	24,60	18,57	15"),
-        this._parseTool("  1 000 000   	Палладий	PDM0	$2 014,18	41 911,76 ₽	$0,01	0,7459 ₽	10%	  2   	98,28	73,60	20"),
-        this._parseTool("  1 000 000   	Магнит	MNM0	3 149 ₽	856,91 ₽	1 ₽	1,0000 ₽	10%	  116   	136	115	100"),
-        this._parseTool("  1 000 000   	Евро-Доллар	EDM0	$1,0834	3 572,81 ₽	$0,0001	7,4587 ₽	10%	  27   	0,0078	0,0058	0,003"),
-        this._parseTool("  1 000 000   	Евро-Рубль	EuM0	81 445 ₽	8 682,44 ₽	1 ₽	1,0000 ₽	10%	  11   	973	556	500"),
-        this._parseTool("  1 000 000   	 Light Sweet Crude Oil	CLM0	$17,20	12 000,00 ₽	$0,01	7,4587 ₽	10%	  8   	2,19	1,62	1"),
-        this._parseTool("  1 000 000   	Сургутнефтегаз	SNM0	35 559 ₽	9 352,57 ₽	1 ₽	1,0000 ₽	10%	  10   	1893	1766	1000"),
-        this._parseTool("  1 000 000   	Газпром	GZM0	18 888 ₽	4 938,90 ₽	1 ₽	1,0000 ₽	10%	  20   	609	492	400"),
-        this._parseTool("  1 000 000   	Серебро	SVM0	$15,36	2 622,66 ₽	$0,01	7,4587 ₽	10%	  38   	0,38	0,29	0,1"),
-        this._parseTool("  1 000 000   	Лукойл	LKM0	48 450 ₽	12 620,23 ₽	1 ₽	1,0000 ₽	10%	  7   	1904	1462	800"),
-        this._parseTool("  1 000 000   	Природный газ	NGK0	$1,871	2 818,98 ₽	$0,001	7,4587 ₽	10%	  35   	0,113	0,101	0,02"),
-        this._parseTool("  1 000 000   	ВТБ	VBM0	3 441 ₽	902,18 ₽	1 ₽	1,0000 ₽	10%	  110   	150	113	100"),
-        this._parseTool("  1 000 000   	Норильский Никель	GMM0	201 400 ₽	53 545,63 ₽	1 ₽	1,0000 ₽	10%	  1   	9734	7251	5000"),
-        this._parseTool("  1 000 000   	СберБанкП	SPM0	17 360 ₽	4 569,88 ₽	1 ₽	1,0000 ₽	10%	  21   	813	560	450"),
-        this._parseTool("  1 000 000   	НЛМК	NMM0	12 369 ₽	3 311,61 ₽	1 ₽	1,0000 ₽	10%	  30   	505	432	300"),
-      ]
-    }, JSON.parse(JSON.stringify( this.initial )));
+    };
+
+    this.state.loading = true;
+
+    this.applyInvestorInfo = applyInvestorInfo.bind(this);
+    this.applyTools        = applyTools.bind(this);
+    this.fetchSaveById     = fetchSaveById.bind(this, "ksd");
   }
 
   componentDidMount() {
     this.bindEvents();
-
-    if (dev) {
-      this.fetchTools()
-        .then(tools => this.unpackTools(tools))
-        .catch(err => console.log(err));
-
-      setTimeout(() => {
-        this.loadFakeSave();
-      }, 1500);
-
-      return;
-    }
-
-    const checkIfAuthorized = () => {
-      return new Promise((resolve, reject) => {
-        this.sendRequest("getAuthInfo")
-          .then(res => {
-            if (res.authorized) {
-              resolve();
-            }
-            else {
-              reject();
-            }
-          })
-          .catch(() => reject())
-      })
-    };
-
-    let counter = 0;
-    promiseWhile(false, i => !i, () => {
-      return new Promise(resolve => {
-        counter++;
-        checkIfAuthorized()
-          .then(() => {
-            this.fetchInitialData();
-            resolve(true);
-          })
-          .catch(() => {
-            if (counter >= 10) {
-              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
-              resolve(true);
-            }
-            else {
-              setTimeout(() => resolve(false), 1000);
-            }
-          });
-      });
-    });
+    this.fetchInitialData();
   }
 
-  loadFakeSave() {
-    let { saves } = this.state;
-    let save = {
-      data: {
-        dateCreate: 1595544839,
-        id: 20,
-        name: "Fresh KSD",
-        static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR - 9.20"},{"percentage":60,"selectedToolName":"BR - 1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN - 9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT - 9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"RVI - 9.20"}],"customTools":[],"current_date":"#"}`
-      },
-      error: false,
-      id: 20
-    };
-
-    const index = 0;
-    this.extractSave(save);
-    this.setState({ currentSaveIndex: index + 1 });
-
-    saves[index] = {
-      id: save.data.id,
-      name: save.data.name,
-      corrupt: false
-    };
-    this.setState({ saves });
+  setStateAsync(state = {}) {
+    return new Promise(resolve => this.setState(state, resolve))
   }
 
   fetchInitialData() {
-    this.fetchTools()
-      .then(tools => this.unpackTools(tools))
-      .catch(err => console.log(err));
+    this.fetchInvestorInfo();
+    this.fetchTools();
+    if (dev) {
+      this.loadFakeSave();
+      return;
+    }
+    this.fetchSaves();
+  }
 
-    this.fetchDepoStart()
-      .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => console.log(err));
+  loadFakeSave() {
+    this.setState({ loading: true });
 
-    this.fetchSaves()
+    setTimeout(() => {
+      let { saves } = this.state;
+      let save = {
+        dateCreate: 1595544839,
+        static: `{"depo":10000,"sortProp":"incomePercentage","sortDESC":null,"mode":0,"data":[{"percentage":20},{"percentage":20,"selectedToolName":"BR-11.20"},{"percentage":20,"selectedToolName":"ROSN-12.20"},{"percentage":20,"selectedToolName":"SILV-12.20"},{"percentage":20,"selectedToolName":"BR-12.20"},{"percentage":20,"selectedToolName":"Si-12.20"},{"percentage":20,"selectedToolName":"GAZR-12.20"},{"percentage":20,"selectedToolName":"SBPR-12.20"},{"percentage":20,"selectedToolName":"SBRF-12.20"},{"percentage":20,"selectedToolName":"MGNT-12.20"},{"percentage":20,"selectedToolName":"GOLD-12.20"},{"percentage":20,"selectedToolName":"NG-10.20","planIncome":null},{"percentage":10,"selectedToolName":"RTS-12.20","planIncome":null}],"customTools":[],"current_date":"#"}`,
+        data: {
+          id: 20,
+          name: "Fresh KSD",
+        },
+        error: false,
+        id: 20
+      };
+  
+      const index = 0;
+      this.extractSave(save);
+  
+      saves[index] = {
+        id:      save.data.id,
+        name:    save.data.name,
+      };
+      this.setState({ 
+        saves, 
+        currentSaveIndex: index + 1,
+        loading: false
+      });
+    }, 1500);
+  }
+
+  fetchInvestorInfo() {
+    fetch("getInvestorInfo")
+      .then(response => {
+        const { status, skill } = response.data;
+        let investorInfo = { ...this.state.investorInfo, status, skill };
+        return new Promise(resolve => this.setState({ investorInfo }, () => resolve(response)));
+      })
+      .then(response => {
+        let { deposit } = response.data;
+        return this.setStateAsync({ depo: deposit || 10000 });
+      })
+      .then(() => {
+        let { tools, investorInfo } = this.state;
+        tools = tools.map(tool => tool.update( investorInfo ));
+        return this.setStateAsync({ tools });
+      })
+      .catch(error => console.error(error))
+  }
+  
+  fetchTools() {
+    let loaded = 0;
+    const requests = ["getFutures", "getTrademeterInfo"];
+    for (let request of requests) {
+      fetch(request)
+        .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+        .then(tools => {
+          const sorted = Tools.sort( this.state.tools.concat(tools) );
+          loaded++;
+          if (loaded == 2) {
+            const adrJSON = require("../../../common/adr-new.json");
+            const total = sorted.length;
+            let covered = 0
+            let notCovered = [];
+            for (let tool of sorted) {
+              if (adrJSON.find(token => {
+                if (token.isFutures) {
+                  return tool.code.slice(0, 2) == token.code.slice(0, 2);
+                }
+                return tool.code == token.code;
+              })) {
+                covered++;
+              }
+              else {
+                notCovered.push(tool);
+              }
+            }
+
+            // console.log(`Covered ${covered}/${total} (${round(covered/total, 4) * 100}%)`);
+            // console.log(`Not covered: ${notCovered}`);
+          }
+
+          return sorted;
+        })
+        .then(tools => this.setState({ tools }))
+        .catch(error => this.showMessageDialog(`Не удалось получить инстурменты! ${error}`))
+    }
+  }
+
+  fetchSaves() {
+    fetchSavesFor("ksd")
+      .then(response => {
+        const saves = response.data;
+        return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
+      })
       .then(saves => {
         if (saves.length) {
           const pure = params.get("pure") === "true";
           if (!pure) {
-            let found = false;
-            console.log(saves);
+            const save = saves[0];
+            const { id } = save;
 
-            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-              p = p.then(_ => new Promise(resolve => {
-                const save = saves[index];
-                const id = save.id;
-                this.fetchSaveById(id)
-                  .then(save => {
-                    const corrupt = !this.validateSave(save);
-                    if (!corrupt && !found) {
-                      found = true;
-                      // Try to load it
-                      this.extractSave(Object.assign(save, { id }));
-                      this.setState({ currentSaveIndex: index + 1 });
-                    }
-
-                    saves[index].corrupt = corrupt;
-                    this.setState({ saves });
-                    resolve();
-                  });
-              }));
-            }
+            this.setState({ loading: true });
+            this.fetchSaveById(id)
+              .then(response => this.extractSave(response.data))
+              .catch(error => console.error(error));
           }
         }
-        else {
-          console.log("No saves found!");
-        }
-
-        this.setState({ saves });
       })
-      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+      .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
   }
 
   showMessageDialog(msg = "") {
@@ -268,99 +252,8 @@ class App extends React.Component {
     }
   }
 
-  _parseTool(s) {
-    function _number(n) {
-      return Number((n + "").replace(/\,/g, "."));
-    }
-
-    s = s.split(/\t+/g);
-    var len = s.length;
-    return {
-      code:       s[2],
-      adr1:       _number(s[len - 3]),
-      adr2:       _number(s[len - 2]),
-      planIncome: _number(s[len - 1]),
-    }; 
-  }
-
   bindEvents() {
     
-  }
-
-  unpackTools(tools) {
-    return new Promise((resolve, reject) => {
-
-      if (!tools || tools.length == 0) {
-        reject("\"tools\" is not an array or it's simply empty!", tools);
-      }
-
-      var t = [];
-      for (let tool of tools) {
-        if (dev) {
-          if (tool.price == 0 || !tool.volume) {
-            continue;
-          }
-        }
-
-        var obj = {
-          code:             tool.code      || "code",
-          name:             tool.fullName  || tool.shortName,
-          shortName:        tool.shortName || tool.shortName,
-          stepPrice:       +tool.stepPrice || 0,
-          priceStep:       +tool.priceStep || 0,
-          average:         +tool.average   || 0,
-          guaranteeValue:  +tool.guarantee || 0,
-
-          currentMarketPrice: 19051,
-          price:             +tool.price || 0,
-          adr1: 3956,
-          adr2: 2701,
-        };
-
-        // Check if we already have pre-written tool
-        var found = false;
-        for (var _t of this.state.readyTools) {
-          if (_t.code.toLowerCase().slice(0, 2) === obj.code.toLowerCase().slice(0, 2)) {
-
-            let code = obj.code;
-            
-            obj = Object.assign(obj, _t);
-            obj.code = code;
-
-            found = true;
-            break;
-          }
-        }
-
-        // We didn't find the tool in pre-written tools
-        if (!found) {
-
-          const blackSwan = obj.price * 0.2;
-          const adr2 = blackSwan / 10;
-          
-          let substitute = {
-            planIncome: round(obj.price / 10, 2),
-            adr1:       round(adr2 * 1.5,  4),
-            adr2:       round(adr2, 4),
-          };
-
-          obj = Object.assign(obj, substitute);
-
-        }
-
-        // console.log(obj);
-        t.push(obj);
-      }
-
-      if (t.length > 0) {
-        let { tools } = this.state;
-        tools = tools.concat(t).sort((a, b) => a.shortName.localeCompare(b.shortName));
-
-        this.setState({ tools }, resolve);
-      }
-      
-      resolve();
-    });
   }
 
   packSave() {
@@ -387,8 +280,6 @@ class App extends React.Component {
   }
 
   extractSave(save) {
-    console.log(save);
-
     const onError = e => {
       this.showMessageDialog(String(e));
 
@@ -400,25 +291,38 @@ class App extends React.Component {
       }
     };
 
-    const {
-      depoEnd,
-      defaultPassiveIncomeTools,
-    } = this.state;
+    const { saves } = this.state;
 
     let staticParsed;
 
     let state = {};
     let failed = false;
 
+    const getSaveIndex = save => {
+      for (let i = 0; i < saves.length; i++) {
+        let currentSave = saves[i];
+        if (Object.keys(currentSave).every(key => currentSave[key] == save[key])) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    const savePure = { ...save };
+    delete savePure.static;
+
+    // console.log(saves, savePure, getSaveIndex(savePure));
+
     try {
 
-      staticParsed = JSON.parse(save.data.static);
+      staticParsed = JSON.parse(save.static);
       staticParsed.data.map(item => {
         delete item.selectedToolCode;
         return item;
       });
 
-      // console.log("staticParsed", staticParsed);
+      console.log("static", save.static);
+      console.log("staticParsed", staticParsed);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -426,14 +330,25 @@ class App extends React.Component {
       }
 
       state.mode = m;
-      state.sortProp = staticParsed.sortProp || null;
-      state.sortDESC = staticParsed.sortDESC || true;
+      state.sortProp = staticParsed.sortProp;
+      state.sortDESC = staticParsed.sortDESC;
+
       state.depo = staticParsed.depo || this.state.depo;
       state.data = staticParsed.data;
+      state.data = state.data
+        .map(item => {
+          item = { ...defaultToolData, ...item };
+          delete item.planIncome;
+          return item;
+        });
       state.customTools = staticParsed.customTools || [];
+      state.customTools = state.customTools
+        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
 
-      state.id = save.id;
-      state.saved = true;
+      state.id      = save.id;
+      state.saved   = true;
+      state.loading = false;
+      state.currentSaveIndex = getSaveIndex(savePure) + 1;
     }
     catch (e) {
       failed = true;
@@ -445,11 +360,11 @@ class App extends React.Component {
       onError(e);
     }
 
-    this.setState(state, () => console.log(this.state));
+    this.setState(state);
   }
 
   reset() {
-    return new Promise(resolve => this.setState(JSON.parse(JSON.stringify(this.initial)), () => resolve()))
+    return new Promise(resolve => this.setState(JSON.parse(JSON.stringify(this.initialState)), () => resolve()))
   }
 
   save(name = "") {
@@ -464,7 +379,7 @@ class App extends React.Component {
         static: JSON.stringify(json.static),
       };
 
-      this.sendRequest("addKsdSnapshot", "POST", data)
+      fetch("addKsdSnapshot", "POST", data)
         .then(res => {
           console.log(res);
 
@@ -494,7 +409,7 @@ class App extends React.Component {
         name,
         static: JSON.stringify(json.static),
       };
-      this.sendRequest("updateKsdSnapshot", "POST", data)
+      fetch("updateKsdSnapshot", "POST", data)
         .then(res => {
           console.log("Updated!", res);
           resolve();
@@ -507,7 +422,7 @@ class App extends React.Component {
     console.log(`Deleting id: ${id}`);
 
     return new Promise((resolve, reject) => {
-      this.sendRequest("deleteKsdSnapshot", "POST", { id })
+      fetch("deleteKsdSnapshot", "POST", { id })
         .then(() => {
           let {
             id,
@@ -523,10 +438,11 @@ class App extends React.Component {
 
           if (saves.length > 0) {
             id = saves[currentSaveIndex - 1].id;
+
+            this.setState({ loading: true });
             this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
-              .then(() => this.setState({ id }))
-              .catch(err => this.showMessageDialog(err));
+              .then(response => this.extractSave(response.data))
+              .catch(error => console.error(error));
           }
           else {
             this.reset()
@@ -543,83 +459,6 @@ class App extends React.Component {
           }, resolve);
         })
         .catch(err => reject(err));
-    });
-  }
-
-  sendRequest(url = "", method = "GET", data = {}) {
-    return new Promise((resolve, reject) => {
-      console.log(`Sending ${url} request...`);
-      ajax({
-        url: `https://fani144.ru/local/php_interface/s1/ajax/?method=${url}`,
-        method,
-        data,
-        success: res => {
-          const parsed = JSON.parse(res);
-          if (parsed.error) {
-            reject(parsed.message);
-          }
-
-          resolve(parsed);
-        },
-        error: err => reject(err)
-      });
-    });
-  }
-
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-      this.sendRequest("getKsdSnapshots")
-        .then(res => {
-          const savesSorted = res.data.sort((a, b) => a.dateCreate < b.dateCreate);
-          const saves = savesSorted.map(save => ({
-            name: save.name,
-            id:   save.id,
-          }));
-          resolve(saves);
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  fetchSaveById(id) {
-    return new Promise((resolve, reject) => {
-      if (typeof id === "number") {
-        console.log("Trying to fetch id:" + id);
-        this.sendRequest("getKsdSnapshot", "GET", { id })
-          .then(res => resolve(res))
-          .catch(err => reject(err));
-      }
-      else {
-        reject("id must be a number!", id);
-      }
-    });
-  }
-
-  fetchTools() {
-    return new Promise((resolve, reject) => {
-      $.ajax({
-        url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getFutures",
-        success: res => {
-          const data = JSON.parse(res).data;
-          resolve(data);
-        },
-        error: err => reject(err),
-      });
-    })
-  }
-
-  fetchDepoStart() {
-    return new Promise((resolve, reject) => {
-      console.log("Fetching depoStart!");
-      $.ajax({
-        url: "/local/php_interface/s1/ajax/?method=getInvestorInfo",
-        success: res => {
-          var parsed = JSON.parse(res);
-          var depo = Number(parsed.data.deposit);
-          resolve(depo);
-        },
-        error: err => reject(err)
-      });
     });
   }
 
@@ -640,671 +479,445 @@ class App extends React.Component {
   }
 
   render() {
-    const { mode, sortProp, sortDESC } = this.state;
+    const { mode, data, sortProp, sortDESC, isLong } = this.state;
 
     return (
-      <div className="page">
+      <Provider value={this}>
+        <div className="page">
 
-        <main className="main">
+          <main className="main">
 
-          <div className="main-top">
-            <div className="container">
-              <div className="main-top-wrap">
+            <Header
+              onSaveChange={currentSaveIndex => {
+                const { saves } = this.state;
 
-                {/* Select */}
-                {(() => {
-                  const { saves, currentSaveIndex } = this.state;
+                this.setState({ currentSaveIndex });
 
-                  return (dev || saves.length > 0) && (
-                    <label className="labeled-select main-top__select stack-exception">
-                      <span className="labeled-select__label labeled-select__label--hidden">
-                        Сохраненный калькулятор
-                      </span>
-                      <Select
-                        value={currentSaveIndex}
-                        onSelect={val => {
-                          const { saves } = this.state;
+                if (currentSaveIndex === 0) {
+                  this.reset();
+                }
+                else {
+                  const id = saves[currentSaveIndex - 1].id;
+                  this.setState({ loading: true });
+                  this.fetchSaveById(id)
+                    .then(response => this.extractSave(response.data))
+                    .catch(error => this.showAlert(error));
+                }
+              }}
+              onSave={e => {
+                const { saved, changed } = this.state;
 
-                          this.setState({ currentSaveIndex: val });
+                if (saved && changed) {
+                  this.update(this.getTitle());
+                  this.setState({ changed: false });
+                }
+                else {
+                  dialogAPI.open("dialog1", e.target);
+                }
+              }}
+            >
+              <Radio.Group
+                className="tabs"
+                key={mode}
+                defaultValue={mode}
+                name="radiogroup"
+                onChange={e => this.setState({ mode: e.target.value, changed: true })}
+              >
+                <Radio className="tabs__label tabs__label--1" value={0}>
+                  Произвольный
+                  <span className="prefix">ход цены</span>
+                </Radio>
+                <Radio className="tabs__label tabs__label--1" value={1}>
+                  Повышенный
+                  <span className="prefix">ход цены</span>
+                </Radio>
+                <Radio className="tabs__label tabs__label--1" value={2}>
+                  Аномальный
+                  <span className="prefix">ход цены</span>
+                </Radio>
+                <Radio className="tabs__label tabs__label--2" value={3}>
+                  Черный лебедь
+                  <span className="prefix">ход цены</span>
+                </Radio>
+              </Radio.Group>
 
-                          if (val === 0) {
-                            this.reset()
-                              .catch(err => console.warn(err));
-                          }
-                          else {
-                            const id = saves[val - 1].id;
-                            this.fetchSaveById(id)
-                              .then(save => this.extractSave(Object.assign(save, { id })))
-                              .catch(err => this.showMessageDialog(err));
-                          }
+              <Tooltip title="Настройки">
+                <button
+                  className="settings-button js-open-modal main-top__settings"
+                  onClick={e => dialogAPI.open("config", e.target)}
+                >
+                  <span className="visually-hidden">Открыть конфиг</span>
+                  <SettingFilled className="settings-button__icon" />
+                </button>
+              </Tooltip>
+            </Header>
 
-                        }}>
-                        <Option key={0} value={0}>Не выбрано</Option>
-                        {saves.map((save, index) =>
-                          <Option key={index + 1} value={index + 1}>
-                            {save.name}
-                            {save.corrupt && (
-                              <WarningOutlined style={{
-                                marginLeft: ".25em",
-                                color: "var(--danger-color)"
-                              }}/>
-                            )}
-                          </Option>
-                        )}
-                      </Select>
-                    </label>
-                  )
-                })()}
+            <div className="main-content">
 
-                <Stack>
+              <div className="container">
 
-                  <div className="page__title-wrap">
-                    <h1 className="page__title">
-                      { this.getTitle() }
-                      { (dev || this.state.id) && (
-                        <CrossButton
-                          className="main-top__remove"
-                          onClick={e => dialogAPI.open("dialog4", e.target)}/>
-                      )}
-                    </h1>
-                  </div>
+                <div className="main-content__switch-long-short-wrapper">
+                  <Switch
+                    className="main-content__switch-long-short"
+                    key={isLong + ""}
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    defaultChecked={isLong}
+                    onChange={isLong => {
+                      const { tools } = this.state;
+                      const investorInfo = this.state.investorInfo;
+                      investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                  <Radio.Group
-                    className="tabs"
-                    key={mode}
-                    defaultValue={mode}
-                    name="radiogroup"
-                    onChange={e => this.setState({ mode: e.target.value, changed: true })}
-                  >
-                    <Radio className="tabs__label tabs__label--1" value={0}>
-                      Произвольный
-                      <span className="prefix">ход цены</span>
-                    </Radio>
-                    <Radio className="tabs__label tabs__label--1" value={1}>
-                      Повышенный
-                      <span className="prefix">ход цены</span>
-                    </Radio>
-                    <Radio className="tabs__label tabs__label--1" value={2}>
-                      Аномальный
-                      <span className="prefix">ход цены</span>
-                    </Radio>
-                    <Radio className="tabs__label tabs__label--2" value={3}>
-                      Черный лебедь
-                      <span className="prefix">ход цены</span>
-                    </Radio>
-                  </Radio.Group>
+                      this.setStateAsync({ investorInfo })
+                        .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
+                    }}
+                  />
+                </div>
 
-                  <div className="main-top__footer">
-
-                    <Button 
-                      className={
-                        [
-                          "custom-btn",
-                          "custom-btn--secondary",
-                          "main-top__save",
-                        ]
-                          .concat(this.state.changed ? "main-top__new" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      onClick={e => {
-                        const { saved, changed } = this.state;
-
-                        if (saved && changed) {
-                          this.update(this.getTitle());
-                          this.setState({ changed: false });
-                        }
-                        else {
-                          dialogAPI.open("dialog1", e.target);
-                        }
-
-                      }}>
-                      { (this.state.saved && !this.state.changed) ? "Изменить" : "Сохранить" }
-                    </Button>
-                    
-                    {
-                      this.state.saves.length > 0 ? (
-                        <a
-                          className="custom-btn custom-btn--secondary main-top__save"
-                          href="#pure=true" 
-                          target="_blank"
-                        >
-                          Добавить новый
-                        </a>
-                      )
-                      : null
+                <div className="dashboard">
+                  {(() => {
+                    let data = [...this.state.data];
+                    if (sortProp != null && sortDESC != null) {
+                      data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
                     }
 
-                  </div>
-
-                  <Tooltip title="Настройки">
-                    <button
-                      className="settings-button js-open-modal main-top__settings"
-                      onClick={e => dialogAPI.open("dialog3", e.target)}
-                    >
-                      <span className="visually-hidden">Открыть конфиг</span>
-                      <SettingFilled className="settings-button__icon" />
-                    </button>
-                  </Tooltip>
-                </Stack>
-
-              </div>
-              {/* /.main-top-wrap */}
-            </div>
-            {/* /.container */}
-          </div>
-          {/* /.main-top */}
-
-          <div className="main-content">
-
-            <div className="container">
-
-              <div className="dashboard">
-                {(() => {
-                  let data = this.state.data;
-                  if (sortProp != null && sortDESC != null) {
-                    data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
-                  }
-
-                  return (
-                    this.state.tools.length > 0
-                      ? (
-                        data.map((item, index) =>
-                          <DashboardRow
-                            key={index + Math.random()}
-                            item={item}
-                            index={index}
-                            sortProp={sortProp}
-                            sortDESC={sortDESC}
-                            mode={this.state.mode}
-                            depo={this.state.depo}
-                            percentage={item.percentage}
-                            selectedToolName={item.selectedToolName}
-                            planIncome={item.planIncome}
-                            tools={this.getTools()}
-                            onSort={(sortProp, sortDESC) => {
-                              if (sortProp !== this.state.sortProp) {
-                                sortDESC = true;
-                              }
-                              this.setState({ sortProp, sortDESC })
-                            }}
-                            onUpdate={state => {
-                              const { data } = this.state;
-                              data[index] = state;
-                              this.setState({ data });
-                            }}
-                            onChange={(prop, val) => {
-                              const { data } = this.state;
-                              data[index][prop] = val;
-                              if (prop == "selectedToolName") {
-                                data[index].planIncome = null;
-                              }
-                              this.setState({ data, changed: true });
-                            }}
-                            onDelete={index => {
-                              const { data } = this.state;
-                              data.splice(index, 1);
-                              this.setState({ data })
-                            }}
-                          />
-                        )
-                      )
-                      : (
-                        <span className="dashboard__loading">
-                          <Spin
-                            className="dashboard__loading-icon"
-                            indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
+                    return (
+                      this.state.tools.length > 0
+                        ? (
+                          data.map((item, index) =>
+                            <DashboardRow
+                              key={index + Math.random()}
+                              item={item}
+                              index={index}
+                              sortProp={sortProp}
+                              sortDESC={sortDESC}
+                              mode={this.state.mode}
+                              depo={this.state.depo}
+                              percentage={item.percentage}
+                              selectedToolName={item.selectedToolName}
+                              planIncome={item.planIncome}
+                              tools={this.getTools()}
+                              onSort={(sortProp, sortDESC) => {
+                                if (sortProp !== this.state.sortProp) {
+                                  sortDESC = true;
+                                }
+                                this.setState({ sortProp, sortDESC })
+                              }}
+                              onUpdate={state => {
+                                data[index] = { ...data[index], ...state, updatedOnce: true };
+                                this.setState({ data });
+                              }}
+                              onChange={(prop, val) => {
+                                data[index][prop] = val;
+                                if (prop == "selectedToolName") {
+                                  data[index].planIncome = null;
+                                }
+                                this.setState({ data, changed: true });
+                              }}
+                              onDelete={index => {
+                                data.splice(index, 1);
+                                this.setState({ data })
+                              }}
                             />
-                          Подождите, инструменты загружаются...
-                        </span>
-                      )
-                  );
-                })()}
+                          )
+                        )
+                        : (
+                          <span className="dashboard__loading">
+                            <Spin
+                              className="dashboard__loading-icon"
+                              indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
+                              />
+                            Подождите, инструменты загружаются...
+                          </span>
+                        )
+                    );
+                  })()}
+                </div>
+
+                <footer className="main__footer">
+
+                  <Button className="custom-btn main__save"
+                    onClick={() => {
+                      const { data } = this.state;
+                      data.push({ ...defaultToolData });
+                      this.setState({ data })
+                    }}>
+                    <PlusOutlined aria-label="Добавить" />
+                    инструмент
+                  </Button>
+
+                </footer>
+                
               </div>
+              {/* /.container */}
 
-              <footer className="main__footer">
-
-                <Button className="custom-btn main__save"
-                  onClick={() => {
-                    const { data } = this.state;
-                    data.push({ percentage: 10 });
-                    this.setState({ data })
-                  }}>
-                  <PlusOutlined aria-label="Добавить" />
-                  инструмент
-                </Button>
-
-              </footer>
-              
             </div>
-            {/* /.container */}
 
-          </div>
+          </main>
+          {/* /.main */}
 
-        </main>
-        {/* /.main */}
+          {(() => {
+            let { saves, id } = this.state;
+            let namesTaken = saves.slice().map(save => save.name);
+            let name = (id) ? this.getTitle() : "Новое сохранение";
 
-        {(() => {
-          let { saves, id } = this.state;
-          let namesTaken = saves.slice().map(save => save.name);
-          let name = (id) ? this.getTitle() : "Новое сохранение";
+            function validate(str = "") {
+              str = str.trim();
 
-          function validate(str = "") {
-            str = str.trim();
+              let errors = [];
 
-            let errors = [];
-
-            let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
-            if (str.length < 3) {
-              errors.push("Имя должно содержать не меньше трех символов!");
-            }
-            else if (test) {
-              errors.push(`Нельзя использовать символ "${test[0]}"!`);
-            }
-            if (!id) {
-              if (namesTaken.indexOf(str) > -1) {
-                errors.push(`Сохранение с таким именем уже существует!`);
+              let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
+              if (str.length < 3) {
+                errors.push("Имя должно содержать не меньше трех символов!");
               }
-            }
-
-            return errors;
-          }
-
-          class ValidatedInput extends React.Component {
-
-            constructor(props) {
-              super(props);
-
-              let { defaultValue } = props;
-
-              this.state = {
-                error: "",
-                value: defaultValue || ""
+              else if (test) {
+                errors.push(`Нельзя использовать символ "${test[0]}"!`);
               }
-            }
+              if (!id) {
+                if (namesTaken.indexOf(str) > -1) {
+                  errors.push(`Сохранение с таким именем уже существует!`);
+                }
+              }
 
-            vibeCheck() {
-              const { validate } = this.props;
-              let { value } = this.state;
-
-              let errors = validate(value);
-              this.setState({ error: (errors.length > 0) ? errors[0] : "" });
               return errors;
             }
 
-            render() {
-              const { validate, label } = this.props;
-              const { value, error } = this.state;
+            class ValidatedInput extends React.Component {
 
-              return (
-                <label className="save-modal__input-wrap">
-                  {
-                    label
-                      ? <span className="save-modal__input-label">{label}</span>
-                      : null
-                  }
-                  <Input
-                    className={
-                      ["save-modal__input"]
-                        .concat(error ? "error" : "")
+              constructor(props) {
+                super(props);
+
+                let { defaultValue } = props;
+
+                this.state = {
+                  error: "",
+                  value: defaultValue || ""
+                }
+              }
+
+              vibeCheck() {
+                const { validate } = this.props;
+                let { value } = this.state;
+
+                let errors = validate(value);
+                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                return errors;
+              }
+
+              render() {
+                const { validate, label } = this.props;
+                const { value, error } = this.state;
+
+                return (
+                  <label className="save-modal__input-wrap">
+                    {
+                      label
+                        ? <span className="save-modal__input-label">{label}</span>
+                        : null
+                    }
+                    <Input
+                      className={
+                        ["save-modal__input"]
+                          .concat(error ? "error" : "")
+                          .join(" ")
+                          .trim()
+                      }
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      value={value}
+                      maxLength={20}
+                      onChange={e => {
+                        let { value } = e.target;
+                        let { onChange } = this.props;
+
+                        this.setState({ value });
+
+                        if (onChange) {
+                          onChange(value);
+                        }
+                      }}
+                      onKeyDown={e => {
+                        // Enter
+                        if (e.keyCode === 13) {
+                          let { value } = e.target;
+                          let { onBlur } = this.props;
+
+                          let errors = validate(value);
+                          if (errors.length === 0) {
+                            if (onBlur) {
+                              onBlur(value);
+                            }
+                          }
+
+                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                        }
+                      }}
+                      onBlur={() => {
+                        this.vibeCheck();
+                      }} />
+
+                    <span className={
+                      ["save-modal__error"]
+                        .concat(error ? "visible" : "")
                         .join(" ")
                         .trim()
-                    }
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
-                    value={value}
-                    maxLength={20}
-                    onChange={e => {
-                      let { value } = e.target;
-                      let { onChange } = this.props;
-
-                      this.setState({ value });
-
-                      if (onChange) {
-                        onChange(value);
-                      }
-                    }}
-                    onKeyDown={e => {
-                      // Enter
-                      if (e.keyCode === 13) {
-                        let { value } = e.target;
-                        let { onBlur } = this.props;
-
-                        let errors = validate(value);
-                        if (errors.length === 0) {
-                          if (onBlur) {
-                            onBlur(value);
-                          }
-                        }
-
-                        this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                      }
-                    }}
-                    onBlur={() => {
-                      this.vibeCheck();
-                    }} />
-
-                  <span className={
-                    ["save-modal__error"]
-                      .concat(error ? "visible" : "")
-                      .join(" ")
-                      .trim()
-                  }>
-                    {error}
-                  </span>
-                </label>
-              )
+                    }>
+                      {error}
+                    </span>
+                  </label>
+                )
+              }
             }
-          }
 
-          let onConfirm = () => {
-            let { id, data, currentDay, saves, currentSaveIndex } = this.state;
+            let onConfirm = () => {
+              let { id, data, currentDay, saves, currentSaveIndex } = this.state;
 
-            if (id) {
-              this.update(name)
-                .then(() => {
-                  saves[currentSaveIndex - 1].name = name;
-                  this.setState({
-                    saves,
-                    changed: false,
+              if (id) {
+                this.update(name)
+                  .then(() => {
+                    saves[currentSaveIndex - 1].name = name;
+                    this.setState({
+                      saves,
+                      changed: false,
+                    })
                   })
-                })
-                .catch(err => this.showMessageDialog(err));
-            }
-            else {
-              const onResolve = (id) => {
-                let index = saves.push({ id, name });
-                console.log(saves);
+                  .catch(err => this.showMessageDialog(err));
+              }
+              else {
+                const onResolve = (id) => {
+                  let index = saves.push({ id, name });
+                  console.log(saves);
 
-                this.setState({
-                  data,
-                  saves,
-                  saved: true,
-                  changed: false,
-                  currentSaveIndex: index,
-                });
-              };
+                  this.setState({
+                    data,
+                    saves,
+                    saved: true,
+                    changed: false,
+                    currentSaveIndex: index,
+                  });
+                };
 
-              this.save(name)
-                .then(onResolve)
-                .catch(err => this.showMessageDialog(err));
+                this.save(name)
+                  .then(onResolve)
+                  .catch(err => this.showMessageDialog(err));
 
-              if (dev) {
-                onResolve();
+                if (dev) {
+                  onResolve();
+                }
               }
             }
-          }
 
-          let inputJSX = (
-            <ValidatedInput
-              label="Название сохранения"
-              validate={validate}
-              defaultValue={name}
-              onChange={val => name = val}
-              onBlur={() => { }} />
-          );
-          let modalJSX = (
-            <Dialog
-              id="dialog1"
-              className="save-modal"
-              title={"Сохранение"}
-              onConfirm={() => {
-                if (validate(name).length) {
-                  console.error(validate(name)[0]);
-                }
-                else {
-                  onConfirm();
-                  return true;
-                }
-              }}
-            >
-              {inputJSX}
-            </Dialog>
-          );
+            let inputJSX = (
+              <ValidatedInput
+                label="Название сохранения"
+                validate={validate}
+                defaultValue={name}
+                onChange={val => name = val}
+                onBlur={() => { }} />
+            );
+            let modalJSX = (
+              <Dialog
+                id="dialog1"
+                className="save-modal"
+                title={"Сохранение"}
+                onConfirm={() => {
+                  if (validate(name).length) {
+                    console.error(validate(name)[0]);
+                  }
+                  else {
+                    onConfirm();
+                    return true;
+                  }
+                }}
+              >
+                {inputJSX}
+              </Dialog>
+            );
 
-          return modalJSX;
-        })()}
-        {/* Save Popup */}
+            return modalJSX;
+          })()}
+          {/* Save Popup */}
 
-        <Dialog
-          id="dialog4"
-          title="Удаление трейдометра"
-          confirmText={"Удалить"}
-          onConfirm={() => {
-            const { id } = this.state;
-            this.delete(id)
-              .then(() => console.log("Deleted!"))
-              .catch(err => console.warn(err));
-            return true;
-          }}
-        >
-          Вы уверены, что хотите удалить {this.getTitle()}?
-        </Dialog>
-        {/* Delete Popup */}
+          <Dialog
+            id="dialog4"
+            title="Удаление трейдометра"
+            confirmText={"Удалить"}
+            onConfirm={() => {
+              const { id } = this.state;
+              this.delete(id)
+                .then(() => console.log("Deleted!"))
+                .catch(err => console.warn(err));
+              return true;
+            }}
+          >
+            Вы уверены, что хотите удалить {this.getTitle()}?
+          </Dialog>
+          {/* Delete Popup */}
 
-        <Dialog
-          id="dialog3"
-          title="Инструменты"
-          className=""
-          confirmText="Добавить"
-          onConfirm={e => {
-            var { toolTemplate, customTools, propsToShowArray } = this.state;
+          <Config
+            id="config"
+            title="Инструменты"
+            template={template}
+            tools={this.state.tools}
+            toolsInfo={[
+              { name: "Инструмент",   prop: "name"         },
+              { name: "Код",          prop: "code"         },
+              { name: "Цена шага",    prop: "stepPrice"    },
+              { name: "Шаг цены",     prop: "priceStep"    },
+              { name: "ГО",           prop: "guarantee"    },
+              { name: "Текущая цена", prop: "currentPrice" },
+              { name: "Размер лота",  prop: "lotSize"      },
+              { name: "Курс доллара", prop: "dollarRate"   },
+              { name: "ADR",          prop: "adrDay"       },
+            ]}
+            customTools={this.state.customTools}
+            onChange={customTools => this.setState({ customTools })}
 
-            const nameExists = (value, tools) => {
-              let found = 0;
-              console.log(value, tools);
-              for (const tool of tools) {
-                if (value === tool.shortName) {
-                  found++;
-                }
-              }
-
-              return found > 1;
-            };
-
-            var template = Object.assign({}, toolTemplate);
-            var tool = template;
-            propsToShowArray.map((prop, index) => {
-              tool[prop] = toolTemplate[prop];
-              if (index === 0) {
-                const suffix = customTools.length + 1;
-                tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`;
-              }
-            });
-
-            tool.planIncome = round(tool.price / 10, 2);
-
-            customTools.push(tool);
-
-            while (nameExists(tool.shortName, this.getTools())) {
-              const end = tool.shortName.match(/\d+$/g)[0];
-              tool.shortName = tool.shortName.replace(end, Number(end) + 1);
-            }
-
-            this.setState({ customTools }, () => {
-              $(".config-table-wrap").scrollTop(9999);
-            });
-          }}
-          cancelText="Закрыть"
-        >
-          <label className="input-group input-group--fluid ksd-config__depo">
-            <span className="input-group__label">Размер депозита:</span>
-            <NumericInput
-              className="input-group__input"
-              key={this.state.depo}
-              defaultValue={this.state.depo}
-              format={formatNumber}
-              min={10000}
-              max={Infinity}
-              onBlur={val => {
-                const { depo } = this.state;
-                if (val == depo) {
-                  return;
-                }
-
-                this.setState({ depo: val, changed: true });
-              }}
-            />
-          </label>
-
-          <div className="config-table-wrap">
-            <table className="table">
-              <thead className="table-header">
-                <tr className="table-tr">
-                  <th className="config-th table-th">Инструмент</th>
-                  <th className="config-th table-th">Код</th>
-                  <th className="config-th table-th">Цена шага</th>
-                  <th className="config-th table-th">Шаг цены</th>
-                  <th className="config-th table-th">ГО</th>
-                  <th className="config-th table-th">Текущая цена</th>
-                  <th className="config-th table-th">
-                    <Info tooltip="Средний ход (пунктов) за год с учетом аномальных движений">
-                      ADR1
-                    </Info>
-                  </th>
-                  <th className="config-th table-th">
-                    <Info tooltip="Средний ход (пунктов) за год без учета аномальных движений">
-                      ADR2
-                    </Info>
-                  </th>
-                  <th className="config-th table-th"></th>
-                </tr>
-              </thead>
-              <tbody className="table-body">
-                {
-                  this.state.tools.map((tool, index) =>
-                    <tr className="config-tr" key={index}>
-                      {
-                        this.state.propsToShowArray.map((prop, i) =>
-                          <td
-                            className="table-td"
-                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                            key={i}>
-                            {tool[prop]}
-                          </td>
-                        )
-                      }
-                    </tr>
-                  )
-                }
-                {(() => {
-                  const nameExists = (value, tools) => {
-                    let found = 0;
-                    for (const tool of tools) {
-                      if (value === tool.shortName) {
-                        found++;
-                      }
+            insertBeforeDialog={
+              <label className="input-group input-group--fluid ksd-config__depo">
+                <span className="input-group__label">Размер депозита:</span>
+                <NumericInput
+                  className="input-group__input"
+                  key={this.state.depo}
+                  defaultValue={this.state.depo}
+                  format={formatNumber}
+                  min={10000}
+                  max={Infinity}
+                  onBlur={val => {
+                    const { depo } = this.state;
+                    if (val == depo) {
+                      return;
                     }
 
-                    return found > 1;
-                  };
+                    this.setState({ depo: val, changed: true });
+                  }}
+                />
+              </label>
+            }
+          />
+          {/* Инструменты */}
 
-                  var onBlur = (val, index, prop) => {
-                    var { customTools, tools } = this.state;
-                    customTools[index][prop] = val;
-                    if (prop === "shortName") {
-                      while (nameExists(customTools[index][prop], this.getTools())) {
-                        const end = customTools[index][prop].match(/\d+$/g)[0];
-                        customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
-                      }
-                    }
+          {(() => {
+            const { errorMessage } = this.state;
+            return (
+              <Dialog
+                id="dialog-msg"
+                title="Сообщение"
+                hideConfirm={true}
+                cancelText="ОК"
+              >
+                {errorMessage}
+              </Dialog>
+            )
+          })()}
+          {/* Error Popup */}
 
-                    this.setState({ customTools });
-                  };
-
-                  return this.state.customTools.map((tool, index) =>
-                    <tr className="config-tr" key={index}>
-                      {
-                        this.state.propsToShowArray.map((prop, i) =>
-                          <td
-                            className="table-td"
-                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                            key={i}>
-                            {(() => {
-                              const valid = true;
-
-                              return i === 0 ? (
-                                <div style={{ position: "relative" }}>
-                                  <Input
-                                    key={tool[prop] + Math.random()}
-                                    className={tool["error"] != null ? "error" : ""}
-                                    defaultValue={tool[prop]}
-                                    onBlur={e => onBlur(e.target.value, index, prop)}
-                                    onKeyDown={e => {
-                                      if (
-                                        [
-                                          13, // Enter
-                                          27  // Escape
-                                        ].indexOf(e.keyCode) > -1
-                                      ) {
-                                        e.target.blur();
-                                        onBlur(e.target.value, index, prop);
-                                      }
-                                    }}
-                                  />
-                                  <span style={{
-                                    position:  "absolute",
-                                    left:      "0",
-                                    top:       "100%",
-                                    color:     "var(--danger-color)",
-                                    fontSize:  ".7em",
-                                    textAlign: "center"
-                                  }}>{tool["error"]}</span>
-                                </div>
-                              )
-                              : (
-                                <NumericInput
-                                  defaultValue={tool[prop]}
-                                  onBlur={val => onBlur(val, index, prop)}
-                                />
-                              )
-                            })()}
-                          </td>
-                        )
-                      }
-                      <td className="table-td" key={index}>
-                        <Tooltip title="Удалить">
-                          <button
-                            className="cross-button config__delete"
-                            aria-label="Удалить"
-                            onClick={e => {
-                              var { customTools } = this.state;
-                              customTools.splice(index, 1);
-                              this.setState({ customTools });
-                            }}>
-                            <span>&times;</span>
-                          </button>
-                        </Tooltip>
-                      </td>
-                    </tr>
-                  )
-                })()}
-              </tbody>
-            </table>
-          </div>
-          {/* /.config-talbe-wrap */}
-        </Dialog>
-
-        {(() => {
-          const { errorMessage } = this.state;
-          return (
-            <Dialog
-              id="dialog-msg"
-              title="Сообщение"
-              hideConfirm={true}
-              cancelText="ОК"
-            >
-              {errorMessage}
-            </Dialog>
-          )
-        })()}
-        {/* Error Popup */}
-
-      </div>
+        </div>
+      </Provider>
     );
   }
 }
 
-export default App;
+export { App, Consumer }

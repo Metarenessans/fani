@@ -1,6 +1,17 @@
 {
-  "presets": [],
+  "env": {
+    "test": {
+      "plugins": [
+        "@babel/plugin-transform-modules-commonjs"
+      ]
+    }
+  },
+  "presets": [
+    "@babel/preset-react"
+  ],
   "plugins": [
-    "transform-react-jsx"
+    "babel-plugin-root-import",
+    "@babel/plugin-proposal-optional-chaining",
+    "@babel/plugin-proposal-numeric-separator"
   ]
 }

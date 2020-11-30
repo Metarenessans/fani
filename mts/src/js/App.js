@@ -13,28 +13,31 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
-import $              from "jquery"
-import {ajax}         from "jquery"
-import params         from "./utils/params"
-import round          from "./utils/round";
-import formatNumber   from "./utils/format-number"
-import typeOf         from "./utils/type-of"
-import fractionLength from "./utils/fraction-length"
-import promiseWhile   from "./utils/promise-while"
+import fetch          from "../../../common/api/fetch"
+import params         from "../../../common/utils/params"
+import round          from "../../../common/utils/round";
+import formatNumber   from "../../../common/utils/format-number"
+import typeOf         from "../../../common/utils/type-of"
+import fractionLength from "../../../common/utils/fraction-length"
+import promiseWhile   from "../../../common/utils/promise-while"
 
-import { Tools }           from "./tools"
-import Info                from "./components/Info/Info"
-import Stack               from "./components/stack"
-import CustomSlider        from "./components/custom-slider"
-import CrossButton         from "./components/cross-button"
-import NumericInput        from "./components/numeric-input"
-import {Dialog, dialogAPI} from "./components/dialog"
+import { Tools, template }     from "../../../common/tools"
+import Stack                   from "../../../common/components/stack"
+import CustomSlider            from "./components/custom-slider"
+import CrossButton             from "../../../common/components/cross-button"
+import NumericInput            from "../../../common/components/numeric-input"
+import { Dialog, dialogAPI }   from "../../../common/components/dialog"
+import Config                  from "../../../common/components/config"
+import {
+  Chart,
+  updateChartMinMax,
+  updateChartScaleMinMax,
+  updateChartZoom
+} from "./components/chart"
 
 const { Option } = Select;
 
 import "../sass/style.sass"
-
-const dev = true;
 
 class App extends React.Component {
 
@@ -43,71 +46,51 @@ class App extends React.Component {
 
     this.initial = {
 
-      depo: 1000000,
+      loading: true,
+      loadingChartData: true,
 
+      investorInfo: {
+        status: "KSUR",
+        type:   "LONG",
+      },
+
+      depo: 1000000,
+      mode: 0,
+      chance: 50,
       page: 1,
-      priceRange: [0, 0],
+      priceRange: [null, null],
       percentage: 0,
+      days: 1,
+      data: null,
 
       customTools: [],
-      currentToolIndex: 0,
-      
-    };
+      currentToolCode: "SBER",
 
-    this.state = Object.assign({
       id:                 null,
       saved:              false,
-      saves:              [],
-      currentSaveIndex:   0,
+    };
 
-      tools:       [],
-      propsToShowArray: [
-        "shortName",
-        "stepPrice",
-        "priceStep",
-        "averageProgress",
-        "guaranteeValue",
-        "currentPrice",
-        "lotSize",
-        "dollarRate"
-      ],
-      toolTemplate: {
-        code:            "",
-        shortName:       "",
-        name:            "",
-        stepPrice:       0,
-        priceStep:       0,
-        averageProgress: 0,
-        guaranteeValue:  0,
-        currentPrice:    0,
-        lotSize:         0,
-        dollarRate:      0,
-
-        isFuters: false,
-
-        points: [
-          [70,  70],
-          [156, 55],
-          [267, 41],
-          [423, 27],
-          [692, 13],
-          [960, 7 ],
-        ]
-      },
-    }, JSON.parse(JSON.stringify( this.initial )));
+    this.state = {
+      ...this.initial,
+      ...{
+        saves:              [],
+        currentSaveIndex:   0,
+        tools:              [],
+      } 
+    };
   }
 
   componentDidMount() {
     this.bindEvents();
 
     if (dev) {
-      this.fetchTools();
+      this.fetchInitialData();
       return;
     }
 
     const checkIfAuthorized = () => {
       return new Promise((resolve, reject) => {
-        this.sendRequest("getAuthInfo")
+        fetch("getAuthInfo")
           .then(res => {
             if (res.authorized) {
               resolve();
@@ -131,7 +114,7 @@ class App extends React.Component {
           })
           .catch(() => {
             if (counter >= 10) {
-              this.showMessageDialog("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
+              this.showAlert("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
               resolve(true);
             }
             else {
@@ -142,6 +125,52 @@ class App extends React.Component {
     });
   }
 
+  setStateAsync(state = {}) {
+    return new Promise(resolve => this.setState(state, resolve))
+  }
+
+  fetchCompanyQuotes() {
+    this.setState({ loadingChartData: true });
+
+    let from = new Date();
+    let to   = new Date();
+    from.setMonth(from.getMonth() - 1);
+
+    from = Math.floor(+from / 1000);
+    to   = Math.floor(+to   / 1000);
+
+    const tool = this.getCurrentTool();
+    let method = "getCompanyQuotes";
+
+    if (tool.dollarRate == 0) {
+      method = "getPeriodFutures";
+      from = tool.firstTradeDate;
+      to   = tool.lastTradeDate;
+    }
+
+    let body = {
+      code:   tool.code,
+      from,
+      to,
+    };
+    
+    if (tool.dollarRate != 0) {
+      body = {
+        ...body,
+        region: tool.dollarRate != 1 ? "US" : "RU",
+      };
+    }
+
+    fetch(method, "GET", body)
+      .then(response => {
+        if (this.state.currentToolCode == tool.code) {
+          const data = response.data;
+          this.setState({ data, loadingChartData: false });
+        }
+      })
+      .catch(error => console.error(error));
+  }
+
   // ----------
   // Fetch
   // ----------
@@ -149,8 +178,11 @@ class App extends React.Component {
   // Fetching everithing we need to start working
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools();
+    this.fetchTools()
+      .then(() => this.fetchCompanyQuotes());
 
+
+    return;
     this.fetchSaves()
       .then(saves => {
         if (saves.length) {
@@ -187,21 +219,24 @@ class App extends React.Component {
 
         this.setState({ saves });
       })
-      .catch(err => this.showMessageDialog(`Не удалось получить сохранения! ${err}`));
+      .catch(error => {
+        // this.showAlert(`Не удалось получить сохранения! ${error}`);
+        console.log(error);
+      });
   }
 
   fetchSaves() {
     return new Promise((resolve, reject) => {
-      this.sendRequest("getMtsSnapshots")
+      fetch("getMtsSnapshots")
         .then(res => {
           const savesSorted = res.data.sort((a, b) => a.dateCreate < b.dateCreate);
           const saves = savesSorted.map(save => ({
             name: save.name,
-            id: save.id,
+            id:   save.id,
           }));
           resolve(saves);
         })
-        .catch(err => reject(err));
+        .catch(error => reject(error));
     });
   }
 
@@ -209,7 +244,7 @@ class App extends React.Component {
     return new Promise((resolve, reject) => {
       if (typeof id === "number") {
         console.log("Trying to fetch id:" + id);
-        this.sendRequest("getMtsSnapshot", "GET", { id })
+        fetch("getMtsSnapshot", "GET", { id })
           .then(res => resolve(res))
           .catch(err => reject(err));
       }
@@ -220,23 +255,32 @@ class App extends React.Component {
   }
 
   fetchTools() {
-    this.sendRequest("getFutures")
-      .then(res => new Promise(resolve => resolve(res.data)))
-      .then(tools => Tools.parse(tools))
-      .then(tools => this.state.tools.concat(tools))
-      .then(tools => tools.sort((a, b) => a.shortName.localeCompare(b.shortName)))
-      .then(tools => new Promise(resolve => this.setState({ tools }, resolve)))
-      .catch(err => this.showMessageDialog(`Не удалось получить инстурменты! ${err}`))
+    return new Promise((resolve, reject) => {
+      for (let request of [
+        "getFutures",
+        "getTrademeterInfo"
+      ]) {
+        fetch(request)
+          .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+          .then(tools => Tools.sort(this.state.tools.concat(tools)))
+          .then(tools => this.setStateAsync({ tools }))
+          .then(() => this.updatePriceRange(this.getCurrentTool()))
+          .then(resolve)
+          .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+      }
+    })
   }
 
   fetchInvestorInfo() {
-    this.sendRequest("getInvestorInfo")
-      .then(res => {
-        const { status, skill, deposit } = res.data;
-        return new Promise(resolve => this.setState({ status, skill }, () => resolve(deposit)));
+    fetch("getInvestorInfo")
+      .then(response => {
+        const { deposit, status, skill } = response.data;
+        return new Promise(resolve => {
+          this.setState({ investorInfo: { status, skill } }, () => resolve(deposit));
+        });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => this.showMessageDialog(`Не удалось получить начальный депозит! ${err}`));
+      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
 
   updatePriceRange(tool) {
@@ -246,7 +290,7 @@ class App extends React.Component {
     })
   }
 
-  showMessageDialog(msg = "") {
+  showAlert(msg = "") {
     console.log(`%c${msg}`, "background: #222; color: #bada55");
     if (!dev) {
       this.setState({ errorMessage: msg }, () => {
@@ -257,91 +301,6 @@ class App extends React.Component {
 
   bindEvents() {
     
-  }
-
-  parseTool(str) {
-    let arr = str
-      .replace(/\,/g, ".")
-      .split(/\t+/g)
-      .map(n => (n + "").replace(/\"/g, "").replace(/(\d+)\s(\d+)/, "$1$2"));
-    
-    let obj = {
-      name:             arr[0],
-      stepPrice:       +arr[1],
-      priceStep:       +arr[2],
-      averageProgress: +arr[3],
-      guaranteeValue:  +arr[4],
-      currentPrice:    +arr[5],
-      lotSize:         +arr[6],
-      dollarRate:      +arr[7] || 0,
-
-      points: [
-        [ 70,  70 ],
-        [ 156, 55 ],
-        [ 267, 41 ],
-        [ 423, 27 ],
-        [ 692, 13 ],
-        [ 960,  7 ],
-      ]
-    };
-    return obj;
-  }
-
-  unpackTools(tools) {
-    let { toolTemplate } = this.state;
-
-    return new Promise((resolve, reject) => {
-
-      if (!tools || tools.length === 0) {
-        reject(`"tools" is not an array or it's simply empty!`, tools);
-      }
-  
-      let t = [];
-      for (let tool of tools) {
-        if (tool.price == 0 || !tool.volume) {
-          continue;
-        }
-
-        let template = Object.assign({}, toolTemplate);
-  
-        let obj = Object.assign(template, {
-          code:             tool.code            || "code",
-          shortName:        tool.shortName       || "shortName",
-          name:             tool.fullName        || "fullName",
-          stepPrice:       +tool.stepPrice       || 0,
-          priceStep:       +tool.priceStep       || 0,
-          averageProgress: +tool.averageProgress || 0,
-          guaranteeValue:  +tool.guarantee       || 0,
-          currentPrice:    +tool.price           || 0,
-          lotSize:         +tool.lotVolume       || 0,
-          dollarRate:      +tool.dollarRate      || 0,
-  
-          isFuters: true,
-  
-          points: [
-            [70,  70],
-            [156, 55],
-            [267, 41],
-            [423, 27],
-            [692, 13],
-            [960, 7 ],
-          ]
-        });
-        t.push(obj);
-      }
-      
-      if (t.length > 0) {
-        let { tools } = this.state;
-        const sorted = t.sort((a, b) => a.code.localeCompare(b.code));
-        tools = tools.concat(sorted);
-
-        this.setState({ tools }, resolve);
-      }
-      else {
-        resolve();
-      }
-
-    });
   }
 
   packSave() {
@@ -365,7 +324,7 @@ class App extends React.Component {
 
   extractSave(save) {
     const onError = e => {
-      this.showMessageDialog(String(e));
+      this.showAlert(String(e));
 
       const { saves, currentSaveIndex } = this.state;
       if (saves[currentSaveIndex - 1]) {
@@ -391,6 +350,8 @@ class App extends React.Component {
 
       state.depo        = staticParsed.depo || this.state.depo;
       state.customTools = staticParsed.customTools || [];
+      state.customTools = state.customTools
+        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
 
       state.id = save.id;
       state.saved = true;
@@ -404,7 +365,7 @@ class App extends React.Component {
       onError(e);
     }
 
-    this.setState(state, () => console.log(this.state));
+    this.setState(state);
   }
 
   reset() {
@@ -426,7 +387,7 @@ class App extends React.Component {
         static: JSON.stringify(json.static),
       };
 
-      this.sendRequest("addMtsSnapshot", "POST", data)
+      fetch("addMtsSnapshot", "POST", data)
         .then(res => {
           console.log(res);
 
@@ -456,7 +417,7 @@ class App extends React.Component {
         name,
         static: JSON.stringify(json.static),
       };
-      this.sendRequest("updateMtsSnapshot", "POST", data)
+      fetch("updateMtsSnapshot", "POST", data)
         .then(res => {
           console.log("Updated!", res);
           resolve();
@@ -469,7 +430,7 @@ class App extends React.Component {
     console.log(`Deleting id: ${id}`);
 
     return new Promise((resolve, reject) => {
-      this.sendRequest("deleteMtsSnapshot", "POST", { id })
+      fetch("deleteMtsSnapshot", "POST", { id })
         .then(() => {
           let {
             id,
@@ -488,11 +449,11 @@ class App extends React.Component {
             this.fetchSaveById(id)
               .then(save => this.extractSave(Object.assign(save, { id })))
               .then(() => this.setState({ id }))
-              .catch(err => this.showMessageDialog(err));
+              .catch(err => this.showAlert(err));
           }
           else {
             this.reset()
-              .catch(err => this.showMessageDialog(err));
+              .catch(err => this.showAlert(err));
 
             saved = changed = false;
           }
@@ -508,43 +469,10 @@ class App extends React.Component {
     });
   }
 
-  sendRequest(url = "", method = "GET", data = {}) {
-    return new Promise((resolve, reject) => {
-      console.log(`Sending ${url} request...`);
-      ajax({
-        url: `https://fani144.ru/local/php_interface/s1/ajax/?method=${url}`,
-        method,
-        data,
-        success: res => {
-          const parsed = JSON.parse(res);
-          if (parsed.error) {
-            reject(parsed.message);
-          }
-
-          resolve(parsed);
-        },
-        error: err => reject(err)
-      });
-    });
-  }
-
   getCurrentTool() {
-    const { tools, currentToolIndex } = this.state;
-    return tools[currentToolIndex] ||
-      // Fallback
-      this.parseTool(`Золото (GOLD-6.20)	7,95374	0,1000	70	13 638,63	1 482,9	1`);
-  }
+    const { tools, currentToolCode } = this.state;
 
-  getToolName(tool = {}) {
-    let name = "";
-    if (tool.shortName) {
-      name += `${tool.shortName}`;
-    }
-    if (tool.code) {
-      name += ` (${tool.code})`;
-    }
-
-    return name;
+    return tools.find(tool => tool.code == currentToolCode) || Tools.create();
   }
 
   getTools() {
@@ -552,9 +480,14 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools)
   }
 
+  getToolByCode(code) {
+    const { tools } = this.state;
+    return tools.find(tool => tool.code == code) || Tools.create();
+  }
+
   getTitle() {
     const { saves, currentSaveIndex, id } = this.state;
-    let title = "МТС";
+    let title = "Моделирование Торговой Стратегии";
 
     if (id && saves[currentSaveIndex - 1]) {
       title = saves[currentSaveIndex - 1].name;
@@ -564,17 +497,46 @@ class App extends React.Component {
   }
 
   render() {
-    const { depo, page, percentage, priceRange } = this.state;
+    let { mode, depo, data, chance, page, percentage, priceRange, days } = this.state;
 
     const currentTool = this.getCurrentTool();
-
+    const isLong = percentage >= 0;
     const priceRangeSorted = priceRange.sort((l, r) => l - r);
-    let planIncome = priceRangeSorted[1] - priceRangeSorted[0];
-    // if (percentage < 0) {
-    //   planIncome *= -1;
-    // }
+    const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guaranteeValue);
+    const disabledModes = [
+      currentTool.isFutures && currentTool.volume < 1e9,
+      currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600000,
+      depo <= 100000
+    ];
+    if (disabledModes[mode]) {
+      mode = disabledModes.indexOf(false);
+    }
+
+    const fraction = fractionLength(currentTool.priceStep);
+    const price   = round(currentTool.currentPrice, fraction);
+    let percent = currentTool.adrDay;
+    if (days == 5) {
+      percent = currentTool.adrWeek;
+    }
+    else if (days == 20) {
+      percent = currentTool.adrMonth;
+    }
+
+    const max = round(price + percent, fraction);
+    const min = round(price - percent, fraction);
+
+    let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
+    income *= mode == 0 ? 0.6 : 0.9;
+
+    const ratio = income / depo * 100;
+    let suffix = round(ratio, 2);
+    if (suffix > 0) {
+      suffix = "+" + suffix;
+    }
+
+    const kod = round(ratio / days, 2);
 
     return (
       <div className="page">
@@ -590,7 +552,7 @@ class App extends React.Component {
                   const { saves, currentSaveIndex } = this.state;
 
                   return (dev || saves.length > 0) && (
-                    <label className="labeled-select main-top__select stack-exception">
+                    <label hidden className="labeled-select main-top__select stack-exception">
                       <span className="labeled-select__label labeled-select__label--hidden">
                         Сохраненный калькулятор
                       </span>
@@ -609,7 +571,7 @@ class App extends React.Component {
                             const id = saves[val - 1].id;
                             this.fetchSaveById(id)
                               .then(save => this.extractSave(Object.assign(save, { id })))
-                              .catch(err => this.showMessageDialog(err));
+                              .catch(err => this.showAlert(err));
                           }
 
                         }}>
@@ -643,9 +605,9 @@ class App extends React.Component {
                     </h1>
                   </div>
 
-                  <div className="main-top__footer">
+                  <div className="main-top__footer" hidden>
 
-                    <Button 
+                    <Button
                       className={
                         [
                           "custom-btn",
@@ -689,7 +651,7 @@ class App extends React.Component {
                   <Tooltip title="Настройки">
                     <button
                       className="settings-button js-open-modal main-top__settings"
-                      onClick={e => dialogAPI.open("dialog3", e.target)}
+                      onClick={e => dialogAPI.open("config", e.target)}
                     >
                       <span className="visually-hidden">Открыть конфиг</span>
                       <SettingFilled className="settings-button__icon" />
@@ -709,68 +671,58 @@ class App extends React.Component {
             <div className="container">
 
               <div className="main-content__wrap">
-                <Stack className="main-content__left">
+                {(() => {
+                  const STEP_IN_EACH_DIRECTION = 20;
+                  const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
 
-                  <label>
-                    <span className="visually-hidden">Торговый инструмент</span>
-                    <Select
-                      value={this.state.currentToolIndex}
-                      onChange={currentToolIndex => {
-                        this.setState({ currentToolIndex });
-                        this.updatePriceRange(this.getTools()[currentToolIndex]);
-                      }}
-                      disabled={this.getTools().length == 0}
-                      showSearch
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }
-                      style={{ width: "100%" }}
-                    >
-                      {(() => {
-                        const { tools, customTools } = this.state
-                        let arr = []
-                          .concat(tools)
-                          .concat(customTools);
-                        return arr.length > 0
-                          ? (
-                            arr
-                              // Оставляем только фьючи
-                              // .filter(el => el.isFuters)
-                              .map(tool => this.getToolName(tool))
-                              .map((value, index) => (
-                                <Option key={index} value={index}>{value}</Option>
-                              ))
-                          )
-                          : <Option key={0} value={0}>Загрузка...</Option>
-                      })()}
-                    </Select>
-                  </label>
-                  {/* Торговый инструмент */}
+                  return (
+                    <Stack className="main-content__left">
 
-                  {(() => {
-                    const fraction = fractionLength(currentTool.priceStep);
-                    const price   = round(currentTool.currentPrice, fraction);
-                    const percent = round(price / 100, fraction);
-                    const max = round(price + percent, fraction);
-                    const min = round(price - percent, fraction);
-                    const step = (max - min) / 20;
+                      <label>
+                        <span className="visually-hidden">Торговый инструмент</span>
+                        <Select
+                          value={this.state.currentToolCode}
+                          onChange={currentToolCode => {
+                            this.setStateAsync({ currentToolCode })
+                              .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
+                              .then(() => this.fetchCompanyQuotes());
+                          }}
+                          disabled={this.getTools().length == 0}
+                          showSearch
+                          optionFilterProp="children"
+                          filterOption={(input, option) =>
+                            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          }
+                          style={{ width: "100%" }}
+                        >
+                          {(() => {
+                            const tools = this.getTools();
+                            return tools.length > 0
+                              ? (
+                                tools.map((tool, index) => (
+                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
+                                ))
+                              )
+                              : <Option key={0} value={0}>Загрузка...</Option>
+                          })()}
+                        </Select>
+                      </label>
+                      {/* Торговый инструмент */}
 
-                    return (
                       <div className="mts-slider1">
                         <span className="mts-slider1-middle">
                           <b>Текущая цена</b><br />
                           ({formatNumber(price)})
                         </span>
                         <span className="mts-slider1-top">
-                          <b>{formatNumber(round(max, 2))}</b>
+                          <b>{formatNumber(round(max, fraction))}</b>
                           &nbsp;
-                          (+1% от цены)
+                          (+{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <span className="mts-slider1-bottom">
-                          <b>{formatNumber(round(min, 2))}</b>
+                          <b>{formatNumber(round(min, fraction))}</b>
                           &nbsp;
-                          (-1% от цены)
+                          (-{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
@@ -783,54 +735,119 @@ class App extends React.Component {
                           precision={1}
                           tooltipPlacement="left"
                           tipFormatter={val => formatNumber((val).toFixed(fraction))}
-                          // filter={val => val + "%"}
                           onChange={priceRange => {
-                            this.setState({ priceRange })
+                            this.setState({ priceRange });
+                            updateChartMinMax(priceRange);
                           }}
                         />
                       </div>
-                    )
-                  })()}
 
-                  <div className="card main-content-stats">
-                    <div className="main-content-stats__wrap">
-                      <div className="main-content-stats__row">
-                        <span>Риск движения против</span>
-                        <span className="main-content-stats__val">
-                          {(() => {
-                            const risk = 
-                                contracts 
-                              * planIncome
-                              / currentTool.priceStep 
-                              * currentTool.stepPrice 
-                              / depo
-                              * 100;
-                            return `${formatNumber(round(risk, 1))}%`
-                          })()}
-                        </span>
-                      </div>
-                      <div className="main-content-stats__row">
-                        <span>Прибыль</span>
-                        <span className="main-content-stats__val">
-                          {(() => {
-                            const income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
+                      <div className="card main-content-stats">
+                        <div className="main-content-stats__wrap">
 
-                            const ratio = income / depo * 100;
-                            let suffix = round(ratio, 2);
-                            if (suffix > 0) {
-                              suffix = "+" + suffix;
-                            }
+                          <div className="main-content-stats__row">
+                            <span>Точка входа</span>
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(isLong ? priceRange[0] : priceRange[1], fraction))}
+                            </span>
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>Точка выхода</span>
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(isLong ? priceRange[1] : priceRange[0], fraction))}
+                            </span>
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>Величина хода</span>
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
+                            </span>
+                          </div>
+                          
+                          <div className="main-content-stats__row">
+                            <span>Контрактов</span>
+                            <span className="main-content-stats__val">
+                              {contracts}
+                            </span>
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>Вероятность</span>
+                            <span className="main-content-stats__val">
+                              <NumericInput 
+                                key={mode + chance * Math.random()} 
+                                disabled={mode == 0}
+                                defaultValue={mode == 0 ? 0.5 : chance} 
+                                onBlur={chance => this.setState({ chance })}
+                                suffix="%"
+                              />
+                            </span>
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>Риск движения против</span>
+                            <span className="main-content-stats__val">
+                              {(() => {
+                                let risk = .5;
+                                if (mode != 0) {
+                                  risk = 
+                                      contracts 
+                                    * planIncome
+                                    / currentTool.priceStep 
+                                    * currentTool.stepPrice 
+                                    / depo
+                                    * 100;
+                                  risk *= chance / 100;
+                                }
+                                return `${formatNumber(round(risk, 1))}%`
+                              })()}
+                            </span>
+                          </div>
+                          
+                          {(() => {
                             
-                            return `${formatNumber(Math.floor(income))} (${suffix}%)`
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                </Stack>
+                            return (
+                              <>
+                                <div className="main-content-stats__row">
+                                  <span>Прибыль</span>
+                                  <span className="main-content-stats__val">
+                                    {`${formatNumber(Math.floor(income))} (${suffix}%)`}
+                                  </span>
+                                </div>
+
+                                <div className="main-content-stats__row">
+                                  <span>КОД</span>
+                                  <span className="main-content-stats__val">
+                                    {`${formatNumber(kod)}%`}
+                                  </span>
+                                </div>
+                              </>
+                            )
+                          })()}
+
+                        </div>
+                      </div>
+
+                    </Stack>
+                  )
+                })()}
 
                 <Stack className="main-content__right">
+                  <Chart 
+                    className="mts__chart"
+                    key={currentTool.toString() + this.state.loadingChartData} 
+                    min={min}
+                    max={max}
+                    priceRange={priceRange}
+                    loading={this.state.loadingChartData}
+                    tool={currentTool} 
+                    data={data}
+                    days={days}
+                  />
+
                   {(() => {
                     return (
                       <div className={
@@ -862,8 +879,19 @@ class App extends React.Component {
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
+                            let { tools, investorInfo } = this.state;
                             const percentage = range[0] + range[1];
-                            this.setState({ percentage })
+
+                            investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
+                            tools = tools.map(tool => tool.update(investorInfo));
+
+                            updateChartMinMax(priceRange, percentage >= 0);
+
+                            this.setState({
+                              investorInfo,
+                              percentage, 
+                              tools,
+                            })
                           }}
                         />
 
@@ -880,63 +908,95 @@ class App extends React.Component {
                         <span className="main-content-options__label">Алгоритм МАНИ 144</span>
                         <Radio.Group 
                           className="main-content-options__radio"
-                          defaultValue={1}
-                          onChange={e => console.log(e)} 
+                          value={mode}
+                          onChange={e => this.setState({ mode: e.target.value })} 
                         >
-                          <Radio value={1}>1</Radio>
-                          <Radio value={2}>2</Radio>
-                          <Radio value={3}>3</Radio>
+                          <Radio value={0} disabled={disabledModes[0]}>
+                            стандарт
+                          </Radio>
+                          <Radio value={1} disabled={disabledModes[1]}>
+                            смс<span style={{ fontFamily: "serif", fontWeight: 300 }}>+</span>тор
+                          </Radio>
+                          <Radio value={2} disabled={disabledModes[2]}>
+                            лимитник
+                          </Radio>
                         </Radio.Group>
                       </div>
 
                       <div className="main-content-options__row">
-                        <span className="main-content-options__label">КОД</span>
+                        <span className="main-content-options__label">Дней в позиции</span>
                         <Radio.Group
                           className="main-content-options__radio"
-                          defaultValue={1}
-                          onChange={e => console.log(e)}
+                          key={days}
+                          defaultValue={days}
+                          onChange={e => {
+                            const days = e.target.value;
+
+                            const fraction = fractionLength(currentTool.priceStep);
+                            const price    = round(currentTool.currentPrice, fraction);
+                            let percent = currentTool.adrDay;
+                            if (days == 5) {
+                              percent = currentTool.adrWeek;
+                            }
+                            else if (days == 20) {
+                              percent = currentTool.adrMonth;
+                            }
+
+                            const max = round(price + percent, fraction);
+                            const min = round(price - percent, fraction);
+
+                            this.setState({ days });
+                            updateChartScaleMinMax(min, max);
+                            updateChartZoom(days);
+                          }}
                         >
-                          <Radio value={1}>1 день</Radio>
-                          <Radio value={2}>2 день</Radio>
-                          <Radio value={3}>
-                            Выберите<br className="sm-only" /> день
-                          </Radio>
+                          <Radio value={1}>день</Radio>
+                          <Radio value={5}>неделя</Radio>
+                          <Radio value={20}>месяц</Radio>
                         </Radio.Group>
                       </div>
                     </div>
                   </div>
                   {/* Mods */}
 
-                  <div className="mts-table">
-                    <h3>Статистика КОД</h3>
-                    <table>
-                      <tr>
-                        <th>День</th>
-                        <th>План</th>
-                        <th>Факт</th>
-                        <th>Доходность</th>
-                      </tr>
-                      {new Array(5).fill(0).map((value, index) =>
-                        <tr>
-                          <td>{((page - 1) * 5) + (index + 1)}</td>
-                          <td>1</td>
-                          <td><Input defaultValue="1" /></td>
-                          <td><Input defaultValue="1" /></td>
-                        </tr>
-                      )}
-                    </table>
-                    <Pagination 
-                      className="mts-table__paginator"
-                      onChange={page => {
-                        this.setState({ page })
-                      }}
-                      defaultCurrent={1}
-                      total={50}
-                    />
-                  </div>
+                  {(() => {
+                    const period = Math.min(days, 5);
+
+                    return (
+                      <div className="mts-table">
+                        <h3>Статистика КОД</h3>
+                        <table>
+                          <tr>
+                            <th>День</th>
+                            <th>План %</th>
+                            <th>Факт %</th>
+                            <th>Доходность</th>
+                          </tr>
+                          {new Array(period).fill(0).map((value, index) =>
+                            <tr>
+                              <td>{((page - 1) * period) + (index + 1)}</td>
+                              <td>{kod}</td>
+                              <td><Input defaultValue="1"/></td>
+                              <td><Input defaultValue="1"/></td>
+                            </tr>
+                          )}
+                        </table>
+                        <Pagination
+                          key={days}
+                          style={{display: days < 20 ? "none" : "flex"}}
+                          className="mts-table__paginator"
+                          onChange={page => {
+                            this.setState({ page })
+                          }}
+                          defaultCurrent={1}
+                          pageSize={period}
+                          total={days}
+                        />
+                      </div>
+                    )
+                  })()}
                 </Stack>
               </div>
-
 
             </div>
             {/* /.container */}
@@ -1073,7 +1133,7 @@ class App extends React.Component {
                     changed: false,
                   })
                 })
-                .catch(err => this.showMessageDialog(err));
+                .catch(err => this.showAlert(err));
             }
             else {
               const onResolve = (id) => {
@@ -1091,7 +1151,7 @@ class App extends React.Component {
 
               this.save(name)
                 .then(onResolve)
-                .catch(err => this.showMessageDialog(err));
+                .catch(err => this.showAlert(err));
 
               if (dev) {
                 onResolve();
@@ -1146,206 +1206,49 @@ class App extends React.Component {
         </Dialog>
         {/* Delete Popup */}
 
-        <Dialog
-          id="dialog3"
-          className=""
-          confirmText="Добавить"
-          onConfirm={e => {
-            var { toolTemplate, customTools, propsToShowArray } = this.state;
+        <Config
+          id="config"
+          title="Инструменты"
+          template={template}
+          tools={this.state.tools}
+          toolsInfo={[
+            { name: "Инструмент",   prop: "name"         },
+            { name: "Код",          prop: "code"         },
+            { name: "Цена шага",    prop: "stepPrice"    },
+            { name: "Шаг цены",     prop: "priceStep"    },
+            { name: "ГО",           prop: "guarantee"    },
+            { name: "Текущая цена", prop: "currentPrice" },
+            { name: "Размер лота",  prop: "lotSize"      },
+            { name: "Курс доллара", prop: "dollarRate"   },
+            { name: "ADR",          prop: "adrDay"       },
+            { name: "ADR неделя",   prop: "adrWeek"      },
+            { name: "ADR месяц",    prop: "adrMonth"     },
+          ]}
+          customTools={this.state.customTools}
+          onChange={customTools => this.setState({ customTools })}
 
-            const nameExists = (value, tools) => {
-              let found = 0;
-              console.log(value, tools);
-              for (const tool of tools) {
-                if (value === tool.shortName) {
-                  found++;
-                }
-              }
+          insertBeforeDialog={
+            <label className="input-group input-group--fluid mts-config__depo">
+              <span className="input-group__label">Размер депозита:</span>
+              <NumericInput
+                className="input-group__input"
+                key={this.state.depo}
+                defaultValue={this.state.depo}
+                format={formatNumber}
+                min={10000}
+                max={Infinity}
+                onBlur={val => {
+                  const { depo } = this.state;
+                  if (val == depo) {
+                    return;
+                  }
 
-              return found > 1;
-            };
-
-            var template = Object.assign({}, toolTemplate);
-            var tool = template;
-            propsToShowArray.map((prop, index) => {
-              tool[prop] = toolTemplate[prop];
-              if (index === 0) {
-                const suffix = customTools.length + 1;
-                tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`;
-              }
-            });
-
-            tool.planIncome = round(tool.price / 10, 2);
-
-            customTools.push(tool);
-
-            while (nameExists(tool.shortName, this.getTools())) {
-              const end = tool.shortName.match(/\d+$/g)[0];
-              tool.shortName = tool.shortName.replace(end, Number(end) + 1);
-            }
-
-            this.setState({ customTools }, () => {
-              $(".config-table-wrap").scrollTop(9999);
-            });
-          }}
-          cancelText="Закрыть"
-        >
-          <label className="input-group input-group--fluid mts-config__depo">
-            <span className="input-group__label">Размер депозита:</span>
-            <NumericInput
-              className="input-group__input"
-              key={this.state.depo}
-              defaultValue={this.state.depo}
-              format={formatNumber}
-              min={10000}
-              max={Infinity}
-              onBlur={val => {
-                const { depo } = this.state;
-                if (val == depo) {
-                  return;
-                }
-
-                this.setState({ depo: val, changed: true });
-              }}
-            />
-          </label>
-
-          <div className="config-table-wrap">
-            <table className="table">
-              <thead className="table-header">
-                <tr className="table-tr">
-                  <th className="config-th table-th">Инструмент</th>
-                  <th className="config-th table-th">Цена шага</th>
-                  <th className="config-th table-th">Шаг цены</th>
-                  <th className="config-th table-th">ГО</th>
-                  <th className="config-th table-th">Текущая цена</th>
-                  <th className="config-th table-th">
-                    <Info tooltip="Средний ход (пунктов) за год с учетом аномальных движений">
-                      ADR1
-                    </Info>
-                  </th>
-                  <th className="config-th table-th">
-                    <Info tooltip="Средний ход (пунктов) за год без учета аномальных движений">
-                      ADR2
-                    </Info>
-                  </th>
-                  <th className="config-th table-th"></th>
-                </tr>
-              </thead>
-              <tbody className="table-body">
-                {
-                  this.state.tools.map((tool, index) =>
-                    <tr className="config-tr" key={index}>
-                      {
-                        this.state.propsToShowArray.map((prop, i) =>
-                          <td
-                            className="table-td"
-                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                            key={i}>
-                            {tool[prop]}
-                          </td>
-                        )
-                      }
-                    </tr>
-                  )
-                }
-                {(() => {
-                  const nameExists = (value, tools) => {
-                    let found = 0;
-                    for (const tool of tools) {
-                      if (value === tool.shortName) {
-                        found++;
-                      }
-                    }
-
-                    return found > 1;
-                  };
-
-                  var onBlur = (val, index, prop) => {
-                    var { customTools, tools } = this.state;
-                    customTools[index][prop] = val;
-                    if (prop === "shortName") {
-                      while (nameExists(customTools[index][prop], this.getTools())) {
-                        const end = customTools[index][prop].match(/\d+$/g)[0];
-                        customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
-                      }
-                    }
-
-                    this.setState({ customTools });
-                  };
-
-                  return this.state.customTools.map((tool, index) =>
-                    <tr className="config-tr" key={index}>
-                      {
-                        this.state.propsToShowArray.map((prop, i) =>
-                          <td
-                            className="table-td"
-                            style={{ width: (prop == "shortName") ? "15em" : "9em" }}
-                            key={i}>
-                            {(() => {
-                              const valid = true;
-
-                              return i === 0 ? (
-                                <div style={{ position: "relative" }}>
-                                  <Input
-                                    key={tool[prop] + Math.random()}
-                                    className={tool["error"] != null ? "error" : ""}
-                                    defaultValue={tool[prop]}
-                                    onBlur={e => onBlur(e.target.value, index, prop)}
-                                    onKeyDown={e => {
-                                      if (
-                                        [
-                                          13, // Enter
-                                          27  // Escape
-                                        ].indexOf(e.keyCode) > -1
-                                      ) {
-                                        e.target.blur();
-                                        onBlur(e.target.value, index, prop);
-                                      }
-                                    }}
-                                  />
-                                  <span style={{
-                                    position: "absolute",
-                                    left: "0",
-                                    top: "100%",
-                                    color: "var(--danger-color)",
-                                    fontSize: ".7em",
-                                    textAlign: "center"
-                                  }}>{tool["error"]}</span>
-                                </div>
-                              )
-                                : (
-                                  <NumericInput
-                                    defaultValue={tool[prop]}
-                                    onBlur={val => onBlur(val, index, prop)}
-                                  />
-                                )
-                            })()}
-                          </td>
-                        )
-                      }
-                      <td className="table-td" key={index}>
-                        <Tooltip title="Удалить">
-                          <button
-                            className="cross-button config__delete"
-                            aria-label="Удалить"
-                            onClick={e => {
-                              var { customTools } = this.state;
-                              customTools.splice(index, 1);
-                              this.setState({ customTools });
-                            }}>
-                            <span>&times;</span>
-                          </button>
-                        </Tooltip>
-                      </td>
-                    </tr>
-                  )
-                })()}
-              </tbody>
-            </table>
-          </div>
-          {/* /.config-talbe-wrap */}
-        </Dialog>
+                  this.setState({ depo: val, changed: true });
+                }}
+              />
+            </label>
+          }
+        />
         {/* Инструменты */}
 
         {(() => {

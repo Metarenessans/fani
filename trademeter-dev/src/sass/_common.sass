@@ -61,6 +61,16 @@ body
 
 @import "layout/index"
 
+// Fix
+.footer__links a
+  white-space: nowrap !important
+
+.input-group input
+  font-size: 1.6em
+
+.ant-select-selection--single,
+  font-size: .8em
+
 /* Extract these sections into separate files */
 
 .section
@@ -363,7 +373,6 @@ body
       transform: translateY(-50%) rotate(-45deg) scale(1.3)
 
   &__tool-block
-    position: relative
     margin-top: 1.25em
 
     +sm
@@ -459,7 +468,7 @@ body
   &__title
     position: absolute
     left:  0
-    top:  -0.04em
+    top:   0.04em
     z-index: 1
     
     font-size: 3.6em
@@ -472,9 +481,14 @@ body
       top: 0.35em
 
     +xs
-      top: 0.4em
+      top: 0.2em
   
   &-header
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+
     min-height: 2em
     margin-bottom: 1em
 
@@ -487,11 +501,17 @@ body
       padding: .65em 0
       margin-bottom: 0
 
+      font-size: 2em
+
     +xs
+      display: flex
+      width: 100%
+
       padding-left: .35em
       text-align: left
 
     &--first
+      justify-content: flex-end
       text-align: right
 
       +xs
@@ -540,8 +560,8 @@ body
     font-weight: bold
 
   &__day-select
-    position: relative;
-    top: -.12em;
+    position: relative
+    top: -.12em
     width: 3.5em !important
     margin-right: .15em
 
@@ -549,12 +569,15 @@ body
 
     +sm
       width: 4em !important
+    
+    +xs
+      margin-left: auto
 
     .ant-select
 
       &-arrow
         right: 0.2em
-        top:   1.4em
+        top:   1.8em
 
         font-size: .6em
 
@@ -562,13 +585,14 @@ body
           top:   1.4em
 
       &-search__field
+        margin-top: -0.15em
         text-align: right
-        line-height: 1em !important
-        padding-top: .2em
 
       &-selection
         border: none
         padding: 0
+
+        font-size: 1em
 
         outline: none
 
@@ -590,10 +614,41 @@ body
           +font("Circe", bold)
           color: var( --primary-color )
   
+  &__switch-long-short
+    background: var(--danger-color)
+    margin-top: .1em
+    margin-left: 2em
+    width: 5em
+
+    font-size: .5em
+
+    +sm
+      margin-left: .75em
+      width: 3.5em
+    
+    +xs
+      margin-left: auto
+
+    &.ant-switch-checked
+      background: var(--accent-color)
+
+      .ant-switch-inner
+        margin-left: .5em
+
+    .ant-switch
+      &-inner
+        margin-left: 1.8em
+        padding-top: .2em
+
+        font-size:  .8em
+        line-height: 1em
+
   &__switch
     .switch__input
       margin-top: 0
-      transform: scale(.6)
+      margin-left: .5em
+
+      font-size: .5em
   
   &-progress
 
@@ -1025,7 +1080,7 @@ body
     display: flex
     justify-content: space-between
     align-items: flex-start
-    align-items: center
+    align-items: baseline
 
     &:last-of-type
       margin-bottom: 0
@@ -1056,7 +1111,7 @@ body
       font-size: 2em
 
   &-l
-    width: 9.5em
+    width: 9em
 
   &-r
     width: 10em
@@ -1091,7 +1146,8 @@ body
       text-align: center
 
     &-suffix
-      flex-basis: 4.5em
+      white-space: nowrap
+      flex-basis: 5em
       flex-shrink: 0
 
       text-align: left
@@ -1106,8 +1162,8 @@ body
     width: 4rem
 
 .save-modal
-  max-width: 40em
-  border-radius: 1.5em
+  .dialog-content
+    max-width: 40em
 
   &__error
     display: block
@@ -1160,21 +1216,10 @@ body
   &-select-search__field
     box-shadow: none !important
 
-#_chart
-  height: 58em
-
 /* anychart */
 .empty-tooltip-row + br
   display: none
   
-.anychart
-
-  &-credits
-    display: none
-
-  &-tooltip
-    width: 18rem
-
 .hide-sm
   +sm
     display: none

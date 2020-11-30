@@ -1,0 +1,45 @@
+.cross-button {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  
+  width:  1em;
+  height: 1em;
+
+  color: white;
+  line-height: 1;
+  
+  cursor: pointer;
+  
+  transform: scale(.85);
+  transition: transform .15s ease-in-out;
+  will-change: transform;
+
+  user-select: none;
+
+  &:hover {
+    transform: scale(1);
+    background-color: rgba(black, .2);
+    opacity: 1;
+
+    color: var( --danger-color );
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-outline-width) white;
+  }
+  
+  [role="img"] {
+    font-size: .75em;
+    position: absolute;
+    // left: 50%;
+    // top:  50%;
+    transform: rotate(45deg);
+  }
+}

@@ -1,0 +1,113 @@
+.main
+  overflow-x: hidden
+  color: #141414
+
+  &__h2,
+  &__h3
+    color: inherit
+    font-size: 2.4em
+    font-weight: normal
+    text-transform: uppercase
+    letter-spacing: 0.05em
+
+    +sm
+      font-size: 1.8em
+  
+  &__h3
+    font-size: 1.2em
+    letter-spacing: .15em
+  
+  &-top
+    position: relative
+    z-index: 2
+    background: var( --primary-color )
+    box-shadow: 0 1.1em 2.1em rgba(0,0,0,.15)
+    padding: 2em 0 2.5em
+
+    color: white
+    text-align: center
+
+    &-wrap
+      position: relative
+      padding: 0 6em
+
+      +sm
+        display: flex
+        flex-direction: column
+        // align-items: center
+        padding: 0
+    
+    &__footer
+      margin-top: 2.5em
+
+      font-size: 1.6em
+
+      > *
+        min-width: 16em
+
+        +xs
+          width: 100%
+
+      > * + *
+        margin-left: 1em
+
+        +xs
+          margin-left: 0
+          margin-top: 1em
+
+    &__new
+      background: white
+      color: var( --primary-color )
+
+      &:hover,
+      &:focus
+        border-color: white
+
+    &__save
+      &:hover,
+      &:focus
+        background: white
+        color: var( --primary-color )
+
+      &:focus
+        border: 1px solid var( --primary-color-light )
+
+      &:hover
+        box-shadow: 0 0 0 0.1em var( --primary-color-lighter )
+        border: 1px solid var( --primary-color-light ) !important
+
+    &__select
+      position: absolute
+      right: 0
+      top:   .75em
+      width:  20em
+
+      color: white !important
+
+      +sm
+        position: static
+        order: -1
+        width: 100%
+        margin-bottom: 1.75em
+
+  &-save
+    font-size: 1.5em
+
+  &__stats
+    margin-bottom: 1.5em
+
+  &__card-1
+    margin: 1.25em 0
+
+  &__card-2
+    width: 50%
+    margin-right: 1.25em
+
+  &__card-3
+    width: 50%
+
+  &__card-4
+    margin-top: 1.25em
+
+  &__section4
+    margin-top: 4em

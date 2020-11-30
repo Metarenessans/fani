@@ -1,4 +1,3 @@
-@import "components/breadcrumbs"
 @import "components/dashboard"
 @import "components/tabs"
   
@@ -40,6 +39,9 @@
         flex-direction: column
         // align-items: center
         padding: 0
+      
+      .stack
+        --gap: 1em
 
     &__footer
       margin-top: 2.5em
@@ -84,17 +86,6 @@
         // border: 1px solid white
 
     &__remove
-      position: absolute
-      z-index: 0
-      right: -1.15em
-      top:    .025em
-
-      +sm
-        position: absolute
-        left: initial
-        right: 0
-        top:   50%
-        transform: translateY(-50%) !important
     
     &__settings
       position: absolute
@@ -112,8 +103,8 @@
     &__select
       position: absolute
       right: 0
-      top:   0
-      width: 15rem
+      top:   .5em
+      width: 20em
 
       color: white !important
 
@@ -157,7 +148,36 @@
       text-align: center
 
   &-content
+    position: relative
     padding: 3em 0
+
+    &__switch-long-short
+      background: var(--danger-color)
+      width: 3em
+      
+      font-size: 3em
+
+      +sm
+        margin-left: .75em
+        width: 3.5em
+      
+      +xs
+        margin-left: auto
+      
+      &-wrapper
+        display: flex
+        justify-content: flex-end
+        padding-right: 4.5em
+
+      &.ant-switch-checked
+        background: var(--accent-color)
+
+      .ant-switch
+        &-inner
+          padding-top: .1em
+
+          font-size: .5em
+          line-height: 1em
 
   &-save
     font-size: 1.5em

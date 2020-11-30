@@ -2652,7 +2652,7 @@ html {
   margin-right: 11px;
   margin-left: 11px;
   // line-height: 30px;
-  padding-top: 0.1em;
+  // padding-top: 0.1em;
 }
 .ant-select-selection__rendered::after {
   display: inline-block;
@@ -19293,7 +19293,7 @@ textarea.ant-mentions {
           box-sizing: border-box;
   min-width: 44px;
   height: 22px;
-  line-height: 1.8em;
+  line-height: 20px;
   vertical-align: middle;
   background-color: rgba(0, 0, 0, 0.25);
   border: 1px solid transparent;
@@ -19310,8 +19310,9 @@ textarea.ant-mentions {
   display: block;
   margin-right: 6px;
   margin-left: 24px;
+  padding-top: .05em;
+  
   color: #fff;
-  // font-size: 12px;
 }
 .ant-switch-loading-icon,
 .ant-switch::after {

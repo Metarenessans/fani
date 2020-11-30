@@ -61,6 +61,10 @@ body
 
 @import "layout/index"
 
+// Fix
+.footer__links a
+  white-space: nowrap !important
+
 .ksd
   &-config
     &__depo
@@ -1088,8 +1092,10 @@ body
     width: 4rem
 
 .save-modal
-  max-width: 40em
-  border-radius: 1.5em
+
+  .dialog-content
+    max-width: 40em
+    // border-radius: 1.5em
 
   &__error
     display: block

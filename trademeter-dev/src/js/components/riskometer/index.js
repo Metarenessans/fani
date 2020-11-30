@@ -289,9 +289,9 @@ export default class Speedometer extends React.Component {
 
     this.setState({ value: p_out[4] * 100 }, this.createShape);
 
-    window.addEventListener("resize", e => {
-      this.updateShape();
-    });
+    // window.addEventListener("resize", e => {
+    //   this.updateShape();
+    // });
   }
 
   render() {

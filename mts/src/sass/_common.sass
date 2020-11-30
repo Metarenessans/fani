@@ -61,24 +61,33 @@ body
 
 @import "layout/index"
 
+// Fix
+.footer__links a
+  white-space: nowrap !important
+
 .mts
   &-config
     &__depo
+      span
+        font-size: 1.4em
+
       .ant-input
         font-size: 1em !important 
 
   &-slider1
     position: relative
-    height: 30em
+    height: 31em
     margin-left: 5em
 
     +xs
       // margin-left: 10em
 
     .ant-slider-handle
+      width:  1.7em
+      height: 1.7em
       margin: 0
       margin-top:   0
-      margin-left: -0.55em
+      margin-left: -0.725em
 
     &-top,
     &-bottom,
@@ -90,7 +99,7 @@ body
 
     &-top,
     &-bottom
-      left: 2em
+      left: 2.35em
       color: #999
 
       font-size: 1.4em
@@ -104,10 +113,10 @@ body
         font-size: 1.8em !important
 
     &-top
-      top: 0
+      top:    -0.7em
 
     &-bottom
-      bottom: 0
+      bottom: -0.7em
 
       b
         color: #777
@@ -161,6 +170,9 @@ body
 
     .ant-slider-handle
       margin-left: 0
+      margin-top: -0.8em
+      width:  1.7em
+      height: 1.7em
 
       &-1
         +visible
@@ -223,12 +235,11 @@ body
         position: absolute
         left:  50%
         top:   0
-        margin-top:  -2.5em
-        // margin-left: .275em
+        margin-top:  -2.575em
         transform: translateX(-50%)
 
-        width:  (.8em / 2)
-        height: (4em / 2)
+        width:  (.4em / 2)
+        height:  (4em / 2)
         background-color: #dcae1d
 
         +no-select
@@ -329,6 +340,7 @@ body
         width: 6em
 
         font-size: 1em
+        line-height: 1em
         text-align: center
 
       tr
