@@ -24,6 +24,7 @@ import promiseWhile   from "../../../common/utils/promise-while"
 import { Tools, template }     from "../../../common/tools"
 import Stack                   from "../../../common/components/stack"
 import CustomSlider            from "./components/custom-slider"
+import SettingsGenerator       from "./components/settings-generator"
 import CrossButton             from "../../../common/components/cross-button"
 import NumericInput            from "../../../common/components/numeric-input"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
@@ -921,6 +922,15 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
+
+                        <button
+                          className="settings-button js-open-modal main-content-options__settings"
+                          onClick={e => dialogAPI.open("settings-generator", e.target)}
+                        >
+                          <span className="visually-hidden">Открыть конфиг</span>
+                          <SettingFilled className="settings-button__icon" />
+                        </button>
+
                       </div>
 
                       <div className="main-content-options__row">
@@ -1265,6 +1275,19 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
+
+        <Dialog
+          id="settings-generator"
+          pure={true}
+        >
+          <SettingsGenerator
+            onClose={e => {
+              console.log('onClose');
+              dialogAPI.close("settings-generator");
+            }}
+          />
+        </Dialog>
+        {/* ГЕНА */}
 
       </div>
     );

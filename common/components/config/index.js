@@ -12,14 +12,17 @@ import { Tools }             from "../../tools"
 
 import "./style.scss"
 
-export default class Config extends React.Component {
+class Config extends React.Component {
 
   constructor(props) {
     super(props);
 
     const { customTools } = this.props;
 
+    this.ref = React.createRef();
+
     this.state = {
+      showMax:  20,
       customTools,
       changed:   false,
       alertText: "",
@@ -28,12 +31,13 @@ export default class Config extends React.Component {
   }
 
   componentDidMount() {
-
+    document.getElementById(this.ref.current.id);
+    console.log();
   }
 
   render() {
-    let { alertText, changed, customTools, filter } = this.state;
-    let { id, title, template, tools, currentToolIndex, toolsInfo, onChange, insertBeforeDialog } = this.props;
+    let { alertText, changed, customTools, filter, showMax } = this.state;
+    let { id, title, template, tools, toolsInfo, onChange, insertBeforeDialog } = this.props;
     insertBeforeDialog = insertBeforeDialog || null;
 
     const alertId = String(id).concat("-alert");
@@ -106,6 +110,7 @@ export default class Config extends React.Component {
               return true;
             }
           }}
+          ref={this.ref}
         >
           <Stack className="config">
             {/* Самый идиотский костыль, который я когда-либо придумывал */}
@@ -117,134 +122,136 @@ export default class Config extends React.Component {
               onChange={e => {
                 const filter = e.target.value;
                 this.setState({ filter });
-              }} />
+              }}
+            />
 
-            <div className={
-              ["config-table-wrap"]
-                .join(" ")
-                .trim()
-            }>
-              {(() => {
-                return (
-                  <table className="table">
-                    <thead className="table-header">
-                      <tr className="table-tr">
-                        {
-                          toolsInfo
-                            .map(info => info.name)
-                            .map((name, index) =>
-                              <th style={{ minWidth: index == 0 ? "14em" : "" }} className="config-th table-th">{name}</th>
-                            )
-                        }
-                        {customTools && customTools.length ? <th></th> : null}
-                      </tr>
-                    </thead>
-                    <tbody className="table-body">
-                      {
-                        tools && tools
-                          .filter(tool => tool.toString().toLowerCase().indexOf(filter.toLowerCase()) > -1)
-                          .map((tool, index) =>
-                            <tr className="config-tr" key={index}>
-                              {
-                                toolsInfo
-                                  .map(info => info.prop)
-                                  .map((prop, i) =>
-                                    <td key={i} className="table-td">
-                                      {prop == uniqueProp
-                                        ? <span title={tool.toString()}>{croppString(tool[prop], 27)}</span>
-                                        : tool[prop]
-                                      }
-                                    </td>
-                                  )
-                              }
-                            </tr>
-                          )
+            <div 
+              className="config-table-wrap"
+              onScroll={e => {
+                const scrollTopMax = e.target.querySelector("table").offsetHeight - e.target.offsetHeight * 1.5;
+                if (e.target.scrollTop > scrollTopMax && showMax < getAllTools().length) {
+                  this.setState({ showMax: showMax + 40 });
+                }
+              }}>
+              <table className="table">
+                <thead className="table-header">
+                  <tr className="table-tr">
+                    {
+                      toolsInfo
+                        .map(info => info.name)
+                        .map((name, index) =>
+                          <th style={{ minWidth: index == 0 ? "14em" : "" }} className="config-th table-th">
+                            {name}
+                          </th>
+                        )
+                    }
+                    {customTools && customTools.length ? <th></th> : null}
+                  </tr>
+                </thead>
+                <tbody className="table-body">
+                  {
+                    tools && tools
+                      .filter(tool => tool.toString().toLowerCase().indexOf(filter.toLowerCase()) > -1)
+                      .slice(0, showMax)
+                      .map((tool, index) =>
+                        <tr className="config-tr" key={index}>
+                          {
+                            toolsInfo
+                              .map(info => info.prop)
+                              .map((prop, i) =>
+                                <td key={i} className="table-td">
+                                  {prop == uniqueProp
+                                    ? <span title={tool.toString()}>{croppString(tool[prop], 27)}</span>
+                                    : tool[prop]
+                                  }
+                                </td>
+                              )
+                          }
+                        </tr>
+                      )
+                  }
+                  {(() => {
+                    let onBlur = (val, index, prop) => {
+                      // Do nothing if input stays unchanged
+                      if (customTools[index][prop] === val) {
+                        return;
                       }
-                      {(() => {
-                        let onBlur = (val, index, prop) => {
-                          // Do nothing if input stays unchanged
-                          if (customTools[index][prop] === val) {
-                            return;
+
+                      customTools[index][prop] = val;
+                      if (prop === uniqueProp) {
+                        while (nameExists(customTools[index][prop], getAllTools())) {
+                          const found = customTools[index][prop].match(/\d+$/g);
+                          if (found) {
+                            const end = customTools[index][prop].match(/\d+$/g)[0];
+                            customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
                           }
-
-                          customTools[index][prop] = val;
-                          if (prop === uniqueProp) {
-                            while (nameExists(customTools[index][prop], getAllTools())) {
-                              const found = customTools[index][prop].match(/\d+$/g);
-                              if (found) {
-                                const end = customTools[index][prop].match(/\d+$/g)[0];
-                                customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
-                              }
-                              else {
-                                customTools[index][prop] += " 2";
-                              }
-                            }
+                          else {
+                            customTools[index][prop] += " 2";
                           }
+                        }
+                      }
 
-                          this.setState({ customTools, changed: true });
-                        };
+                      this.setState({ customTools, changed: true });
+                    };
 
-                        return customTools && customTools.map((tool, index) =>
-                          <tr className="config-tr" key={index}>
-                            {
-                              toolsInfo
-                                .map(info => info.prop)
-                                .map((prop, i) =>
-                                  <td
-                                    key={i}
-                                    className="table-td"
-                                  >
-                                    {(() => {
-                                      const value = tool[prop];
-                                      return (
-                                        typeof value == "string" ? (
-                                          <Input
-                                            key={value + Math.random()}
-                                            defaultValue={value}
-                                            onKeyDown={e => {
-                                              if (
-                                                [
-                                                  13, // Enter
-                                                  27  // Escape
-                                                ].indexOf(e.keyCode) > -1
-                                              ) {
-                                                e.target.blur();
-                                              }
-                                            }}
-                                            onBlur={e => onBlur(e.target.value, index, prop)}
-                                          />
-                                        )
-                                        : (
-                                          <NumericInput
-                                            key={value + Math.random()}
-                                            defaultValue={value}
-                                            onBlur={val => onBlur(val, index, prop)}
-                                          />
-                                        )
+                    return customTools && customTools
+                      .slice(0, showMax)
+                      .map((tool, index) =>
+                        <tr className="config-tr" key={index}>
+                          {
+                            toolsInfo
+                              .map(info => info.prop)
+                              .map((prop, i) =>
+                                <td
+                                  key={i}
+                                  className="table-td"
+                                >
+                                  {(() => {
+                                    const value = tool[prop];
+                                    return (
+                                      typeof value == "string" ? (
+                                        <Input
+                                          key={value + Math.random()}
+                                          defaultValue={value}
+                                          onKeyDown={e => {
+                                            if (
+                                              [
+                                                13, // Enter
+                                                27  // Escape
+                                              ].indexOf(e.keyCode) > -1
+                                            ) {
+                                              e.target.blur();
+                                            }
+                                          }}
+                                          onBlur={e => onBlur(e.target.value, index, prop)}
+                                        />
                                       )
-                                    })()}
-                                  </td>
-                                )
-                            }
+                                      : (
+                                        <NumericInput
+                                          key={value + Math.random()}
+                                          defaultValue={value}
+                                          onBlur={val => onBlur(val, index, prop)}
+                                        />
+                                      )
+                                    )
+                                  })()}
+                                </td>
+                              )
+                          }
 
-                            <CrossButton 
-                              className="config__delete"
-                              onClick={e => {
-                              // if (index == currentToolIndex) {
-                              //   this.setState({ alertText: "Вы уверены, что хотите удалить выбранный инструмент?" });
-                              //   dialogAPI.open(alertId);
-                              // }
+                          <CrossButton 
+                            className="config__delete"
+                            onClick={e => {
                               customTools.splice(index, 1);
                               this.setState({ customTools, changed: true });
                             }} />
-                          </tr>
-                        )
-                      })()}
-                    </tbody>
-                  </table>
-                )
-              })()}
+                        </tr>
+                      )
+                  })()}
+                </tbody>
+              </table>
             </div>
+
           </Stack>
         </Dialog>
 
@@ -264,3 +271,5 @@ export default class Config extends React.Component {
     )
   }
 }
+
+export default React.memo(Config);

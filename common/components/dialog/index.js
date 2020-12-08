@@ -195,6 +195,8 @@ class Dialog extends React.Component {
       cancelText,
       cancelClass,
       hideCancel,
+
+      pure
     } = this.props;
     
     className = className || "";
@@ -205,7 +207,14 @@ class Dialog extends React.Component {
     return (
       <div
         id={id}
-        className={[].concat(block).concat(className).join(" ").trim()}
+        className={
+          []
+            .concat(block)
+            .concat(className)
+            .concat(pure ? "pure" : "")
+            .join(" ")
+            .trim()
+        }
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -218,49 +227,60 @@ class Dialog extends React.Component {
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${block}__inner card`}>
           <div className={["stack"].concat(className).join(" ").trim()}>
-            <h2 className={`${block}__title`}>{title}</h2>
+            {!pure 
+              ? <h2 className={`${block}__title`}>{title}</h2>
+              : null
+            }
 
             <div className={`${block}__content`}>
               {this.props.children}
             </div>
 
-            {footer 
-              ? footer
-              : !hideFooter && (
-              <div className={`${block}-footer-wrap`}>
-                <footer className={`${block}-footer`}>
+            {!pure && (
+              footer 
+                ? footer
+                : !hideFooter && (
+                  <div className={`${block}-footer-wrap`}>
+                    <footer className={`${block}-footer`}>
 
-                  {!hideCancel && (
-                    <Button
-                      className={[].concat("custom-btn").concat(cancelClass).join(" ").trim()}
-                      onClick={() => this.onCancel()}>
-                      {cancelText ? cancelText : "Отмена"}
-                    </Button>
-                  )}
+                      {!hideCancel && (
+                        <Button
+                          className={[].concat("custom-btn").concat(cancelClass).join(" ").trim()}
+                          onClick={() => this.onCancel()}>
+                          {cancelText ? cancelText : "Отмена"}
+                        </Button>
+                      )}
 
-                  {!hideConfirm && (
-                    <Button
-                      className="custom-btn custom-btn--filled"
-                      type="primary"
-                      onClick={() => this.onConfirm()}>
-                      {confirmText ? confirmText : "Сохранить"}
-                    </Button>
-                  )}
+                      {!hideConfirm && (
+                        <Button
+                          className="custom-btn custom-btn--filled"
+                          type="primary"
+                          onClick={() => this.onConfirm()}>
+                          {confirmText ? confirmText : "Сохранить"}
+                        </Button>
+                      )}
 
-                </footer>
-              </div>
-            )}
+                    </footer>
+                  </div>
+                )
+              )}
 
           </div>
-          <CrossButton 
-            className={`${block}__close`}
-            onClick={e => this.onClose()}
-          />
+          {!pure
+            ?
+            <CrossButton 
+              className={`${block}__close`}
+              onClick={e => this.onClose()}
+            />
+            : null
+          }
         </div>
         <div tabIndex="0" aria-hidden="true"></div>
       </div>
     )
   }
 }
+
+Dialog = React.memo(Dialog);
 
 export { Dialog, dialogAPI };

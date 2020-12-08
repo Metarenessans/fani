@@ -48,6 +48,7 @@ import roundUp             from "../../../common/utils/round-up"
 import typeOf              from "../../../common/utils/type-of"
 import { Tools, template } from "../../../common/tools"
 
+import Stack        from "./components/stack"
 import BigNumber    from "./components/BigNumber"
 import Config       from "../../../common/components/config";
 import CrossButton  from "../../../common/components/cross-button"
@@ -57,7 +58,6 @@ import Header       from "./components/header"
 import ModeToggle   from "./components/mode-toggle"
 import NumericInput from "./components/numeric-input"
 import Speedometer  from "./components/riskometer"
-import Stack        from "./components/stack"
 import Value        from "./components/value"
 import {
   Chart,
@@ -71,7 +71,7 @@ import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
 let saveToDonwload;
 
-const shouldLoadFakeSave = true;
+const shouldLoadFakeSave = false;
 const chartVisible = true;
 
 class App extends Component {
@@ -105,6 +105,9 @@ class App extends Component {
        * @type {Array<Number>}
        */
       depoStart: [ depoStart, depoStart ],
+
+      // НДФЛ
+      tax: 13,
       
       /**
        * Целевой депозит
@@ -957,7 +960,7 @@ class App extends Component {
         data[d - 1].day = d;
         data[d - 1].customIncome    = item.customIncome    != null ? item.customIncome    : item.ci;
         data[d - 1].iterations      = item.iterations      != null ? item.iterations      : item.i;
-        data[d - 1].iterationsList  = item.iterationsList  != null ? item.iterationsList  : item.il;
+        data[d - 1].iterationsList  = item.iterationsList  != null ? item.iterationsList  : item.il || [];
         
         data[d - 1].passiveIncome   = item.passiveIncome   != null ? item.passiveIncome   : item.pi;
         data[d - 1].directUnloading = item.directUnloading != null ? item.directUnloading : item.du;
@@ -1051,8 +1054,6 @@ class App extends Component {
     //   .slice(0, frequency)
     //   .map(d => d.goal)
     //   .reduce((prev, curr) => prev + curr);
-
-    console.log("заработано за", frequency, "д.:", Math.round(max), "(rate="+rate+"%)");
 
     return Math.round(max);
   }
@@ -1499,7 +1500,7 @@ class App extends Component {
     }
 
     if (!data[day - 1].iterationsList) {
-      return;
+      return [];
     }
 
     return data[day - 1].iterationsList.filter(v => v.percent != null || v.income != null);
@@ -1720,7 +1721,6 @@ class App extends Component {
                           <label className="input-group">
                             <span className="input-group__label">Доходность в день</span>
                             <NumericInput
-                              // key={this.state.days[this.state.mode]}
                               disabled={this.state.saved}
                               max={30}
                               className="input-group__input"
@@ -2180,23 +2180,22 @@ class App extends Component {
                     withdrawalInterval,
                     payloadInterval,
                     payload,
+                    tax,
                   } = this.state;
 
+                  // Вывод
                   let paymentTotal = 0;
-                  let payloadTotal = 0;
-
+                  let paymentTax   = 0;
                   if (days[mode] > withdrawalInterval[mode]) {
-                    // Вывод
-                    paymentTotal = new Array( +Math.floor(days[mode] / withdrawalInterval[mode]) )
-                      .fill(withdrawal[mode] - withdrawal[mode] * 0.18)
-                      .reduce((prev, curr) => prev + curr);
+                    const multiplier = Math.floor(days[mode] / payloadInterval[mode]);
+                    paymentTotal = (withdrawal[mode] - withdrawal[mode] * (tax / 100)) * multiplier;
+                    paymentTax = (withdrawal[mode] * (tax / 100)) * multiplier;
                   }
-
+                  
+                  // Пополнение
+                  let payloadTotal = 0;
                   if (days[mode] > payloadInterval[mode]) {
-                    // Пополнение
-                    payloadTotal = new Array( +Math.floor(days[mode] / payloadInterval[mode]) )
-                      .fill(payload[mode])
-                      .reduce((prev, curr) => prev + curr);
+                    payloadTotal = payload[mode] * Math.floor(days[mode] / payloadInterval[mode]);
                   }
 
                   return (
@@ -2274,14 +2273,18 @@ class App extends Component {
                                 <h3 className="stats-key main__h3">
                                   { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
                                 </h3>
-                                <div className="stats-val">
-                                  {
-                                    paymentTotal != 0
-                                      ? "-"
-                                      : null
-                                  }
-                                  <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
-                                </div>
+                                <Tooltip title={"Удержан НДФЛ: " + formatNumber(paymentTax)}>
+
+                                  <div className="stats-val">
+                                    {
+                                      paymentTotal != 0
+                                        ? "-"
+                                        : null
+                                    }
+                                    <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
+                                  </div>
+
+                                </Tooltip>
                               </Col>
                             )
                             : null
@@ -3595,7 +3598,7 @@ class App extends Component {
 
                                   const iterationsList = data[currentDay - 1].iterationsList;
 
-                                  return iterationsList
+                                  return iterationsList && iterationsList
                                     .map((listItem, index) =>
                                       <li key={index} className="iterations-list-item">
                                         <span className="iterations-list-item__number">
@@ -4014,6 +4017,27 @@ class App extends Component {
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools })}
+
+            insertBeforeDialog={
+              <label className="input-group input-group--fluid trademeter-config__depo">
+                <span className="input-group__label">НДФЛ:</span>
+                <NumericInput
+                  className="input-group__input"
+                  key={this.state.tax}
+                  defaultValue={this.state.tax}
+                  format={formatNumber}
+                  suffix="%"
+                  onBlur={val => {
+                    const { tax } = this.state;
+                    if (val == tax) {
+                      return;
+                    }
+
+                    this.setState({ tax: val, changed: true });
+                  }}
+                />
+              </label>
+            }
           />
           {/* Инструменты */}
 

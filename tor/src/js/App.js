@@ -112,7 +112,7 @@ constructor(props) {
     this.fetchInvestorInfo();
     this.fetchTools();
     if (dev) {
-      this.loadFakeSave();
+      // this.loadFakeSave();
       return;
     }
     this.fetchSaves();
