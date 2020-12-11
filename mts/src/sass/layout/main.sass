@@ -242,6 +242,8 @@
         margin: calc(-1 * var(--gap)) 
 
       &__row
+        position: relative
+
         margin: var(--gap)
         display: flex
         align-items: center
@@ -301,7 +303,10 @@
 
       &__settings
         +sm
-          margin-top: 1em
+          position: absolute
+          right: 0
+          top:   0
+          margin-top: -0.3em
 
   &-save
     font-size: 1.5em

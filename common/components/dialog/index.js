@@ -13,8 +13,17 @@ dialogAPI.getFocusableDescendants = element => {
 }
 
 dialogAPI.focusFirstDescendant = element => {
-  const focusable = dialogAPI.getFocusableDescendants(element);
-  focusable[0].focus();
+  let elementToFocus;
+  const focusFirstElement = element.querySelector(".js-dialog-focus-first");
+  if (focusFirstElement) {
+    elementToFocus = focusFirstElement;
+  }
+  else {
+    const focusable = dialogAPI.getFocusableDescendants(element);
+    elementToFocus = focusable[0];
+  }
+
+  elementToFocus.focus();
 }
 
 dialogAPI.focusLastDescendant = element => {
@@ -220,7 +229,11 @@ class Dialog extends React.Component {
         aria-label={title}
         hidden={true}
         onClick={e => {
-          if (e.target.classList.contains(block)) {
+          if (
+            e.target.id
+              .split(" ")
+              .indexOf(id) > -1
+          ) {
             this.onClose();
           }
         }}>

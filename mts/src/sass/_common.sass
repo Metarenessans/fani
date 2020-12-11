@@ -229,27 +229,29 @@ body
         color: var(--accent-color)
         font-weight: 700
 
-      &::before
-        content: ''
-        display: block
-        position: absolute
-        left:  50%
-        top:   0
-        margin-top:  -2.575em
-        transform: translateX(-50%)
-
-        width:  (.4em / 2)
-        height:  (4em / 2)
-        background-color: #dcae1d
-
-        +no-select
-
     &__input
       padding: 0
       padding-top: 2.75em
 
       .ant-slider
+        position: relative
         margin: .75em 0
+
+        &::before
+          content: ''
+          display: block
+          position: absolute
+          z-index: 1
+          left:   50%
+          bottom: 50%
+          transform: translate(-50%, 50%)
+          margin-bottom: 0.1em
+
+          width:  (.4em / 2)
+          height:  (4em / 2)
+          background-color: #dcae1d
+
+          +no-select
 
   &-table
     width: 100%

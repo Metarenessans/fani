@@ -2,6 +2,14 @@
 
 $m: .4475;
 
+#settings-generator-add-popup {
+  font-size: 1.6em * $m;
+
+  .dialog__content {
+    font-size: .8em;
+  }
+}
+
 .settings-generator {
   max-width: 1280px;
 
@@ -43,6 +51,7 @@ $m: .4475;
     svg {
       font-size: .65em;
       fill: white;
+
       transform: scaleY(.85);
     }
 
@@ -53,14 +62,14 @@ $m: .4475;
   }
 
   &__burger-button {
-    display: none;
+    display: none !important;
     align-self: flex-end;
     margin-right: .25em;
 
     font-size: 1.8em;
 
     @include sm {
-      display: inline-flex;
+      display: inline-flex !important;
     }
 
     @include xs {
@@ -128,7 +137,7 @@ $m: .4475;
 
     @include sm {
       position: absolute;
-      z-index: 99999;
+      z-index: 99;
       left: 0;
       top:  0;
       height: 100%;
@@ -140,7 +149,8 @@ $m: .4475;
       transition: opacity .3s ease-in;
       will-change: opacity;
 
-      &.visible {
+      &.visible,
+      &:focus-within {
         left: 0;
         pointer-events: all;
       }
@@ -240,9 +250,11 @@ $m: .4475;
       font-size: 1.6em * $m;
 
       &__label {
-        font-size: .8em;
         margin-left: 1em * $m;
         margin-bottom: .5em * $m;
+
+        font-size: .8em;
+        font-weight: bold;
       }
 
       > [class^="ant-"] {
@@ -261,8 +273,10 @@ $m: .4475;
       }
 
       &__label {
-        font-size: 1.4em * $m;
         margin-left: 1.5em * $m;
+
+        font-size: 1.4em * $m;
+        font-weight: bold;
       }
     }
 
@@ -391,10 +405,16 @@ $m: .4475;
 
       &--1 {
         @include xs {
+
+          > * + * {
+            margin-top: 1em;
+          }
+
           .input-group {
             width: 100%;
             max-width: 100%;
           }
+
         }
       }
 
@@ -415,7 +435,7 @@ $m: .4475;
 
         @include xs {
           width: 100%;
-          gap: .5em;
+          gap: 1em;
         }
       }
 
@@ -493,9 +513,9 @@ $m: .4475;
     }
 
     &__label {
-      font-family: "Circe";
+      font-family: "Circe", sans-serif;
       font-size: 1.4em * $m;
-      font-weight: 700;
+      font-weight: bold;
       color: #999;
     }
 
@@ -777,6 +797,16 @@ $m: .4475;
         transform: none;
         cursor: not-allowed;
       }
+    }
+  }
+
+  &__delete {
+    background: none !important;
+    svg {
+      fill: #c62f39 !important;
+      transform: none !important;
+
+      font-size: 1em !important;
     }
   }
 }

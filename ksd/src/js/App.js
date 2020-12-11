@@ -138,7 +138,7 @@ class App extends React.Component {
       let { saves } = this.state;
       let save = {
         dateCreate: 1595544839,
-        static: `{"depo":10000,"sortProp":"incomePercentage","sortDESC":null,"mode":0,"data":[{"percentage":20},{"percentage":20,"selectedToolName":"BR-11.20"},{"percentage":20,"selectedToolName":"ROSN-12.20"},{"percentage":20,"selectedToolName":"SILV-12.20"},{"percentage":20,"selectedToolName":"BR-12.20"},{"percentage":20,"selectedToolName":"Si-12.20"},{"percentage":20,"selectedToolName":"GAZR-12.20"},{"percentage":20,"selectedToolName":"SBPR-12.20"},{"percentage":20,"selectedToolName":"SBRF-12.20"},{"percentage":20,"selectedToolName":"MGNT-12.20"},{"percentage":20,"selectedToolName":"GOLD-12.20"},{"percentage":20,"selectedToolName":"NG-10.20","planIncome":null},{"percentage":10,"selectedToolName":"RTS-12.20","planIncome":null}],"customTools":[],"current_date":"#"}`,
+        static: `{"depo":200000,"sortProp":null,"sortDESC":true,"mode":1,"data":[{"percentage":10,"guaranteeValue":4697.58,"contracts":4,"planIncome":null,"income":15193.400000000001,"incomePercentage":7.5967,"loadingPercentage":75.967,"risk":7.5967,"freeMoney":82.4033,"selectedToolName":"Si-12.20"},{"percentage":10,"guaranteeValue":6632.46,"contracts":3,"planIncome":2.0165,"income":4624.419285000001,"incomePercentage":2.3122096425000005,"loadingPercentage":23.122,"risk":2.3122096425000005,"freeMoney":87.6877903575,"selectedToolName":"BR-10.20"},{"percentage":10,"guaranteeValue":23397.4,"contracts":0,"planIncome":null,"income":0,"incomePercentage":0,"loadingPercentage":0,"risk":0,"freeMoney":90,"selectedToolName":"RTS-12.20"},{"percentage":10,"guaranteeValue":2357.81,"contracts":8,"planIncome":null,"income":5451.6,"incomePercentage":2.7258,"loadingPercentage":27.258,"risk":2.7258,"freeMoney":87.27420000000001,"selectedToolName":"MOEX-12.20"},{"percentage":10,"guaranteeValue":15836.26,"contracts":1,"planIncome":null,"income":7378.27836,"incomePercentage":3.6891391799999997,"loadingPercentage":36.891,"risk":3.6891391799999997,"freeMoney":86.31086082,"selectedToolName":"GOLD-12.20"},{"percentage":10,"guaranteeValue":783.37,"contracts":25,"planIncome":null,"income":5610,"incomePercentage":2.8049999999999997,"loadingPercentage":28.05,"risk":2.8049999999999997,"freeMoney":87.195,"selectedToolName":"MGNT-12.20"},{"percentage":10,"guaranteeValue":1411.45,"contracts":14,"planIncome":null,"income":5707.1,"incomePercentage":2.8535500000000003,"loadingPercentage":28.536,"risk":2.8535500000000003,"freeMoney":87.14645,"selectedToolName":"AFLT-12.20"}],"customTools":[],"current_date":"#"}`,
         data: {
           id: 20,
           name: "Fresh KSD",
@@ -338,6 +338,12 @@ class App extends React.Component {
       state.data = state.data
         .map(item => {
           item = { ...defaultToolData, ...item };
+
+          if (item.guaranteeValue) {
+            item.guarantee = item.guaranteeValue;
+            delete item.guaranteeValue;
+          }
+
           delete item.planIncome;
           return item;
         });

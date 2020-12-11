@@ -1281,6 +1281,9 @@ class App extends React.Component {
           pure={true}
         >
           <SettingsGenerator
+            depo={this.state.depo}
+            tools={this.getTools()}
+            load={percentage}
             onClose={e => {
               console.log('onClose');
               dialogAPI.close("settings-generator");

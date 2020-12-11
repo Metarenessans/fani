@@ -212,7 +212,7 @@ export default class DashboardRow extends React.Component {
     if (!
       (
         currentTool.getSortProperty() == selectedToolName ||
-        currentTool.code == selectedToolName
+        currentTool.code              == selectedToolName
       )
     ) {
       delete itemUpdated.planIncome;

@@ -89,8 +89,7 @@
 }
 .ant-switch:focus {
   outline: 0;
-  -webkit-box-shadow: 0 0 0 1px var( --primary-color-lighter );
-          box-shadow: 0 0 0 1px var( --primary-color-lighter );
+  box-shadow: 0 0 0 var(--focus-outline-width) var(--primary-color-lighter)
 }
 .ant-switch:focus:hover {
   -webkit-box-shadow: none;

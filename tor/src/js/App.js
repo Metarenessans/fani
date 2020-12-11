@@ -149,13 +149,15 @@ constructor(props) {
   }
 
   fetchInvestorInfo() {
-    fetchInvestorInfo()
-      .then(this.applyInvestorInfo)
+    fetch("getInvestorInfo")
       .then(response => {
-        let { deposit } = response.data;
-        return this.setStateAsync({ depo: deposit || 10000 });
+        const { deposit, status, skill } = response.data;
+        return new Promise(resolve => {
+          this.setState({ investorInfo: { status, skill } }, () => resolve(deposit));
+        });
       })
-      .catch(error => console.error(error))
+      .then(depo => this.setState({ depo: depo || 10000 }))
+      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
   
   fetchTools() {
