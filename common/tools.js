@@ -3,6 +3,33 @@ import fractionLength from "./utils/fraction-length"
 import readyTools    from "./adr.json"
 import readyToolsNew from "./adr-new.json"
 
+const template = {
+  ref:             null,
+  fullName:        "",
+  shortName:       "",
+  code:            "",
+  stepPrice:       0,
+  priceStep:       0,
+  averageProgress: 0,
+  guarantee:       0,
+  currentPrice:    0,
+  volume:          0,
+  lotSize:         0,
+  dollarRate:      0,
+  adrDay:          0,
+  adrWeek:         0,
+  adrMonth:        0,
+
+  points: [
+    [70,  70],
+    [156, 55],
+    [267, 41],
+    [423, 27],
+    [692, 13],
+    [960,  7],
+  ],
+};
+
 class Tool {
   constructor(toCopy = {}) {
     Object.keys(toCopy).forEach(key => {
@@ -31,10 +58,6 @@ class Tool {
 
       this.guarantee = round(guarantee, 1);
     }
-    else {
-      this.guarantee = 0;
-    }
-
     return this;
   }
 
@@ -141,23 +164,26 @@ const parseTool = tool => {
     }
   }
 
-  // Check if we already have pre-written tool
   var found = false;
-
+  
+  // Check if we already have pre-written tool
   const check = readyTools => {
     for (let readyTool of readyTools) {
-      const lastCompareIndex = readyTool.isFutures && dollarRate == 0 ? 2 : undefined;
+      const lastCompareIndex = (readyTool.isFutures && dollarRate == 0) ? 2 : undefined;
       const toolCode = tool.code.toLowerCase().slice(0, lastCompareIndex);
       const readyToolCode = readyTool.code.replace(".US", "").toLowerCase().slice(0, lastCompareIndex);
-      
+
       if (toolCode == readyToolCode) {
-        if (readyTool.code == "GOLD.US") {
-          debugger;
+
+        if (readyTool.adr) {
+          adrDay   =  currentPrice * readyTool.adr      / 100;
         }
-        
-        adrDay   = adrDay   || currentPrice * readyTool.adr      / 100;
-        adrWeek  = adrWeek  || currentPrice * readyTool.adrWeek  / 100;
-        adrMonth = adrMonth || currentPrice * readyTool.adrMonth / 100;
+        if (readyTool.adrWeek) {
+          adrWeek  =  currentPrice * readyTool.adrWeek  / 100;
+        }
+        if (readyTool.adrMonth) {
+          adrMonth =  currentPrice * readyTool.adrMonth / 100;
+        }
   
         found = true;
         break;
@@ -165,8 +191,15 @@ const parseTool = tool => {
     }
   };
 
-  check(readyTools);
-  check(readyToolsNew);
+  const filterFn = t => {
+    if (t.adrWeek == "" && t.adrMonth == "") {
+      return false;
+    }
+    return true;
+  };
+
+  check(readyTools.filter(filterFn));
+  check(readyToolsNew.filter(filterFn));
 
   // We didn't find the tool in pre-written tools
   if (!found) {
@@ -180,13 +213,21 @@ const parseTool = tool => {
 
   // Оставляем такое же кол-во знаков после запятой, что и в шаге цены
   let fraction = fractionLength(priceStep);
-  adrDay   = +(adrDay).toFixed(fraction);
-  adrWeek  = +(adrWeek).toFixed(fraction);
-  adrMonth = +(adrMonth).toFixed(fraction);
+  if (adrDay) {
+    adrDay   = +(adrDay).toFixed(fraction);
+  }
+  if (adrWeek) {
+    adrWeek  = +(adrWeek).toFixed(fraction);
+  }
+  if (adrMonth) {
+    adrMonth = +(adrMonth).toFixed(fraction);
+  }
+
 
   return {
     ref:       tool,
     code:      tool.code,
+    // id:        tool.code + (dollarRate == 1) ? ".RU" : ".US",
     fullName:  tool.fullName  || tool.name,
     shortName: tool.shortName,
     stepPrice,
@@ -309,37 +350,36 @@ class Tools {
   ) {
     const investorInfo = options.investorInfo || {};
 
-    let tool = new Tool(merge(cloneDeep(template), toolInfo));
+    let tool = new Tool({ ...template, ...toolInfo });
     tool = tool.update(investorInfo);
     return tool;
   }
+
+  static getToolIndexByCode(tools = [], search = "") {
+    if (!search || !tools.length) {
+      return 0;
+    }
+    
+    let index = tools.indexOf( tools.find( tool => tool.getSortProperty() == search ) );
+    if (index > -1) {
+      return index;
+    }
+
+    // Если в id есть месяц и год, то можно начать искать ближайший
+    const regexp = /\d{1,2}\.\d{1,2}/;
+    const found = regexp.exec(search);
+    if ( found ) {
+      // Находим все инструменты с одинаковым кодом
+      let alike = [ ...tools ].filter(tool => 
+        tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
+      );
+
+      const sorted = this.sort( alike.map(t => t.getSortProperty()).concat(search) );
+      index = tools.indexOf( alike[0] ) + sorted.indexOf( sorted.find( n => n == search ) );
+    }
+
+    return Math.max(index, 0);
+  }
 }
-
-const template = {
-  ref:             null,
-  fullName:        "",
-  shortName:       "",
-  code:            "",
-  stepPrice:       0,
-  priceStep:       0,
-  averageProgress: 0,
-  guarantee:       0,
-  currentPrice:    0,
-  volume:          0,
-  lotSize:         0,
-  dollarRate:      0,
-  adrDay:          0,
-  adrWeek:         0,
-  adrMonth:        0,
-
-  points: [
-    [70,  70],
-    [156, 55],
-    [267, 41],
-    [423, 27],
-    [692, 13],
-    [960,  7],
-  ],
-};
 
 export { Tools, template };

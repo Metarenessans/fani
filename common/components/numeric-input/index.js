@@ -56,7 +56,7 @@ export default class NumericInput extends React.Component {
     if (regexp.test(value)) {
       this.setState({ value });
       if (onChange) {
-        onChange(e, value, this);
+        onChange(e, String(value).replace(/\,/g, "."), this);
       }
     }
   }
@@ -65,6 +65,9 @@ export default class NumericInput extends React.Component {
     var { value } = e.target;
     value = (value + "").replace(/\s+/g, "");
     this.setState({ value: value });
+    if (this.props.onFocus) {
+      this.props.onFocus(e);
+    }
   }
 
   parse(val) {
@@ -142,6 +145,7 @@ export default class NumericInput extends React.Component {
       27  // Escape
     ].indexOf(e.keyCode) > -1) {
       e.target.blur();
+      e.stopPropagation();
     }
   }
 
@@ -154,7 +158,8 @@ export default class NumericInput extends React.Component {
         visible={errMsg.length > 0}
       >
         <Input
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
           placeholder={0}
           {...this.props}
           className={this.className.concat(errMsg.length ? " error" : "")}

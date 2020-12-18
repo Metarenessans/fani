@@ -1,31 +1,31 @@
 import { Tools } from "./tools"
 
-const func = Tools.sort;
+const sort = Tools.sort;
 
 test("properly sorts tools in alphabetical order", () => {
 
-  expect( func(["a", "b", "c"]) ).toEqual( ["a", "b", "c"] );
-  expect( func(["c", "a", "b"]) ).toEqual( ["a", "b", "c"] );
-  expect( func(["b", "a", "c"]) ).toEqual( ["a", "b", "c"] );
+  expect( sort(["a", "b", "c"]) ).toEqual( ["a", "b", "c"] );
+  expect( sort(["c", "a", "b"]) ).toEqual( ["a", "b", "c"] );
+  expect( sort(["b", "a", "c"]) ).toEqual( ["a", "b", "c"] );
 
-  expect( func(["ab", "aa", "ac"]) ).toEqual( ["aa", "ab", "ac"] );
-  expect( func(["aab", "aca", "abc"]) ).toEqual( ["aab", "abc", "aca"] );
+  expect( sort(["ab", "aa", "ac"]) ).toEqual( ["aa", "ab", "ac"] );
+  expect( sort(["aab", "aca", "abc"]) ).toEqual( ["aab", "abc", "aca"] );
 
-  expect( func(["Ab", "aa", "Bb", "ba"]) ).toEqual( ["aa", "Ab", "ba", "Bb"] );
+  expect( sort(["Ab", "aa", "Bb", "ba"]) ).toEqual( ["aa", "Ab", "ba", "Bb"] );
   
-  expect( func(["5", "2", "0", "9"]) ).toEqual( ["0", "2", "5", "9"] );
+  expect( sort(["5", "2", "0", "9"]) ).toEqual( ["0", "2", "5", "9"] );
 });
 
 test("numbers always go first", () => {
 
-  expect( func(["1", "3", "1a"]) ).toEqual( ["1", "1a", "3"] );
-  expect( func(["AFLT", "3 MMM", "4 Weird Name"]) ).toEqual( ["3 MMM", "4 Weird Name", "AFLT"] );
+  expect( sort(["1", "3", "1a"]) ).toEqual( ["1", "1a", "3"] );
+  expect( sort(["AFLT", "3 MMM", "4 Weird Name"]) ).toEqual( ["3 MMM", "4 Weird Name", "AFLT"] );
   
 });
 
-test("works in a real-word example", () => {
+test("sorting works in a real-word example", () => {
   
-  expect( func([
+  expect( sort([
     "American Airlines",
     "AbbVie, Inc.",
     "ABIOMED, Inc.",
@@ -41,7 +41,7 @@ test("works in a real-word example", () => {
 
 test("properly sorts numbers at the end", () => {
   
-  expect( func([
+  expect( sort([
     "Si-12.20",
     "Si-12.21",
     "Si-3.21",
@@ -61,7 +61,7 @@ test("properly sorts numbers at the end", () => {
     "Si-9.22",
   ] );
   
-  expect( func([
+  expect( sort([
     "BR-11.21",
     "BR-1.21",
     "BR-10.21",
@@ -91,7 +91,7 @@ test("properly sorts numbers at the end", () => {
     "BR-11.21",
   ] );
   
-  expect( func([
+  expect( sort([
     "A-2.21",
     "A-1.20",
     "A-3.21",
@@ -106,5 +106,57 @@ test("properly sorts numbers at the end", () => {
     "A-2.21",
     "A-3.21",
   ] );
+
+});
+
+test("properly finds tool index by code", () => {
+  
+  const codes = [
+    "MMM",
+    "Si-3.21",
+    "Si-6.21",
+    "Si-9.21",
+    "Si-12.21",
+    "BR-12.20",
+    "BR-1.21",
+    "BR-3.21",
+    "BR-6.21",
+  ];
+  const tools = codes.map(code => Tools.create({ code }));
+
+  let result;
+
+  // Инструмент существует
+  result = expect(
+    Tools.getToolIndexByCode( tools, "BR-1.21" )
+  );
+  result.toEqual(6);
+  result.not.toEqual(-1);
+
+  // Инструмента не существует
+  result = expect(
+    Tools.getToolIndexByCode( tools, "XXX" )
+  );
+  result.toEqual(0);
+  result.not.toEqual(-1);
+
+  // Инструмент истек и мы может взять следующий по списку
+  result = expect(
+    Tools.getToolIndexByCode( tools, "BR-2.21" )
+  );
+  result.toEqual(7);
+  result.not.toEqual(-1);
+
+  result = expect(
+    Tools.getToolIndexByCode( tools, "Si-5.21" )
+  );
+  result.toEqual(2);
+  result.not.toEqual(-1);
+
+  result = expect(
+    Tools.getToolIndexByCode( tools, "BR-6.21" )
+  );
+  result.toEqual(8);
+  result.not.toEqual(-1);
 
 });

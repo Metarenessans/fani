@@ -68,10 +68,9 @@ import {
 } from "./components/chart"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
-
 let saveToDonwload;
 
-const shouldLoadFakeSave = false;
+const shouldLoadFakeSave = true;
 const chartVisible = true;
 
 class App extends Component {
@@ -1342,7 +1341,7 @@ class App extends Component {
     
     let value = rateRecommended(
       depoStart,
-      this.getDepoEnd(),
+      Math.round(this.getDepoEnd()),
       withdrawal,
       withdrawalInterval[mode],
       payload,
@@ -1353,6 +1352,20 @@ class App extends Component {
       0,
       realData
     ) * 100;
+
+    console.log(
+      depoStart,
+      Math.round(this.getDepoEnd()),
+      withdrawal,
+      withdrawalInterval[mode],
+      payload,
+      payloadInterval[mode],
+      days,
+      withdrawalInterval[mode],
+      payloadInterval[mode],
+      0,
+      realData
+    );
 
     if (Math.abs(rate - value) < .0008) {
       value = rate;
@@ -2919,7 +2932,10 @@ class App extends Component {
                                   })()}
 
                                   {(() => {
-                                    const value = this.getRateRecommended();
+                                    let value = this.getRateRecommended();
+                                    if ( String(value).indexOf("e") > -1 ) {
+                                      value = value.toExponential(3);
+                                    }
                                     const valid = value >= rate;
 
                                     return (

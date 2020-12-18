@@ -9,9 +9,13 @@ import {
 } from 'antd/es'
 
 import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  LoadingOutlined,
+  QuestionCircleFilled,
   SettingFilled,
-  WarningOutlined,
-} from '@ant-design/icons'
+  WarningOutlined
+} from "@ant-design/icons"
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
@@ -281,7 +285,12 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
+      .catch(error => {
+        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
+        if (dev) {
+          this.setState({ depo: 12_000_000 });
+        }
+      });
   }
 
   updatePriceRange(tool) {
@@ -479,6 +488,25 @@ class App extends React.Component {
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools)
+  }
+
+  getToolIndexByCode(code) {
+    const tools = this.getTools();
+    if (!code || !tools.length) {
+      return 0;
+    }
+    
+    let index = tools.indexOf( tools.find(tool => tool.code == code) );
+    if (index < 0) {
+      index = 0;
+    }
+
+    return index;
+  }
+
+  getCurrentToolIndex() {
+    let { currentToolCode } = this.state;
+    return this.getToolIndexByCode(currentToolCode);
   }
 
   getToolByCode(code) {
@@ -682,8 +710,10 @@ class App extends React.Component {
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
                         <Select
-                          value={this.state.currentToolCode}
-                          onChange={currentToolCode => {
+                          value={this.getCurrentToolIndex()}
+                          onChange={currentToolIndex => {
+                            const tools = this.getTools();
+                            const currentToolCode = tools[currentToolIndex].code; 
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
                               .then(() => this.fetchCompanyQuotes());
@@ -697,14 +727,20 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            const tools = this.getTools();
-                            return tools.length > 0
-                              ? (
-                                tools.map((tool, index) => (
-                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
-                                ))
+                            let tools = this.getTools();
+                            if (tools.length) {
+                              return tools
+                                .map(tool => String(tool))
+                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                            }
+                            else {
+                              return (
+                                <Option key={0} value={0}>
+                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                  Загрузка...
+                                </Option>
                               )
-                              : <Option key={0} value={0}>Загрузка...</Option>
+                            }
                           })()}
                         </Select>
                       </label>
@@ -1285,7 +1321,6 @@ class App extends React.Component {
             tools={this.getTools()}
             load={percentage}
             onClose={e => {
-              console.log('onClose');
               dialogAPI.close("settings-generator");
             }}
           />

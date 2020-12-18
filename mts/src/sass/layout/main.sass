@@ -302,6 +302,14 @@
               font-size: 1.8em
 
       &__settings
+
+        &[disabled]
+          opacity: .5
+          cursor: not-allowed
+
+          &:hover
+            transform: none
+
         +sm
           position: absolute
           right: 0

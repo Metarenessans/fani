@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import {
-  Button, Input, Select, Slider, Switch, Tooltip
+  Button, Input, Select, Slider, Switch, Tooltip, Tabs
 } from 'antd/es'
 
 import {
@@ -15,7 +15,9 @@ import DownloadIcon from "./icons/Download"
 import CodeIcon     from "./icons/CodeIcon"
 import CloseIcon    from "./icons/CloseIcon"
 
+import createTabs   from "./tabs"
 import BurgerButton from "./burger-button"
+import { Tools }    from '../../../../../common/tools'
 import CrossButton  from '../../../../../common/components/cross-button'
 import NumericInput from '../../../../../common/components/numeric-input'
 import CustomSlider from '../../../../../common/components/custom-slider'
@@ -28,25 +30,56 @@ import "./style.scss"
 const SettingsGenerator = props => {
 
   const { onClose } = props;
-  const tools = props.tools || [];
+  
+  const investorDepo = props.depo != null ? props.depo : 1_000_000;
+  const [depo, setDepo] = useState(
+    investorDepo != null 
+      ? Math.floor(investorDepo * .25) 
+      : 0
+  );
+  const [secondaryDepo, setSecondaryDepo] = useState(
+    investorDepo != null 
+      ? Math.floor(investorDepo * .75)
+      : 0
+  );
 
-  const [depo, setDepo] = useState(props.depo || 0);
-  const [secondaryDepo, setSecondaryDepo] = useState(0);
+  // componentDidMount
+  useEffect(() => {
+    createTabs();
+  }, []);
+
+  useEffect(() => {
+
+    setDepo(Math.floor(investorDepo * .25));
+    setSecondaryDepo(Math.floor(investorDepo * .75));
+
+  }, [investorDepo])
+
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
+
+  const tools = props.tools || [ Tools.create() ];
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
+  const currentTool = tools[currentToolIndex];
+
   // Add popup
   const [newPresetName, setNewPresetName] = useState("МТС");
+  const [currentPresetName, setCurrentPresetName] = useState("Стандарт");
 
-  const [mirrorOn, setMirrorOn] = useState(true);
+  // Flags
+  const [mirrorOn, setMirrorOn] = useState(false);
   const [reversedOn, setReversedOn] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const depoAvailable = investorDepo * (load / 100);
 
   const [presets, setPresets] = useState([
     { name: "Стандарт" },
     { name: "СМС + ТОР" },
     { name: "Лимитник" }
   ]);
+
+  const hasExtraDepo = (depo < depoAvailable);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -79,6 +112,33 @@ const SettingsGenerator = props => {
         </li>
       </ul>
     )
+  };
+
+  const makeUnique = (value, arr) => {
+
+    const alreadyExists = (value, arr) => {
+      for (let el of arr) {
+        if (el == value) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    while ( alreadyExists(value, arr) ) {
+      const found = value.match(/\d+$/g);
+      if (found) {
+        const end = found[0];
+        value = value.replace(end, Number(end) + 1);
+      }
+      else {
+        value += " 2";
+      }
+    }
+
+    return value;
+    
   };
 
   return (
@@ -184,15 +244,35 @@ const SettingsGenerator = props => {
                 className="settings-generator-content-header__title-wrap"
               >
 
-                <h3 
+                <h3
+                  key={Math.random()}
                   className="settings-generator-content-header__title"
                   contentEditable
+                  onKeyDown={e => {
+                    const key = e.key.toLowerCase();
+                    if (key == "enter" || key == "escape") {
+                      e.target.blur();
+                    }
+                  }}
                   onBlur={e => {
-                    const name = e.target.innerText;
-                    console.log(name);
+                    let name = e.target.innerText;
+
+                    const presetsCopy = [...presets];
+                    const currentPreset = presetsCopy.find( preset => preset.name == currentPresetName );
+                    currentPreset.name = name;
+
+                    const namesArray = presetsCopy.map(preset => preset.name);
+
+                    if ( namesArray.filter(n => n == name).length > 1 ) {
+                      name = makeUnique( name, namesArray );
+                    }
+                    
+                    currentPreset.name = name;
+                    setCurrentPresetName(name);
+                    setPresets(presetsCopy);
                   }}
                 >
-                  СМС + ТОР
+                  {currentPresetName}
                 </h3>
 
                 <button className="round-btn settings-generator-content-header__download" aria-label="Скачать">
@@ -252,10 +332,8 @@ const SettingsGenerator = props => {
                     key={comission}
                     defaultValue={comission}
                     format={formatNumber}
-                    min={10000}
-                    max={Infinity}
                     onBlur={val => {
-                      
+                      setComission(val);
                     }}
                   />
                 </label>
@@ -304,12 +382,43 @@ const SettingsGenerator = props => {
                     )
                   };
 
+                  let contractsTotal = 0;
+                  if (currentTool) {
+                    contractsTotal = Math.floor( investorDepo / currentTool.guarantee );
+                  }
+
+                  let contracts = 0;
+                  if (currentTool) {
+                    contracts = Math.floor( depoAvailable / currentTool.guarantee );
+                    if (depo < depoAvailable) {
+                      contracts = contracts + " " + `
+                        (
+                        ${Math.floor( depo / currentTool.guarantee )}
+                        /
+                        ${Math.floor( (depoAvailable - depo) / currentTool.guarantee )}
+                        )
+                      `.replace(/\s+/g, "");
+                    }
+                   }
+
                   return (
                     <>
-                      <PairJSX name="Контрактов max."        value={1244} />
-                      <PairJSX name="Прибыль"                value={1244} />
-                      <PairJSX name="Контракты (осн./плеч.)" value={1244} />
-                      <PairJSX name="Убыток"                 value={1244} />
+                      <PairJSX 
+                        name="Контрактов max."
+                        value={contractsTotal}
+                      />
+                      <PairJSX 
+                        name="Прибыль"
+                        value={9999}
+                      />
+                      <PairJSX 
+                        name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
+                        value={contracts}
+                      />
+                      <PairJSX
+                        name="Убыток"
+                        value={9999}
+                      />
                     </>
                   )
 
@@ -382,6 +491,144 @@ const SettingsGenerator = props => {
             </div>
             {/* row */}
 
+            <div hidden={false}>
+              <h3 className="settings-generator-content__row-header">Закрытие основного депозита</h3>
+
+              <div className="settings-generator-content__row">
+
+                <div className="settings-generator-content__row-col-half">
+
+                  <label className="input-group">
+                    <span className="input-group__label">Кол-во закрытий</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                  <label className="input-group">
+                    <span className="input-group__label">% закрытия</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                </div>
+                {/* half */}
+
+                <div className="settings-generator-content__row-col-half">
+
+                  <label className="input-group">
+                    <span className="input-group__label">Шаг</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                  <div className="settings-generator-content__print-group">
+                    <span>Суммарный % закрытия</span>
+                    <b>59%</b>
+                  </div>
+
+                </div>
+                {/* half */}
+
+              </div>
+              {/* row */}
+            </div>
+
+            <div hidden={!hasExtraDepo}>
+              <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
+
+              <div className="settings-generator-content__row">
+
+                <div className="settings-generator-content__row-col-half">
+
+                  <label className="input-group">
+                    <span className="input-group__label">Кол-во закрытий</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                  <label className="input-group">
+                    <span className="input-group__label">% закрытия</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                </div>
+                {/* half */}
+
+                <div className="settings-generator-content__row-col-half">
+
+                  <label className="input-group">
+                    <span className="input-group__label">Шаг</span>
+                    <NumericInput
+                      className="input-group__input"
+                      key={0}
+                      defaultValue={0}
+                      format={formatNumber}
+                      min={0}
+                      max={Infinity}
+                      onBlur={val => {
+                        
+                      }}
+                    />
+                  </label>
+
+                  <div className="settings-generator-content__print-group">
+                    <span>Суммарный % закрытия</span>
+                    <b>59%</b>
+                  </div>
+
+                </div>
+                {/* half */}
+
+              </div>
+              {/* row */}
+            </div>
+
             <label className="switch-group">
               <Switch 
                 checked={mirrorOn} 
@@ -390,7 +637,10 @@ const SettingsGenerator = props => {
               <span className="switch-group__label">Зеркальные докупки</span>
             </label>
 
-            <div className="settings-generator-content__row">
+            <div
+              className="settings-generator-content__row"
+              hidden={!mirrorOn}
+            >
 
               <div className="settings-generator-content__row-col-half">
 
@@ -535,25 +785,53 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-table-header">
 
-                <ul className="settings-generator-table-tabs">
-                  <li>
-                    <Button className="custom-btn custom-btn--filled">
-                      Закрытие<br />
-                      основного депо
-                    </Button>
-                  </li>
-                  <li>
-                    <Button className="custom-btn">
-                      Закрытие<br />
-                      плечевого депо
-                    </Button>
-                  </li>
-                  <li>
-                    <Button className="custom-btn">
-                      Докупки (ТОР)
-                    </Button>
-                  </li>
-                </ul>
+                <div
+                  className="settings-generator-table-tabs"
+                  role="tablist"
+                  aria-label="Таблицы" // TODO: придумать название, которое будет лучше описывать контент
+                >
+
+                  <Button className="custom-btn"
+                          role="tab"
+                          aria-selected="true"
+                          aria-controls="settings-generator-tab1"
+                          id="settings-generator-tab1-control"
+                  >
+                    Закрытие основного депо
+                  </Button>
+
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab2"
+                          id="settings-generator-tab2-control"
+                          hidden={!hasExtraDepo}>
+                    Закрытие плечевого депо
+                  </Button>
+
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab3"
+                          id="settings-generator-tab3-control"
+                          hidden={!mirrorOn}>
+                    Зеркальные докупки
+                  </Button>
+
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab4"
+                          id="settings-generator-tab4-control"
+                          hidden={!reversedOn}>
+                    Обратные докупки
+                  </Button>
+
+                </div>
+                {/* tablist */}
 
                 <button className="settings-generator-table__show-code">
                   <CodeIcon />
@@ -562,96 +840,137 @@ const SettingsGenerator = props => {
               </div>
               {/* header */}
 
-              <div className="settings-generator-table">
-                {[1, 2, 3].map((value, index) =>
-                  <table className="settings-generator-table__row">
-                    <tr className="settings-generator-table__row-header">
-                      <th>№</th>
-                      <th>
-                        % закрытия/<br />
-                        докупки
-                      </th>
-                      <th>
-                        Ход в<br />
-                        пунктах
-                      </th>
-                      <th>
-                        Кол-во закрытых/<br />
-                        докупленных контрактов
-                      </th>
-                      <th>
-                        Контрактов<br />
-                        в работе
-                      </th>
-                      <th>
-                        Накопленная прибыль<br />
-                        без комиссии
-                      </th>
-                      <th>
-                        Величина<br />
-                        комиссии
-                      </th>
-                      <th>
-                        Накопленная прибыль<br />
-                        с учетом комиссии
-                      </th>
-                    </tr>
-                    <tr>
-                      <td 
-                        data-label="№"
-                        data-label-xs="№"
-                      >
-                        {index + 1}
-                      </td>
-                      <td 
-                        data-label="% закрытия/докупки"
-                        data-label-xs="% закр./докупки"
-                      >
-                        4.9
-                      </td>
-                      <td 
-                        data-label="Ход в пунктах"
-                        data-label-xs="Ход в пунктах"
-                      >
-                        15
-                      </td>
-                      <td 
-                        data-label="Закрытых/докупленных контрактов"
-                        data-label-xs="Закр./докупл. контр."
-                      >
-                        225
-                      </td>
-                      <td 
-                        data-label="Контрактов в работе"
-                        data-label-xs="Контр. в раб."
-                      >
-                        102
-                      </td>
-                      <td 
-                        data-label="Прибыль без комиссии"
-                        data-label-xs="Приб. без комиссии"
-                      >
-                        1 029 471
-                      </td>
-                      <td 
-                        data-label="Величина комиссии"
-                        data-label-xs="Комиссия"
-                      >
-                        6%
-                      </td>
-                      <td 
-                        data-label="Накопленная прибыль с учетом комиссии"
-                        data-label-xs="Приб. с уч. комисии"
-                      >
-                        967 702
-                      </td>
-                    </tr>
-                    {/* table-row-header */}
-                  </table>
-                )}
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab1"
+                   aria-labelledby="settings-generator-tab1-control">
+                
+                <div className="settings-generator-table">
+                  {[1, 2, 3].map((value, index) =>
+                    <table className="settings-generator-table__row">
+                      <tr className="settings-generator-table__row-header">
+                        <th>№</th>
+                        <th>
+                          % закрытия/<br />
+                          докупки
+                        </th>
+                        <th>
+                          Ход в<br />
+                          пунктах
+                        </th>
+                        <th>
+                          Кол-во закрытых/<br />
+                          докупленных контрактов
+                        </th>
+                        <th>
+                          Контрактов<br />
+                          в работе
+                        </th>
+                        <th>
+                          Накопленная прибыль<br />
+                          без комиссии
+                        </th>
+                        <th>
+                          Величина<br />
+                          комиссии
+                        </th>
+                        <th>
+                          Накопленная прибыль<br />
+                          с учетом комиссии
+                        </th>
+                      </tr>
+                      <tr>
+                        <td 
+                          data-label="№"
+                          data-label-xs="№"
+                        >
+                          {index + 1}
+                        </td>
+                        <td 
+                          data-label="% закрытия/докупки"
+                          data-label-xs="% закр./докупки"
+                        >
+                          4.9
+                        </td>
+                        <td 
+                          data-label="Ход в пунктах"
+                          data-label-xs="Ход в пунктах"
+                        >
+                          15
+                        </td>
+                        <td 
+                          data-label="Закрытых/докупленных контрактов"
+                          data-label-xs="Закр./докупл. контр."
+                        >
+                          225
+                        </td>
+                        <td 
+                          data-label="Контрактов в работе"
+                          data-label-xs="Контр. в раб."
+                        >
+                          102
+                        </td>
+                        <td 
+                          data-label="Прибыль без комиссии"
+                          data-label-xs="Приб. без комиссии"
+                        >
+                          1 029 471
+                        </td>
+                        <td 
+                          data-label="Величина комиссии"
+                          data-label-xs="Комиссия"
+                        >
+                          6%
+                        </td>
+                        <td 
+                          data-label="Накопленная прибыль с учетом комиссии"
+                          data-label-xs="Приб. с уч. комисии"
+                        >
+                          967 702
+                        </td>
+                      </tr>
+                      {/* table-row-header */}
+                    </table>
+                  )}
+
+                </div>
+                {/* table */}
 
               </div>
-              {/* table */}
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab2"
+                   aria-labelledby="settings-generator-tab2-control"
+                   hidden>
+                <p>
+                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
+                </p>
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab3"
+                   aria-labelledby="settings-generator-tab3-control"
+                   hidden>
+                <p>
+                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
+                </p>
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab4"
+                   aria-labelledby="settings-generator-tab4-control"
+                   hidden>
+                <p>
+                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
+                </p>
+              </div>
+              {/* tabpanel */}
 
             </div>
             {/* table-wrap */}
@@ -670,8 +989,11 @@ const SettingsGenerator = props => {
         confirmText="Добавить"
         onConfirm={e => {
           const presetsCopy = [...presets];
-          presetsCopy.push({ name: newPresetName });
+          let name = makeUnique(newPresetName, presetsCopy.map(preset => preset.name));
+
+          presetsCopy.push({ name });
           setPresets(presetsCopy);
+          setCurrentPresetName(name);
 
           return true;
         }}
@@ -680,7 +1002,6 @@ const SettingsGenerator = props => {
         <Select
           defaultValue={newPresetName}
           onChange={name => {
-            console.log(name);
             setNewPresetName(name);
           }}
           showSearch
@@ -690,12 +1011,10 @@ const SettingsGenerator = props => {
           }
           style={{ width: "100%" }}
         >
-          <Select.Option value={"МТС"}>
-            Создать новый на основе МТС
-          </Select.Option>
-          <Select.Option value={"BR_100_scalp"}>
-            BR_100_scalp
-          </Select.Option>
+          <Select.Option value={"МТС"}>Создать новый на основе МТС</Select.Option>
+          <Select.Option value={"Стандарт"}>Стандарт</Select.Option>
+          <Select.Option value={"СМС + ТОР"}>СМС + ТОР</Select.Option>
+          <Select.Option value={"Лимитник"}>Лимитник</Select.Option>
         </Select>
       </Dialog>
     </>

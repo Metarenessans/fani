@@ -57,7 +57,7 @@ import "../sass/style.sass"
 
 const defaultToolData = {
   percentage: 10,
-  selectedToolName: "SBER"
+  selectedToolName: "SBER" // TODO: вернуть SBER
 };
 
 class App extends React.Component {
@@ -125,7 +125,7 @@ class App extends React.Component {
     this.fetchInvestorInfo();
     this.fetchTools();
     if (dev) {
-      this.loadFakeSave();
+      // this.loadFakeSave();
       return;
     }
     this.fetchSaves();
@@ -190,7 +190,7 @@ class App extends React.Component {
         .then(tools => {
           const sorted = Tools.sort( this.state.tools.concat(tools) );
           loaded++;
-          if (loaded == 2) {
+          if (false && loaded == 2) {
             const adrJSON = require("../../../common/adr-new.json");
             const total = sorted.length;
             let covered = 0
@@ -209,8 +209,8 @@ class App extends React.Component {
               }
             }
 
-            // console.log(`Covered ${covered}/${total} (${round(covered/total, 4) * 100}%)`);
-            // console.log(`Not covered: ${notCovered}`);
+            console.log(`Covered ${covered}/${total} (${round(covered/total, 4) * 100}%)`);
+            console.log(`Not covered: ${notCovered}`);
           }
 
           return sorted;
@@ -877,6 +877,8 @@ class App extends React.Component {
               { name: "Размер лота",  prop: "lotSize"      },
               { name: "Курс доллара", prop: "dollarRate"   },
               { name: "ADR",          prop: "adrDay"       },
+              { name: "ADR неделя",   prop: "adrWeek"      },
+              { name: "ADR месяц",    prop: "adrMonth"     },
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools })}

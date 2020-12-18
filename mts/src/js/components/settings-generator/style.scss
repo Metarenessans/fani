@@ -6,11 +6,14 @@ $m: .4475;
   font-size: 1.6em * $m;
 
   .dialog__content {
+    padding: .5em;
     font-size: .8em;
   }
 }
 
 .settings-generator {
+  --primary-color: #7682c2;
+
   max-width: 1280px;
 
   position: relative;
@@ -107,7 +110,7 @@ $m: .4475;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #7682c2;
+    background-color: var(--primary-color);
     border-bottom: (0.2em * $m) solid #adc3e0;
 
     min-height: 9.8em * $m;
@@ -219,7 +222,7 @@ $m: .4475;
 
         &.selected,
         &:hover {
-          background-color: #7682c2;
+          background-color: var(--primary-color);
           color: white;
         }
       }
@@ -269,7 +272,13 @@ $m: .4475;
       cursor: pointer;
 
       .ant-switch {
-        font-size: .6em;
+        font-size: .7em;
+        min-width: initial;
+        width: 2.7em;
+        margin-right: -.75em;
+
+        transform: scale(.7);
+        transform-origin: left;
       }
 
       &__label {
@@ -308,9 +317,17 @@ $m: .4475;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: .75em;
 
-      padding: (1.4em * $m) (1.2em * $m);
+      padding: (1.4em * $m) (1.6em * $m);
+
+      > * {
+        align-self: stretch;
+        margin-bottom: .45em;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
       
       @include sm {
         padding: (1.6em * $m) (3em * $m);
@@ -318,6 +335,7 @@ $m: .4475;
 
       @include xs {
         padding: 1.5em * $m;
+        padding-bottom: 3em;
       }
     }
 
@@ -395,13 +413,7 @@ $m: .4475;
     &__row {
       width: 100%;
       display: flex;
-      // align-items: flex-start;
       justify-content: space-between;
-      gap: 1em;
-
-      @include xs {
-        gap: .5em;
-      }
 
       &--1 {
         @include xs {
@@ -425,6 +437,16 @@ $m: .4475;
         border-right: none;
       }
 
+      &-header {
+        margin: 0;
+        margin-bottom: .6em;
+
+        letter-spacing: .15em;
+        font-size: 1.4em * $m;
+
+        text-transform: uppercase;
+      }
+
       &-col-half {
         flex-shrink: 0;
         width: 48%;
@@ -435,7 +457,15 @@ $m: .4475;
 
         @include xs {
           width: 100%;
-          gap: 1em;
+          gap: 0;
+
+          > * {
+            margin-bottom: 1em;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
         }
       }
 
@@ -467,7 +497,7 @@ $m: .4475;
       &s-wrap {
         padding-top: 2em * $m;
         padding-left: 2em * $m;
-        gap: 0em;
+        gap: 0;
 
         @include xs {
           padding: 0;
@@ -567,54 +597,76 @@ $m: .4475;
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
 
-    &-tabs {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      align-items: stretch;
-
-      @include xs {
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: .5em;
-      }
-
-      li {
-        display: inline-flex;
-        margin-right: 2em * $m;
-
+      [role="tablist"] {
+        display: flex;
+        align-items: stretch;
+  
         @include xs {
-          margin-right: 0em;
-          max-width: 50%;
-          max-width: calc(50% - .25em);
           width: 100%;
+          flex-direction: column;
+          justify-content: space-between;
         }
+  
+        > * {
+          margin-right: 1em * $m;
+  
+          @include xs {
+            margin-right: 0;
+            margin-bottom: .5em;
+            max-width: 50%;
+            max-width: calc(50% - .75em);
+            width: 100%;
 
-        &:last-child {
-          margin-right: 0;
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+  
+          &:last-of-type {
+            margin-right: 0;
+          }
+        }
+  
+        button[role="tab"] {
+          width: 100%;
+          max-width: 10em;
+
+          padding-top: 0.2em !important;
+          padding-left:  1.2em !important;
+          padding-right: 1.2em !important;
+          border-radius: .2em;
+          border-bottom-left-radius:  0;
+          border-bottom-right-radius: 0;
+  
+          font-size: 1.6em * $m !important;
+          line-height: 1.25 !important;
+          text-transform: unset;
+          white-space: initial;
+  
+          &[aria-selected="true"] {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+          }
+  
+          @include xs {
+            padding: (.6em * $m) (1.5em * $m) !important;
+            min-width: initial;
+            min-height: 3.2em;
+            border-radius: .2em;
+            border-bottom-left-radius: 0;
+            border-top-left-radius:    0;
+  
+            font-size: 1.4em * $m !important;
+          }
         }
       }
 
-      button {
-        padding-top: 0.2em !important;
-        padding-left:  1.75em !important;
-        padding-right: 1.75em !important;
-        font-size: 1.6em * $m !important;
-        line-height: 1.25 !important;
-        height: 100%;
-        text-transform: unset;
+      [role="tabpanel"] {
 
-        @include xs {
-          padding: (.6em * $m) (1.5em * $m) !important;
-          width: 100%;
-          min-height: 3.1em;
-
-          font-size: 1.4em * $m !important;
-        }
       }
+
     }
 
     &__row {
@@ -752,13 +804,21 @@ $m: .4475;
         padding: (.6em * $m) (.5em * $m);
       }
 
+      th {
+        line-height: 1.25;
+      }
+
+      td {
+        font-weight: normal;
+      }
+
       &:nth-child(n + 2) tr:first-of-type {
         visibility: collapse;
         padding: 0 !important;
       }
 
       &:first-of-type tr:first-of-type,
-      &:nth-child(n + 2) tr:nth-child(2) {
+      &:nth-child(2n) tr:nth-child(2) {
         border-radius: 0.2em * $m;
         background-color: rgba(#2469ae, 0.05);
 

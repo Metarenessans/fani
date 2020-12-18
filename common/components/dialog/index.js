@@ -4,6 +4,7 @@ import { Button } from 'antd/es'
 
 import CrossButton from "../cross-button"
 
+import Stack from "../stack"
 import "./style.sass"
 
 var dialogAPI = {};
@@ -143,6 +144,7 @@ class Dialog extends React.Component {
 
   componentDidMount() {
     window.addEventListener("keyup", event => {
+
       const key = event.which || event.keyCode;
 
       if (key === 27) {
@@ -239,7 +241,7 @@ class Dialog extends React.Component {
         }}>
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${block}__inner card`}>
-          <div className={["stack"].concat(className).join(" ").trim()}>
+          <Stack className={className}>
             {!pure 
               ? <h2 className={`${block}__title`}>{title}</h2>
               : null
@@ -278,7 +280,7 @@ class Dialog extends React.Component {
                 )
               )}
 
-          </div>
+          </Stack>
           {!pure
             ?
             <CrossButton 
