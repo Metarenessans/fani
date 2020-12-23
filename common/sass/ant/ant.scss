@@ -2600,7 +2600,8 @@ html {
   opacity: 1;
 }
 .ant-select-selection-selected-value {
-  line-height: 1.5em;
+  line-height: 2em;
+  height: 100%;
   float: left;
   max-width: 100%;
   overflow: hidden;
@@ -2644,7 +2645,6 @@ html {
 }
 .ant-select-selection--single .ant-select-selection__rendered {
   margin-right: 24px;
-  padding-top: .27em;
 }
 .ant-select-no-arrow .ant-select-selection__rendered {
   margin-right: 11px;
@@ -2652,10 +2652,9 @@ html {
 .ant-select-selection__rendered {
   position: relative;
   display: block;
+  height: 100%;
   margin-right: 11px;
   margin-left: 11px;
-  // line-height: 30px;
-  // padding-top: 0.1em;
 }
 .ant-select-selection__rendered::after {
   display: inline-block;
@@ -2746,6 +2745,7 @@ html {
 }
 .ant-select-search--inline {
   position: absolute;
+  line-height: 2em;
   width: 100%;
   height: 100%;
 }

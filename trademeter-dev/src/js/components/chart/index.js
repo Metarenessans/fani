@@ -36,7 +36,7 @@ const getLen = data => {
   for (let entry of data) {
     let iterationsNum = 
     entry.iterationsList && 
-    entry.iterationsList.filter(v => v.percent != null || v.income != null).length;
+    entry.iterationsList.filter(v => v.percent != null).length;
     
     if (iterationsNum > 1) {
       len += iterationsNum - 1;
@@ -168,7 +168,7 @@ function createChart() {
       }
     });
     chart.tooltip().titleFormat(e => {
-      const { days, mode } = this.state;
+      const { data } = this.state;
       
       let index;
       for (let point of e.points) {
@@ -185,10 +185,10 @@ function createChart() {
       }
       
       return index == 1 
-      ? `Начало 1 дня` 
-      : index - 1 == days[mode]
-      ? `Конец ${index - 1} дня`
-      : `Конец ${index - 1} дня, начало ${index} дня`
+        ? `Начало 1 дня` 
+        : index - 1 == data.length
+          ? `Конец ${index - 1} дня`
+          : `Конец ${index - 1} дня, начало ${index} дня`
     });
     
     // set data
@@ -294,10 +294,7 @@ function createChart() {
 function updateChart(isInit = false) {
   const { days, daysInOrder, mode, currentDay } = this.state;
   const data = [...this.state.data];
-  if (data.length !== days[mode]) {
-    return;
-  }
-  
+
   // ----
   // Факт
   // ----
@@ -306,11 +303,14 @@ function updateChart(isInit = false) {
   const factDays = this.getFilledDays();
   let factArray = [];
   factData = [];
-  let emptyIndex = 1;
   
   if (daysInOrder) {
     if (factDays.length) {
       for (let i = 0; i < factDays.length; i++) {
+        if (i == 6) {
+          console.log('!');
+        }
+
         if (i == 0) {
           factArray[i] = data[i].depoStartTest + this.getRealIncome(i + 1);
         }
@@ -319,17 +319,18 @@ function updateChart(isInit = false) {
           if (typeof value == "object") {
             value = value.slice(-1)[0];
           }
-          factArray[i] = value + this.getRealIncome(i + 1, data, factArray[i - 1]);
+          const income = this.getRealIncome(i + 1, data, value);
+          factArray[i] = value + income;
         }
         
-        const iterationsList = data[i].iterationsList.filter(entry => entry.percent != null || entry.income != null);
+        const iterationsList = data[i].iterationsList.filter(entry => entry.percent != null);
         if (iterationsList.length > 1) {
           let endValue = factArray[i];
           factArray[i] = [];
           let start = data[i].depoStartTest;
           
           for (let j = 0; j < iterationsList.slice(0, -1).length; j++) {
-            start += iterationsList[j].income;
+            start += iterationsList[j].getIncome( data[currentDay - 1].depoStartTest );
             factArray[i].push(start);
           }
           factArray[i].push(endValue);
@@ -396,11 +397,11 @@ function updateChart(isInit = false) {
     // Убираем лейбл у последнего дня, чтобы не было 261 дня
     // (по факту 261 день - это просто конец 260)
     if (factData.length == data.length) {
-      factData[factData.length - 1].customName = "";
+      // factData[factData.length - 1].customName = "";
     }
   }
   
-  // console.table("fact",factData);
+  // console.table("fact", factData);
   if (isInit) {
     chartData = anychart.data.set(factData);
   }
@@ -412,7 +413,7 @@ function updateChart(isInit = false) {
   // План
   // ----
   
-  planData = new Array(days[mode]).fill().map((v, i) => ({
+  planData = new Array(data.length).fill().map((v, i) => ({
     x:     String(i + 1),
     value: data[i].depoEndPlan
   }));
@@ -460,10 +461,10 @@ function updateChart(isInit = false) {
   // Убираем лейбл у последнего дня, чтобы не было 261 дня
   // (по факту 261 день - это просто конец 260)
   if (planData.length == data.length) {
-    planData[planData.length - 1].customName = "";
+    // planData[planData.length - 1].customName = "";
   }
   
-  // console.table('plan',planData);
+  // console.table('plan', planData);
   if (isInit) {
     chartData2 = anychart.data.set(planData);
   }
@@ -474,7 +475,7 @@ function updateChart(isInit = false) {
   // --------
   // Рекоменд
   // --------
-  if (true) {
+  if (daysInOrder) {
     recommendData = [];
     if (factDays.length) {
       const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
@@ -482,7 +483,7 @@ function updateChart(isInit = false) {
       const rateRecommended = this.getRateRecommended();
       
       const factLastDay = this.getLastFilledDayNumber() - 1;
-      recommendData = new Array(days[mode] - factLastDay).fill(0);
+      recommendData = new Array(data.length - factLastDay).fill(0);
       recommendData[0] = factData[factData.length - 1].value;
       
       for (let i = 1; i < recommendData.length; i++) {
@@ -513,7 +514,6 @@ function updateChart(isInit = false) {
       // recommendData[recommendData.length - 1].customName = "";
     }
     
-    // console.table("recommend",recommendData);
     if (isInit) {
       chartData3 = anychart.data.set(recommendData);
     }
@@ -530,7 +530,7 @@ function updateChart(isInit = false) {
     scale.mode('continuous');
   }
 
-  if (data) {
+  if (data.length > 0) {
     let actualScale = steps;
     const len = getLen(data) - 1;
     if (steps == data.length) {

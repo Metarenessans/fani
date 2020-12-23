@@ -72,6 +72,10 @@
       &__input {
         $input-width: 5.3em;
 
+        width: $input-width;
+        font-size: var(--fz);
+        text-align: center;
+
         &-left {
           width: initial;
           text-align: right;

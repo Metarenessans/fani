@@ -57,7 +57,7 @@ import "../sass/style.sass"
 
 const defaultToolData = {
   percentage: 10,
-  selectedToolName: "SBER" // TODO: вернуть SBER
+  selectedToolName: "SBER"
 };
 
 class App extends React.Component {

@@ -24,7 +24,6 @@ import {
 } from "@ant-design/icons"
 
 import {
-  flatten,
   merge,
   cloneDeep as clone
 } from "lodash"
@@ -70,8 +69,18 @@ import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
 let saveToDonwload;
 
-const shouldLoadFakeSave = true;
+const shouldLoadFakeSave = false;
 const chartVisible = true;
+
+class Iteration {
+  constructor(percent = 0) {
+    this.percent = percent;
+  }
+
+  getIncome(depo) {
+    return Math.round( depo * (this.percent / 100) )
+  }
+}
 
 class App extends Component {
   
@@ -119,6 +128,10 @@ class App extends Component {
        * @type {Array<Number>}
        */
       days: [days, days],
+
+      extraDays:  0,
+      isExtended: false,
+      daysDiff:   null,
       
       /**
        * Индекс режима расчета целевого депо
@@ -438,11 +451,11 @@ class App extends Component {
   }
 
   updateDepoPersentageStart() {
-    const { mode, days, currentDay, data } = this.state;
+    const { currentDay, data } = this.state;
 
     const nearest = (n, step) => {
       return step * Math.round(n / step);
-    }
+    };
 
     return new Promise((resolve, reject) => {
       let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStartTest * 100;
@@ -451,7 +464,7 @@ class App extends Component {
       }
 
       this.setState({ depoPersentageStart }, () => {
-        this.updateData(days[mode], false)
+        this.updateData()
           .then(resolve)
           .catch(reject);
       });
@@ -461,6 +474,7 @@ class App extends Component {
 
   packSave() {
     let {
+      tax,
       mode,
       data,
       days,
@@ -474,12 +488,14 @@ class App extends Component {
       customTools,
       passiveIncomeTools,
       currentPassiveIncomeToolIndex,
+      currentToolCode
     } = this.state;
 
     const json = {
       static: {
         depoStart:                     [ this.getDepoStart(0), this.getDepoStart(1) ],
         depoEnd:                       [ this.getDepoEnd(0), mode == 1 ? this.getDepoEnd(1) : null ],
+        tax,
         currentDay:                    currentDay, 
         days:                          [ days[0], days[1] ],
         minDailyIncome:                [
@@ -495,7 +511,8 @@ class App extends Component {
         currentPassiveIncomeToolIndex: [ currentPassiveIncomeToolIndex[0], currentPassiveIncomeToolIndex[1] ],
         mode:                          mode,
         customTools:                   customTools,
-        currentToolCode:               this.getCurrentTool().code,
+        currentToolCode,
+        // TODO: do we need this?
         current_date:                  "#"
       },
       dynamic: data
@@ -607,6 +624,11 @@ class App extends Component {
       }
       else if (typeOf(state.depoEnd) === "number") {
         state.depoEnd = Math.round(state.depoEnd);
+      }
+
+      state.tax = this.initialState.tax;
+      if (staticParsed.tax != null) {
+        state.tax = staticParsed.tax;
       }
 
       currentDay = staticParsed.currentDay;
@@ -868,8 +890,8 @@ class App extends Component {
       customIncomeChanged: data[i].customIncomeChanged,
       iterationsChanged:   data[i].iterationsChanged,
 
-      collapsed: fallbackBoolean(collapsed, true),
-      // collapsed: false,
+      // collapsed: fallbackBoolean(collapsed, true),
+      collapsed: false, // TODO: вернуть
       saved:     fallbackBoolean(saved,     false),
       changed:   fallbackBoolean(changed,   false)
     };
@@ -890,7 +912,11 @@ class App extends Component {
     return data;
   }
 
-  updateData(length = 0, rebuild) {
+  updateData(length, rebuild = false) {
+    if (length == null) {
+      length = this.state.data.length;
+    }
+
     return new Promise(resolve => {
       let { days, realData } = this.state;
       const data = this.buildData(length, rebuild);
@@ -957,9 +983,11 @@ class App extends Component {
         realData[d].payload = payload;
 
         data[d - 1].day = d;
-        data[d - 1].customIncome    = item.customIncome    != null ? item.customIncome    : item.ci;
+        // data[d - 1].customIncome    = item.customIncome    != null ? item.customIncome    : item.ci;
         data[d - 1].iterations      = item.iterations      != null ? item.iterations      : item.i;
         data[d - 1].iterationsList  = item.iterationsList  != null ? item.iterationsList  : item.il || [];
+        data[d - 1].iterationsList  = data[d - 1].iterationsList
+          .map(it => new Iteration( it.percent ));
         
         data[d - 1].passiveIncome   = item.passiveIncome   != null ? item.passiveIncome   : item.pi;
         data[d - 1].directUnloading = item.directUnloading != null ? item.directUnloading : item.du;
@@ -1197,7 +1225,7 @@ class App extends Component {
     this.setState({ withdrawal }, this.recalc);
   }
 
-  setCurrentDay(currentDay = 1) {
+  setCurrentDay(currentDay = 1, options) {
     this.setStateAsync({ currentDay })
       .then(() => this.updateDepoPersentageStart())
       .then(() => {
@@ -1313,11 +1341,47 @@ class App extends Component {
     return round(rate[mode], 3);
   }
 
+  getRateFull(mode) {
+    const {
+      depoEnd,
+      payloadInterval,
+      withdrawalInterval,
+      incomePersantageCustom,
+    } = this.state;
+    mode = mode || this.state.mode;
+
+    const depoStart = this.state.depoStart[mode];
+    const withdrawal = this.state.withdrawal[mode];
+    const payload = this.state.payload[mode];
+    const days = this.state.days[mode];
+
+    let rate = [
+      extRate(
+        depoStart,
+        depoEnd,
+        withdrawal,
+        withdrawalInterval[mode],
+        payload,
+        payloadInterval[mode],
+        days,
+        withdrawalInterval[mode],
+        payloadInterval[mode]
+      ) * 100,
+
+      incomePersantageCustom
+    ]
+
+    return rate[mode];
+  }
+  
   getRateRecommended(options = {}) {
     const {
       mode,
+      data,
       payloadInterval,
       withdrawalInterval,
+      extraDays,
+      daysDiff
     } = this.state;
 
     const depoStart  = this.state.depoStart[mode];
@@ -1325,7 +1389,7 @@ class App extends Component {
     const payload    = this.state.payload[mode];
     const days       = this.state.days[mode];
 
-    const rate = this.getRate();
+    const rate = this.getRateFull();
 
     let realData = clone(options.realData || this.state.realData);
     realData = Object.keys(realData)
@@ -1339,34 +1403,33 @@ class App extends Component {
         return item;
       });
     
-    let value = rateRecommended(
+    const recommendedData = rateRecommended(
       depoStart,
-      Math.round(this.getDepoEnd()),
+      Math.round( this.getDepoEnd() ),
       withdrawal,
       withdrawalInterval[mode],
       payload,
       payloadInterval[mode],
-      days,
+      data.length, // days,
       withdrawalInterval[mode],
       payloadInterval[mode],
       0,
-      realData
-    ) * 100;
-
-    console.log(
-      depoStart,
-      Math.round(this.getDepoEnd()),
-      withdrawal,
-      withdrawalInterval[mode],
-      payload,
-      payloadInterval[mode],
-      days,
-      withdrawalInterval[mode],
-      payloadInterval[mode],
-      0,
-      realData
+      realData,
+      {
+        rateSuggest: rate / 100
+      }
     );
+    // console.log(recommendedData);
 
+    if (recommendedData.extraDays != this.state.extraDays) {
+      this.setState({ extraDays: recommendedData.extraDays });
+    }
+
+    if (recommendedData.daysDiff != this.state.daysDiff) {
+      this.setState({ daysDiff: recommendedData.daysDiff });
+    }
+
+    let value = recommendedData.rate * 100;
     if (Math.abs(rate - value) < .0008) {
       value = rate;
     }
@@ -1410,7 +1473,10 @@ class App extends Component {
       // -- выбираем последний возможный инструмент
       return Math.min(currentToolIndex, tools.length - 1);
     }
-    return this.getToolIndexByCode(currentToolCode);
+
+    return Tools.getToolIndexByCode(tools, currentToolCode);
+
+    // return this.getToolIndexByCode(currentToolCode);
   }
 
   /**
@@ -1538,7 +1604,8 @@ class App extends Component {
         ? data[day - 1].scale 
         : fallbackRate;
 
-    let value = Math.round(depoStart * round(scale, 3) / 100);
+    // let value = Math.round( depoStart * (scale / 100) );
+    let value = depoStart * (scale / 100);
 
     if (data[day - 1].customIncome != null) {
       value = data[day - 1].customIncome;
@@ -1546,7 +1613,9 @@ class App extends Component {
 
     const iterationsList = this.getIterationsList(day, data);
     if (iterationsList && iterationsList.length) {
-      value = iterationsList.map(el => el.income).reduce((prev, curr) => prev + curr);
+      value = iterationsList
+        .map(el => el.getIncome( data[day - 1].depoStartTest ))
+        .reduce((prev, curr) => prev + curr);
     }
 
     if (realData[day]) {
@@ -1559,11 +1628,6 @@ class App extends Component {
       value += data[day - 1].payloadPlan;
       value -= data[day - 1].paymentPlan;
     }
-
-    // if (!pure) {
-    //   value += realData[day] && realData[day].payload != null ? realData[day].payload : 0;
-    //   value -= realData[day] && realData[day].payment != null ? realData[day].payment : 0;
-    // }
     
     return value;
   }
@@ -1576,6 +1640,9 @@ class App extends Component {
       mode,
       realData,
       saved,
+      extraDays,
+      isExtended,
+      daysDiff,
     } = this.state; 
 
     if (!data.length) {
@@ -2059,7 +2126,6 @@ class App extends Component {
                                   }
                                 }}
                                 onRef={ref => {
-                                  // console.log('new ref', this.withdrawalInput, this.withdrawalInput.getErrorMsg());
                                   this.withdrawalInput = ref;
                                 }}
                               />
@@ -2080,12 +2146,10 @@ class App extends Component {
                             min={1}
                             max={2600}
                             onSearch={value => {
-                              console.log(value);
                               const { mode, withdrawal } = this.state;
                               const max = this.getMaxPaymentValue(value);
 
                               let errMessages = ["", ""];
-                              console.log(withdrawal[mode], max, withdrawal[mode] > max);
                               if (withdrawal[mode] > max) {
                                 errMessages = ["Слишком большой вывод!", "Слишком маленькая доходность!"];
                               }
@@ -2286,7 +2350,8 @@ class App extends Component {
                                 <h3 className="stats-key main__h3">
                                   { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
                                 </h3>
-                                <Tooltip title={"Удержан НДФЛ: " + formatNumber(paymentTax)}>
+                                  <Tooltip title={"Удержан НДФЛ: " + formatNumber(paymentTax)} 
+                                           visible={paymentTax != 0}>
 
                                   <div className="stats-val">
                                     {
@@ -2476,7 +2541,7 @@ class App extends Component {
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
 
                             this.setState({ 
-                              currentToolCode: currentTool.code,
+                              currentToolCode: currentTool.getSortProperty(),
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
                               depoPersentageStart
@@ -2791,62 +2856,18 @@ class App extends Component {
                               withdrawalInterval,
                             } = this.state;
 
-                            const depoStart = this.state.depoStart[mode];
-                            const withdrawal = this.state.withdrawal[mode];
-                            const payload = this.state.payload[mode];
                             const days = this.state.days[mode];
-                            
-                            function getPeriods(rate, present, future, payment, paymentper, payload, payloadper, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}) {
-                              realdata = JSON.parse(JSON.stringify(realdata));
-                              // ( Ставка, Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням  )
-                              // Возвращает: Дней до цели
-                              const rateRounded = round(rate * 100, 3);
-
-                              var res = present;
-                              var p1 = dayoffirstpayment;
-                              var p2 = dayoffirstpayload;
-                              var x = 0;
-                              rate += 1;
-                              payment = payment * (1 + comission);
-
-                              while (res < future) {
-                                if (realdata[x] !== undefined) {
-
-                                  realdata[x].scale   = realdata[x].scale   != null ? realdata[x].scale   : rateRounded;
-                                  realdata[x].payload = realdata[x].payload != null ? realdata[x].payload : 0;
-                                  realdata[x].payment = realdata[x].payment != null ? realdata[x].payment : 0;
-
-                                  res = res * (1 + (realdata[x].scale / 100));
-                                  p1--; p2--;
-                                  res += realdata[x].payload;
-                                  res -= realdata[x].payment;
-                                  if (!p2) { p2 = payloadper; }
-                                  if (!p1) { p1 = paymentper; }
-                                } else {
-                                  res = res * rate;
-                                  p1--; p2--;
-                                  if (!p2) { p2 = payloadper; res += payload; }
-                                  if (!p1) { p1 = paymentper; res -= payment; }
-                                }
-                                x++;
-                              }
-                              return x;
-                            }
 
                             const rate = this.getRate();
                             let sum   = 0;
                             let total = 0;
                             let avg   = 0;
-                            let atLeastOneChanged = false;
-
+                            let printArr = [];
                             for (let dataItem of data) {
                               if (dataItem.changed) {
-                                atLeastOneChanged = true;
                                 sum += (dataItem.scale != null) ? dataItem.scale : rate;
+                                printArr.push((dataItem.scale != null) ? dataItem.scale : rate);
                                 total++;
-                              }
-                              else {
-                                // sum += rate;
                               }
                             }
 
@@ -2857,25 +2878,18 @@ class App extends Component {
                               avg = round(rate, 3);  
                             }
 
-                            const periods = getPeriods(
-                              rate / 100,
-                              depoStart,
-                              this.getDepoEnd(),
-                              withdrawal,
-                              withdrawalInterval[mode],
-                              payload,
-                              payloadInterval[mode],
-                              withdrawalInterval[mode],
-                              payloadInterval[mode],
-                              0,
-                              realData
-                            );
+                            let printedDays = daysDiff;
+                            if (currentDay == data.length) {
+                              printedDays = extraDays;
+                            }
 
-                            let realDaysLeft = atLeastOneChanged
-                              ? roundUp( periods )
-                              : days;
-                            let difference = -(days - realDaysLeft);
-                            let persentage = (currentDay) / (days + difference) * 100;
+                            // let daysTotal = days + daysDiff;
+                            let daysTotal = data.length + daysDiff;
+                            if (extraDays == 0 && daysDiff == 0) {
+                              daysTotal = data.length;
+                            }
+                            const daysLeft = daysTotal - currentDay;
+                            const percent = currentDay / daysTotal * 100;
 
                             return (
                               <div className="section4-content section4-content--centered card">
@@ -2885,29 +2899,27 @@ class App extends Component {
                                     className="section4-progress"
                                     type="circle"
                                     percent={
-                                      (persentage > 3 && persentage < 100) 
-                                        ? persentage - 2 
-                                        : persentage
+                                      percent > 3 && percent < 100
+                                        ? percent - 2 
+                                        : percent
                                     } 
-                                    format={() => `${realDaysLeft - currentDay} ${num2str(realDaysLeft - currentDay, ["день", "дня", "дней"])}`}
+                                    format={() => daysLeft + " " + num2str(daysLeft, ["день", "дня", "дней"])}
                                   />
 
                                   {
-                                    total > 0 && difference != 0
-                                      ? (
-                                        <span className="section4-progress__label">
-                                          { difference > 0 ? "+" : null }
-                                          {`${ difference } ${ num2str(difference, ["день", "дня", "дней"]) }` }
-                                        </span>
-                                      )
-                                      : null
+                                    printedDays != 0 && (
+                                      <span className="section4-progress__label">
+                                        { printedDays > 0 && "+" }
+                                        { printedDays + " " + num2str(printedDays, ["день", "дня", "дней"]) }
+                                      </span>
+                                    )
                                   }
                                 </div>
 
                                 <Stack className="section4__stats">
                                   {(() => {
                                     if (total > 0) {
-                                      let visible = round(avg, 3) < round(this.getRate(), 3);
+                                      let visible = round(avg, 3) < round(rate, 3);
 
                                       return (
                                         <Statistic
@@ -2921,9 +2933,7 @@ class App extends Component {
                                           valueStyle={{
                                             color: `var( ${visible ? "--danger-color" : "--success-color"} )`
                                           }}
-                                          prefix={
-                                            visible ? <ArrowDownOutlined /> : <ArrowUpOutlined />
-                                          }
+                                          prefix={visible ? <ArrowDownOutlined /> : <ArrowUpOutlined />}
                                           suffix="%"
                                         />
                                       );
@@ -2978,6 +2988,8 @@ class App extends Component {
 
                 {(() => {
                   const {
+                    days,
+                    mode,
                     data,
                     realData,
                     daysInOrder,
@@ -3017,10 +3029,6 @@ class App extends Component {
                     return changed;
                   };
 
-                  const resetIterationsList = () => {
-                    data[currentDay - 1].iterationsList = [];
-                  };
-
                   const placeholder = "—";
                   const onBlur = (prop, val) => {
                     if (val === "") {
@@ -3039,7 +3047,9 @@ class App extends Component {
                       let scale = val;
                       if (val != null) {
                         scale = (val / data[currentDay - 1].depoStartTest) * 100;
-                        il = [{ percent: scale, income: val }]; 
+
+                        // il = [{ percent: scale, income: val }]; 
+                        il = [new Iteration(scale)]; 
                         iterations = 1;
                       }
 
@@ -3058,7 +3068,8 @@ class App extends Component {
                       let customIncome = val;
                       if (val != null) {
                         customIncome = Math.round(data[currentDay - 1].depoStartTest * val / 100);
-                        il = [{ percent: val, income: customIncome }];
+                        // il = [{ percent: val, income: customIncome }];
+                        il = [new Iteration(val)];
                         iterations = 1;
                       }
 
@@ -3067,7 +3078,6 @@ class App extends Component {
                       data[currentDay - 1].iterations = iterations;
                       realData[currentDay].iterations = iterations;
                       data[currentDay - 1].iterationsList = il;
-                      // resetIterationsList();
                     }
                     
                     data[currentDay - 1][prop] = val;
@@ -3076,14 +3086,11 @@ class App extends Component {
                     const changed = isChanged(data[currentDay - 1]);
                     data[currentDay - 1].changed = !val ? changed : true;
 
-                    console.log(data[currentDay - 1], realData[currentDay]);
+                    // console.log(data[currentDay - 1], realData[currentDay]);
                     
-                    this.setState({ data, realData }, () => {
-                      const { days, mode } = this.state;
-                      this.updateData(days[mode], false)
-                        .then(() => updateChart.call(this));
-                    });
-
+                    this.setStateAsync({ data, realData })
+                      .then(() => this.updateData())
+                      .then(() => updateChart.call(this))
                   };
 
                   const ArrowRight = props => {
@@ -3099,7 +3106,7 @@ class App extends Component {
                         <path d="M492 236H68.4l70.2-69.8a20 20 0 10-28.2-28.4L5.9 241.8a20 20 0 000 28.4l104.5 104a20 20 0 0028.2-28.4L68.4 276H492a20 20 0 100-40z"/>
                       </svg>
                     );
-                  }
+                  };
 
                   return (
                     <section className="section5">
@@ -3117,10 +3124,23 @@ class App extends Component {
                         День {currentDay}
 
                         <button 
-                          disabled={currentDay == this.state.days[this.state.mode]}
+                          disabled={currentDay == data.length && extraDays == 0}
                           data-type="link"
-                          onClick={() => this.setCurrentDay(currentDay + 1)}>
-                          Следующий день
+                          onClick={() => {
+                            if ( currentDay < data.length || extraDays == 0 ) {
+                              this.setCurrentDay(currentDay + 1);
+                            }
+                            else {
+                              let period = data.length + extraDays;
+                              this.setStateAsync({ extraDays: 0 })
+                                .then(() => this.updateData(period, false))
+                                .then(() => updateChart.call(this))
+                            }
+                          }}>
+                          {currentDay < data.length || extraDays == 0
+                            ? "Следующий день" 
+                            : `Добавить ${extraDays} ${num2str(extraDays, ["день", "дня", "дней"])}`
+                          }
                           <ArrowRight />
                         </button>
                       </div>
@@ -3188,8 +3208,8 @@ class App extends Component {
 
                                 return data[currentDay - 1].changed
                                   ? (
-                                    <Value format={val => val > 0 ? "+" + formatNumber(val) : formatNumber(val)}>
-                                      { value }
+                                    <Value format={val => val > 0 ? "+" + val : val}>
+                                      { formatNumber(Math.round(value)) }
                                     </Value>
                                   )
                                   : "—"
@@ -3290,10 +3310,22 @@ class App extends Component {
                                   const prop = "scale";
                                   let value = data[currentDay - 1][prop];
                                   if (value == null) {
-                                    value = (data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest) * 100;
+                                    if (data[currentDay - 1].customIncome != null) {
+                                      value = (data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest) * 100;
+                                    }
                                   }
 
                                   const disabled = this.getIterationsList(currentDay).length > 1;
+
+                                  return (
+                                    <span>
+                                      {
+                                        data[currentDay - 1].changed && value != null
+                                          ? round(value, 3) 
+                                          : placeholder
+                                      }
+                                    </span>
+                                  );
 
                                   return (
                                     <NumericInput
@@ -3427,7 +3459,11 @@ class App extends Component {
                                   const prop = "customIncome";
                                   let value = data[currentDay - 1][prop];
                                   if (value == null) {
-                                    value = Math.round(data[currentDay - 1].depoStartTest * data[currentDay - 1].scale / 100);
+                                    if (data[currentDay - 1].scale != null) {
+                                      value = Math.round(
+                                        data[currentDay - 1].depoStartTest * data[currentDay - 1].scale / 100
+                                      );
+                                    }
                                   }
                                     
                                   const min = -data[currentDay - 1].depoStartTest;
@@ -3531,58 +3567,11 @@ class App extends Component {
                           </Col>
 
                           <Col className="card section5-col section5-col--no-padding">
-                            {/* {(() => {
-                              let percentage = round(
-                                data[currentDay - 1].scale / (round( this.getRate(), 3 )) * 100,
-                                2
-                              );
-
-                              if (data[currentDay - 1].customIncome != null) {
-                                percentage = round(
-                                  data[currentDay - 1].customIncome / 
-                                  Math.round(data[currentDay - 1].incomeReal)
-                                  * 100,
-                                  2
-                                );
-                              }
-
-                              return (
-                                <Progress
-                                  type="circle"
-                                  status={
-                                    data[currentDay - 1].changed
-                                      ? percentage >= 100
-                                        ? "success"
-                                        : percentage <= 0
-                                          ? "exception"
-                                          : "normal"
-                                      : "normal"
-                                  }
-                                  trailColor={
-                                    percentage >= 100
-                                      ? "#3f6b33"
-                                      : percentage <= 0
-                                        ? "#f5222d"
-                                        : "#4859b4"
-                                  }
-                                  percent={
-                                    data[currentDay - 1].changed
-                                      ? percentage < 0
-                                          ? 100
-                                          : (percentage > 3 && percentage < 100)
-                                              ? percentage - 2
-                                              : percentage
-                                      : 0
-                                  }
-                                />
-                              ) 
-                            })()} */}
-
                             <div className="iterations">
                               <ol className="iterations-list">
                                 {(() => {
                                   const onChange = (iterationsList = []) => {
-                                    const iterations = iterationsList.filter(v => v.percent != null || v.income != null);
+                                    const iterations = iterationsList.filter(v => v.percent != null);
 
                                     let scale;
                                     let iterationsLength;
@@ -3605,11 +3594,10 @@ class App extends Component {
                                     const changed = isChanged(data[currentDay - 1]);
                                     data[currentDay - 1].changed = changed;
 
-                                    this.setState({ data, realData }, () => {
-                                      const { days, mode } = this.state;
-                                      this.updateData(days[mode], false)
-                                        .then(() => updateChart.call(this));
-                                    });
+                                    this.setStateAsync({ data, realData })
+                                      .then(() => this.updateData())
+                                      .then(() => updateChart.call(this))
+
                                   };
 
                                   const iterationsList = data[currentDay - 1].iterationsList;
@@ -3620,48 +3608,54 @@ class App extends Component {
                                         <span className="iterations-list-item__number">
                                           {index + 1}.
                                         </span>
-                                        <NumericInput
-                                          className="iterations-list-item__input-left"
-                                          key={Math.random()}
-                                          defaultValue={listItem.percent != null ? listItem.percent : ""}
-                                          suffix="%"
-                                          format={formatNumber}
-                                          onBlur={val => {
-                                            // if (val === "") {
-                                            //   val = 0;
-                                            // }
+                                        
+                                        <span className="iterations-list-item__input">
+                                          {listItem.percent != null
+                                            ? formatNumber(round(listItem.percent, 3)) + "%"
+                                            : ""
+                                          }
+                                        </span>
 
-                                            if (!data[currentDay - 1].iterationsList[index]) {
-                                              data[currentDay - 1].iterationsList[index] = {};
-                                            }
-                                            
-                                            let income;
-                                            let percent;
-                                            if (val !== "") {
-                                              income  = Math.round(data[currentDay - 1].depoStart * (val / 100));
-                                              percent = val;
-                                            }
-                                            
-                                            data[currentDay - 1].iterationsList[index].income  = income;
-                                            data[currentDay - 1].iterationsList[index].percent = percent;
-                                            this.setState({ data });
-                                            onChange(data[currentDay - 1].iterationsList);
-                                          }}
-                                        />
+                                        {false && (
+                                          <NumericInput
+                                            className="iterations-list-item__input-left"
+                                            key={Math.random()}
+                                            defaultValue={listItem.percent != null ? listItem.percent : ""}
+                                            suffix="%"
+                                            format={val => formatNumber( round(val, 3) )}
+                                            onBlur={val => {
+                                              if (!data[currentDay - 1].iterationsList[index]) {
+                                                data[currentDay - 1].iterationsList[index] = new Iteration();
+                                              }
+                                              
+                                              let income;
+                                              let percent;
+                                              if (val !== "") {
+                                                income  = Math.round(data[currentDay - 1].depoStart * (val / 100));
+                                                percent = val;
+                                              }
+                                              
+                                              // data[currentDay - 1].iterationsList[index].income  = income;
+                                              data[currentDay - 1].iterationsList[index].percent = percent;
+                                              this.setState({ data });
+                                              onChange(data[currentDay - 1].iterationsList);
+                                            }}
+                                          />
+                                        )}
                                         <span className="iterations-list-item__separator">
                                           /
                                       </span>
                                         <NumericInput
-                                          className="iterations-list-item__input-right"
+                                          className="iterations-list-item__input"
                                           key={Math.random()}
-                                          defaultValue={listItem.income != null ? listItem.income : ""}
+                                          defaultValue={
+                                            listItem.percent != null
+                                              ? listItem.getIncome( data[currentDay - 1].depoStartTest )
+                                              :  ""
+                                          }
                                           format={formatNumber}
                                           round="true"
                                           onBlur={val => {
-                                            // if (val === "") {
-                                            //   val = 0;
-                                            // }
-
                                             if (!data[currentDay - 1].iterationsList[index]) {
                                               data[currentDay - 1].iterationsList[index] = {};
                                             }
@@ -3670,10 +3664,10 @@ class App extends Component {
                                             let percent;
                                             if (val !== "") {
                                               income  = val;
-                                              percent = round((val / data[currentDay - 1].depoStart) * 100, 3);
+                                              percent = val / data[currentDay - 1].depoStartTest * 100;
                                             }
 
-                                            data[currentDay - 1].iterationsList[index].income  = income;
+                                            // data[currentDay - 1].iterationsList[index].income  = income;
                                             data[currentDay - 1].iterationsList[index].percent = percent;
                                             this.setState({ data });
                                             onChange(data[currentDay - 1].iterationsList);
@@ -3695,7 +3689,7 @@ class App extends Component {
                                 className="iterations-button" 
                                 aria-label="Добавить итерацию"
                                 onClick={() => {
-                                  data[currentDay - 1].iterationsList.push(0);
+                                  data[currentDay - 1].iterationsList.push( new Iteration() );
                                   this.setState({ data }, () => {
                                     const list = document.querySelector(".iterations-list");
                                     list.scrollTop = 9999;
@@ -3717,8 +3711,6 @@ class App extends Component {
                           if (income <= 0) {
                             percent = 0;
                           }
-
-                          // ~~
 
                           return (
                             <footer className="section5-footer">

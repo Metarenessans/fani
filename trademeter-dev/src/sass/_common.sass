@@ -74,14 +74,17 @@ body
 .trademeter
   &-config
     &__depo
+      align-self: flex-start
+
       span
         font-size: 1.4em
 
-      .ant-input
-        font-size: 1em !important 
+      > [class*=ant-input]
+        width: 7.5em !important
+        font-size: .8em !important
 
-        &-suffix
-          font-size: 1em !important 
+        .ant-input-suffix
+          font-size: 1.6em !important 
 
 
 /* Extract these sections into separate files */
@@ -1144,6 +1147,7 @@ body
       *:first-child
         flex-grow: 1
         flex-basis: 4em
+        text-align: center
       
       .ant-input
         // flex-basis: initial

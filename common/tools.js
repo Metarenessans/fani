@@ -248,11 +248,18 @@ const parseTool = tool => {
 };
 
 const shouldBeSkipped = tool => {
+  // dollarRate == 0 or doesn't exist
   if (!tool.dollarRate) {
     if (tool.price == 0 || !tool.volume) {
       return true;
     }
+
+    // Истек срок действия
+    if (Number(tool.updateDate) > Number(tool.lastTradeDate)) {
+      return true
+    }
   }
+
   return false;
 };
 
@@ -360,7 +367,12 @@ class Tools {
       return 0;
     }
     
-    let index = tools.indexOf( tools.find( tool => tool.getSortProperty() == search ) );
+    let index = tools.indexOf( 
+      tools.find( tool => 
+        tool.getSortProperty() == search || 
+        tool.code              == search
+      ) 
+    );
     if (index > -1) {
       return index;
     }

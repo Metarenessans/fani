@@ -126,8 +126,10 @@ export default class CustomSelect extends React.Component {
           if (!this.inputElement) {
             this.inputElement = e.target;
             this.inputElement.addEventListener("input", (event) => {
-              this.inputValue = event.target.value; 
-              this.props.onSearch(+this.inputValue);
+              this.inputValue = event.target.value;
+              if (this.props.onSearch) {
+                this.props.onSearch(Number(this.inputValue));
+              }
             });
           }
 
