@@ -1,5 +1,3 @@
-import "../sass/style.sass"
-
 import React, { Component } from "react"
 const { Provider, Consumer } = React.createContext();
 import {
@@ -21,6 +19,8 @@ import {
   LoadingOutlined,
   QuestionCircleFilled,
   SettingFilled,
+  ClockCircleFilled,
+  CheckCircleFilled
 } from "@ant-design/icons"
 
 import {
@@ -38,7 +38,7 @@ import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import extRate             from "../../../common/utils/rate"
 import rateRecommended     from "../../../common/utils/rate-recommended"
-import fallbackBoolean     from "../../../common/utils/fallback-boolean"
+import fallbackProp        from "../../../common/utils/fallback-prop"
 import formatNumber        from "../../../common/utils/format-number"
 import num2str             from "../../../common/utils/num2str"
 import params              from "../../../common/utils/params"
@@ -46,6 +46,9 @@ import round               from "../../../common/utils/round"
 import roundUp             from "../../../common/utils/round-up"
 import typeOf              from "../../../common/utils/type-of"
 import { Tools, template } from "../../../common/tools"
+
+import Iteration from "./utils/iteration"
+import Data      from "./utils/data"
 
 import Stack        from "./components/stack"
 import BigNumber    from "./components/BigNumber"
@@ -63,24 +66,15 @@ import {
   createChart,
   updateChart,
   updateChartTicks,
-  updateChartZoom
 } from "./components/chart"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
+import "../sass/style.sass"
+
 let saveToDonwload;
 
-const shouldLoadFakeSave = false;
-const chartVisible = true;
-
-class Iteration {
-  constructor(percent = 0) {
-    this.percent = percent;
-  }
-
-  getIncome(depo) {
-    return Math.round( depo * (this.percent / 100) )
-  }
-}
+const shouldLoadFakeSave = true;
+const chartVisible       = true;
 
 class App extends Component {
   
@@ -129,8 +123,10 @@ class App extends Component {
        */
       days: [days, days],
 
+      // Реальная длина date
+      dataLength: days,
+
       extraDays:  0,
-      isExtended: false,
       daysDiff:   null,
       
       /**
@@ -252,7 +248,6 @@ class App extends Component {
       saved: false,
       changed: false,
 
-      daysInOrder: true,
       directUnloading: true,
 
       // TODO: remove?
@@ -301,13 +296,42 @@ class App extends Component {
       }
     );
 
-    this.state.data = this.buildData(this.state.days[this.state.mode]);
+    this.state.data = new Data();
+    this.state.data.build(this.getDataOptions());
+
     this.state.loading = true;
 
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
     this.fetchSaveById     = fetchSaveById.bind(this, "Trademeter");
+  }
+
+  getDataOptions() {
+    const {
+      data,
+      mode,
+      depoStart,
+      days,
+      dataLength,
+      withdrawal,
+      withdrawalInterval,
+      payload,
+      payloadInterval,
+    } = this.state;
+    const rate = this.getRate();
+
+    return {
+      $start:           depoStart[mode],
+      $length:          dataLength,
+      $rate:            rate,
+      $rateRequired:    null,
+      $payment:         withdrawal[mode],      // Вывод
+      $paymentInterval: withdrawalInterval[mode],
+      $payload:         payload[mode],         // Пополнение
+      $payloadInterval: payloadInterval[mode],
+      $tool:            this.getCurrentTool()
+    };
   }
 
   componentDidMount() {
@@ -391,19 +415,13 @@ class App extends Component {
   }
 
   fetchTools() {
-    let first = true;
     for (let request of [
       "getFutures",
       "getTrademeterInfo"
     ]) {
       fetch(request)
         .then(this.applyTools)
-        .then(() => {
-          // if (first) {
-          //   first = false;
-          // }
-          this.updateDepoPersentageStart();
-        })
+        .then(() => this.updateDepoPersentageStart())
         .catch(error => console.error(error));
     }
   }
@@ -453,14 +471,19 @@ class App extends Component {
   updateDepoPersentageStart() {
     const { currentDay, data } = this.state;
 
-    const nearest = (n, step) => {
-      return step * Math.round(n / step);
-    };
+    const nearest = (n, step) => step * Math.round(n / step);
 
     return new Promise((resolve, reject) => {
-      let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStartTest * 100;
+      let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
       if (this.state.depoPersentageStart) {
         depoPersentageStart = nearest(this.state.depoPersentageStart, depoPersentageStart);
+      }
+
+      if (depoPersentageStart > 100) {
+        depoPersentageStart = 100;
+      }
+      else if (depoPersentageStart < 0) {
+        depoPersentageStart = 0;
       }
 
       this.setState({ depoPersentageStart }, () => {
@@ -498,6 +521,8 @@ class App extends Component {
         tax,
         currentDay:                    currentDay, 
         days:                          [ days[0], days[1] ],
+        dataLength:                    Math.max( days[mode], data.length ),
+        dataExtendedFrom:              data.extendedFrom,
         minDailyIncome:                [
           round(this.getRate(0), 3),
           round(this.getRate(1), 3)
@@ -520,19 +545,20 @@ class App extends Component {
         .filter(item => item.changed)
         .map((item, index) => ({
           d:   item.day,
-          s:   item.scale,
-          ci:  item.customIncome,
+          s:   item.rate,
+          rr:  item.rateRequired,
+          ci:  item.income,
           pmt: item.payment,
           pld: item.payload,
-          i:   item.iterations,
-          il:  item.iterationsList,
+          i:   item.iterations.length,
+          il:  item.iterations,
           c:   item.changed,
           pi: (() => {
             let val = data[index].depoEnd;
             let tool = passiveIncomeTools[currentPassiveIncomeToolIndex];
             if (tool) {
-              let persantage = tool.rate / 365 * (365 / 260) / 100;
-              return Math.round(val * persantage)
+              let percent = tool.rate / 365 * (365 / 260) / 100;
+              return Math.round(val * percent)
             }
             return 0;
           })(),
@@ -702,308 +728,144 @@ class App extends Component {
         state.currentToolIndex = staticParsed.currentToolIndex || 0;
       }
 
-      state.currentDay = 1;
-      state.data       = this.buildData(state.days[m]);
-      state.realData   = [];
+      
+      state.dataLength = staticParsed.dataLength;
+      if (state.dataLength == null) {
+        state.dataLength = Math.max(state.days[m], dynamicParsed.length);
+      }
+      
+      const minRate = staticParsed.minDailyIncome[m];
+      state.data = this.buildData(state.dataLength, true, 0, { $rateRequired: minRate });
+      state.data.extendedFrom = state.dataLength > state.days[m] ? state.days[m] : null;
 
-      state.id      = save.id;
-      state.saved   = true;
+      state.currentDay = 1;
+      state.id = save.id;
+      state.saved = true;
       state.loading = false;
       state.currentSaveIndex = getSaveIndex(savePure) + 1;
     }
     catch (e) {
-      // console.log("Failed!");
-
       failed = true;
       state = {
         id: save.id,
         saved: true
       };
 
-      // onError(`Формат сохранения устарел. Пожалуйста, попробуйте другое сохранение`);
       onError(e);
     }
 
     this.setState(state, () => {
       if (!failed) {
-        this.updateData(state.days[state.mode], true)
-          .then(() => this.overrideData(dynamicParsed))
-          .then(() => this.updateData(state.days[state.mode], false))
-          .then(() => updateChart.call(this))
+        this.overrideData(dynamicParsed)
+          .then(() => this.updateData())
+          .then(() => chartVisible && updateChart.call(this))
           .then(() => this.setCurrentDay(currentDay))
           .catch(err => this.showAlert(err));
       }
     });
   }
 
-  createDayData(daysArray, i, rebuild, rate, rateRecommended) {
-    let {
-      currentDay,
-      mode,
-      data,
-      realData,
-      withdrawalInterval,
-      payloadInterval,
-      depoPersentageStart,
-    } = this.state;
+  buildData(length = 0, rebuild = false, start = 0, options) {
+    let { data } = this.state;
 
-    data[i] = data[i] || {};
-
-    let depoStart   = this.state.depoStart[mode];
-    let withdrawal  = this.state.withdrawal[mode];
-    let payload     = this.state.payload[mode];
-    let currentTool = this.getCurrentTool();
-
-    let { collapsed, saved, changed } = !rebuild ? data[i] : {
-      collapsed: true,
-      saved:     false,
-      changed:   false
-    };
-
-    let _scale = rate;
-    if (!rebuild && data && data[i] && data[i].scale != null) {
-      _scale = data[i].scale;
+    if (rebuild) {
+      data = new Data();
     }
-
-    if (Object.keys(realData).length) {
-      const currentRealData = realData[i + 1];
-      // Заполнен факт
-      if (
-        currentRealData && Object.keys(currentRealData).length &&
-        Object.keys(currentRealData).map(prop => currentRealData[prop]).filter(val => val != null).length
-      ) {
-        rebuild = false;
-        changed = true;
-        data[i].scale   = currentRealData.scale;
-        data[i].payment = currentRealData.payment;
-        data[i].payload = currentRealData.payload;
-      }
-    }
-
-    let _depoStart     = depoStart;
-    let  depoStartTest = depoStart;
-    if (i > 0) {
-      // Доход предыдущего дня
-      let income = this.getRealIncome(i, daysArray, daysArray[i - 1].depoStartTest, null, rate);
-      _depoStart = depoStartTest = daysArray[i - 1].depoStartTest + income;
-    }
-
-    let _depoStartPlan = depoStart;
-    if (i > 0) {
-      _depoStartPlan = daysArray[i - 1].depoEndPlan;
-    }
-
-
-    let _depoStartReal = _depoStart * (depoPersentageStart / 100);
-
-    let customIncome;
-    if (data && data[i] && data[i].customIncome != null) {
-      customIncome = data[i].customIncome;
-    }
-
-    let goal = depoStartTest * (rate / 100);
-
-    let _income     = (_depoStart     * _scale) / 100;
-    let _incomePlan = (_depoStartPlan * rate)   / 100;
-    let _incomeReal = (_depoStart     * rate)   / 100;
-    
-    if (!rebuild && customIncome != null) {
-      _income = customIncome;
-    }
-
-    let paymentPlan = 0;
-    if ((i + 1) > 0 && ((i + 1) % withdrawalInterval[mode]) == 0) {
-      _income     -= withdrawal;
-      _incomePlan -= withdrawal;
-      _incomeReal -= withdrawal;
-      paymentPlan  = withdrawal;
-    }
-
-    let payloadPlan = 0;
-    if ((i + 1) > 0 && ((i + 1) % payloadInterval[mode]) == 0) {
-      _income     += payload;
-      _incomePlan += payload;
-      _incomeReal += payload;
-      payloadPlan  = payload;
-    }
-
-    // let _depoEnd     = _depoStart     + _income;
-    let _depoEnd     = depoStartTest + goal - paymentPlan + payloadPlan;
-    let _depoEndPlan = _depoStartPlan + _incomePlan;
-
-    let _contractsStart = (round(_depoStartReal, 1) / currentTool.guarantee);
-    if (Math.ceil(_contractsStart) - _contractsStart < .00001) {
-      _contractsStart = Math.ceil(_contractsStart);
-    }
-    else {
-      _contractsStart = Math.floor(_contractsStart);
-    }
-
-    if (_contractsStart < 1) {
-      _contractsStart = 1;
-    }
-
-    let _pointsForIteracion = goal / currentTool.stepPrice / _contractsStart;
-
-    let iterationsList = [];
-    if (!rebuild && data && data[i] && data[i].iterationsList != null) {
-
-      iterationsList = data[i].iterationsList;
-
-      // iterationsList = data[i].iterationsList.map(entry => {
-      //   if (entry.percent != null) {
-      //     entry.income = Math.round( data[i].depoStartPlan * (entry.percent / 100) );
-      //   }
-      //   return entry;
-      // });
-    }
-
-    let res = {
-      day:                i + 1,
-      scale:              (!rebuild && data && data[i] && data[i].scale != null) ? data[i].scale : undefined,
-      depoStartTest,
-      goal,
-      depoStart:          _depoStart,
-      depoStartPlan:      _depoStartPlan,
-      depoStartReal:      _depoStartReal,
-      customIncome,
-      income:             _income,
-      incomePlan:         _incomePlan,
-      incomeReal:         _incomeReal,
-
-      paymentPlan,
-      payloadPlan,
-
-      depoEnd:            _depoEnd,
-      depoEndPlan:        _depoEndPlan,
-      contractsStart:     _contractsStart,
-      pointsForIteration: _pointsForIteracion,
-
-      iterations:     data[i].iterations,
-      iterationsList,
-      payment:        data[i].payment,
-      payload:        data[i].payload,
-
-      scaleChanged:        data[i].scaleChanged,
-      paymentChanged:      data[i].paymentChanged,
-      payloadChanged:      data[i].payloadChanged,
-      customIncomeChanged: data[i].customIncomeChanged,
-      iterationsChanged:   data[i].iterationsChanged,
-
-      // collapsed: fallbackBoolean(collapsed, true),
-      collapsed: false, // TODO: вернуть
-      saved:     fallbackBoolean(saved,     false),
-      changed:   fallbackBoolean(changed,   false)
-    };
-    return res;
+    return data.build({ ...this.getDataOptions(), $length: length, $startFrom: start, ...options });
   }
 
-  buildData(length = 0, rebuild) {
-    const { realData } = this.state;
-
-    const rate = this.getRate();
-    const rateRecommended = this.getRateRecommended({ realData });
-
-    let data = new Array(length).fill(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = this.createDayData(data, i, rebuild, rate, rateRecommended);
-    }
-
-    return data;
-  }
-
-  updateData(length, rebuild = false) {
+  updateData(length, rebuild = false, start = 0) {
     if (length == null) {
-      length = this.state.data.length;
+      length = this.state.dataLength;
     }
 
     return new Promise(resolve => {
-      let { days, realData } = this.state;
-      const data = this.buildData(length, rebuild);
-      if (rebuild) {
-        realData = {};
-      }
-
-      this.setState({ data, realData, days }, () => resolve());
+      let { days } = this.state;
+      const data = this.buildData(length, rebuild, start);
+      this.setState({ data, days }, () => resolve());
     })
   }
 
   overrideData(override = []) {
-    const { data, realData } = this.state;
-
-    const isConsequent = arr => {
-      if (arr.length == 0) {
-        return true;
-      }
-
-      if (arr[0] != 1) {
-        return false;
-      }
-
-      for (let i = 0; i < arr.length - 1; i++) {
-        if (arr[i + 1] - arr[i] != 1) {
-          return false;
-        }
-      }
-
-      return true;
-    };
+    const { mode, days, data } = this.state;
 
     return new Promise(resolve => {
       for (let i = 0; i < override.length; i++) {
         let item = override[i];
-        let d = (item.day != null) ? item.day : item.d;
 
-        if (!realData[d]) {
-          realData[d] = {};
-        }
+        let d = fallbackProp(item, ["day", "d"], i + 1);
+        data[d - 1].day = d;
 
-        const changed = item.changed != null ? item.changed : item.c;
+        let changed = fallbackProp(item, ["changed", "c"], false);
         data[d - 1].changed = changed;
 
-        let scale = item.scale != null ? item.scale : item.s != null ? item.s : 0;
         if (!changed) {
-          scale = null;
+          continue;
+        }
+
+        let scale;
+        if (changed) {
+          scale = fallbackProp(item, ["rate", "scale", "s"]);
+          if (scale != null) {
+            scale = round(scale, 3);
+          }
         }
         data[d - 1].scale = scale;
-        realData[d].scale = scale;
 
-        let payment = item.payment != null ? item.payment : item.pmt != null ? item.pmt : 0;
-        if (!changed) {
-          payment = null;
+        let rateRequired;
+        if (changed && d > days[mode]) {
+          rateRequired = fallbackProp(item, ["rr"]);
+        }
+        data[d - 1].rateRequired = rateRequired;
+
+        let payment;
+        if (changed) {
+          payment = fallbackProp(item, ["payment", "pmt"]);
         }
         data[d - 1].payment = payment;
-        realData[d].payment = payment;
 
-        let payload = item.payload != null ? item.payload : item.pld != null ? item.pld : 0;
-        if (!changed) {
-          payload = null;
+        let payload;
+        if (changed) {
+          payload = fallbackProp(item, ["payload", "pld"]);
         }
         data[d - 1].payload = payload;
-        realData[d].payload = payload;
 
-        data[d - 1].day = d;
-        // data[d - 1].customIncome    = item.customIncome    != null ? item.customIncome    : item.ci;
-        data[d - 1].iterations      = item.iterations      != null ? item.iterations      : item.i;
-        data[d - 1].iterationsList  = item.iterationsList  != null ? item.iterationsList  : item.il || [];
-        data[d - 1].iterationsList  = data[d - 1].iterationsList
-          .map(it => new Iteration( it.percent ));
-        
-        data[d - 1].passiveIncome   = item.passiveIncome   != null ? item.passiveIncome   : item.pi;
-        data[d - 1].directUnloading = item.directUnloading != null ? item.directUnloading : item.du;
+        let income = fallbackProp(item, ["income", "customIncome", "ci"]);
+        if (income == null || typeof income != "number") {
+          // data[d - 1].income = Math.round(data[d - 1].depoStart * scale / 100);
+          // data[d - 1].scale = null;
+        }
+        else {
+          data[d - 1].income = income;
+          data[d - 1].scale = null;
+        }
+
+        data[d - 1].iterations = fallbackProp(item, ["iterations", "iterationsList", "il"]);
+        if (typeof data[d - 1].iterations == "object") {
+          const { iterations } = data[d - 1];
+          
+          if (iterations.length > 1) {
+            data[d - 1].iterations = data[d - 1].iterations.map(it => new Iteration(it.percent));
+            data[d - 1].scale = iterations.calculatedRate;
+          }
+          else {
+            data[d - 1].iterations = [];
+
+            if (data[d - 1].scale != null) {
+              data[d - 1].iterations = [ new Iteration(data[d - 1].scale) ];
+            }
+          }
+
+        }
+        else {
+          data[d - 1].iterations = [];
+        }
+
+        data[d - 1].passiveIncome = fallbackProp(item, ["passiveIncome", "pi"], 0);
+        data[d - 1].directUnloading = fallbackProp(item, ["directUnloading", "du"]);
       }
 
-      const filteredDays = Object.keys(realData)
-        .map(prop => {
-          const item = realData[prop];
-          if (Object.keys(item).length && Object.keys(item).map(p => item[p]).some(val => val != null)) {
-            return prop;
-          }
-        })
-        .filter(value => value != null);
-
-      const daysInOrder = isConsequent(filteredDays);
-      this.setState({ data, realData, daysInOrder }, () => resolve());
+      this.setState({ data, daysInOrder: data.hasNoGaps }, () => resolve());
     })
   }
 
@@ -1013,7 +875,7 @@ class App extends Component {
     const period = days[mode];
     return new Promise((resolve, reject) => {
       this.updateData(period, rebuild)
-        .then(() => updateChart.call(this))
+        .then(() => chartVisible && updateChart.call(this))
         .then(() => resolve())
         .catch(err => reject(err));
     });
@@ -1225,7 +1087,7 @@ class App extends Component {
     this.setState({ withdrawal }, this.recalc);
   }
 
-  setCurrentDay(currentDay = 1, options) {
+  setCurrentDay(currentDay = 1) {
     this.setStateAsync({ currentDay })
       .then(() => this.updateDepoPersentageStart())
       .then(() => {
@@ -1243,50 +1105,12 @@ class App extends Component {
           scaleEnd   = max / data.length;
         }
       })
-      .then(() => updateChartTicks.call(this));
+      .then(() => chartVisible && updateChartTicks.call(this));
   }
   
   // ==================
   // Getters
   // ==================
-
-  getLastFilledDay() {
-    const { realData } = this.state;
-    let lastFilledDay = Object.keys(realData)
-      .map(prop => realData[prop])
-      .filter(day => 
-        day != null &&
-        Object.keys(day).length &&
-        Object.keys(day)
-          .map(prop => day[prop])
-          .filter(value => value != null)
-          .length
-      )
-      .pop();
-
-    if (!lastFilledDay) {
-      lastFilledDay = 0;
-    }
-
-    return lastFilledDay;
-  }
-
-  getFilledDays() {
-    const { realData } = this.state;
-    let arr = [];
-    for (let n of Object.keys(realData).map(value => Number(value))) {
-      if (
-        realData[n] &&
-        Object.keys(realData[n])
-          .map(prop => realData[n][prop])
-          .filter(value => value != null)
-          .length
-      ) {
-        arr.push(n);
-      }
-    }
-    return arr;
-  }
 
   getLastFilledDayNumber() {
     const { realData } = this.state;
@@ -1380,9 +1204,12 @@ class App extends Component {
       data,
       payloadInterval,
       withdrawalInterval,
-      extraDays,
-      daysDiff
+      dataLength
     } = this.state;
+
+    if (!options.length) {
+      options.length = dataLength;
+    }
 
     const depoStart  = this.state.depoStart[mode];
     const withdrawal = this.state.withdrawal[mode];
@@ -1391,17 +1218,13 @@ class App extends Component {
 
     const rate = this.getRateFull();
 
-    let realData = clone(options.realData || this.state.realData);
-    realData = Object.keys(realData)
-      .map(prop => realData[prop])
-      // Удаляем все пустые ячейки
-      .filter(data => Object.keys(data).length && Object.keys(data).map(key => data[key]).some(item => item != null))
-      .map(item => {
-        item.scale   =  (item.scale != null ? item.scale   : rate) / 100;
-        item.payment = item.payment != null ? item.payment : 0;
-        item.payload = item.payload != null ? item.payload : 0;
-        return item;
-      });
+    const realData = data
+      .filledDays
+      .map(item => ({
+        scale:   item.calculatedRate / 100,
+        payment: item.payment || 0,
+        payload: item.payload || 0,
+      }));
     
     const recommendedData = rateRecommended(
       depoStart,
@@ -1410,7 +1233,7 @@ class App extends Component {
       withdrawalInterval[mode],
       payload,
       payloadInterval[mode],
-      data.length, // days,
+      options.length,
       withdrawalInterval[mode],
       payloadInterval[mode],
       0,
@@ -1419,7 +1242,7 @@ class App extends Component {
         rateSuggest: rate / 100
       }
     );
-    // console.log(recommendedData);
+    // console.log(realData);
 
     if (recommendedData.extraDays != this.state.extraDays) {
       this.setState({ extraDays: recommendedData.extraDays });
@@ -1446,24 +1269,6 @@ class App extends Component {
     return [].concat(tools).concat(customTools);
   }
 
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-
-    return index;
-
-    // TODO:
-    // Проблема: выбранный инструмент в конце месяца может пропасть из списка
-    // -- нужно подставлять следующий по алфавиту, то есть был ...9.20, стал 10.20
-  }
-
   getCurrentToolIndex() {
     let { currentToolCode, currentToolIndex } = this.state;
     const tools = this.getTools();
@@ -1475,8 +1280,6 @@ class App extends Component {
     }
 
     return Tools.getToolIndexByCode(tools, currentToolCode);
-
-    // return this.getToolIndexByCode(currentToolCode);
   }
 
   /**
@@ -1501,7 +1304,7 @@ class App extends Component {
    * Депо через N дней
    */
   getDepoEnd(mode) {
-    const { data, depoStart, depoEnd } = this.state;
+    const { data, days, depoStart, depoEnd } = this.state;
     mode = mode || this.state.mode;
 
     if (mode === 0) {
@@ -1510,12 +1313,16 @@ class App extends Component {
     else {
       let depo = depoStart[mode];
       if (data.length) {
-        depo += data.map(d => d.incomePlan).reduce((prev, curr) => prev + curr);
+        depo += data
+          .slice(0, days[mode])
+          .map(d => d.incomePlan)
+          .reduce((acc, curr) => acc + curr);
       }
       return depo;
     }
   }
 
+  // TODO: оптимизировать
   getPointsForIteration() {
     let { data, directUnloading, iterations, currentDay } = this.state;
     iterations = iterations || 1;
@@ -1634,34 +1441,22 @@ class App extends Component {
 
   render() {
     let {
-      currentDay,
       data,
+      dataLength,
+      currentDay,
       isLong,
       mode,
-      realData,
       saved,
       extraDays,
-      isExtended,
       daysDiff,
     } = this.state; 
 
-    if (!data.length) {
-      return;
-    }
+    // console.log( data );
 
-    const getNthDayRealIncome = day => {
-      const { data, realData } = this.state;
-      let factArray = [];
-      factArray[0] = data[0].depoStartTest + this.getRealIncome(1, null, null, null, 0);
-      for (let i = 1; i < Object.keys(realData).length; i++) {
-        factArray[i] = factArray[i - 1] + this.getRealIncome(i + 1, data, factArray[i - 1], null, 0);
-        if (i == day - 1) {
-          return factArray[i];
-        }
-      }
+    const rate = this.getRate();
+    const rateRecomm = this.getRateRecommended();
 
-      return factArray[0];
-    };
+    const placeholder = "—";
 
     return (
       <Provider value={this}>
@@ -1897,9 +1692,10 @@ class App extends Component {
                             
                             days[mode] = value;
                             let currentDay = Math.min(value, this.state.currentDay);
-                            const data = this.buildData(value);
+                            const data = this.buildData(value, true);
+                            const dataLength = data.length;
 
-                            this.setState({ days, currentDay, data }, this.recalc);
+                            this.setState({ days, dataLength, currentDay }, this.recalc);
 
                             // validation
                             let withdrawal = this.state.withdrawal[mode];
@@ -2308,7 +2104,7 @@ class App extends Component {
                                       <BigNumber 
                                         val={val} 
                                         format={formatNumber} 
-                                        threshold={1e9} 
+                                        threshold={1_000_000_000} 
                                         suffix="%" />
                                     </Value>
                                   )
@@ -2322,12 +2118,9 @@ class App extends Component {
                               <span aria-label="Доходность">Дох-ть</span> за итерацию
                             </h3>
                             <div className="stats-val">
-                              {
-                                (() => {
-                                  const val = this.getRate() / (iterations * (directUnloading ? 1 : 2));
-                                  return <Value format={val => +val.toFixed(3) + "%"}>{val}</Value>
-                                })()
-                              }
+                              <Value format={val => +val.toFixed(3) + "%"}>
+                                { this.getRate() / (iterations * (directUnloading ? 1 : 2)) }
+                              </Value>
                             </div>
                           </Col>
                         </footer>
@@ -2343,50 +2136,38 @@ class App extends Component {
                         </p>
 
                         <footer className="stats-footer">
-                          {
-                            true
-                            ? (
-                              <Col span={12} className="stats-footer-row">
-                                <h3 className="stats-key main__h3">
-                                  { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
-                                </h3>
-                                  <Tooltip title={"Удержан НДФЛ: " + formatNumber(paymentTax)} 
-                                           visible={paymentTax != 0}>
 
-                                  <div className="stats-val">
-                                    {
-                                      paymentTotal != 0
-                                        ? "-"
-                                        : null
-                                    }
-                                    <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
-                                  </div>
+                          <Col span={12} className="stats-footer-row">
+                            <h3 className="stats-key main__h3">
+                              { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
+                            </h3>
 
-                                </Tooltip>
-                              </Col>
-                            )
-                            : null
-                          }
+                            <Tooltip title={paymentTax != 0 && "Удержан НДФЛ: " + formatNumber(Math.round(paymentTax))}>
+                              <div className="stats-val">
+                                {
+                                  paymentTotal != 0
+                                    ? placeholder
+                                    : null
+                                }
+                                <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
+                              </div>
+                            </Tooltip>
+                          </Col>
 
-                          {
-                            true
-                            ? (
-                              <Col span={12} className="stats-footer-row">
-                                <h3 className="stats-key main__h3">
-                                  { `Пополнено за ${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}` }
-                                </h3>
-                                <div className="stats-val">
-                                  {
-                                    payloadTotal != 0
-                                      ? "+"
-                                      : null
-                                  }
-                                  <Value format={formatNumber}>{ Math.round(payloadTotal) }</Value>
-                                </div>
-                              </Col>
-                            )
-                            : null
-                          }
+                          <Col span={12} className="stats-footer-row">
+                            <h3 className="stats-key main__h3">
+                              { `Пополнено за ${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}` }
+                            </h3>
+                            <div className="stats-val">
+                              {
+                                payloadTotal != 0
+                                  ? "+"
+                                  : null
+                              }
+                              <Value format={formatNumber}>{ Math.round(payloadTotal) }</Value>
+                            </div>
+                          </Col>
+
                         </footer>
                       </Col>
                     </section>
@@ -2410,9 +2191,9 @@ class App extends Component {
                         {(() => {
                           const { mode, depoStart, depoPersentageStart } = this.state;
                           const tools = this.getTools();
-                          let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStartTest * 100;
+                          let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
                           if (step > 100) {
-                            console.warn('step is more than 100');
+                            console.warn('step > 100');
                             for (let i = 0; i < tools.length; i++) {
                               let s = tools[i].guarantee / depoStart[mode] * 100;
                               if (s < 100) {
@@ -2541,9 +2322,9 @@ class App extends Component {
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
 
                             this.setState({ 
-                              currentToolCode: currentTool.getSortProperty(),
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
+                              currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
                             }, () => {
                               this.updateData(days[mode])
@@ -2661,12 +2442,12 @@ class App extends Component {
                             key={this.state.currentDay + Math.random()}
                             className="section4__day-select"
                             options={
-                              new Array(days).fill(0).map((val, index) => index + 1)
+                              new Array(data.length).fill(0).map((val, index) => index + 1)
                             }
                             format={val => val}
                             value={this.state.currentDay}
                             min={1}
-                            max={days}
+                            max={data.length}
                             onChange={value => this.setCurrentDay(value)}
                           />
                           /
@@ -2681,7 +2462,7 @@ class App extends Component {
                             </div>
                             <div className="section4-r">
                               {
-                                formatNumber(Math.round(data[currentDay - 1].depoStartTest * (depoPersentageStart / 100)))
+                                formatNumber(Math.round(data[currentDay - 1].depoStart * (depoPersentageStart / 100)))
                                 +
                                 ` (${ round(depoPersentageStart, 3) }%)`
                               }
@@ -2689,50 +2470,26 @@ class App extends Component {
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
-                            <div className="section4-l">
-                              Целевой депо
-                            </div>
-                            <div className="section4-r">
-                              {(() => {
-                                let value = data[currentDay - 1].depoEnd;
-                                // let value = data[currentDay - 1].depoEndPlan;
-                                return formatNumber(Math.round(value));
-                              })()}
-                            </div>
+                            <div className="section4-l">Целевой депо</div>
+                            {/* <div className="section4-r">{formatNumber(data[currentDay - 1].depoStart + data[currentDay - 1].goal)}</div> */}
+                            <div className="section4-r">{formatNumber(data[currentDay - 1].realDepoEnd)}</div>
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
-                            <div className="section4-l">
-                              Вывод / Пополнение
-                            </div>
+                            <div className="section4-l">Вывод / Пополнение</div>
                             <div className="section4-r">
                               {(() => {
-                                const {
-                                  mode,
-                                  withdrawal,
-                                  withdrawalInterval,
-                                  payload,
-                                  payloadInterval
-                                } = this.state;
-
-                                let _w = 0;
-                                let _p = 0;
-                                let _d = currentDay;
-
-                                if (_d !== 0 && _d % withdrawalInterval[mode] == 0) {
-                                  _w = withdrawal[mode];
-                                  if (_w !== 0) {
-                                    _w = `-${formatNumber(_w)}`;
-                                  }
-                                }
-                                if (_d !== 0 && _d % payloadInterval[mode] == 0) {
-                                  _p = payload[mode];
-                                  if (_p !== 0) {
-                                    _p =`+${formatNumber(_p)}`;
-                                  }
+                                let { paymentPlan } = data[currentDay - 1];
+                                if (paymentPlan != 0) {
+                                  paymentPlan = "-" + formatNumber(paymentPlan);
                                 }
 
-                                return `${_w} / ${_p}`
+                                let { payloadPlan } = data[currentDay - 1];
+                                if (payloadPlan != 0) {
+                                  payloadPlan = "+" + formatNumber(payloadPlan);
+                                }
+
+                                return paymentPlan + " / " + payloadPlan;
                               })()}
                             </div>
                           </div>
@@ -2803,41 +2560,23 @@ class App extends Component {
                           </header>
                           <div className="section4-content card">
                             <div className="section4-row">
-                              <div className="section4-l">
-                                Контрактов
-                              </div>
-                              <div className="section4-r">
-                                {
-                                  data[currentDay - 1].contractsStart
-                                }
-                              </div>
+                              <div className="section4-l">Контрактов</div>
+                              <div className="section4-r">{ formatNumber(data[currentDay - 1].contracts) }</div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
                               <div className="section4-l">Шагов цены</div>
-                              <div className="section4-r">{formatNumber(pointsForIteration)}</div>
+                              <div className="section4-r">{ formatNumber(pointsForIteration) }</div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
-                              <div className="section4-l">
-                                Итераций
-                              </div>
-                              <div className="section4-r">
-                                {
-                                  Math.min(iterations * (directUnloading ? 1 : 2), 100)
-                                }
-                              </div>
+                              <div className="section4-l">Итераций</div>
+                              <div className="section4-r">{ Math.min(iterations * (directUnloading ? 1 : 2), 100) }</div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
-                              <div className="section4-l">
-                                Торговая цель
-                              </div>
-                              <div className="section4-r">
-                                {
-                                  formatNumber(Math.round(data[currentDay - 1].goal))
-                                }
-                              </div>
+                              <div className="section4-l">Торговая цель</div>
+                              <div className="section4-r">{formatNumber(data[currentDay - 1].goal) }</div>
                             </div>
                             {/* /.row */}
                           </div>
@@ -2848,17 +2587,8 @@ class App extends Component {
                             До цели
                           </header>
                           {(() => {
-                            const {
-                              mode,
-                              realData,
-                              daysInOrder,
-                              payloadInterval,
-                              withdrawalInterval,
-                            } = this.state;
+                            const { mode, dataLength } = this.state;
 
-                            const days = this.state.days[mode];
-
-                            const rate = this.getRate();
                             let sum   = 0;
                             let total = 0;
                             let avg   = 0;
@@ -2879,15 +2609,11 @@ class App extends Component {
                             }
 
                             let printedDays = daysDiff;
-                            if (currentDay == data.length) {
+                            if (currentDay == dataLength) {
                               printedDays = extraDays;
                             }
 
-                            // let daysTotal = days + daysDiff;
-                            let daysTotal = data.length + daysDiff;
-                            if (extraDays == 0 && daysDiff == 0) {
-                              daysTotal = data.length;
-                            }
+                            let daysTotal = dataLength + daysDiff;
                             const daysLeft = daysTotal - currentDay;
                             const percent = currentDay / daysTotal * 100;
 
@@ -2929,7 +2655,8 @@ class App extends Component {
                                               <span aria-label="доходность">дох-ть</span>
                                             </span>
                                           }
-                                          value={round(avg, 3)}
+                                          value={formatNumber(round(avg, 3))}
+                                          formatter={node => node}
                                           valueStyle={{
                                             color: `var( ${visible ? "--danger-color" : "--success-color"} )`
                                           }}
@@ -2938,31 +2665,27 @@ class App extends Component {
                                         />
                                       );
                                     }
-
                                   })()}
 
                                   {(() => {
-                                    let value = this.getRateRecommended();
+                                    let value = rateRecomm;
                                     if ( String(value).indexOf("e") > -1 ) {
                                       value = value.toExponential(3);
                                     }
+                                    
                                     const valid = value >= rate;
 
                                     return (
                                       <Statistic
+
                                         title={
                                           <span>
                                             рекомендуемая<br />
                                             <span aria-label="доходность">дох-ть</span>
                                           </span>
                                         }
-                                        value={round(value, 3)}
-                                        // formatter={node =>
-                                        //   // TODO: подставить значение из рекомендованного графика
-                                        //   <Tooltip title={<span>Рекомендуется заработать<br /> {2} руб.</span>}>
-                                        //     {node}
-                                        //   </Tooltip>
-                                        // }
+                                        value={formatNumber(round(value, 3))}
+                                        formatter={node => node}
                                         valueStyle={{
                                           color: `var( ${valid ? "--success-color" : "--danger-color"} )`
                                         }}
@@ -2988,11 +2711,9 @@ class App extends Component {
 
                 {(() => {
                   const {
-                    days,
                     mode,
                     data,
-                    realData,
-                    daysInOrder,
+                    dataLength,
                     currentDay,
                     directUnloading,
                     passiveIncomeTools,
@@ -3002,82 +2723,34 @@ class App extends Component {
                   let iterations = Math.min(this.state.iterations * (directUnloading ? 1 : 2), 100);
 
                   const rate  = this.getRate();
-                  const lastFilledDay = this.getLastFilledDayNumber();
-                  // const planIncome = Math.round(data[currentDay - 1].depoEnd - data[currentDay - 1].depoStartTest);
-                  const planIncome = Math.round(data[currentDay - 1].goal);
-                  
-                  const getRealRate = () => {
-                    let value = (data[currentDay - 1].scale != null) ? data[currentDay - 1].scale : 0;
-                    
-                    if (data[currentDay - 1].customIncome != null) {
-                      value = data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest * 100;
-                    }
-                    
-                    const iterationsList = this.getIterationsList();
-                    if (iterationsList && iterationsList.length) {
-                      value = iterationsList.map(el => el.percent).reduce((prev, curr) => prev + curr);
-                    }
+                  const lastFilledDay = data.lastFilledDay?.day || 0;
+                  const planIncome = data[currentDay - 1].goal;
 
-                    return value;
+                  const isChanged = dayItem => {
+                    for (let prop of ["rate", "income", "payment", "payload"]) {
+                      if (dayItem[prop] != null) {
+                        return true;
+                      }
+                    }
+                    return false;
                   };
 
-                  const isChanged = dayData => {
-                    let changed = false;
-                    for (const prop of ["scale", "customIncome", "payment", "payload", "iterations"]) {
-                      changed = changed || (dayData[prop] != null);
-                    }
-                    return changed;
-                  };
-
-                  const placeholder = "—";
                   const onBlur = (prop, val) => {
                     if (val === "") {
                       val = undefined;
                     }
 
-                    if (!realData[currentDay]) {
-                      realData[currentDay] = {};
-                    }
-                    realData[currentDay][prop] = val;
-
-                    if (prop === "customIncome") {
-                      let il = [];
-                      let iterations;
+                    if (prop === "income") {
+                      let iterations = [];
 
                       let scale = val;
                       if (val != null) {
-                        scale = (val / data[currentDay - 1].depoStartTest) * 100;
-
-                        // il = [{ percent: scale, income: val }]; 
-                        il = [new Iteration(scale)]; 
-                        iterations = 1;
+                        scale = (val / data[currentDay - 1].depoStart) * 100;
+                        iterations = [ new Iteration(scale) ]; 
                       }
-
 
                       data[currentDay - 1].scale = scale;
-                      realData[currentDay].scale = scale;
                       data[currentDay - 1].iterations = iterations;
-                      realData[currentDay].iterations = iterations;
-                      data[currentDay - 1].iterationsList = il;
-                      // resetIterationsList();
-                    }
-                    else if (prop === "scale") {
-                      let il = [];
-                      let iterations;
-
-                      let customIncome = val;
-                      if (val != null) {
-                        customIncome = Math.round(data[currentDay - 1].depoStartTest * val / 100);
-                        // il = [{ percent: val, income: customIncome }];
-                        il = [new Iteration(val)];
-                        iterations = 1;
-                      }
-
-                      data[currentDay - 1].customIncome = customIncome;
-                      realData[currentDay].customIncome = customIncome;
-                      data[currentDay - 1].iterations = iterations;
-                      realData[currentDay].iterations = iterations;
-                      data[currentDay - 1].iterationsList = il;
                     }
                     
                     data[currentDay - 1][prop] = val;
@@ -3086,11 +2759,11 @@ class App extends Component {
                     const changed = isChanged(data[currentDay - 1]);
                     data[currentDay - 1].changed = !val ? changed : true;
 
-                    // console.log(data[currentDay - 1], realData[currentDay]);
+                    // console.log(data[currentDay - 1]);
                     
-                    this.setStateAsync({ data, realData })
-                      .then(() => this.updateData())
-                      .then(() => updateChart.call(this))
+                    this.setStateAsync({ data })
+                      .then(() => this.updateData(data.length, false, currentDay - 1))
+                      .then(() => chartVisible && updateChart.call(this))
                   };
 
                   const ArrowRight = props => {
@@ -3124,20 +2797,34 @@ class App extends Component {
                         День {currentDay}
 
                         <button 
-                          disabled={currentDay == data.length && extraDays == 0}
+                          disabled={currentDay == dataLength && extraDays == 0}
                           data-type="link"
                           onClick={() => {
-                            if ( currentDay < data.length || extraDays == 0 ) {
+                            if ( currentDay < dataLength || extraDays == 0 ) {
                               this.setCurrentDay(currentDay + 1);
                             }
                             else {
-                              let period = data.length + extraDays;
-                              this.setStateAsync({ extraDays: 0 })
-                                .then(() => this.updateData(period, false))
-                                .then(() => updateChart.call(this))
+                              const { data } = this.state;
+                              this.setStateAsync({
+                                extraDays:  0,
+                                dataLength: data.length + extraDays
+                              })
+                                .then(() => {
+                                  const r = this.getRateRecommended({ length: dataLength + extraDays });
+                                  return this.setStateAsync({
+                                    data: data.extend({
+                                      ...this.getDataOptions(),
+                                      $extraDays: extraDays,
+                                      $rateRequired: r,
+                                      $rate:         r,
+                                    })
+                                  })
+                                })
+                                .then(() => chartVisible && updateChart.call(this))
+                                .then(() => this.setCurrentDay(currentDay + 1))
                             }
                           }}>
-                          {currentDay < data.length || extraDays == 0
+                          {currentDay < dataLength || extraDays == 0
                             ? "Следующий день" 
                             : `Добавить ${extraDays} ${num2str(extraDays, ["день", "дня", "дней"])}`
                           }
@@ -3157,13 +2844,9 @@ class App extends Component {
                             const day = (page * 5) + index + 1;
                             const title = `Выбрать день номер ${day}`;
 
-                            // const income = this.getRealIncome(day, data, null, null, 0);
-                            // const planIncome = data[day - 1].depoEnd - data[day - 1].depoStartTest;
-
-                            const income = this.getRealIncome(day, data, null, null, 0, true);
-                            const planIncome = data[day - 1].goal;
-                            let success = income >= Math.round(planIncome);
-                            let failed = income <= 0;
+                            const { realIncome, goal } = data[day - 1];
+                            let success = realIncome >= goal;
+                            let failed = realIncome <= 0;
 
                             return (
                               <button
@@ -3183,40 +2866,42 @@ class App extends Component {
                       </div>
 
                       {
-                        (data[currentDay - 1].collapsed && !this.state.saved)
+                        (!data[currentDay - 1].expanded && !this.state.saved)
                         ? null
                         : (
                           <span className="section5-content-title">
                             <span>
-                              {(() => {
-                                const value = getRealRate();
-
-                                return (
-                                  data[currentDay - 1].changed
-                                    ? <Value format={val => formatNumber(round(val, 3))}>{value}</Value>
-                                    : "—"
-                                )
-                              })()}
+                              {
+                                data[currentDay - 1].changed
+                                  ? 
+                                    <Value format={val => formatNumber(round(val, 3))}>
+                                      {data[currentDay - 1].calculatedRate || 0}
+                                    </Value>
+                                  : placeholder
+                              }
                               &nbsp;/&nbsp;
-                              { round(rate, 3) }
+                              {formatNumber(round(
+                                data[currentDay - 1].rateRequired != null
+                                  ? data[currentDay - 1].rateRequired
+                                  : rate,
+                                3
+                              ))}
                             </span>
                             &nbsp;
                             <span>
                               (
                               {(() => {
-                                const value = this.getRealIncome(null, null, null, null, 0, true);
-
                                 return data[currentDay - 1].changed
                                   ? (
                                     <Value format={val => val > 0 ? "+" + val : val}>
-                                      { formatNumber(Math.round(value)) }
+                                      { formatNumber(data[currentDay - 1].pureIncome) }
                                     </Value>
                                   )
-                                  : "—"
+                                  : placeholder
                               })()}
                               {" "}/{" "}
                               {
-                                "+" + formatNumber(Math.round(data[currentDay - 1].goal))
+                                "+" + formatNumber(data[currentDay - 1].goal)
                               }
                               )
                             </span>
@@ -3238,10 +2923,10 @@ class App extends Component {
                           className={
                             []
                               .concat("section5__save")
-                              .concat(daysInOrder && (currentDay > lastFilledDay + 1) ? "section5__save--hidden" : "")
+                              .concat(data.hasNoGaps && (currentDay > lastFilledDay + 1) ? "section5__save--hidden" : "")
                               .concat("custom-btn")
                               .concat(
-                                (data[currentDay - 1].changed || !data[currentDay - 1].collapsed)
+                                (data[currentDay - 1].changed || data[currentDay - 1].expanded)
                                   ? "custom-btn--filled"
                                   : ""
                               )
@@ -3249,33 +2934,33 @@ class App extends Component {
                               .trim()
                           }
                           role="button"
-                          aria-expanded={!data[currentDay - 1].collapsed}
+                          aria-expanded={data[currentDay - 1].expanded}
                           aria-controls="result"
-                          type={data[currentDay - 1].collapsed ? "primary" : "default"}
+                          type={!data[currentDay - 1].expanded ? "primary" : "default"}
                           onClick={e => {
                             let { data, currentDay, saved } = this.state;
-                            const collapsed = data[currentDay - 1].collapsed;
+                            const { expanded } = data[currentDay - 1];
                             
-                            if (!collapsed) {
+                            if (expanded) {
 
                               if (!saved) {
                                 dialogAPI.open("dialog1", e.target);
                               }
                               else {
                                 this.update(this.getTitle());
-                                data[currentDay - 1].collapsed = !collapsed;
+                                data[currentDay - 1].expanded = !expanded;
                               }
                               
                             }
                             else {
-                              data[currentDay - 1].collapsed = !collapsed;
+                              data[currentDay - 1].expanded = !expanded;
                             }
                             
                             this.setState(data);
                           }}
                         >
                           {
-                            data[currentDay - 1].collapsed
+                            !data[currentDay - 1].expanded
                               ? data[currentDay - 1].changed
                                 ? "Изменить"
                                 : "Добавить"
@@ -3295,70 +2980,25 @@ class App extends Component {
 
                       <div 
                         id="result"
-                        className="section5-collapse"
-                        hidden={data[currentDay - 1].collapsed}
+                        className="result"
+                        hidden={!data[currentDay - 1].expanded}
                       >
-                        <div className="section5-content">
 
-                          <Col className="card section5-col">
-                            <div className="section5-row">
-                              <div className="section5-l">
-                                <span aria-label="Доходность">Дох-ть</span> за день
-                              </div>
-                              <div className="section5-r">
-                                {(() => {
-                                  const prop = "scale";
-                                  let value = data[currentDay - 1][prop];
-                                  if (value == null) {
-                                    if (data[currentDay - 1].customIncome != null) {
-                                      value = (data[currentDay - 1].customIncome / data[currentDay - 1].depoStartTest) * 100;
-                                    }
-                                  }
+                        <div className="result-col result-col-additional card">
+                          <h3 className="result-col__title">Дополнительно</h3>
+                          <div className="result-col__content">
 
-                                  const disabled = this.getIterationsList(currentDay).length > 1;
+                            <div className="result-col-additional-row">
+                              {(() => {
+                                const prop = "payment";
+                                const value = data[currentDay - 1][prop];
+                                const max = Math.trunc(data[currentDay - 1].depoStartTest * .8);
 
-                                  return (
-                                    <span>
-                                      {
-                                        data[currentDay - 1].changed && value != null
-                                          ? round(value, 3) 
-                                          : placeholder
-                                      }
-                                    </span>
-                                  );
-
-                                  return (
+                                return (
+                                  <label className="input-group">
+                                    <span className="input-group__label">Вывод</span>
                                     <NumericInput
-                                      key={value + Math.random()}
-                                      disabled={disabled}
-                                      defaultValue={
-                                        data[currentDay - 1].changed && value != null
-                                          ? round(value, 3) 
-                                          : ""
-                                      }
-                                      placeholder={placeholder}
-                                      format={formatNumber}
-                                      onBlur={val => onBlur(prop, val)}
-                                    />
-                                  )
-                                })()}
-                                <span className="section5-r-suffix">
-                                  <span className="section5-r-suffix__separator">/</span>
-                                  {round(rate, 3)}%
-                                </span>
-                              </div>
-                            </div>
-                            {/* /.row */}
-
-                            <div className="section5-row">
-                              <div className="section5-l">Вывод</div>
-                              <div className="section5-r">
-                                {(() => {
-                                  const prop = "payment";
-                                  const value = data[currentDay - 1][prop];
-                                  const max = Math.trunc(data[currentDay - 1].depoStartTest * .8);
-                                  return (
-                                    <NumericInput
+                                      className="input-group__input"
                                       key={value + Math.random()}
                                       defaultValue={
                                         data[currentDay - 1].changed && value != null
@@ -3384,33 +3024,31 @@ class App extends Component {
                                         onBlur(prop, typeof val == "string" ? val : Number(val));
                                       }}
                                     />
-                                  );
-                                })()}
-                                <span className="section5-r-suffix">
-                                  <span className="section5-r-suffix__separator">/</span>
-                                  {
-                                    formatNumber(this.getPayment(currentDay))
-                                  }
-                                </span>
+                                  </label>
+                                )
+                              })()}
+
+                              <div className="result-col-additional-row__side">
+                                {formatNumber(this.getPayment(currentDay))}
+                                <CheckCircleFilled />
                               </div>
                             </div>
-                            {/* /.row */}
 
-                            <div className="section5-row">
-                              <div className="section5-l">
-                                Пополнение
-                              </div>
-                              <div className="section5-r">
-                                {(() => {
-                                  const prop = "payload";
-                                  const value = data[currentDay - 1][prop];
-                                  const max = Math.trunc(this.getDepoEnd() - data[currentDay - 1].depoStartTest);
-                                  return (
+                            <div className="result-col-additional-row">
+                              {(() => {
+                                const prop = "payload";
+                                const value = data[currentDay - 1][prop];
+                                const max = Math.trunc(this.getDepoEnd() - data[currentDay - 1].depoStartTest);
+
+                                return (
+                                  <label className="input-group">
+                                    <span className="input-group__label">Пополнение</span>
                                     <NumericInput
+                                      className="input-group__input"
                                       key={value + Math.random()}
                                       defaultValue={
-                                        data[currentDay - 1].changed && value != null 
-                                          ? value 
+                                        data[currentDay - 1].changed && value != null
+                                          ? value
                                           : ""
                                       }
                                       round="true"
@@ -3432,117 +3070,19 @@ class App extends Component {
                                         onBlur(prop, typeof val == "string" ? val : Number(val));
                                       }}
                                     />
-                                  )
-                                })()}
-                                <span className="section5-r-suffix">
-                                  <span className="section5-r-suffix__separator">/</span>
-                                  {
-                                    formatNumber(this.getPayload(currentDay))
-                                  }
-                                </span>
+                                  </label>
+                                )
+                              })()}
+
+                              <div className="result-col-additional-row__side">
+                                {formatNumber(this.getPayload(currentDay))}
+                                <CheckCircleFilled />
                               </div>
                             </div>
-                            {/* /.row */}
-                          </Col>
 
-                          <Col className="card section5-col">
-                            <div className="section5-row">
-                              <div className="section5-l">
-                                <span aria-label="Доходность">Дох-ть</span>
-                                {" "}
-                                в
-                                {" "}
-                                <span aria-label="рублях">руб.</span>
-                              </div>
-                              <div className="section5-r">
-                                {(() => {
-                                  const prop = "customIncome";
-                                  let value = data[currentDay - 1][prop];
-                                  if (value == null) {
-                                    if (data[currentDay - 1].scale != null) {
-                                      value = Math.round(
-                                        data[currentDay - 1].depoStartTest * data[currentDay - 1].scale / 100
-                                      );
-                                    }
-                                  }
-                                    
-                                  const min = -data[currentDay - 1].depoStartTest;
-                                  const disabled = this.getIterationsList(currentDay).length > 1;
-
-                                  return (
-                                    <NumericInput
-                                      key={value + Math.random()}
-                                      disabled={disabled}
-                                      defaultValue={
-                                        data[currentDay - 1].changed && value != null
-                                          ? value
-                                          : ""
-                                      }
-                                      round="true"
-                                      placeholder={placeholder}
-                                      format={formatNumber}
-                                      onChange={(e, val, jsx) => {
-                                        let errMsg = "";
-                                        if (val <= min && mode == 0) {
-                                          errMsg = "Нельзя вывести больше, чем депозит на начало дня";
-                                        }
-                                        jsx.setState({ errMsg });
-                                      }}
-                                      onBlur={val => {
-                                        if (val) {
-                                          if (mode == 0) {
-                                            val = Math.max(Number(val), min + 1);
-                                          }
-                                        }
-                                        onBlur(prop, typeof val == "string" ? val : Number(val));
-                                      }}
-                                    />
-                                  )
-                                })()}
-                                <span className="section5-r-suffix">
-                                  &nbsp;
-                                  руб.
-                                </span>
-                              </div>
-                            </div>
-                            {/* /.row */}
-
-                            <div className="section5-row">
-                              <div className="section5-l">
-                                Итераций:
-                              </div>
-                              <div className="section5-r">
-                                {(() => {
-                                  const prop = "iterations";
-                                  const value = data[currentDay - 1][prop];
-                                  return (
-                                    <NumericInput
-                                      key={value + Math.random()}
-                                      defaultValue={
-                                        value != null
-                                          ? value
-                                          : ""
-                                      }
-                                      round="true"
-                                      placeholder={placeholder}
-                                      format={formatNumber}
-                                      onBlur={val => onBlur(prop, val)}
-                                    />
-                                  )
-                                })()}
-                                <span className="section5-r-suffix">
-                                  <span className="section5-r-suffix__separator">/</span>
-                                  {formatNumber(iterations)}
-                                </span>
-                              </div>
-                            </div>
-                            {/* /.row */}
-
-                            <div className="section5-row">
-                              <div className="section5-l">
-                                Пассивный доход:
-                              </div>
-                              <div className="section5-r">
+                            <div className="result-col-additional-row">
+                              <span className="result-col-additional-row__main">Пассивный доход</span>
+                              <div className="result-col-additional-row__side">
                                 <Value>
                                   {(() => {
                                     const { mode } = this.state;
@@ -3551,254 +3091,298 @@ class App extends Component {
                                     if (tool) {
                                       let persantage = tool.rate / 365 * (365 / 260) / 100;
 
-                                      return formatNumber(Math.round(val * persantage))
+                                      return "+" + formatNumber(Math.round(val * persantage))
                                     }
 
                                     return 0;
                                   })()}
-                                </Value>
-                                <span className="section5-r-suffix">
-                                  <span className="section5-r-suffix__separator">/</span>
-                                  день
-                                </span>
+                                </Value> / мес
                               </div>
                             </div>
-                            {/* /.row */}
-                          </Col>
 
-                          <Col className="card section5-col section5-col--no-padding">
-                            <div className="iterations">
-                              <ol className="iterations-list">
-                                {(() => {
-                                  const onChange = (iterationsList = []) => {
-                                    const iterations = iterationsList.filter(v => v.percent != null);
-
-                                    let scale;
-                                    let iterationsLength;
-                                    if (iterations.length) {
-                                      scale = iterations.map(el => el.percent).reduce((prev, curr) => prev + curr);
-                                      iterationsLength = iterations.length
-                                    }
-
-                                    if (iterations.length > 0) {
-                                      data[currentDay - 1].scale = scale;
-                                      data[currentDay - 1].customIncome = null;
-                                      data[currentDay - 1].iterations = iterationsLength;
-  
-                                      if (!realData[currentDay]) {
-                                        realData[currentDay] = {};
-                                      }
-                                      realData[currentDay].scale = scale;
-                                    }
-                                    
-                                    const changed = isChanged(data[currentDay - 1]);
-                                    data[currentDay - 1].changed = changed;
-
-                                    this.setStateAsync({ data, realData })
-                                      .then(() => this.updateData())
-                                      .then(() => updateChart.call(this))
-
-                                  };
-
-                                  const iterationsList = data[currentDay - 1].iterationsList;
-
-                                  return iterationsList && iterationsList
-                                    .map((listItem, index) =>
-                                      <li key={index} className="iterations-list-item">
-                                        <span className="iterations-list-item__number">
-                                          {index + 1}.
-                                        </span>
-                                        
-                                        <span className="iterations-list-item__input">
-                                          {listItem.percent != null
-                                            ? formatNumber(round(listItem.percent, 3)) + "%"
-                                            : ""
-                                          }
-                                        </span>
-
-                                        {false && (
-                                          <NumericInput
-                                            className="iterations-list-item__input-left"
-                                            key={Math.random()}
-                                            defaultValue={listItem.percent != null ? listItem.percent : ""}
-                                            suffix="%"
-                                            format={val => formatNumber( round(val, 3) )}
-                                            onBlur={val => {
-                                              if (!data[currentDay - 1].iterationsList[index]) {
-                                                data[currentDay - 1].iterationsList[index] = new Iteration();
-                                              }
-                                              
-                                              let income;
-                                              let percent;
-                                              if (val !== "") {
-                                                income  = Math.round(data[currentDay - 1].depoStart * (val / 100));
-                                                percent = val;
-                                              }
-                                              
-                                              // data[currentDay - 1].iterationsList[index].income  = income;
-                                              data[currentDay - 1].iterationsList[index].percent = percent;
-                                              this.setState({ data });
-                                              onChange(data[currentDay - 1].iterationsList);
-                                            }}
-                                          />
-                                        )}
-                                        <span className="iterations-list-item__separator">
-                                          /
-                                      </span>
-                                        <NumericInput
-                                          className="iterations-list-item__input"
-                                          key={Math.random()}
-                                          defaultValue={
-                                            listItem.percent != null
-                                              ? listItem.getIncome( data[currentDay - 1].depoStartTest )
-                                              :  ""
-                                          }
-                                          format={formatNumber}
-                                          round="true"
-                                          onBlur={val => {
-                                            if (!data[currentDay - 1].iterationsList[index]) {
-                                              data[currentDay - 1].iterationsList[index] = {};
-                                            }
-
-                                            let income;
-                                            let percent;
-                                            if (val !== "") {
-                                              income  = val;
-                                              percent = val / data[currentDay - 1].depoStartTest * 100;
-                                            }
-
-                                            // data[currentDay - 1].iterationsList[index].income  = income;
-                                            data[currentDay - 1].iterationsList[index].percent = percent;
-                                            this.setState({ data });
-                                            onChange(data[currentDay - 1].iterationsList);
-                                          }}
-                                        />
-                                        <CrossButton 
-                                          className="iterations-list-item__delete"
-                                          onClick={e => {
-                                            data[currentDay - 1].iterationsList.splice(index, 1);
-                                            this.setState({ data });
-                                            onChange(data[currentDay - 1].iterationsList);
-                                          }}
-                                        />
-                                      </li>
-                                    )
-                                })()}
-                              </ol>
-                              <button 
-                                className="iterations-button" 
-                                aria-label="Добавить итерацию"
-                                onClick={() => {
-                                  data[currentDay - 1].iterationsList.push( new Iteration() );
-                                  this.setState({ data }, () => {
-                                    const list = document.querySelector(".iterations-list");
-                                    list.scrollTop = 9999;
-                                  });
-                                }}
-                              >
-                                + итерация
-                              </button>
-                            </div>
-                          </Col>
-
+                          </div>
                         </div>
-                        {/* /.section5-content */}
 
                         {(() => {
-                          // const income = this.getRealIncome(null, null, null, null, 0);
-                          const income = this.getRealIncome(null, null, null, null, 0, true);
-                          let percent = income / planIncome;
-                          if (income <= 0) {
-                            percent = 0;
-                          }
-
                           return (
-                            <footer className="section5-footer">
-                              <h3 className="section5-footer-title">Дневная цель</h3>
+                            <div className="result-col card">
+                              <h3 className="result-col__title">Торговая цель</h3>
+                              <div className="result-col__content">
+                                {(() => {
+                                  let { scale, rateRequired } = data[currentDay - 1];
+                                  if (scale == null) {
+                                    scale = data[currentDay - 1].calculatedRate || 0;
+                                  }
 
-                              {(() => {
-                                let real = income;
+                                  if (rateRequired == null) {
+                                    rateRequired = rate;
+                                  }
 
-                                return (
-                                  <div className="section5-footer-subtitle">
+                                  const percent = round(scale, 3) / round(rateRequired, 3) * 100;
+
+                                  return (
+                                    <Progress
+                                      className="result-round-progress"
+                                      type="circle"
+                                      percent={
+                                        percent > 3 && percent < 100
+                                          ? percent - 2
+                                          : percent
+                                      }
+                                      format={() =>
+                                        <div className="result-round-progress__inner">
+                                          <span>
+                                            {
+                                              data[currentDay - 1].changed && scale != null
+                                                ? formatNumber(round(scale, 3)) + "%"
+                                                : placeholder
+                                            }
+                                          </span>
+                                          <span>
+                                            из{" "}
+                                            {
+                                              formatNumber(round(rateRequired, 3))
+                                            }
+                                          </span>
+                                        </div>
+                                      }
+                                    />
+                                  )
+                                })()}
+                                <p className="result-round-progress__subtitle">
+                                  До цели:
+                                  <span>
+                                    {
+                                      formatNumber(
+                                        Math.max(data[currentDay - 1].goal - (data[currentDay - 1].realIncome || 0), 0)
+                                      )
+                                    }
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })()}
+
+                        <div className="result-col result-col--no-padding card">
+                          <h3 className="result-col__title">Итерации</h3>
+                          <div className="result-col__content">
+                            {(() => {
+                              const onChange = (iterations = []) => {
+                                if (iterations.length <= 1) {
+                                  iterations = iterations.filter(it => it.percent != null);
+                                }
+
+                                const { depoStart } = data[currentDay - 1];
+
+                                let rate;
+                                let income;
+                                if (iterations.length) {
+                                  rate = iterations.map(it => it.rate).reduce((prev, curr) => prev + curr)
+                                  income = iterations.map(it => it.getIncome(depoStart)).reduce((prev, curr) => prev + curr)
+                                }
+
+                                data[currentDay - 1].rate = rate;
+                                data[currentDay - 1].income = income;
+                                data[currentDay - 1].iterations = iterations;
+
+                                data[currentDay - 1].changed = isChanged(data[currentDay - 1]);
+
+                                this.setStateAsync({ data })
+                                  .then(() => this.updateData())
+                                  .then(() => chartVisible && updateChart.call(this))
+                              };
+
+                              let { iterations, calculatedRate } = data[currentDay - 1];
+                              if (iterations.length == 0) {
+                                iterations = [new Iteration(calculatedRate || 0)];
+                              }
+
+                              return (
+                                <div className="iterations">
+                                  <ol className="iterations-list">
+                                    {
+                                      iterations && iterations
+                                        .map((listItem, index) =>
+                                          <li key={index} className="iterations-list-item">
+                                            <span className="iterations-list-item__number">
+                                              {index + 1}.
+                                            </span>
+
+                                            <NumericInput
+                                              className="iterations-list-item__input"
+                                              key={Math.random()}
+                                              defaultValue={
+                                                data[currentDay - 1].changed
+                                                  ?
+                                                  listItem.rate != null
+                                                    ? listItem.getIncome(data[currentDay - 1].depoStart)
+                                                    : 0
+                                                  : ""
+                                              }
+                                              placeholder={placeholder}
+                                              format={formatNumber}
+                                              round="true"
+                                              onBlur={(val, textValue) => {
+                                                if (!iterations[index]) {
+                                                  iterations[index] = new Iteration();
+                                                }
+
+                                                let percent;
+                                                if (val !== "") {
+                                                  percent = val / data[currentDay - 1].depoStartTest * 100;
+                                                }
+
+                                                iterations[index].percent = percent;
+                                                onChange(iterations);
+                                              }}
+                                            />
+                                            <span className="iterations-list-item__separator">~</span>
+                                            <span className="iterations-list-item__input iterations-list-item__input--unstyled">
+                                              {
+                                                formatNumber(
+                                                  round(
+                                                    data[currentDay - 1].changed
+                                                      ?
+                                                      listItem.rate != null
+                                                        ? listItem.rate
+                                                        : 0
+                                                      : 0
+                                                    , 3)
+                                                ) + "%"
+                                              }
+                                            </span>
+
+                                            <div className="iterations-list-item__clock">
+                                              <ClockCircleFilled />
+                                            </div>
+
+                                            {index > 0 && (
+                                              <CrossButton
+                                                className="iterations-list-item__delete"
+                                                onClick={e => {
+                                                  const { iterations } = data[currentDay - 1];
+                                                  iterations.splice(index, 1);
+                                                  onChange(iterations);
+                                                }}
+                                              />
+                                            )}
+                                          </li>
+                                        )
+                                    }
+                                  </ol>
+                                  <button
+                                    className="iterations-button"
+                                    disabled={data[currentDay - 1].iterations.filter(it => it.percent != null).length < 1}
+                                    onClick={() => {
+                                      const { iterations } = data[currentDay - 1];
+                                      iterations.push(new Iteration(0));
+                                      onChange(iterations);
+
+                                      this.setState({ data }, () => {
+                                        const list = document.querySelector(".iterations-list");
+                                        list.scrollTop = 9999;
+                                      });
+                                    }}
+                                  >
+                                    Добавить
+                                    <span className="visually-hidden">итерацию</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        <div className="result-col">
+                          <h3 className="result-col__title result-col__title--large">Дневная цель</h3>
+                          <div className="result-col__content">
+
+                            {(() => {
+                              const { realIncome, goal, payment, payload } = data[currentDay - 1];
+                              const planIncome = goal;
+                              const income = (realIncome || 0) - (payment || 0) + (payload || 0);
+                              let percent = income / planIncome;
+                              if (income < 0) {
+                                percent = 0;
+                              }
+
+                              return (
+                                <footer className="result-info">
+
+                                  <div className="result-info-subtitle">
                                     {
                                       data[currentDay - 1].changed
                                         ? (
                                           <Value format={val => formatNumber(Math.round(val))}>
-                                            {real}
+                                            {income}
                                           </Value>
                                         )
-                                        : "—"
+                                        : placeholder
                                     }
                                     {" "}
                                     /
                                     {" "}
-                                    <Value 
-                                      format={val => formatNumber(Math.round(val))} 
-                                      neutral={true}
-                                    >
+                                    <Value format={val => formatNumber(Math.round(val))} neutral={true}>
                                       {planIncome}
                                     </Value>
                                   </div>
-                                )
-                              })()}
 
-                              <Progress 
-                                status={
-                                  data[currentDay - 1].changed
-                                    ? percent >= 1 
-                                      ? "success"
-                                      : percent <= 0
-                                        ? "exception" 
-                                        : "normal"
-                                    : "normal"
-                                }
-                                trailColor={
-                                  percent >= 1
-                                    ? "#3f6b33"
-                                    : percent <= 0
-                                      ? "#f5222d"
-                                      : "#4859b4"
-                                } 
-                                percent={
-                                  data[currentDay - 1].changed
-                                    ? percent <= 0
-                                      ? 100
-                                      : round(percent * 100, 2)
-                                    : 0
-                                }
-                              />
-                              <span className="section5-footer__label">
-                                <h4 className="section5-footer__label-title">Депозит:</h4>
-                                {" "}
-                                {(() => {
-                                  const value = getNthDayRealIncome(currentDay);
+                                  <Progress
+                                    status={
+                                      data[currentDay - 1].changed
+                                        ? percent >= 1
+                                          ? "success"
+                                          : percent <= 0
+                                            ? "exception"
+                                            : "active"
+                                        : "active"
+                                    }
+                                    trailColor={
+                                      percent >= 1
+                                        ? "#3f6b33"
+                                        : percent <= 0
+                                          ? "#f5222d"
+                                          : "#4859b4"
+                                    }
+                                    percent={
+                                      data[currentDay - 1].changed
+                                        ? percent <= 0
+                                          ? 100
+                                          : round(percent * 100, 2)
+                                        : 0
+                                    }
+                                  />
 
-                                  return (
-                                    data[currentDay - 1].changed
-                                      ? (
-                                        <Value
-                                          format={val => formatNumber(Math.round(val))}
-                                          neutral={value <= data[currentDay - 1].depoStartTest}>
-                                          {value}
-                                        </Value>
-                                      )
-                                      : placeholder
-                                  )
-                                })()}
-                                {" "}/{" "}
-                                {
-                                  formatNumber(Math.round(data[currentDay - 1].depoEnd))
-                                  // formatNumber(Math.round(data[currentDay - 1].depoEndPlan))
-                                }
-                              </span>
+                                  <span className="result-info__label">
+                                    <h4 className="result-info__label-title">Депозит:</h4>
+                                    {" "}
+                                    {
+                                      data[currentDay - 1].changed
+                                        ? (
+                                          <Value
+                                            format={val => formatNumber(Math.round(val))}
+                                            neutral={data[currentDay - 1].depoEnd <= data[currentDay - 1].depoStart}
+                                          >
+                                            {data[currentDay - 1].depoEnd}
+                                          </Value>
+                                        )
+                                        : placeholder
+                                    }
+                                    {" "}/{" "}
+                                    {
+                                      formatNumber(data[currentDay - 1].realDepoEnd)
+                                    }
+                                  </span>
 
-                            </footer>
-                          )
-                        })()}
+                                </footer>
+                              )
+                            })()}
+
+                          </div>
+                        </div>
 
                       </div>
-                      {/* section5-content */}
 
                     </section>
                   )
@@ -3949,10 +3533,10 @@ class App extends Component {
               }
               else {
                 const onResolve = (id) => {
-                  const collapsed = data[currentDay - 1].collapsed;
+                  const { expanded } = data[currentDay - 1];
                   // Сохранение
-                  if (!collapsed) {
-                    data[currentDay - 1].collapsed = true;
+                  if (!expanded) {
+                    data[currentDay - 1].expanded = true;
                   }
 
                   let index = saves.push({ id, name });

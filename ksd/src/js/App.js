@@ -125,7 +125,7 @@ class App extends React.Component {
     this.fetchInvestorInfo();
     this.fetchTools();
     if (dev) {
-      // this.loadFakeSave();
+      this.loadFakeSave();
       return;
     }
     this.fetchSaves();
@@ -138,7 +138,7 @@ class App extends React.Component {
       let { saves } = this.state;
       let save = {
         dateCreate: 1595544839,
-        static: `{"depo":200000,"sortProp":null,"sortDESC":true,"mode":1,"data":[{"percentage":10,"guaranteeValue":4697.58,"contracts":4,"planIncome":null,"income":15193.400000000001,"incomePercentage":7.5967,"loadingPercentage":75.967,"risk":7.5967,"freeMoney":82.4033,"selectedToolName":"Si-12.20"},{"percentage":10,"guaranteeValue":6632.46,"contracts":3,"planIncome":2.0165,"income":4624.419285000001,"incomePercentage":2.3122096425000005,"loadingPercentage":23.122,"risk":2.3122096425000005,"freeMoney":87.6877903575,"selectedToolName":"BR-10.20"},{"percentage":10,"guaranteeValue":23397.4,"contracts":0,"planIncome":null,"income":0,"incomePercentage":0,"loadingPercentage":0,"risk":0,"freeMoney":90,"selectedToolName":"RTS-12.20"},{"percentage":10,"guaranteeValue":2357.81,"contracts":8,"planIncome":null,"income":5451.6,"incomePercentage":2.7258,"loadingPercentage":27.258,"risk":2.7258,"freeMoney":87.27420000000001,"selectedToolName":"MOEX-12.20"},{"percentage":10,"guaranteeValue":15836.26,"contracts":1,"planIncome":null,"income":7378.27836,"incomePercentage":3.6891391799999997,"loadingPercentage":36.891,"risk":3.6891391799999997,"freeMoney":86.31086082,"selectedToolName":"GOLD-12.20"},{"percentage":10,"guaranteeValue":783.37,"contracts":25,"planIncome":null,"income":5610,"incomePercentage":2.8049999999999997,"loadingPercentage":28.05,"risk":2.8049999999999997,"freeMoney":87.195,"selectedToolName":"MGNT-12.20"},{"percentage":10,"guaranteeValue":1411.45,"contracts":14,"planIncome":null,"income":5707.1,"incomePercentage":2.8535500000000003,"loadingPercentage":28.536,"risk":2.8535500000000003,"freeMoney":87.14645,"selectedToolName":"AFLT-12.20"}],"customTools":[],"current_date":"#"}`,
+        static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR-9.20"},{"percentage":60,"selectedToolName":"BR-1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN-9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT-9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"RVI-9.20"}],"customTools":[],"current_date":"#"}`,
         data: {
           id: 20,
           name: "Fresh KSD",
@@ -258,6 +258,12 @@ class App extends React.Component {
 
   packSave() {
     let { depo, sortProp, sortDESC, mode, data, customTools } = this.state;
+
+    data = data.map(item => {
+      item.selectedToolName = item.realSelectedToolName;
+      delete item.realSelectedToolName;
+      return item;
+    });
 
     const json = {
       static: {
@@ -586,6 +592,8 @@ class App extends React.Component {
                     if (sortProp != null && sortDESC != null) {
                       data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
                     }
+
+                    // console.log(data);
 
                     return (
                       this.state.tools.length > 0

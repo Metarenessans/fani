@@ -53,10 +53,6 @@ body
 
 @import "components/index"
 
-/* Sections */
-
-@import "sections/index"
-
 /* Layout */
 
 @import "layout/index"
@@ -720,8 +716,7 @@ body
   +xs
     padding-left:  0
     padding-right: 0
-    // padding-top:   12em
-    margin: 0 -2em
+    margin: 0 -2.7em
 
   &::before,
   &::after
@@ -739,64 +734,6 @@ body
 
   &::after
     left: 100%
-
-  .ant-progress-line
-    .ant-progress
-      &-inner
-        background: #e4e4e4
-      
-      &-text
-        margin-left: 1em
-        
-        &[title]
-          // visibility: hidden
-          // pointer-events: none
-      
-      &-outer
-        margin-right: -3em
-        padding-right: 3em
-        padding-left:  3em
-
-        +sm
-          padding-right: 2.5em
-          padding-left:  2.5em
-
-  .ant-progress-circle
-    $root: &
-
-    &-trail
-      stroke: white !important
-
-      +sm
-        stroke: #eee !important
-
-    &.ant-progress-status-exception
-
-      .ant-progress-circle-trail
-        background: pink
-        stroke: var( --danger-color ) !important
-
-
-    .ant-progress-inner
-      background: none
-      font-size: 1.5em !important
-      width:  6em !important
-      height: 6em !important
-
-      +lg
-        font-size: 1.4em !important
-
-      +md
-        font-size: 1em !important
-
-      +sm
-        font-size: 1.8em !important
-
-    +sm
-      // margin-left: 3.5em
-
-    +xs
-      margin-left:  0
 
   &__save
     font-size: 1.6em
@@ -872,6 +809,7 @@ body
       max-width: initial
 
   &-save-wrap
+    margin-bottom: 2em
     width: 90em
     display: flex
     justify-content: space-between
@@ -1246,3 +1184,7 @@ body
 
   +xs
     display: block
+
+/* Sections */
+
+@import "sections/index"

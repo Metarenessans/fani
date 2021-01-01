@@ -1,14 +1,12 @@
 .iterations {
   position: relative;
   width:  100%;
+  min-height: 14em;
+  max-height: 20.5em;
   height: 100%;
-  height: 14em;
   display: flex;
   flex-direction: column;
 
-  @include xs() {
-    height: 19.2em;
-  }
   
   &-list {
     --space: .8em;
@@ -29,18 +27,18 @@
 
     &-item {
       position: relative;
-
+      
+      padding-right: 2em;
       margin-bottom: var(--space);
       display: flex;
-      align-items: center;
-      // justify-content: space-between;
-
-      font-weight: 400;
+      align-items: baseline;
 
       --fz: 1.8em;
+      font-size: .9em;
 
       @include xs() {
         --fz: 2em;
+        font-size: .9em;
       }
 
       &:last-child {
@@ -56,45 +54,64 @@
       
       &__separator {
         display: inline-block;
-        margin: 0 1em;
+        margin: 0 .8em;
 
         font-size: var(--fz);
       }
 
+      &__clock {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        width: 6em;
+
+        text-align: center;
+
+        cursor: not-allowed;
+
+        [role="img"] {
+          flex-shrink: 0;
+
+          font-size: 1.2em;
+          color: #777;
+        }
+
+      }
+
       &__delete {
         position: absolute;
-        top:     0;
+        top:     50%;
         right:  -0.125em;
+        transform: translateY(-50%);
+
+        flex-shrink: 0;
+
         font-size: 2.5em;
-        color: inherit !important;
+        color: #777 !important;
+
+        &:hover,
+        &:focus {
+          transform: translateY(-50%) scale(1.2);
+        }
       }
       
       &__input {
-        $input-width: 5.3em;
+        $input-width: 6em;
 
         width: $input-width;
         font-size: var(--fz);
         text-align: center;
 
-        &-left {
-          width: initial;
-          text-align: right;
+        &--unstyled {
+          width: 8em;
           
-          .ant-input,
-          .ant-input-suffix {
-            font-size: var(--fz);
-            color: var(--accent-color) !important;
-          }
-
-          .ant-input {
-            width: $input-width;
-          }
-        }
-        
-        &-right {
-          width: $input-width;
-
           font-size: var(--fz);
+          text-align: center;
+
+          white-space: pre;
+          text-overflow: ellipsis;
+          overflow: hidden;
         }
 
       }
@@ -103,11 +120,6 @@
   }
 
   &-button {
-    // position: absolute;
-    // z-index: 2;
-    // left:   0;
-    // bottom: 0;
-
     width: 100%;
     border: none;
     background: var(--primary-color);
@@ -118,8 +130,14 @@
     font-size: 1em;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: .1em;
 
     cursor: pointer;
+
+    &:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
 
     @include xs() {
       font-size: 1.4em;

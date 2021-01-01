@@ -136,7 +136,7 @@ export default class NumericInput extends React.Component {
 
     this.setState({ value: this.format(val) });
     if (this.props.onBlur) {
-      this.props.onBlur(val);
+      this.props.onBlur(val, value);
     }
   }
 

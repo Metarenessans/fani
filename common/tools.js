@@ -298,7 +298,7 @@ class Tools {
       const r = String(b.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
 
       let res = 0;
-      for (let i = 0; i < r.length; i++) {
+      for (let i = 0; i < Math.min(l.length,r.length); i++) {
         res = c(l[i]) - c(r[i]);
         if (res != 0) {
           break;

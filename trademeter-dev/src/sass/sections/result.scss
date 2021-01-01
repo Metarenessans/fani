@@ -1,0 +1,291 @@
+.result {
+
+  @function em($val) {
+    @return $val / 1.125;
+  }
+
+  // Test
+  max-width: 120em;
+
+  $gap: 1%;
+
+  margin: -$gap;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  @include xs {
+    width: 100%;
+    margin: -1.5% -1.7em;
+  }
+
+  &-col {
+    margin: $gap;
+    width: 31%;
+    display: flex;
+    flex-direction: column;
+
+    &--no-padding {
+      padding-left:   0;
+      padding-right:  0;
+      padding-bottom: 0;
+    }
+
+    &:last-child {
+      width: 100%;
+
+      @include sm {
+        @include card();
+        
+        width: 50% - 2%;
+      }
+
+      @include xs {
+        width: 100%;
+      }
+    }
+
+    @include sm {
+      width: 50% - 2%;
+    }
+
+    @include xs {
+      margin: 0;
+      margin-bottom: 1.5em;
+      width: 100%;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    &-additional {
+      font-family: "Roboto", sans-serif;
+
+      .result-col__content {
+        @include xs {
+          font-size: 1.35em;
+        }
+
+        > * + * {
+          margin-top: 1.6em;
+        }
+      }
+      
+      &-row {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+
+        .input-group {
+          max-width: 16em;
+          text-align: left;
+
+          &__label {
+            @include xs {
+              font-size: 1.4em;
+            }
+          }
+
+          input {
+            text-align: left;
+          }
+        }
+
+        &__main,
+        &__side {
+          padding: .2em 0;
+  
+          font-size: 1.6em;
+        }
+
+        &__side {
+          [role="img"] {
+            margin-left: .75em;
+
+            color: var(--success-color);
+          }
+        }
+
+      }
+    }
+
+    &__title {
+      margin: 0;
+      margin-top: .4em;
+      margin-bottom: em(1.4em);
+
+      font-family: "Circe";
+      font-size: em(1.9em);
+      font-weight: 500;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: em(0.25em);
+
+      @include sm {
+        margin-bottom: em(.8em);
+      }
+
+      @include xs {
+        font-size: em(2.5em);
+      }
+
+      &--large {
+        margin: 0.5em 0;
+        font-size: em(2.4em);
+        letter-spacing: em(.4em);
+      }
+    }
+
+    &__content {
+      flex-grow: 1;
+      text-align: center;
+    }
+
+  }
+
+  &-round-progress {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 15em;
+
+    @include xs {
+      font-size: 23.5em;
+    }
+
+    &.ant-progress-circle {
+      .ant-progress-inner {
+        width:     1em !important;
+        height:    1em !important;
+        font-size: 1em !important;
+      }
+    }
+
+
+    &__inner {
+      padding: 0 0.7em;
+
+      font-size: 0.125em;
+
+      span {
+        display: block;
+
+        font-size: .85em;
+        line-height: 1.15;
+
+        &:first-child {
+          font-size: 1.4em;
+          font-weight: 900;
+        }
+      }
+    }
+
+    &__subtitle {
+      margin: 0;
+
+      font-size: 2.4em;
+      color: #777;
+
+      span {
+        display: inline-block;
+        margin-left: .5em;
+
+        color: #141414;
+      }
+    }
+
+  }
+
+  &-info {
+    padding: 0 24em;
+
+    @include sm {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      padding: .5em 1em;
+    }
+
+    @include xs {
+      width: 100%;
+    }
+
+    &-title {
+      margin: 0;
+      margin-bottom: .2em;
+      margin-left: .5em;
+      
+      font-size: 2.4em;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: .5em;
+
+      text-align: center;
+
+      @include sm {
+        order: -2;
+        font-size: 2em;      
+      }
+    }
+
+    &-subtitle {
+      margin: 0;
+      margin-top: .2em;
+
+      font-size: 3em;
+      color: #777;
+      line-height: 1.15;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    &__label {
+      display: block;
+      margin: 0;
+
+      font-size: 1.9em;
+      color: #777;
+      font-weight: 700;
+
+      @include sm {
+        margin-top: .5em;
+
+        font-size: 2.2em;
+      }
+
+      b {
+        color: #3f6b33;
+      }
+      
+      &-title {
+        display: inline-block;
+        margin: 0;
+
+        @include sm {
+          display: block;
+        }
+      }
+    }
+
+    .ant-progress-line {
+      position: relative;
+
+      .ant-progress {
+
+        &-bg {
+          height: .8em !important;
+        }
+
+        &-text {
+          font-weight: bold;
+        }
+
+      }
+
+    }
+  }
+
+}
