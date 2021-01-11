@@ -49,14 +49,8 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      margin-left:  20em;
-      margin-right: 20em;
-
-      @include sm() {
-        margin-left:  0;
-        margin-right: 0;
-      }
-
+      margin-left:  auto;
+      margin-right: auto;
     }
   }
 }

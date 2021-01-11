@@ -3,10 +3,12 @@ import {
   Select,
   Button,
   Tooltip,
-  Switch} from "antd/es"
+  Switch
+} from "antd/es"
 
 import {
   SettingFilled,
+  LoadingOutlined,
 } from '@ant-design/icons'
 
 import { Tools, template } from "../../../../common/tools"
@@ -84,6 +86,24 @@ export default class Item extends React.Component {
     return { ...tools[selectedToolIndex] } || { ...template };
   }
 
+  getCurrentToolIndex() {
+    const { tools, data } = this.props;
+
+    const selectedToolName = data.selectedToolName;
+
+    let selectedToolIndex = 0;
+    if (selectedToolName != null) {
+      for (let i = 0; i < tools.length; i++) {
+        let tool = tools[i];
+        if (tool.getSortProperty() === selectedToolName) {
+          return i;
+        }
+      }
+    }
+
+    return 0;
+  }
+
   componentDidMount() {
 
   }
@@ -109,6 +129,8 @@ export default class Item extends React.Component {
 
     let currentTool = this.getCurrentTool();
     currentTool.update != null && currentTool.update(investorInfo);
+
+    let currentToolIndex = this.getCurrentToolIndex();
 
     let selectedToolName = data.selectedToolName;
     if (selectedToolName == null && this.props.tools.length) {
@@ -168,11 +190,11 @@ export default class Item extends React.Component {
             <label className="tool-header__select">
               <span className="input-group__title search__title">Торговый инструмент</span>
               <Select
-                key={selectedToolName}
-                value={selectedToolName}
+                value={currentToolIndex}
                 disabled={this.props.tools.length == 0}
-                onChange={val => {
-                  onChange("selectedToolName", val);
+                onChange={index => {
+                  let name = this.props.tools[index].getSortProperty();
+                  onChange("selectedToolName", name);
                 }}
                 showSearch
                 optionFilterProp="children"
@@ -181,14 +203,22 @@ export default class Item extends React.Component {
                 }
                 style={{ width: "100%" }}
               >
-                {
-                  this.props.tools
-                    .map((tool, index) => 
-                      <Option key={index} value={tool.getSortProperty()} title={tool.toString()}>
-                        {tool.toString()}
+                {(() => {
+                  let tools = this.props.tools;
+                  if (tools.length) {
+                    return tools
+                      .map(tool => String(tool))
+                      .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                  }
+                  else {
+                    return (
+                      <Option key={0} value={0}>
+                        <LoadingOutlined style={{ marginRight: ".2em" }} />
+                        Загрузка...
                       </Option>
                     )
-                }
+                  }
+                })()}
               </Select>
             </label>
 
@@ -401,7 +431,7 @@ export default class Item extends React.Component {
                       </div>
                       
                       <div className="tool-main-card-body-pair">
-                        <h3 className="tool-main-card-body-pair-key">Итераций</h3>
+                        <h3 className="tool-main-card-body-pair-key">Итераций:</h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(iterations, 2)) }
                         </span>
@@ -443,7 +473,7 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
                           Прибыль <br className="hide-xs" />
-                          за итерацию
+                          за итерацию:
                         </h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={val => formatNumber(round(val, 3))}>
@@ -526,7 +556,7 @@ export default class Item extends React.Component {
 
 
                       <div className="tool-main-card-body-pair">
-                        <h3 className="tool-main-card-body-pair-key">Депозит</h3>
+                        <h3 className="tool-main-card-body-pair-key">Депози:т</h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(deposit, 2)) }
                         </span>
@@ -569,7 +599,7 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
                           Убыток <br className="hide-xs" />
-                          на догрузку
+                          на догрузку:
                         </h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={val => formatNumber(round(val, 3))}>{loss}</Value>

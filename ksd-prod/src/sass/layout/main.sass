@@ -44,7 +44,7 @@
         --gap: 1em
 
     &__footer
-      margin-top: 2.5em
+      margin: 2.5em auto 0
 
       font-size: 1.6em
 
@@ -94,7 +94,8 @@
 
       +sm
         position: static
-        margin-top: 1.5em
+        margin: 1.5em auto 0
+
         font-size: 1.5em
 
       .settings-button__icon
@@ -103,7 +104,7 @@
     &__select
       position: absolute
       right: 0
-      top:   .5em
+      top:   0
       width: 20em
 
       color: white !important
@@ -153,9 +154,9 @@
 
     &__switch-long-short
       background: var(--danger-color)
-      width: 3em
+      min-width: 6em
       
-      font-size: 3em
+      font-size: 1.6em
 
       +sm
         margin-left: .75em
@@ -174,10 +175,10 @@
 
       .ant-switch
         &-inner
-          padding-top: .1em
+          // padding-top: .1em
 
-          font-size: .5em
-          line-height: 1em
+          // font-size: .5em
+          // line-height: 1em
 
   &-save
     font-size: 1.5em

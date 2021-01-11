@@ -102,7 +102,8 @@
 
       +sm
         position: static
-        margin-top: 1.5em
+        margin: 1.5em auto 0
+        
         font-size: 1.5em
 
       .settings-button__icon
@@ -179,6 +180,7 @@
           margin-right: 0
 
     &__left
+      align-items: stretch
       flex-shrink: 0
       width: 30%
 
@@ -190,6 +192,7 @@
 
     &__right
       flex-grow: 1
+      align-items: stretch
 
       +sm
         width: 48%
@@ -239,6 +242,8 @@
         margin: calc(-1 * var(--gap)) 
 
       &__row
+        position: relative
+
         margin: var(--gap)
         display: flex
         align-items: center
@@ -294,7 +299,22 @@
             
             +xs
               height: 3.2em
-              font-size: 2em
+              font-size: 1.8em
+
+      &__settings
+
+        &[disabled]
+          opacity: .5
+          cursor: not-allowed
+
+          &:hover
+            transform: none
+
+        +sm
+          position: absolute
+          right: 0
+          top:   0
+          margin-top: -0.3em
 
   &-save
     font-size: 1.5em

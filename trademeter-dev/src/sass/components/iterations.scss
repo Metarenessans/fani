@@ -2,44 +2,36 @@
   position: relative;
   width:  100%;
   min-height: 14em;
-  max-height: 20.5em;
+  max-height: 20em;
   height: 100%;
   display: flex;
   flex-direction: column;
-
+  
+  @include xs {
+    min-height: 0;
+    max-height: 20.6em;
+  }
   
   &-list {
-    --space: .8em;
+    --space: .9em;
 
     flex-grow: 1;
     overflow-y: scroll;
-    padding: .75em 1em;
-    margin: 0;
-
-    @include sm() {
-      padding: .75em 1em;
-    }
-    
-    @include xs() {
-      padding: .75em 1em;
-      font-size: 1.25em;
-    }
+    padding: .1em 1em;
+    margin: 1em 0;
 
     &-item {
       position: relative;
       
       padding-right: 2em;
       margin-bottom: var(--space);
+      min-height: 3.8em;
       display: flex;
       align-items: baseline;
 
-      --fz: 1.8em;
-      font-size: .9em;
+      --fz: 1.885em;
 
-      @include xs() {
-        --fz: 2em;
-        font-size: .9em;
-      }
+      font-size: .85em;
 
       &:last-child {
         margin-bottom: 0;
@@ -47,30 +39,51 @@
 
       &__number {
         display: inline-block;
+        min-width: 1.3em;
         margin-right: .5em;
 
         font-size: var(--fz);
+        text-align: right;
       }
       
       &__separator {
         display: inline-block;
-        margin: 0 .8em;
+        margin: 0 .55em;
 
         font-size: var(--fz);
       }
 
       &__clock {
+        position: relative;
+
         display: flex;
         align-items: center;
         justify-content: center;
         margin-left: auto;
-        width: 6em;
+        min-width:  6em;
+        min-height: 1em;
 
         text-align: center;
 
-        cursor: not-allowed;
+        cursor: pointer;
+
+        > * + * {
+
+        }
+
+        &-time {
+          display: inline-block;
+
+          font-size: 1.4em;
+          line-height: 1;
+        }
 
         [role="img"] {
+          position: absolute;
+          left: 50%;
+          top:  50%;
+          transform: translate(-50%, -50%);
+
           flex-shrink: 0;
 
           font-size: 1.2em;
@@ -80,12 +93,14 @@
       }
 
       &__delete {
-        position: absolute;
-        top:     50%;
+        position: absolute !important;
+        top:     50% !important;
         right:  -0.125em;
-        transform: translateY(-50%);
+        transform: translateY(-50%) !important;
 
         flex-shrink: 0;
+        width:  .85em;
+        height: .85em;
 
         font-size: 2.5em;
         color: #777 !important;
@@ -97,17 +112,25 @@
       }
       
       &__input {
-        $input-width: 6em;
+        $input-width: 8.5em;
 
-        width: $input-width;
+        width: 6.5em;
         font-size: var(--fz);
         text-align: center;
 
+        @include sm {
+          width: 5.5em;
+        }
+        
+        @include xs {
+          width: $input-width;
+        }
+
         &--unstyled {
-          width: 8em;
+          // width: $input-width;
           
-          font-size: var(--fz);
-          text-align: center;
+          // font-size: var(--fz);
+          // text-align: center;
 
           white-space: pre;
           text-overflow: ellipsis;
@@ -120,6 +143,8 @@
   }
 
   &-button {
+    flex-shrink: 0;
+
     width: 100%;
     border: none;
     background: var(--primary-color);
@@ -128,6 +153,7 @@
     color: #fff;
     font-family: "Roboto";
     font-size: 1em;
+    line-height: 1.6;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .1em;

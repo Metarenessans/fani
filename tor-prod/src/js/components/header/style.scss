@@ -49,8 +49,8 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      margin-left:  20em;
-      margin-right: 20em;
+      margin-left:  auto;
+      margin-right: auto;
 
       @include sm() {
         margin-left:  0;

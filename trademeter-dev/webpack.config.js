@@ -117,6 +117,7 @@ module.exports = (env, options) => {
       contentBase: path.join(__dirname, ""),
       overlay: true,
       hot: true,
+      host: '192.168.0.129'
     },
     module: {
       rules: [

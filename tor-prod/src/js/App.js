@@ -262,14 +262,16 @@ constructor(props) {
 
     try {
 
-      console.log(save);
       staticParsed = JSON.parse(save.static);
-
+      console.log(save);
       console.log("staticParsed", staticParsed);
 
       state.depo = staticParsed.depo || this.state.depo;
       state.items = staticParsed.items;
+
       state.customTools = staticParsed.customTools || [];
+      state.customTools = state.customTools
+        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
 
       state.id      = save.id;
       state.saved   = true;

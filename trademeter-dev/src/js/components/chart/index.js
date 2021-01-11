@@ -347,8 +347,8 @@ function updateChart(isInit = false) {
       for (let i = 0; i < factDays.length; i++) {
         factArray[i] = data[i].depoEnd;
         
-        const { iterations } = data[i];
-        if (iterations.length > 1) {
+        const iterations = [...data[i].iterations].filter(it => it.rate != null);
+        if (iterations && iterations.length > 1) {
           let endValue = factArray[i];
           factArray[i] = [];
           let start = data[i].depoStart;

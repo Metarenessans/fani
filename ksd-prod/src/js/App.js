@@ -53,9 +53,12 @@ import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
-const { Option } = Select;
-
 import "../sass/style.sass"
+
+const defaultToolData = {
+  percentage: 10,
+  selectedToolName: "SBER"
+};
 
 class App extends React.Component {
 
@@ -74,7 +77,7 @@ class App extends React.Component {
       },
       isLong: true,
 
-      data: [{ percentage: 10 }],
+      data: [{ ...defaultToolData }],
 
       // Режим
       mode: 0,
@@ -134,11 +137,11 @@ class App extends React.Component {
     setTimeout(() => {
       let { saves } = this.state;
       let save = {
+        dateCreate: 1595544839,
+        id: 20,
+        name: "Fresh KSD",
+        static: `{"depo":1000000,"sortProp":"incomePercentage","sortDESC":true,"mode":0,"data":[{"percentage":10,"guarantee":9175.6,"contracts":10,"income":9270,"incomePercentage":0.927,"loadingPercentage":9.27,"risk":0.927,"freeMoney":89.07300000000001,"selectedToolName":"LKOH-12.20"},{"percentage":10,"guarantee":6784.8,"contracts":14,"income":14423.64672,"incomePercentage":1.442364672,"loadingPercentage":14.424,"risk":1.442364672,"freeMoney":88.557635328,"selectedToolName":"BR-12.20"},{"percentage":10,"guarantee":13399.5,"contracts":7,"income":15325.124639999998,"incomePercentage":1.5325124639999999,"loadingPercentage":15.325,"risk":1.5325124639999999,"freeMoney":88.467487536,"selectedToolName":"GOLD-12.20"},{"percentage":10,"guarantee":4340.2,"contracts":23,"income":8165,"incomePercentage":0.8165,"loadingPercentage":8.165,"risk":0.8165,"freeMoney":89.1835,"selectedToolName":"SBPR-12.20"},{"percentage":10,"guarantee":4919.5,"contracts":20,"planIncome":127.9,"income":2558,"incomePercentage":0.25579999999999997,"loadingPercentage":2.558,"risk":0.25579999999999997,"freeMoney":89.7442,"selectedToolName":"LKOH"},{"percentage":10,"guarantee":1396.2,"contracts":71,"planIncome":3.84,"income":2726.3999999999996,"incomePercentage":0.27263999999999994,"loadingPercentage":2.726,"risk":0.27263999999999994,"freeMoney":89.72736,"selectedToolName":"MOEX"},{"percentage":10,"guarantee":6597.7,"contracts":15,"income":15420,"incomePercentage":1.542,"loadingPercentage":15.42,"risk":1.542,"freeMoney":88.458,"selectedToolName":"Si-12.20"},{"percentage":10,"guarantee":877.9,"contracts":113,"income":5401.400000000001,"incomePercentage":0.5401400000000001,"loadingPercentage":5.401,"risk":0.5401400000000001,"freeMoney":89.45985999999999,"selectedToolName":"MAGN-12.20"},{"percentage":10,"guarantee":862.9,"contracts":115,"income":5405,"incomePercentage":0.5405,"loadingPercentage":5.405,"risk":0.5405,"freeMoney":89.4595,"selectedToolName":"MOEX-12.20"},{"percentage":10,"guarantee":862.9,"contracts":115,"income":5405,"incomePercentage":0.5405,"loadingPercentage":5.405,"risk":0.5405,"freeMoney":89.4595,"selectedToolName":"MIX-12.20"}],"customTools":[],"current_date":"#"}`,
         data: {
-          dateCreate: 1595544839,
-          id: 20,
-          name: "Fresh KSD",
-          static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR - 9.20"},{"percentage":60,"selectedToolName":"BR - 1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN - 9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT - 9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"RVI - 9.20"}],"customTools":[],"current_date":"#"}`
         },
         error: false,
         id: 20
@@ -270,7 +273,7 @@ class App extends React.Component {
     const savePure = { ...save };
     delete savePure.static;
 
-    console.log(saves, savePure, getSaveIndex(savePure));
+    // console.log(saves, savePure, getSaveIndex(savePure));
 
     try {
 
@@ -280,7 +283,8 @@ class App extends React.Component {
         return item;
       });
 
-      // console.log("staticParsed", staticParsed);
+      console.log("static", save.static);
+      console.log("staticParsed", staticParsed);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -435,7 +439,11 @@ class App extends React.Component {
   }
 
   render() {
-    const { mode, sortProp, sortDESC, isLong } = this.state;
+    const { mode, data, sortProp, sortDESC, isLong } = this.state;
+
+    // console.log(
+    //   data.map(entry => `${entry.selectedToolName}: ${entry.incomePercentage}`)
+    // );
 
     return (
       <Provider value={this}>
@@ -560,6 +568,7 @@ class App extends React.Component {
                                 this.setState({ sortProp, sortDESC })
                               }}
                               onUpdate={state => {
+                                // console.log(data[index], state);
                                 data[index] = state;
                                 this.setState({ data });
                               }}
@@ -595,7 +604,7 @@ class App extends React.Component {
                   <Button className="custom-btn main__save"
                     onClick={() => {
                       const { data } = this.state;
-                      data.push({ percentage: 10 });
+                      data.push({ ...defaultToolData });
                       this.setState({ data })
                     }}>
                     <PlusOutlined aria-label="Добавить" />

@@ -34,17 +34,20 @@ const updateChartMinMax = (priceRange, isLong = true) => {
 }
 
 const updateChartScaleMinMax = (min, max) => {
-  yScale.minimum(min);
-  yScale.maximum(max);
+  if (yScale) {
+    yScale.minimum(min);
+    yScale.maximum(max);
+  }
 }
 
 const updateChartZoom = days => {
-  const now = dataParsed[dataParsed.length - 1][0];
-  chart.selectRange(now - (86_400_000 * days), now);
+  if (dataParsed) {
+    const now = dataParsed[dataParsed.length - 1][0];
+    chart.selectRange(now - (86_400_000 * days), now);
+  }
 }
 
 class Chart extends Component {
-
   update() {
     const { min, max, priceRange } = this.props;
 
@@ -140,9 +143,13 @@ class Chart extends Component {
 
   render() {
     return (
-      <div className="chart-wrap">
+      <div className={
+        ["chart-wrap"]
+          .concat(this.props.className)
+          .join(" ")
+          .trim()
+      }>
         {this.props.loading ? <LoadingOutlined /> : <div id="chart"></div>}
-        {/* <div id="chart"></div> */}
       </div>
     )
   }

@@ -2,11 +2,19 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { Input, Tooltip, Select } from 'antd/es'
 
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  LoadingOutlined,
+  QuestionCircleFilled,
+  SettingFilled,
+} from "@ant-design/icons"
+
 import NumericInput from "../../../../common/components/numeric-input"
 import CustomSelect from "../../../../common/components/custom-select"
 import CrossButton  from "../../../../common/components/cross-button"
 
-import { template }   from "../../../../common/tools"
+import { Tools, template } from "../../../../common/tools"
 import round          from "../../../../common/utils/round"
 import formatNumber   from "../../../../common/utils/format-number"
 import fractionLength from "../../../../common/utils/fraction-length"
@@ -19,41 +27,27 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    const { mode, depo, tools, onChange } = this.props;
     let { percentage, selectedToolName, planIncome } = this.props;
 
     this.state = {
       percentage,
       selectedToolName,
-      planIncome
+      planIncome,
+
+      tooltipText: "",
+      tooltipVisible: false
     };
   }
 
-  getTool() {
-    const { tools, selectedToolName } = this.props;
-
-    let selectedToolIndex = 0;
-    if (selectedToolName != null) {
-      for (let i = 0; i < tools.length; i++) {
-        let tool = tools[i];
-        if (tool.getSortProperty() === selectedToolName) {
-          selectedToolIndex = i;
-          break;
-        }
-      }
-    }
-
-    return tools[selectedToolIndex] || clone(template);
-  }
-
   getPlanIncome() {
-    const { mode, item } = this.props;
-    const currentTool = this.getTool();
+    const { mode, item, index } = this.props;
+    const currentTool = this.getCurrentTool();
     var planIncome;
     // console.log(currentTool, item);
 
-    // Если первая вкладка
     if (mode == 0) {
+      if (index == 0) {
+      }
       // В приоритете введенное значение, если его нет - откатываемся к дефолтному
       planIncome = item.planIncome != null ? item.planIncome : currentTool.adrDay;
     }
@@ -76,26 +70,34 @@ export default class DashboardRow extends React.Component {
   }
 
   getBlackSwan() {
-    return this.getTool().currentPrice * 0.1;
-  }
-
-  getToolName(tool = {}) {
-    var name = "";
-    if (tool.shortName) {
-      name += `${tool.shortName}`;
-    }
-    if (tool.code) {
-      name += ` (${tool.code})`;
-    }
-
-    return name;
+    return this.getCurrentTool().currentPrice * 0.1;
   }
 
   update() {
 
   }
 
+  getToolIndexByCode(code) {
+    const { tools, selectedToolName } = this.props;
+    if (!code || !tools.length) {
+      return 0;
+    }
+
+    return Tools.getToolIndexByCode(tools, selectedToolName);
+  }
+
+  getCurrentTool() {
+    const { tools } = this.props;
+    return tools[this.getCurrentToolIndex()] || Tools.create();
+  }
+
+  getCurrentToolIndex() {
+    const { selectedToolName } = this.props;
+    return this.getToolIndexByCode(selectedToolName);
+  }
+
   render() {
+    const { tooltipVisible, tooltipText } = this.state;
     let { selectedToolName, percentage, item } = this.props;
     const {
       index,
@@ -111,8 +113,9 @@ export default class DashboardRow extends React.Component {
     } = this.props;
 
     selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].getSortProperty();
-
-    const currentTool = this.getTool();
+    
+    const currentTool      = this.getCurrentTool();
+    const currentToolIndex = this.getCurrentToolIndex();
 
     var planIncome = this.getPlanIncome();
 
@@ -186,11 +189,25 @@ export default class DashboardRow extends React.Component {
       risk,
       // Свободно
       freeMoney,
-
+      // Выбранный инструмент
       selectedToolName,
+      // Идентификатор реального найденного инструмента
+      realSelectedToolName: tools[this.getCurrentToolIndex()].getSortProperty(),
+
+      updatedOnce: item.updatedOnce,
     };
 
+    if (!
+      (
+        currentTool.getSortProperty() == selectedToolName ||
+        currentTool.code              == selectedToolName
+      )
+    ) {
+      // delete itemUpdated.planIncome;
+    }
+    
     if (!isEqual(itemUpdated, item)) {
+      // console.log(item, itemUpdated);
       onUpdate(itemUpdated);
     }
 
@@ -201,25 +218,35 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
-              key={selectedToolName}
+              key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
-              value={selectedToolName}
+              value={currentToolIndex}
+              onChange={currentToolIndex => {
+                onChange("selectedToolName", tools[currentToolIndex].getSortProperty());
+              }}
+              disabled={tools.length == 0}
               showSearch
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              onChange={selectedToolName => onChange("selectedToolName", selectedToolName)}
+              style={{ width: "100%" }}
             >
-              {                
-                tools.map((tool, index) => {
+              {(() => {
+                if (tools.length) {
+                  return tools
+                    .map(tool => String(tool))
+                    .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                }
+                else {
                   return (
-                    <Option key={index} value={tool.getSortProperty()} title={tool.toString()}>
-                      {tool.toString()}
+                    <Option key={0} value={0}>
+                      <LoadingOutlined style={{ marginRight: ".2em" }} />
+                      Загрузка...
                     </Option>
                   )
-                })
-              }
+                }
+              })()}
             </Select>
           </span>
         </div>
@@ -230,9 +257,9 @@ export default class DashboardRow extends React.Component {
             <SortButton prop="guarantee" />
           </span>
           <span className="dashboard-val dashboard-val--wrap">
-            <span className="no-wrap">{formatNumber(this.getTool().currentPrice)}</span>
+            <span className="no-wrap">{formatNumber(this.getCurrentTool().currentPrice)}</span>
             &nbsp;/&nbsp;
-            <span className="no-wrap">{formatNumber(this.getTool().guarantee)}</span>
+            <span className="no-wrap">{formatNumber(this.getCurrentTool().guarantee)}</span>
           </span>
         </div>
         {/* col */}
@@ -264,16 +291,45 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val">
             {(() => {
               const fraction = fractionLength(currentTool.priceStep);
+              let timeout;
+              if (!tooltipText) {
+                this.setState({
+                  tooltipText: `${(planIncome).toFixed(fraction)} = ${round(planIncome / currentTool.priceStep, 2)} п`
+                })
+              }
 
               return mode == 0
                 ? (
-                  <NumericInput
-                    key={Math.random()}
-                    className="dashboard__input"
-                    defaultValue={planIncome}
-                    format={val => formatNumber((val).toFixed(fraction))}
-                    onBlur={val => onChange("planIncome", val)}
-                  />
+                  <Tooltip 
+                    title={tooltipText}
+                    visible={tooltipVisible}
+                  >
+                    <NumericInput
+                      key={Math.random()}
+                      className="dashboard__input"
+                      defaultValue={planIncome}
+                      format={val => formatNumber((val).toFixed(fraction))}
+                      onBlur={val => onChange("planIncome", val)}
+                      onChange={(e, value = "") => {
+                        value = Number(value);
+                        const tooltipText = `${+(value).toFixed(fraction)} = ${round((value) / currentTool.priceStep, 2)} п`;
+                        this.setState({ tooltipText })
+                      }}
+                      onFocus={e => this.setState({ tooltipVisible: true })}
+                      onMouseEnter={e => {
+                        if (timeout) {
+                          clearTimeout(timeout);
+                        }
+                        this.setState({ tooltipVisible: true });
+                      }}
+                      onMouseLeave={e => {
+                        if (e.target == document.activeElement) {
+                          return;
+                        }
+                        timeout = setTimeout(() => this.setState({ tooltipVisible: false }), 500)
+                      }}
+                    />
+                  </Tooltip>
                 )
                 : formatNumber((planIncome).toFixed(fraction)) 
             })()}

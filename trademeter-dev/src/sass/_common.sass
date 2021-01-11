@@ -47,7 +47,7 @@ body
     font-size: 1.45vw
 
   +xs
-    font-size: 2.25vw
+    font-size: 2.6vw
 
 /* Components */
 
@@ -103,8 +103,8 @@ body
     flex-direction: column
 
   +xs
+    padding: 0
     margin: 0 -2.75em
-    padding-top: 0
   
   &__passive-income
     .ant-input
@@ -195,6 +195,7 @@ body
 
     +sm
       flex-shrink: 0
+      width: 39.75em
 
     +xs
       width: 100%
@@ -228,7 +229,6 @@ body
 
   +xs
     margin: 0 -2em
-    padding: 0
     background: none
     flex-direction: column
     align-items: center
@@ -255,6 +255,7 @@ body
     left: 100%
 
   &-title
+    margin-bottom: .75em
 
   &-subtitle
     margin: 0
@@ -480,7 +481,7 @@ body
   &__title
     position: absolute
     left:  0
-    top:   0.04em
+    top:   0.07em
     z-index: 1
     
     font-size: 3.6em
@@ -493,7 +494,8 @@ body
       top: 0.35em
 
     +xs
-      top: 0.2em
+      top: 0.55em
+      margin-left: 0.3em
   
   &-header
     position: relative
@@ -517,10 +519,14 @@ body
 
     +xs
       display: flex
+      padding-left: .35em
       width: 100%
 
-      padding-left: .35em
+      font-size: 2.4em
       text-align: left
+
+      [role="switch"]
+        font-size: .55em !important
 
     &--first
       justify-content: flex-end
@@ -544,14 +550,22 @@ body
     &--centered
       flex-direction: row
       align-items: center
-      // TODO: delete
       justify-content: center
+
+      +xs
+        justify-content: space-between
+
+        > :first-child
+          margin: 0 auto
 
       > * + *
         margin-left: 4.5em
 
         +lg
           margin-left: 2.5em
+
+        +xs
+          width: 48%
   
   &-row
     width: 100%
@@ -593,11 +607,9 @@ body
 
         font-size: .6em
 
-        +sm
-          top:   1.4em
-
       &-search__field
-        margin-top: -0.15em
+        margin-top: 0.1em
+
         text-align: right
 
       &-selection
@@ -633,10 +645,6 @@ body
     width: 5em
 
     font-size: .5em
-
-    +sm
-      margin-left: .75em
-      width: 3.5em
     
     +xs
       margin-left: auto
@@ -645,11 +653,11 @@ body
       background: var(--accent-color)
 
       .ant-switch-inner
-        margin-left: .5em
+        margin-left: .8em !important
 
     .ant-switch
       &-inner
-        margin-left: 1.8em
+        margin-left: 1.8em !important
         padding-top: .2em
 
         font-size:  .8em
@@ -807,6 +815,9 @@ body
 
     +sm
       max-width: initial
+    
+    +xs
+      font-size: 1.45em
 
   &-save-wrap
     margin-bottom: 2em
@@ -834,7 +845,7 @@ body
       font-size: 1.3em
 
       +xs
-        font-size: 1.4em
+        font-size: 1.2em
     
   &-quick-select
     --margin: .5em
@@ -998,11 +1009,10 @@ body
       
       position: relative
 
-      +sm
-        
-
       +xs
         width: 100%
+
+        font-size: 3.2em
         text-align: center
 
       &::before,
@@ -1177,6 +1187,10 @@ body
   
 .hide-sm
   +sm
+    display: none
+
+.hide-xs
+  +xs
     display: none
 
 .xs-only

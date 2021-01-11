@@ -10,6 +10,7 @@ import {
   Statistic,
   Switch,
   Tooltip,
+  Popover,
 } from "antd/es"
 const { Option } = Select;
 
@@ -58,9 +59,10 @@ import CustomSelect from "./components/custom-select"
 import CustomSlider from "./components/custom-slider"
 import Header       from "./components/header"
 import ModeToggle   from "./components/mode-toggle"
-import NumericInput from "./components/numeric-input"
+import NumericInput from "../../../common/components/numeric-input"
 import Speedometer  from "./components/riskometer"
 import Value        from "./components/value"
+import TimeRangePicker from "./components/time-range-picker"
 import {
   Chart,
   createChart,
@@ -318,11 +320,13 @@ class App extends Component {
       withdrawalInterval,
       payload,
       payloadInterval,
+      depoPersentageStart
     } = this.state;
     const rate = this.getRate();
 
     return {
       $start:           depoStart[mode],
+      $percent:         depoPersentageStart,
       $length:          dataLength,
       $rate:            rate,
       $rateRequired:    null,
@@ -1461,6 +1465,7 @@ class App extends Component {
     return (
       <Provider value={this}>
         <div className="page">
+
           <main className="main">
             <Header
               title={this.getTitle()}
@@ -2146,7 +2151,7 @@ class App extends Component {
                               <div className="stats-val">
                                 {
                                   paymentTotal != 0
-                                    ? placeholder
+                                    ? '-'
                                     : null
                                 }
                                 <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
@@ -2501,7 +2506,7 @@ class App extends Component {
                             let val = data[currentDay - 1].depoEnd;
                             let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
                             if (tool) {
-                              let persantage = tool.rate / 365 * (365 / 260) / 100;
+                              let persantage = tool.rate / 12 * (365 / 260) / 100;
 
                               val = formatNumber(Math.round(val * persantage))
                             }
@@ -2513,12 +2518,8 @@ class App extends Component {
                               ? null
                               : (
                                 <div className="section4-row">
-                                  <div className="section4-l">
-                                    Пассивный доход
-                                  </div>
-                                  <div className="section4-r">
-                                    { val } / день
-                                  </div>
+                                  <div className="section4-l">Пассивный доход</div>
+                                  <div className="section4-r">{ val } / месяц</div>
                                 </div>
                               )
                               {/* /.row */}
@@ -2595,8 +2596,9 @@ class App extends Component {
                             let printArr = [];
                             for (let dataItem of data) {
                               if (dataItem.changed) {
-                                sum += (dataItem.scale != null) ? dataItem.scale : rate;
-                                printArr.push((dataItem.scale != null) ? dataItem.scale : rate);
+                                let r = (dataItem.calculatedRate != null) ? dataItem.calculatedRate : rate;
+                                sum += r;
+                                printArr.push(r);
                                 total++;
                               }
                             }
@@ -2984,6 +2986,243 @@ class App extends Component {
                         hidden={!data[currentDay - 1].expanded}
                       >
 
+                        <div className="result-col result-col-iterations card">
+                          <h3 className="result-col__title">Итерации</h3>
+                          <div className="result-col__content">
+                            {(() => {
+                              const onChange = (iterations = []) => {
+                                // if (iterations.length <= 1) {
+                                //   iterations = iterations.filter(it => it.percent != null);
+                                // }
+
+                                const filteredIterations = iterations.filter(it => it.percent != null);
+
+                                const { depoStart } = data[currentDay - 1];
+
+                                let rate;
+                                let income;
+                                if (filteredIterations.length) {
+                                  rate = filteredIterations
+                                    .map(it => it.rate)
+                                    .reduce((prev, curr) => prev + curr);
+
+                                  income = filteredIterations
+                                    .map(it => it.getIncome(depoStart))
+                                    .reduce((prev, curr) => prev + curr);
+                                }
+
+                                data[currentDay - 1].rate = rate;
+                                data[currentDay - 1].income = income;
+                                data[currentDay - 1].iterations = iterations;
+
+                                data[currentDay - 1].changed = isChanged(data[currentDay - 1]);
+
+                                this.setStateAsync({ data })
+                                  .then(() => this.updateData())
+                                  .then(() => chartVisible && updateChart.call(this))
+                              };
+
+                              let { iterations, calculatedRate } = data[currentDay - 1];
+                              if (iterations.length == 0) {
+                                iterations = [new Iteration(calculatedRate || 0)];
+                              }
+
+                              return (
+                                <div className="iterations">
+                                  <ol className="iterations-list">
+                                    {
+                                      iterations && iterations
+                                        .map((listItem, index) =>
+                                          <li key={index} className="iterations-list-item">
+                                            <span className="iterations-list-item__number">
+                                              {index + 1}.
+                                            </span>
+
+                                            <NumericInput
+                                              className="iterations-list-item__input"
+                                              key={Math.random()}
+                                              defaultValue={
+                                                data[currentDay - 1].changed
+                                                  ?
+                                                  listItem.rate != null
+                                                    ? listItem.getIncome(data[currentDay - 1].depoStart)
+                                                    : ""
+                                                  : ""
+                                              }
+                                              placeholder={placeholder}
+                                              format={formatNumber}
+                                              round="true"
+                                              onBlur={(val, textValue) => {
+                                                if (!iterations[index]) {
+                                                  iterations[index] = new Iteration();
+                                                }
+
+                                                let percent;
+                                                if (val !== "") {
+                                                  percent = val / data[currentDay - 1].depoStartTest * 100;
+                                                }
+
+                                                iterations[index].percent = percent;
+                                                onChange(iterations);
+                                              }}
+                                            />
+                                            <span className="iterations-list-item__separator">~</span>
+                                            <span className="iterations-list-item__input iterations-list-item__input--unstyled">
+                                              {
+                                                formatNumber(
+                                                  round(
+                                                    data[currentDay - 1].changed
+                                                      ? listItem.rate != null
+                                                        ? listItem.rate
+                                                        : 0
+                                                      : 0
+                                                    ,
+                                                    3
+                                                  )
+                                                ) + "%"
+                                              }
+                                            </span>
+
+                                            <Popover
+                                              content={
+                                                <TimeRangePicker 
+                                                  onChange={elapsed => {
+                                                    console.log(elapsed);
+                                                    iterations[index].time = elapsed;
+                                                    data[currentDay - 1].iterations = iterations;
+                                                    this.setState({ data });
+                                                  }}
+                                                />
+                                              }
+                                              trigger="click"
+                                              placement="left"
+                                              destroyTooltipOnHide={true}
+                                            >
+                                              <div className="iterations-list-item__clock">
+
+                                                {(() => {
+                                                  let showIcon = true;
+                                                  let start = 0;
+                                                  let end   = 0;
+                                                  if (listItem.time != null) {
+                                                    showIcon = false;
+                                                    const date = new Date(listItem.time);
+                                                    start = date.getUTCHours();
+                                                    end   = date.getUTCMinutes();
+                                                  }
+                                                  return (
+                                                    <>
+                                                      <span 
+                                                        className="iterations-list-item__clock-time"
+                                                        hidden={listItem.time == null}
+                                                      >
+                                                        {`${start}ч ${end}м`}
+                                                      </span>
+
+                                                      {showIcon && <ClockCircleFilled />}
+                                                    </>
+                                                  )
+                                                })()}
+
+                                              </div>
+                                            </Popover>
+
+                                            {index > 0 && (
+                                              <CrossButton
+                                                className="iterations-list-item__delete"
+                                                onClick={e => {
+                                                  const { iterations } = data[currentDay - 1];
+                                                  iterations.splice(index, 1);
+                                                  onChange(iterations);
+                                                }}
+                                              />
+                                            )}
+                                          </li>
+                                        )
+                                    }
+                                  </ol>
+                                  <button
+                                    className="iterations-button"
+                                    onClick={() => {
+                                      iterations.push(new Iteration());
+                                      onChange(iterations);
+
+                                      this.setState({ data }, () => {
+                                        const list = document.querySelector(".iterations-list");
+                                        list.scrollTop = 9999;
+                                      });
+                                    }}
+                                  >
+                                    Добавить
+                                    <span className="visually-hidden">итерацию</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {(() => {
+                          return (
+                            <div className="result-col card">
+                              <h3 className="result-col__title">Торговая цель</h3>
+                              <div className="result-col__content">
+                                {(() => {
+                                  let { scale, rateRequired } = data[currentDay - 1];
+                                  if (scale == null) {
+                                    scale = data[currentDay - 1].calculatedRate || 0;
+                                  }
+
+                                  if (rateRequired == null) {
+                                    rateRequired = rate;
+                                  }
+
+                                  const percent = round(scale, 3) / round(rateRequired, 3) * 100;
+
+                                  return (
+                                    <Progress
+                                      className="result-round-progress"
+                                      type="circle"
+                                      percent={
+                                        percent > 3 && percent < 100
+                                          ? percent - 2
+                                          : percent
+                                      }
+                                      format={() =>
+                                        <div className="result-round-progress__inner">
+                                          <span>
+                                            {
+                                              data[currentDay - 1].changed && scale != null
+                                                ? formatNumber(round(scale, 3)) + "%"
+                                                : placeholder
+                                            }
+                                          </span>
+                                          <span>
+                                            из{" "}
+                                            {
+                                              formatNumber(round(rateRequired, 3))
+                                            }
+                                          </span>
+                                        </div>
+                                      }
+                                    />
+                                  )
+                                })()}
+                                <p className="result-round-progress__subtitle">
+                                  До цели:
+                                  <span>
+                                    {
+                                      formatNumber(
+                                        Math.max(data[currentDay - 1].goal - (data[currentDay - 1].realIncome || 0), 0)
+                                      )
+                                    }
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })()}
+
                         <div className="result-col result-col-additional card">
                           <h3 className="result-col__title">Дополнительно</h3>
                           <div className="result-col__content">
@@ -3089,7 +3328,7 @@ class App extends Component {
                                     let val = data[currentDay - 1].depoEnd;
                                     let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
                                     if (tool) {
-                                      let persantage = tool.rate / 365 * (365 / 260) / 100;
+                                      let persantage = tool.rate / 12 * (365 / 260) / 100;
 
                                       return "+" + formatNumber(Math.round(val * persantage))
                                     }
@@ -3100,197 +3339,6 @@ class App extends Component {
                               </div>
                             </div>
 
-                          </div>
-                        </div>
-
-                        {(() => {
-                          return (
-                            <div className="result-col card">
-                              <h3 className="result-col__title">Торговая цель</h3>
-                              <div className="result-col__content">
-                                {(() => {
-                                  let { scale, rateRequired } = data[currentDay - 1];
-                                  if (scale == null) {
-                                    scale = data[currentDay - 1].calculatedRate || 0;
-                                  }
-
-                                  if (rateRequired == null) {
-                                    rateRequired = rate;
-                                  }
-
-                                  const percent = round(scale, 3) / round(rateRequired, 3) * 100;
-
-                                  return (
-                                    <Progress
-                                      className="result-round-progress"
-                                      type="circle"
-                                      percent={
-                                        percent > 3 && percent < 100
-                                          ? percent - 2
-                                          : percent
-                                      }
-                                      format={() =>
-                                        <div className="result-round-progress__inner">
-                                          <span>
-                                            {
-                                              data[currentDay - 1].changed && scale != null
-                                                ? formatNumber(round(scale, 3)) + "%"
-                                                : placeholder
-                                            }
-                                          </span>
-                                          <span>
-                                            из{" "}
-                                            {
-                                              formatNumber(round(rateRequired, 3))
-                                            }
-                                          </span>
-                                        </div>
-                                      }
-                                    />
-                                  )
-                                })()}
-                                <p className="result-round-progress__subtitle">
-                                  До цели:
-                                  <span>
-                                    {
-                                      formatNumber(
-                                        Math.max(data[currentDay - 1].goal - (data[currentDay - 1].realIncome || 0), 0)
-                                      )
-                                    }
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        })()}
-
-                        <div className="result-col result-col--no-padding card">
-                          <h3 className="result-col__title">Итерации</h3>
-                          <div className="result-col__content">
-                            {(() => {
-                              const onChange = (iterations = []) => {
-                                if (iterations.length <= 1) {
-                                  iterations = iterations.filter(it => it.percent != null);
-                                }
-
-                                const { depoStart } = data[currentDay - 1];
-
-                                let rate;
-                                let income;
-                                if (iterations.length) {
-                                  rate = iterations.map(it => it.rate).reduce((prev, curr) => prev + curr)
-                                  income = iterations.map(it => it.getIncome(depoStart)).reduce((prev, curr) => prev + curr)
-                                }
-
-                                data[currentDay - 1].rate = rate;
-                                data[currentDay - 1].income = income;
-                                data[currentDay - 1].iterations = iterations;
-
-                                data[currentDay - 1].changed = isChanged(data[currentDay - 1]);
-
-                                this.setStateAsync({ data })
-                                  .then(() => this.updateData())
-                                  .then(() => chartVisible && updateChart.call(this))
-                              };
-
-                              let { iterations, calculatedRate } = data[currentDay - 1];
-                              if (iterations.length == 0) {
-                                iterations = [new Iteration(calculatedRate || 0)];
-                              }
-
-                              return (
-                                <div className="iterations">
-                                  <ol className="iterations-list">
-                                    {
-                                      iterations && iterations
-                                        .map((listItem, index) =>
-                                          <li key={index} className="iterations-list-item">
-                                            <span className="iterations-list-item__number">
-                                              {index + 1}.
-                                            </span>
-
-                                            <NumericInput
-                                              className="iterations-list-item__input"
-                                              key={Math.random()}
-                                              defaultValue={
-                                                data[currentDay - 1].changed
-                                                  ?
-                                                  listItem.rate != null
-                                                    ? listItem.getIncome(data[currentDay - 1].depoStart)
-                                                    : 0
-                                                  : ""
-                                              }
-                                              placeholder={placeholder}
-                                              format={formatNumber}
-                                              round="true"
-                                              onBlur={(val, textValue) => {
-                                                if (!iterations[index]) {
-                                                  iterations[index] = new Iteration();
-                                                }
-
-                                                let percent;
-                                                if (val !== "") {
-                                                  percent = val / data[currentDay - 1].depoStartTest * 100;
-                                                }
-
-                                                iterations[index].percent = percent;
-                                                onChange(iterations);
-                                              }}
-                                            />
-                                            <span className="iterations-list-item__separator">~</span>
-                                            <span className="iterations-list-item__input iterations-list-item__input--unstyled">
-                                              {
-                                                formatNumber(
-                                                  round(
-                                                    data[currentDay - 1].changed
-                                                      ?
-                                                      listItem.rate != null
-                                                        ? listItem.rate
-                                                        : 0
-                                                      : 0
-                                                    , 3)
-                                                ) + "%"
-                                              }
-                                            </span>
-
-                                            <div className="iterations-list-item__clock">
-                                              <ClockCircleFilled />
-                                            </div>
-
-                                            {index > 0 && (
-                                              <CrossButton
-                                                className="iterations-list-item__delete"
-                                                onClick={e => {
-                                                  const { iterations } = data[currentDay - 1];
-                                                  iterations.splice(index, 1);
-                                                  onChange(iterations);
-                                                }}
-                                              />
-                                            )}
-                                          </li>
-                                        )
-                                    }
-                                  </ol>
-                                  <button
-                                    className="iterations-button"
-                                    disabled={data[currentDay - 1].iterations.filter(it => it.percent != null).length < 1}
-                                    onClick={() => {
-                                      const { iterations } = data[currentDay - 1];
-                                      iterations.push(new Iteration(0));
-                                      onChange(iterations);
-
-                                      this.setState({ data }, () => {
-                                        const list = document.querySelector(".iterations-list");
-                                        list.scrollTop = 9999;
-                                      });
-                                    }}
-                                  >
-                                    Добавить
-                                    <span className="visually-hidden">итерацию</span>
-                                  </button>
-                                </div>
-                              );
-                            })()}
                           </div>
                         </div>
 
@@ -3349,7 +3397,7 @@ class App extends Component {
                                       data[currentDay - 1].changed
                                         ? percent <= 0
                                           ? 100
-                                          : round(percent * 100, 2)
+                                          : round(percent * 100, 1)
                                         : 0
                                     }
                                   />

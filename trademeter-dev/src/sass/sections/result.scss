@@ -25,18 +25,13 @@
     display: flex;
     flex-direction: column;
 
-    &--no-padding {
-      padding-left:   0;
-      padding-right:  0;
-      padding-bottom: 0;
-    }
-
     &:last-child {
+      order: 2;
       width: 100%;
 
       @include sm {
         @include card();
-        
+
         width: 50% - 2%;
       }
 
@@ -46,6 +41,7 @@
     }
 
     @include sm {
+      order: initial !important;
       width: 50% - 2%;
     }
 
@@ -59,12 +55,25 @@
       }
     }
 
+    &-iterations {
+      order: 1;
+      padding-left:   0;
+      padding-right:  0;
+      padding-bottom: 0;
+
+      .result-col__content {
+        display: flex;
+        align-items: flex-start;
+      }
+    }
+
     &-additional {
+      order: -1;
       font-family: "Roboto", sans-serif;
 
       .result-col__content {
         @include xs {
-          font-size: 1.35em;
+          // font-size: 1.35em;
         }
 
         > * + * {
@@ -152,7 +161,7 @@
     font-size: 15em;
 
     @include xs {
-      font-size: 23.5em;
+      font-size: 20em;
     }
 
     &.ant-progress-circle {
@@ -167,7 +176,7 @@
     &__inner {
       padding: 0 0.7em;
 
-      font-size: 0.125em;
+      font-size: 0.115em;
 
       span {
         display: block;
@@ -273,6 +282,14 @@
     .ant-progress-line {
       position: relative;
 
+      @include sm {
+        padding: 0 0.3em;
+      }
+
+      @include xs {
+        padding: 0 1em;
+      }
+
       .ant-progress {
 
         &-bg {
@@ -281,6 +298,7 @@
 
         &-text {
           font-weight: bold;
+          text-align: center;
         }
 
       }

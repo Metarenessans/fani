@@ -61,13 +61,23 @@ body
 
 @import "layout/index"
 
+// Fix
+.footer__links a
+  white-space: nowrap !important
+
 .mts
   &-config
     &__depo
+      span
+        font-size: 1.4em
+
       .ant-input
         font-size: 1em !important 
 
   &-slider1
+    display: flex
+    align-items: stretch
+
     position: relative
     height: 31em
     margin-left: 5em
@@ -75,12 +85,15 @@ body
     +xs
       // margin-left: 10em
 
-    .ant-slider-handle
-      width:  1.7em
-      height: 1.7em
-      margin: 0
-      margin-top:   0
-      margin-left: -0.725em
+    .ant-slider
+      margin: 0 0.8em
+
+      &-handle
+        width:  1.7em
+        height: 1.7em
+        margin: 0
+        margin-top:   0
+        margin-left: -0.725em
 
     &-top,
     &-bottom,
@@ -92,7 +105,7 @@ body
 
     &-top,
     &-bottom
-      left: 2.35em
+      left: 2.65em
       color: #999
 
       font-size: 1.4em
@@ -106,10 +119,10 @@ body
         font-size: 1.8em !important
 
     &-top
-      top:    -0.7em
+      top:    -0.9em
 
     &-bottom
-      bottom: -0.7em
+      bottom: -0.9em
 
       b
         color: #777
@@ -222,27 +235,29 @@ body
         color: var(--accent-color)
         font-weight: 700
 
-      &::before
-        content: ''
-        display: block
-        position: absolute
-        left:  50%
-        top:   0
-        margin-top:  -2.575em
-        transform: translateX(-50%)
-
-        width:  (.4em / 2)
-        height:  (4em / 2)
-        background-color: #dcae1d
-
-        +no-select
-
     &__input
       padding: 0
       padding-top: 2.75em
 
       .ant-slider
+        position: relative
         margin: .75em 0
+
+        &::before
+          content: ''
+          display: block
+          position: absolute
+          z-index: 1
+          left:   50%
+          bottom: 50%
+          transform: translate(-50%, 50%)
+          margin-bottom: 0.1em
+
+          width:  (.4em / 2)
+          height:  (4em / 2)
+          background-color: #dcae1d
+
+          +no-select
 
   &-table
     width: 100%
@@ -432,3 +447,7 @@ body
 
   +xs
     display: block
+
+.hide-xs
+  +xs
+    display: none

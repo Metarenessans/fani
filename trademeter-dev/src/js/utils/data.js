@@ -6,6 +6,7 @@ export default class Data extends Array {
 
   build({
     $startFrom       = 0,
+    $percent         = 100,
     $start           = 1_000_000,
     $length          = 0,
     $rate            = 0.424,
@@ -66,10 +67,11 @@ export default class Data extends Array {
         ? income 
         : Math.round(depoStart * (rate != null ? rate : $rate) / 100);
       
-      if (iterations.length > 1) {
+      if (iterations.filter(it => it.rate != null).length) {
         _income = iterations
+          .filter(it => it.rate != null)
           .map(it => it.getIncome( depoStart ))
-          .reduce((acc, curr) => acc + curr);
+          .reduce((acc, curr) => acc + curr, 0);
       }
 
       _income -= payment || 0;
@@ -80,7 +82,7 @@ export default class Data extends Array {
 
       /* Tool-related stuff */
 
-      let contracts = round(depoStart, 1) / $tool.guarantee;
+      let contracts = round(depoStart * $percent / 100, 1) / $tool.guarantee;
       if (isNaN(contracts)) {
         // TODO: handle this error properly
         console.warn( `Количество контрактов равно NaN! depoStart (${depoStart}) / tool.guarantee (${$tool.guarantee})` );
@@ -143,8 +145,11 @@ export default class Data extends Array {
           if (this.rate != null) {
             return this.rate;
           }
-          else if (this.iterations.length) {
-            return this.iterations.map(it => it.rate).reduce((acc, curr) => acc + curr);
+          else if (this.iterations.filter(it => it.rate != null).length) {
+            return this.iterations
+              .filter(it => it.rate != null)
+              .map(it => it.rate)
+              .reduce((acc, curr) => acc + curr, 0);
           }
           else if (this.income != null) {
             return this.income / this.depoStart * 100
@@ -156,10 +161,11 @@ export default class Data extends Array {
           if (this.income != null) {
             return this.income;
           }
-          else if (this.iterations.length) {
+          else if (this.iterations.filter(it => it.rate != null).length) {
             return this.iterations
+              .filter(it => it.rate != null)
               .map(it => it.getIncome( this.depoStart ))
-              .reduce((acc, curr) => acc + curr);
+              .reduce((acc, curr) => acc + curr, 0);
           }
           return Math.round(this.depoStart * (this.rate != null ? this.rate : 0) / 100)
         }

@@ -43,11 +43,8 @@ export default class DashboardRow extends React.Component {
     const { mode, item, index } = this.props;
     const currentTool = this.getCurrentTool();
     var planIncome;
-    // console.log(currentTool, item);
 
     if (mode == 0) {
-      if (index == 0) {
-      }
       // В приоритете введенное значение, если его нет - откатываемся к дефолтному
       planIncome = item.planIncome != null ? item.planIncome : currentTool.adrDay;
     }
@@ -116,6 +113,8 @@ export default class DashboardRow extends React.Component {
     
     const currentTool      = this.getCurrentTool();
     const currentToolIndex = this.getCurrentToolIndex();
+
+    const realSelectedToolName = tools[currentToolIndex].getSortProperty();
 
     var planIncome = this.getPlanIncome();
 
@@ -192,7 +191,7 @@ export default class DashboardRow extends React.Component {
       // Выбранный инструмент
       selectedToolName,
       // Идентификатор реального найденного инструмента
-      realSelectedToolName: tools[this.getCurrentToolIndex()].getSortProperty(),
+      realSelectedToolName,
 
       updatedOnce: item.updatedOnce,
     };
@@ -203,7 +202,7 @@ export default class DashboardRow extends React.Component {
         currentTool.code              == selectedToolName
       )
     ) {
-      // delete itemUpdated.planIncome;
+      delete itemUpdated.planIncome;
     }
     
     if (!isEqual(itemUpdated, item)) {

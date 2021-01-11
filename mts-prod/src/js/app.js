@@ -9,9 +9,13 @@ import {
 } from 'antd/es'
 
 import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  LoadingOutlined,
+  QuestionCircleFilled,
   SettingFilled,
-  WarningOutlined,
-} from '@ant-design/icons'
+  WarningOutlined
+} from "@ant-design/icons"
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
@@ -24,6 +28,7 @@ import promiseWhile   from "../../../common/utils/promise-while"
 import { Tools, template }     from "../../../common/tools"
 import Stack                   from "../../../common/components/stack"
 import CustomSlider            from "./components/custom-slider"
+import SettingsGenerator       from "./components/settings-generator"
 import CrossButton             from "../../../common/components/cross-button"
 import NumericInput            from "../../../common/components/numeric-input"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
@@ -161,8 +166,6 @@ class App extends React.Component {
       };
     }
 
-    console.log(method, body);
-
     fetch(method, "GET", body)
       .then(response => {
         if (this.state.currentToolCode == tool.code) {
@@ -282,7 +285,12 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
+      .catch(error => {
+        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
+        if (dev) {
+          this.setState({ depo: 12_000_000 });
+        }
+      });
   }
 
   updatePriceRange(tool) {
@@ -482,6 +490,25 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools)
   }
 
+  getToolIndexByCode(code) {
+    const tools = this.getTools();
+    if (!code || !tools.length) {
+      return 0;
+    }
+    
+    let index = tools.indexOf( tools.find(tool => tool.code == code) );
+    if (index < 0) {
+      index = 0;
+    }
+
+    return index;
+  }
+
+  getCurrentToolIndex() {
+    let { currentToolCode } = this.state;
+    return this.getToolIndexByCode(currentToolCode);
+  }
+
   getToolByCode(code) {
     const { tools } = this.state;
     return tools.find(tool => tool.code == code) || Tools.create();
@@ -528,6 +555,17 @@ class App extends React.Component {
 
     const max = round(price + percent, fraction);
     const min = round(price - percent, fraction);
+
+    let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
+    income *= mode == 0 ? 0.6 : 0.9;
+
+    const ratio = income / depo * 100;
+    let suffix = round(ratio, 2);
+    if (suffix > 0) {
+      suffix = "+" + suffix;
+    }
+
+    const kod = round(ratio / days, 2);
 
     return (
       <div className="page">
@@ -663,7 +701,6 @@ class App extends React.Component {
 
               <div className="main-content__wrap">
                 {(() => {
-                  
                   const STEP_IN_EACH_DIRECTION = 20;
                   const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
 
@@ -673,8 +710,10 @@ class App extends React.Component {
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
                         <Select
-                          value={this.state.currentToolCode}
-                          onChange={currentToolCode => {
+                          value={this.getCurrentToolIndex()}
+                          onChange={currentToolIndex => {
+                            const tools = this.getTools();
+                            const currentToolCode = tools[currentToolIndex].code; 
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
                               .then(() => this.fetchCompanyQuotes());
@@ -688,14 +727,20 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            const tools = this.getTools();
-                            return tools.length > 0
-                              ? (
-                                tools.map((tool, index) => (
-                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
-                                ))
+                            let tools = this.getTools();
+                            if (tools.length) {
+                              return tools
+                                .map(tool => String(tool))
+                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                            }
+                            else {
+                              return (
+                                <Option key={0} value={0}>
+                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                  Загрузка...
+                                </Option>
                               )
-                              : <Option key={0} value={0}>Загрузка...</Option>
+                            }
                           })()}
                         </Select>
                       </label>
@@ -797,24 +842,28 @@ class App extends React.Component {
                               })()}
                             </span>
                           </div>
+                          
+                          {(() => {
+                            
 
-                          <div className="main-content-stats__row">
-                            <span>Прибыль</span>
-                            <span className="main-content-stats__val">
-                              {(() => {
-                                let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
-                                income *= mode == 0 ? 0.6 : 0.9;
+                            return (
+                              <>
+                                <div className="main-content-stats__row">
+                                  <span>Прибыль</span>
+                                  <span className="main-content-stats__val">
+                                    {`${formatNumber(Math.floor(income))} (${suffix}%)`}
+                                  </span>
+                                </div>
 
-                                const ratio = income / depo * 100;
-                                let suffix = round(ratio, 2);
-                                if (suffix > 0) {
-                                  suffix = "+" + suffix;
-                                }
-                                
-                                return `${formatNumber(Math.floor(income))} (${suffix}%)`
-                              })()}
-                            </span>
-                          </div>
+                                <div className="main-content-stats__row">
+                                  <span>КОД</span>
+                                  <span className="main-content-stats__val">
+                                    {`${formatNumber(kod)}%`}
+                                  </span>
+                                </div>
+                              </>
+                            )
+                          })()}
 
                         </div>
                       </div>
@@ -825,6 +874,7 @@ class App extends React.Component {
 
                 <Stack className="main-content__right">
                   <Chart 
+                    className="mts__chart"
                     key={currentTool.toString() + this.state.loadingChartData} 
                     min={min}
                     max={max}
@@ -908,6 +958,16 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
+
+                        <button
+                          className="settings-button js-open-modal main-content-options__settings"
+                          disabled
+                          onClick={e => dialogAPI.open("settings-generator", e.target)}
+                        >
+                          <span className="visually-hidden">Открыть конфиг</span>
+                          <SettingFilled className="settings-button__icon" />
+                        </button>
+
                       </div>
 
                       <div className="main-content-options__row">
@@ -932,9 +992,9 @@ class App extends React.Component {
                             const max = round(price + percent, fraction);
                             const min = round(price - percent, fraction);
 
+                            this.setState({ days });
                             updateChartScaleMinMax(min, max);
                             updateChartZoom(days);
-                            this.setState({ days });
                           }}
                         >
                           <Radio value={1}>день</Radio>
@@ -947,7 +1007,7 @@ class App extends React.Component {
                   {/* Mods */}
 
                   {(() => {
-                    const period = days;
+                    const period = Math.min(days, 5);
 
                     return (
                       <div className="mts-table">
@@ -955,26 +1015,29 @@ class App extends React.Component {
                         <table>
                           <tr>
                             <th>День</th>
-                            <th>План</th>
-                            <th>Факт</th>
+                            <th>План %</th>
+                            <th>Факт %</th>
                             <th>Доходность</th>
                           </tr>
                           {new Array(period).fill(0).map((value, index) =>
                             <tr>
                               <td>{((page - 1) * period) + (index + 1)}</td>
-                              <td>1</td>
+                              <td>{kod}</td>
                               <td><Input defaultValue="1"/></td>
                               <td><Input defaultValue="1"/></td>
                             </tr>
                           )}
                         </table>
-                        <Pagination 
+                        <Pagination
+                          key={days}
+                          style={{display: days < 20 ? "none" : "flex"}}
                           className="mts-table__paginator"
                           onChange={page => {
                             this.setState({ page })
                           }}
                           defaultCurrent={1}
-                          total={50}
+                          pageSize={period}
+                          total={days}
                         />
                       </div>
                     )
@@ -1249,6 +1312,21 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
+
+        <Dialog
+          id="settings-generator"
+          pure={true}
+        >
+          <SettingsGenerator
+            depo={this.state.depo}
+            tools={this.getTools()}
+            load={percentage}
+            onClose={e => {
+              dialogAPI.close("settings-generator");
+            }}
+          />
+        </Dialog>
+        {/* ГЕНА */}
 
       </div>
     );
