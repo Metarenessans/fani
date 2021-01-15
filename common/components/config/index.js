@@ -22,7 +22,7 @@ class Config extends React.Component {
     this.ref = React.createRef();
 
     this.state = {
-      showMax:  20,
+      showMax:  30,
       customTools,
       changed:   false,
       alertText: "",

@@ -22,6 +22,10 @@ export default class NumericInput extends React.Component {
     }
   }
 
+  getErrorMsg() {
+    return this.state.errMsg;
+  }
+
   setErrorMsg(errMsg) {
     this.setState({ errMsg });
   }

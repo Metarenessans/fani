@@ -43,7 +43,10 @@
     &__footer
       margin: 1.9em auto 0
 
-      font-size: 1.3em
+      font-size: 1.6em
+
+      +sm
+        font-size: 1.3em
 
       > *
         min-width: 16em
@@ -61,12 +64,15 @@
     &__new
       background: white
       color: var( --primary-color )
+      border-color: var( --primary-color )
 
       &:hover,
       &:focus
         border-color: white
 
     &__save
+      border-color: white
+
       &:hover,
       &:focus
         background: white

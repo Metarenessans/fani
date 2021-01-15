@@ -26,7 +26,6 @@ import {
 
 import "../../../common/api/fetch";
 
-import $                   from "jquery"
 import params              from "../../../common/utils/params"
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
@@ -36,7 +35,6 @@ import fractionLength      from "../../../common/utils/fraction-length"
 import readyTools          from "../../../common/adr.json"
 import { Tools, template } from "../../../common/tools"
 
-import Info                  from "./components/Info/Info"
 import Header                from "./components/header"
 import CrossButton           from "../../../common/components/cross-button"
 import NumericInput          from "../../../common/components/numeric-input"
@@ -141,7 +139,7 @@ class App extends React.Component {
         static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR-9.20"},{"percentage":60,"selectedToolName":"BR-1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN-9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT-9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"}],"customTools":[],"current_date":"#"}`,
         data: {
           id: 20,
-          name: "Fresh KSD",
+          name: "Отсортированный",
         },
         error: false,
         id: 20
@@ -182,39 +180,11 @@ class App extends React.Component {
   }
   
   fetchTools() {
-    let loaded = 0;
     const requests = ["getFutures", "getTrademeterInfo"];
     for (let request of requests) {
       fetch(request)
         .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-        .then(tools => {
-          const sorted = Tools.sort( this.state.tools.concat(tools) );
-          loaded++;
-          if (false && loaded == 2) {
-            const adrJSON = require("../../../common/adr-new.json");
-            const total = sorted.length;
-            let covered = 0
-            let notCovered = [];
-            for (let tool of sorted) {
-              if (adrJSON.find(token => {
-                if (token.isFutures) {
-                  return tool.code.slice(0, 2) == token.code.slice(0, 2);
-                }
-                return tool.code == token.code;
-              })) {
-                covered++;
-              }
-              else {
-                notCovered.push(tool);
-              }
-            }
-
-            console.log(`Covered ${covered}/${total} (${round(covered/total, 4) * 100}%)`);
-            console.log(`Not covered: ${notCovered}`);
-          }
-
-          return sorted;
-        })
+        .then(tools => Tools.sort(this.state.tools.concat(tools)))
         .then(tools => this.setState({ tools }))
         .catch(error => this.showMessageDialog(`Не удалось получить инстурменты! ${error}`))
     }
@@ -592,8 +562,6 @@ class App extends React.Component {
                     if (sortProp != null && sortDESC != null) {
                       data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
                     }
-
-                    // console.log(data);
 
                     return (
                       this.state.tools.length > 0

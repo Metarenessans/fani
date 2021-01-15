@@ -1,12 +1,12 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
-
 import { Select } from 'antd/es'
 const { Option } = Select;
 
-import "./style.sass"
+import round from '../../utils/round';
 
-export default class CustomSelect extends React.Component {
+import "./style.sass";
+
+export default React.memo(class CustomSelect extends React.Component {
 
   constructor(props) {
     super(props);
@@ -56,37 +56,65 @@ export default class CustomSelect extends React.Component {
     this.setState({ options, index }, () => cb());
   }
 
-  onSelect(value, index) {
+  onSelect(value) {
     const { options } = this.state;
+    const { onChange } = this.props;
 
     // Option exists
     if (options.indexOf(value) != -1) {
       this.setState({ index: options.indexOf(value) });
-      if (this.props.onChange) {
-        this.props.onChange(value);
+      if (onChange) {
+        onChange(value);
       }
     }
     // Option doesn't exists
     else {
       this.addOption(value, () => {
-        if (this.props.onChange) {
-          this.props.onChange(value);
+        if (onChange) {
+          onChange(value);
         }
       });
     }
   }
 
-  limitValue(value) {
-    let { min, max } = this.props;
+  parseValue(value) {
+    if (!value) {
+      return;
+    }
+
+    let { min, max, allowFraction } = this.props;
     let { options } = this.state;
 
-    min = min || options[0];
-    max = max || Infinity;
+    min = min != null ? min : options[0];
+    max = max != null ? max : Infinity;
     
+    value = value
+      .replace(/\s+/g, "")
+      .replace(/\,/g, ".")
+      .replace(/^0+/g, "0");
+
+    if (
+      allowFraction &&
+      value.indexOf(".") < 0 &&
+      value.length > 1 &&
+      value[0] == "0"
+    ) {
+      var before = value.substring(0, 1);
+      var after = value.substring(1, value.length);
+      value = before + "." + after;
+    }
+
+    value = Number(value);
+
     // Get rid of fractional numbers
-    value = Math.floor(value);
-    value = Math.max(+min, value);
-    value = Math.min(+max, value);
+    if (allowFraction) {
+      value = round(value, allowFraction);
+    }
+    else {
+      value = Math.floor(value);
+    }
+    value = Math.max(min, value);
+    value = Math.min(max, value);
     return value;
   }
 
@@ -100,15 +128,12 @@ export default class CustomSelect extends React.Component {
         showSearch
         filterOption={false}
         style={{ width: "100%" }}
-        onSearch={e => {}}
         onBlur={e => {
-          var value = +this.inputValue;
-          if (!isNaN(value)) {
-            value = this.limitValue(value);
+          let value = this.parseValue(this.inputValue);
+          if (value != null && !isNaN(value)) {
             this.onSelect(value);
           }
 
-          // TODO: remove?
           this.inputElement = null;
         }}
         onChange={(index, element) => {
@@ -118,15 +143,14 @@ export default class CustomSelect extends React.Component {
           }
           
           var value = +(element.props.children + "").match(/\d+/)[0];
-
-          value = this.limitValue(value);
+          value = this.parseValue(value);
           this.onSelect(value, index);
         }}
         onInputKeyDown={e => {
           if (!this.inputElement) {
             this.inputElement = e.target;
-            this.inputElement.addEventListener("input", (event) => {
-              this.inputValue = event.target.value; 
+            this.inputElement.addEventListener("input", e => {
+              this.inputValue = e.target.value; 
             })
           }
 
@@ -135,16 +159,15 @@ export default class CustomSelect extends React.Component {
             e.stopPropagation();
 
             if (e.target.value) {
-  
-              var value = +e.target.value;
-              if (!isNaN(value)) {
-                value = this.limitValue(value);
+              let value = this.parseValue(e.target.value);
+              if (value != null && !isNaN(value)) {
                 this.onSelect(value);
               }
             }
 
           }
-        }}>
+        }}
+      >
         {
           options
             .map(option => this.format( option ))
@@ -155,4 +178,4 @@ export default class CustomSelect extends React.Component {
       </Select>
     )
   }
-}
+})

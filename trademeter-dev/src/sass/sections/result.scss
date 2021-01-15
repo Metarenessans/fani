@@ -4,7 +4,6 @@
     @return $val / 1.125;
   }
 
-  // Test
   max-width: 120em;
 
   $gap: 1%;
@@ -110,7 +109,91 @@
         }
 
         &__side {
-          [role="img"] {
+          display: flex;
+          align-items: center;
+
+          .ant-progress {
+            --size: 2em;
+            width:  var(--size);
+            height: var(--size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+
+            font-size: 0.75em;
+
+            stroke: rgb(243, 243, 243);
+
+            &-circle-path,
+            &-circle-trail {
+              stroke-width: 1em !important;
+            }
+
+            &-circle-path {
+              stroke: inherit !important;
+            }
+
+            &-circle-trail {
+              stroke: rgb(243, 243, 243) !important;
+            }
+
+            &-status-exception {
+              stroke: var(--danger-color);
+              .ant-progress-text {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+              }
+            }
+
+            &-status-success {
+              .ant-progress-text {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+              }
+            }
+
+            &-status-success,
+            &-status-normal {
+              stroke: var(--success-color);
+
+              .ant-progress-circle-trail {
+                stroke: inherit !important;
+              }
+            }
+
+            
+            &-status-normal {
+              .ant-progress-circle-trail {
+                stroke: var(--contrast-color) !important;
+              }
+
+              .ant-progress-text {
+                display: none;
+              }
+            }
+            
+            &.in-progress {
+              .ant-progress-circle-trail {
+                stroke: rgb(243, 243, 243) !important;
+              }
+            }
+
+            &-inner {
+              --size: 3.35em;
+              
+              overflow: visible !important;
+              width:     var(--size) !important;
+              height:    var(--size) !important;
+              font-size: 0.5em !important;
+
+              svg {
+                overflow: visible !important;
+              }
+            }
+
             margin-left: .75em;
 
             color: var(--success-color);
@@ -144,6 +227,11 @@
         margin: 0.5em 0;
         font-size: em(2.4em);
         letter-spacing: em(.4em);
+
+        @include sm {
+          margin-top: 0.4em;
+          font-size: 1.68889em;
+        }
       }
     }
 
@@ -161,7 +249,7 @@
     font-size: 15em;
 
     @include xs {
-      font-size: 20em;
+      font-size: 17em;
     }
 
     &.ant-progress-circle {
@@ -215,10 +303,11 @@
       flex-direction: column;
       align-items: center;
       width: 100%;
-      padding: .5em 1em;
+      padding: 3em 1em;
     }
-
+    
     @include xs {
+      padding: .5em 1em;
       width: 100%;
     }
 

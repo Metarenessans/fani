@@ -22,6 +22,10 @@ export default class NumericInput extends React.Component {
     }
   }
 
+  getErrorMsg() {
+    return this.state.errMsg;
+  }
+
   setErrorMsg(errMsg) {
     this.setState({ errMsg });
   }
@@ -56,7 +60,7 @@ export default class NumericInput extends React.Component {
     if (regexp.test(value)) {
       this.setState({ value });
       if (onChange) {
-        onChange(e, value);
+        onChange(e, value, this);
       }
     }
   }
@@ -154,7 +158,8 @@ export default class NumericInput extends React.Component {
         visible={errMsg.length > 0}
       >
         <Input
-          inputMode="tel"
+          // type="text"
+          // inputMode="numeric"
           placeholder={0}
           {...this.props}
           className={this.className.concat(errMsg.length ? " error" : "")}

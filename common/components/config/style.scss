@@ -26,7 +26,8 @@
     flex-basis: 32em;
     flex-grow: 1;
 
-    overflow-y: scroll;
+    // overflow-y: scroll;
+    overflow: auto;
 
     font-size: .75em;
 
@@ -35,7 +36,7 @@
     }
 
     @include xs {
-      flex-basis: initial;
+      flex-basis: 31em;
     }
 
     &.extended {
@@ -51,6 +52,7 @@
 
     border-bottom: none;
     box-shadow: inset 0 -.2em #eee;
+    border-bottom: none !important;
   }
   
   &-tr {

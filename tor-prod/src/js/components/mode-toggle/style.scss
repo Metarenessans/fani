@@ -1,0 +1,126 @@
+@import "../../../../../common/sass/mixins";
+
+.tabs {
+  position: relative;
+
+  width: 100%;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+
+  font-size: 1.75em !important;
+
+  @include sm() {
+    flex-direction: column;
+  }
+
+  @include xs() {
+    font-size: 2.25em;
+  }
+
+  &__centerline,
+  &::before,
+  &::after {
+    content: '';
+    display: block;
+    width:    5em;
+    height: .05em;
+    background: rgba(white, .1);
+    position: absolute;
+    top: 50%;
+    margin-top: .75em;
+    transform: translateY(-50%);
+  }
+
+  &::before,
+  &::after {
+    @include xs() {
+      display: none;
+    }
+  }
+
+  &__centerline {
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    @include sm() {
+      top: 4.5em;
+    }
+    
+    @include xs() {
+      top: 3.25em
+    }
+  }
+
+  &::before {
+    right: 100%;
+  }
+
+  &::after {
+    left: 100%;
+  }
+
+  &__label {
+    min-width: 13em;
+    margin: 0;
+
+    color: rgba(white, .4);
+    font-size: 1.85em;
+    letter-spacing: .03em;
+
+    transition: color .2s ease;
+
+    @include sm() {
+      margin-bottom: 2em;
+  
+      &:last-of-type {
+        margin-bottom: 0;
+      }
+    }
+
+    @include xs() {
+      font-size: 1.4em;
+    }
+    
+    &:hover,
+    &:focus {
+      color: rgba(white, .8);
+    }
+
+    span.ant-radio + * {
+      padding: 0;
+    }
+
+    &.ant-radio-wrapper {
+      &-checked {
+        color: #dcae1d;
+      }
+
+      &-disabled {
+        opacity: .3;
+      }
+    }
+
+    .prefix {
+      display: block;
+      margin-bottom: .1em;
+
+      color: rgba(white, .8);
+      font-size: 0.345em;
+      text-transform: uppercase;
+
+      @include xs() {
+        font-size: .5em
+      }
+    }
+
+    // Hide input
+    .ant-radio {
+      @include visually-hidden();
+
+      &-disabled + span {
+        color: rgba(white, .4);
+      }
+    }
+  }
+}

@@ -168,7 +168,17 @@ export default class Data extends Array {
               .reduce((acc, curr) => acc + curr, 0);
           }
           return Math.round(this.depoStart * (this.rate != null ? this.rate : 0) / 100)
+        },
+
+        get isChanged() {
+          for (let prop of ["rate", "income", "payment", "payload"]) {
+            if (this[prop] != null) {
+              return true;
+            }
+          }
+          return false;
         }
+
       };
 
     }

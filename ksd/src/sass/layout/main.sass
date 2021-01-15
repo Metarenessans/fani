@@ -156,29 +156,25 @@
       background: var(--danger-color)
       min-width: 6em
       
-      font-size: 1.6em
+      font-size: 1.2em
 
       +sm
         margin-left: .75em
-        width: 3.5em
       
       +xs
         margin-left: auto
+        font-size: 1.475em
       
       &-wrapper
         display: flex
         justify-content: flex-end
-        padding-right: 4.5em
+        padding-right: 2.5em
+
+        +sm
+          padding-right: 0
 
       &.ant-switch-checked
         background: var(--accent-color)
-
-      .ant-switch
-        &-inner
-          // padding-top: .1em
-
-          // font-size: .5em
-          // line-height: 1em
 
   &-save
     font-size: 1.5em

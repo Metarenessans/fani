@@ -42,11 +42,13 @@ export default class DashboardRow extends React.Component {
   getPlanIncome() {
     const { mode, item, index } = this.props;
     const currentTool = this.getCurrentTool();
+    const realSelectedToolName = currentTool.getSortProperty();
+    
     var planIncome;
 
     if (mode == 0) {
       // В приоритете введенное значение, если его нет - откатываемся к дефолтному
-      planIncome = item.planIncome != null ? item.planIncome : currentTool.adrDay;
+      planIncome = item.planIncome != null && item.realSelectedToolName == realSelectedToolName ? item.planIncome : currentTool.adrDay;
     }
     else {
       var m;
@@ -196,18 +198,18 @@ export default class DashboardRow extends React.Component {
       updatedOnce: item.updatedOnce,
     };
 
-    if (!
-      (
-        currentTool.getSortProperty() == selectedToolName ||
-        currentTool.code              == selectedToolName
-      )
-    ) {
-      delete itemUpdated.planIncome;
+    // console.log(item.realSelectedToolName, realSelectedToolName);
+    if (item.realSelectedToolName != realSelectedToolName) {
+      // console.log(item, itemUpdated);
+      // delete itemUpdated.planIncome;
+      // itemUpdated.updatedOnce = false;
+      // console.log("!");
     }
     
     if (!isEqual(itemUpdated, item)) {
       // console.log(item, itemUpdated);
-      onUpdate(itemUpdated);
+      onUpdate(itemUpdated)
+      // setTimeout(() => onUpdate(itemUpdated), 50);
     }
 
     return (
@@ -270,7 +272,8 @@ export default class DashboardRow extends React.Component {
               className="dashboard__select"
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
               formatOption={val => val + "%"}
-              min={1}
+              allowFraction={2}
+              min={0.01}
               max={100}
               value={percentage}
               onChange={val => onChange("percentage", val)}
@@ -290,11 +293,12 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val">
             {(() => {
               const fraction = fractionLength(currentTool.priceStep);
+              
               let timeout;
               if (!tooltipText) {
-                this.setState({
-                  tooltipText: `${(planIncome).toFixed(fraction)} = ${round(planIncome / currentTool.priceStep, 2)} п`
-                })
+                const planIncomeReal = +(planIncome).toFixed(fraction);
+                const steps = round(planIncomeReal / currentTool.priceStep, 2);
+                this.setState({ tooltipText: `${planIncomeReal} = ${steps} п` });
               }
 
               return mode == 0
@@ -307,8 +311,15 @@ export default class DashboardRow extends React.Component {
                       key={Math.random()}
                       className="dashboard__input"
                       defaultValue={planIncome}
-                      format={val => formatNumber((val).toFixed(fraction))}
-                      onBlur={val => onChange("planIncome", val)}
+                      format={value => {
+                        value = Number(value);
+                        return formatNumber(value.toFixed(fraction))
+                      }}
+                      min={0}
+                      onBlur={value => {
+                        value = Number(value);
+                        onChange("planIncome", value);
+                      }}
                       onChange={(e, value = "") => {
                         value = Number(value);
                         const tooltipText = `${+(value).toFixed(fraction)} = ${round((value) / currentTool.priceStep, 2)} п`;

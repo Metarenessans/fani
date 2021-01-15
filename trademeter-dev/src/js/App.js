@@ -554,9 +554,9 @@ class App extends Component {
           ci:  item.income,
           pmt: item.payment,
           pld: item.payload,
+          c:   item.changed,
           i:   item.iterations.length,
           il:  item.iterations,
-          c:   item.changed,
           pi: (() => {
             let val = data[index].depoEnd;
             let tool = passiveIncomeTools[currentPassiveIncomeToolIndex];
@@ -627,7 +627,7 @@ class App extends Component {
       staticParsed = JSON.parse(save.static);
       dynamicParsed = JSON.parse(save.dynamic);
 
-      if (dev) {
+      if (true || dev) {
         console.log("staticParsed", staticParsed);
         console.log("dynamicParsed", dynamicParsed);
       }
@@ -849,15 +849,41 @@ class App extends Component {
           const { iterations } = data[d - 1];
           
           if (iterations.length > 1) {
-            data[d - 1].iterations = data[d - 1].iterations.map(it => new Iteration(it.percent));
+            data[d - 1].iterations = data[d - 1].iterations.map(it => new Iteration(
+              it.percent, it.startTime, it.endTime
+            ));
             data[d - 1].scale = iterations.calculatedRate;
           }
           else {
-            data[d - 1].iterations = [];
+            let its = [new Iteration()];
+
+            let startTime;
+            let endTime;
+            if (iterations[0]) {
+              startTime = iterations[0].startTime;
+              endTime   = iterations[0].endTime;
+            }
 
             if (data[d - 1].scale != null) {
-              data[d - 1].iterations = [ new Iteration(data[d - 1].scale) ];
+              its = [ new Iteration(data[d - 1].scale) ]; 
             }
+            else {
+              if (d == 6) {
+                console.log('!');
+              }
+
+              const it = new Iteration(iterations[0]?.percent);
+              if (income != null) {
+                it.rate   = null;
+                it.income = income;
+              }
+              its = [it]; 
+            }
+
+            its[0].startTime = startTime;
+            its[0].endTime = endTime;
+
+            data[d - 1].iterations = its;
           }
 
         }
@@ -869,6 +895,7 @@ class App extends Component {
         data[d - 1].directUnloading = fallbackProp(item, ["directUnloading", "du"]);
       }
 
+      console.log(data.slice(0, 10));
       this.setState({ data, daysInOrder: data.hasNoGaps }, () => resolve());
     })
   }
@@ -2728,15 +2755,6 @@ class App extends Component {
                   const lastFilledDay = data.lastFilledDay?.day || 0;
                   const planIncome = data[currentDay - 1].goal;
 
-                  const isChanged = dayItem => {
-                    for (let prop of ["rate", "income", "payment", "payload"]) {
-                      if (dayItem[prop] != null) {
-                        return true;
-                      }
-                    }
-                    return false;
-                  };
-
                   const onBlur = (prop, val) => {
                     if (val === "") {
                       val = undefined;
@@ -2758,7 +2776,7 @@ class App extends Component {
                     data[currentDay - 1][prop] = val;
                     
                     // Если заполнен хотя бы один инпут, то считаем, что день изменен 
-                    const changed = isChanged(data[currentDay - 1]);
+                    const changed = data[currentDay - 1].isChanged;
                     data[currentDay - 1].changed = !val ? changed : true;
 
                     // console.log(data[currentDay - 1]);
@@ -2971,7 +2989,7 @@ class App extends Component {
                         </Button>
 
                         <button
-                          disabled={this.state.days[this.state.mode] - currentDay < 5}
+                          disabled={dataLength - currentDay < 5}
                           data-type="link"
                           onClick={() => this.setCurrentDay(currentDay + 5)}>
                           Следующая неделя
@@ -2991,10 +3009,6 @@ class App extends Component {
                           <div className="result-col__content">
                             {(() => {
                               const onChange = (iterations = []) => {
-                                // if (iterations.length <= 1) {
-                                //   iterations = iterations.filter(it => it.percent != null);
-                                // }
-
                                 const filteredIterations = iterations.filter(it => it.percent != null);
 
                                 const { depoStart } = data[currentDay - 1];
@@ -3015,7 +3029,7 @@ class App extends Component {
                                 data[currentDay - 1].income = income;
                                 data[currentDay - 1].iterations = iterations;
 
-                                data[currentDay - 1].changed = isChanged(data[currentDay - 1]);
+                                data[currentDay - 1].changed = data[currentDay - 1].isChanged;
 
                                 this.setStateAsync({ data })
                                   .then(() => this.updateData())
@@ -3023,15 +3037,19 @@ class App extends Component {
                               };
 
                               let { iterations, calculatedRate } = data[currentDay - 1];
-                              if (iterations.length == 0) {
-                                iterations = [new Iteration(calculatedRate || 0)];
+                              if (currentDay == 6) {
+                                console.log(iterations);
+                              }
+                              let iterationsToRender = iterations.map(it => it.copy());
+                              if (iterationsToRender.length == 0) {
+                                iterationsToRender = [new Iteration(calculatedRate)];
                               }
 
                               return (
                                 <div className="iterations">
                                   <ol className="iterations-list">
                                     {
-                                      iterations && iterations
+                                      iterationsToRender && iterationsToRender
                                         .map((listItem, index) =>
                                           <li key={index} className="iterations-list-item">
                                             <span className="iterations-list-item__number">
@@ -3043,10 +3061,7 @@ class App extends Component {
                                               key={Math.random()}
                                               defaultValue={
                                                 data[currentDay - 1].changed
-                                                  ?
-                                                  listItem.rate != null
-                                                    ? listItem.getIncome(data[currentDay - 1].depoStart)
-                                                    : ""
+                                                  ? listItem.getIncome(data[currentDay - 1].depoStart)
                                                   : ""
                                               }
                                               placeholder={placeholder}
@@ -3062,6 +3077,7 @@ class App extends Component {
                                                   percent = val / data[currentDay - 1].depoStartTest * 100;
                                                 }
 
+                                                iterations[index].income  = null;
                                                 iterations[index].percent = percent;
                                                 onChange(iterations);
                                               }}
@@ -3085,10 +3101,21 @@ class App extends Component {
 
                                             <Popover
                                               content={
-                                                <TimeRangePicker 
-                                                  onChange={elapsed => {
-                                                    console.log(elapsed);
-                                                    iterations[index].time = elapsed;
+                                                <TimeRangePicker
+                                                  startTime={listItem.startTime}
+                                                  endTime={listItem.endTime}
+                                                  onChange={(startTime, endTime) => {
+                                                    if (!iterations[index]) {
+                                                      iterations[index] = new Iteration();
+                                                    }
+
+                                                    if (!isNaN(startTime)) {
+                                                      iterations[index].startTime = startTime;
+                                                    }
+                                                    if (!isNaN(endTime)) {
+                                                      iterations[index].endTime = endTime;
+                                                    }
+
                                                     data[currentDay - 1].iterations = iterations;
                                                     this.setState({ data });
                                                   }}
@@ -3101,25 +3128,28 @@ class App extends Component {
                                               <div className="iterations-list-item__clock">
 
                                                 {(() => {
-                                                  let showIcon = true;
-                                                  let start = 0;
-                                                  let end   = 0;
-                                                  if (listItem.time != null) {
-                                                    showIcon = false;
-                                                    const date = new Date(listItem.time);
-                                                    start = date.getUTCHours();
-                                                    end   = date.getUTCMinutes();
+                                                  let h = 0;
+                                                  let m = 0;
+                                                  let text = "";
+
+                                                  let { period } = listItem;
+                                                  if (!isNaN(period) && period != 0) {
+                                                    const date = new Date(period);
+                                                    m = date.getUTCMinutes();
+                                                    text += `${m}м`;
+
+                                                    h = date.getUTCHours();
+                                                    if (h != 0) {
+                                                      text = `${h}ч ` + text;
+                                                    }
                                                   }
+
                                                   return (
                                                     <>
-                                                      <span 
-                                                        className="iterations-list-item__clock-time"
-                                                        hidden={listItem.time == null}
-                                                      >
-                                                        {`${start}ч ${end}м`}
-                                                      </span>
-
-                                                      {showIcon && <ClockCircleFilled />}
+                                                      {text == ""
+                                                        ? <ClockCircleFilled/>
+                                                        : <span className="iterations-list-item__clock-time">{text}</span>
+                                                      }
                                                     </>
                                                   )
                                                 })()}
@@ -3144,6 +3174,13 @@ class App extends Component {
                                   <button
                                     className="iterations-button"
                                     onClick={() => {
+                                      if (iterations.length == 0) {
+                                        iterations = [new Iteration(
+                                          data[currentDay - 1].isChanged
+                                            ? calculatedRate
+                                            : null
+                                        )];
+                                      }
                                       iterations.push(new Iteration());
                                       onChange(iterations);
 
@@ -3267,10 +3304,39 @@ class App extends Component {
                                 )
                               })()}
 
-                              <div className="result-col-additional-row__side">
-                                {formatNumber(this.getPayment(currentDay))}
-                                <CheckCircleFilled />
-                              </div>
+                              {(() => {
+                                const { payment, paymentPlan } = data[currentDay - 1];
+                                const progress = payment / paymentPlan * 100;
+                                return (
+                                  <div className="result-col-additional-row__side">
+                                    {formatNumber(paymentPlan)}
+                                    <Progress
+                                      className={
+                                        ["result-col-additional-row__circle-progress"]
+                                          .concat(
+                                            progress > 0 && progress < 100
+                                              ? "in-progress"
+                                              : ""
+                                          )
+                                          .join(" ")
+                                          .trim()
+                                      }
+                                      type="circle"
+                                      percent={progress}
+                                      status={
+                                        progress == 100
+                                          ? "success"
+                                          : paymentPlan == 0
+                                              ? (payment == null || payment == 0)
+                                                ? "success"
+                                                : "exception"
+                                              : "normal"
+                                      }
+                                    />
+                                  </div>
+                                )
+                              })()}
+
                             </div>
 
                             <div className="result-col-additional-row">
@@ -3313,10 +3379,38 @@ class App extends Component {
                                 )
                               })()}
 
-                              <div className="result-col-additional-row__side">
-                                {formatNumber(this.getPayload(currentDay))}
-                                <CheckCircleFilled />
-                              </div>
+                              {(() => {
+                                const { payload, payloadPlan } = data[currentDay - 1];
+                                const progress = payload / payloadPlan * 100;
+                                return (
+                                  <div className="result-col-additional-row__side">
+                                    {formatNumber(payloadPlan)}
+                                    <Progress
+                                      className={
+                                        ["result-col-additional-row__circle-progress"]
+                                          .concat(
+                                            progress > 0 && progress < 100
+                                              ? "in-progress"
+                                              : ""
+                                          )
+                                          .join(" ")
+                                          .trim()
+                                      }
+                                      type="circle"
+                                      percent={progress}
+                                      status={
+                                        progress == 100
+                                          ? "success"
+                                          : payloadPlan == 0
+                                              ? (payload == null || payload == 0)
+                                                ? "success"
+                                                : "exception"
+                                              : "normal"
+                                      }
+                                    />
+                                  </div>
+                                )
+                              })()}
                             </div>
 
                             <div className="result-col-additional-row">

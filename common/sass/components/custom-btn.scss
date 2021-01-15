@@ -6,7 +6,7 @@
   padding: .7em 2.5em;
   padding-top: .9em;
   border-radius: 2em;
-  border: var(--outline-width) solid currentColor;
+  border: var(--outline-width) solid var(--primary-color);
 
   font-family: inherit;
   color: var(--primary-color);
@@ -16,7 +16,7 @@
   text-transform: uppercase;
 
   &:focus {
-    border: var(--focus-outline-width) solid currentColor;
+    border: var(--focus-outline-width) solid var(--primary-color);
     background: none;
     box-shadow: none;
 
