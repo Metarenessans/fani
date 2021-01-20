@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import ReactDOM from 'react-dom'
 import { Button } from 'antd/es'
 
@@ -131,7 +131,7 @@ dialogAPI.close = dialogID => {
 }
 
 // TODO: accessible close button that is visible only when focused
-class Dialog extends React.Component {
+const Dialog = memo(class extends React.Component {
 
   constructor(props) {
     super(props);
@@ -202,14 +202,16 @@ class Dialog extends React.Component {
       confirmText,
       confirmClass,
       hideConfirm,
-      
+
       cancelText,
       cancelClass,
       hideCancel,
 
       pure
     } = this.props;
-    
+
+    // console.log('rendering Dialog', id);
+
     className = className || "";
     const block = "dialog";
 
@@ -242,7 +244,7 @@ class Dialog extends React.Component {
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${block}__inner card`}>
           <Stack className={className}>
-            {!pure 
+            {!pure
               ? <h2 className={`${block}__title`}>{title}</h2>
               : null
             }
@@ -252,7 +254,7 @@ class Dialog extends React.Component {
             </div>
 
             {!pure && (
-              footer 
+              footer
                 ? footer
                 : !hideFooter && (
                   <div className={`${block}-footer-wrap`}>
@@ -278,12 +280,12 @@ class Dialog extends React.Component {
                     </footer>
                   </div>
                 )
-              )}
+            )}
 
           </Stack>
           {!pure
             ?
-            <CrossButton 
+            <CrossButton
               className={`${block}__close`}
               onClick={e => this.onClose()}
             />
@@ -294,8 +296,6 @@ class Dialog extends React.Component {
       </div>
     )
   }
-}
-
-Dialog = React.memo(Dialog);
+});
 
 export { Dialog, dialogAPI };

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { Select } from 'antd/es'
 const { Option } = Select;
 
@@ -6,7 +6,7 @@ import round from '../../utils/round';
 
 import "./style.sass";
 
-export default React.memo(class CustomSelect extends React.Component {
+export default memo(class CustomSelect extends React.Component {
 
   constructor(props) {
     super(props);
@@ -34,6 +34,13 @@ export default React.memo(class CustomSelect extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    const { value } = this.props;
+    if (value != prevProps.value) {
+      this.onSelect(this.parseValue(value));
+    }
+  }
+
   nextIndexOf(value) {
     const { options } = this.state;
 
@@ -56,22 +63,21 @@ export default React.memo(class CustomSelect extends React.Component {
     this.setState({ options, index }, () => cb());
   }
 
-  onSelect(value) {
+  onSelect(value, callback) {
     const { options } = this.state;
-    const { onChange } = this.props;
 
     // Option exists
     if (options.indexOf(value) != -1) {
       this.setState({ index: options.indexOf(value) });
-      if (onChange) {
-        onChange(value);
+      if (callback) {
+        callback(value);
       }
     }
     // Option doesn't exists
     else {
       this.addOption(value, () => {
-        if (onChange) {
-          onChange(value);
+        if (callback) {
+          callback(value);
         }
       });
     }
@@ -88,7 +94,7 @@ export default React.memo(class CustomSelect extends React.Component {
     min = min != null ? min : options[0];
     max = max != null ? max : Infinity;
     
-    value = value
+    value = String(value)
       .replace(/\s+/g, "")
       .replace(/\,/g, ".")
       .replace(/^0+/g, "0");
@@ -121,6 +127,10 @@ export default React.memo(class CustomSelect extends React.Component {
   render() {
     const { options, index } = this.state;
 
+    if (this.props.name == "Частота") {
+      console.log('rendering Частота CustomSelect');
+    }
+
     return (
       <Select
         { ...this.props }
@@ -131,7 +141,7 @@ export default React.memo(class CustomSelect extends React.Component {
         onBlur={e => {
           let value = this.parseValue(this.inputValue);
           if (value != null && !isNaN(value)) {
-            this.onSelect(value);
+            this.onSelect(value, this.props.onChange);
           }
 
           this.inputElement = null;
@@ -144,7 +154,7 @@ export default React.memo(class CustomSelect extends React.Component {
           
           var value = +(element.props.children + "").match(/\d+/)[0];
           value = this.parseValue(value);
-          this.onSelect(value, index);
+          this.onSelect(value, this.props.onChange);
         }}
         onInputKeyDown={e => {
           if (!this.inputElement) {
@@ -161,7 +171,7 @@ export default React.memo(class CustomSelect extends React.Component {
             if (e.target.value) {
               let value = this.parseValue(e.target.value);
               if (value != null && !isNaN(value)) {
-                this.onSelect(value);
+                this.onSelect(value, this.props.onChange);
               }
             }
 
@@ -178,4 +188,6 @@ export default React.memo(class CustomSelect extends React.Component {
       </Select>
     )
   }
+}, (prevProps, nextProps) => {
+  return prevProps.value == nextProps.value && prevProps.disabled == nextProps.disabled
 })

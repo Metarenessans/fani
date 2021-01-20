@@ -1,8 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-
+import React, { memo } from 'react'
 import * as antv from '@antv/g2';
 
+import { isEqual } from "lodash"
 import round from "../../utils/round"
 
 import "./style.sass"
@@ -45,7 +44,7 @@ function draw(data) {
   chart.changeData(data);
 }
 
-export default class Speedometer extends React.Component {
+export default memo(class Speedometer extends React.Component {
   
   constructor(props) {
     super(props);
@@ -311,4 +310,4 @@ export default class Speedometer extends React.Component {
       </figure>
     )
   }
-}
+}, (prevProps, nextProps) => prevProps.value == nextProps.value && isEqual(prevProps.tool, nextProps.tool))

@@ -1,6 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import React, { memo } from 'react'
 import { Button, Input, Tooltip } from 'antd/es'
+
+import { isEqual } from 'lodash'
 
 import croppString  from "../../utils/cropp-string"
 
@@ -272,4 +273,7 @@ class Config extends React.Component {
   }
 }
 
-export default React.memo(Config);
+export default memo(Config, (prevProps, nextProps) => {
+  return isEqual(prevProps.tools, nextProps.tools) &&
+         isEqual(prevProps.customTools, nextProps.customTools)
+});

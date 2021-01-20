@@ -181,6 +181,14 @@
               }
             }
 
+            &.done {
+              .ant-progress-text {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+              }
+            }
+
             &-inner {
               --size: 3.35em;
               

@@ -785,14 +785,14 @@ class App extends React.Component {
                           <div className="main-content-stats__row">
                             <span>Точка входа</span>
                             <span className="main-content-stats__val">
-                              {formatNumber(round(isLong ? priceRange[0] : priceRange[1], fraction))}
+                              {formatNumber(round((isLong ? priceRange[0] : priceRange[1]) || 0, fraction))}
                             </span>
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Точка выхода</span>
                             <span className="main-content-stats__val">
-                              {formatNumber(round(isLong ? priceRange[1] : priceRange[0], fraction))}
+                              {formatNumber(round((isLong ? priceRange[1] : priceRange[0]) || 0, fraction))}
                             </span>
                           </div>
 

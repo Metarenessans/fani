@@ -2,6 +2,17 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { Input, Tooltip } from 'antd/es'
 
+function iOS() {
+  return [
+    'iPad Simulator',
+    'iPhone Simulator',
+    'iPod Simulator',
+    'iPad',
+    'iPhone',
+    'iPod'
+  ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+}
+
 export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
@@ -135,7 +146,7 @@ export default class NumericInput extends React.Component {
 
     this.setState({ value: this.format(val) });
     if (this.props.onBlur) {
-      this.props.onBlur(val);
+      this.props.onBlur(val, value);
     }
   }
 
@@ -159,7 +170,7 @@ export default class NumericInput extends React.Component {
       >
         <Input
           type="text"
-          inputMode="decimal"
+          inputMode={iOS() ? 'text' : 'decimal'}
           placeholder={0}
           {...this.props}
           className={this.className.concat(errMsg.length ? " error" : "")}

@@ -23,9 +23,98 @@ import NumericInput from '../../../../../common/components/numeric-input'
 import CustomSlider from '../../../../../common/components/custom-slider'
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
+import round        from '../../../../../common/utils/round'
 import formatNumber from '../../../../../common/utils/format-number'
 
 import "./style.scss"
+
+const SGTable = ({ data, closeMode = true }) => {
+  return (
+    <div className="settings-generator-table">
+      <div className="settings-generator-table">
+        {data.map((row, index) =>
+          <table className="settings-generator-table__row">
+            <tr className="settings-generator-table__row-header">
+              <th>№</th>
+              <th>% {closeMode ? 'закрытия' : 'докупки'}</th>
+              <th>
+                Ход в<br />
+                пунктах
+              </th>
+              <th>Кол-во {closeMode ? 'закрытых' : 'докупленных'} контрактов</th>
+              <th>
+                Контрактов<br />
+                в работе
+              </th>
+              <th>
+                Накопленная прибыль<br />
+                без комиссии
+              </th>
+              <th>
+                Величина<br />
+                комиссии
+              </th>
+              <th>
+                Накопленная прибыль<br />
+                с учетом комиссии
+              </th>
+            </tr>
+            <tr>
+              <td 
+                data-label="№"
+                data-label-xs="№"
+              >
+                {index + 1}
+              </td>
+              <td 
+                data-label="% закрытия"
+                data-label-xs="% закр."
+              >
+                {formatNumber(row.percent)}
+              </td>
+              <td 
+                data-label="Ход в пунктах"
+                data-label-xs="Ход в пунктах"
+              >
+                {formatNumber(row.points)}
+              </td>
+              <td 
+                data-label="Закрытых контрактов"
+                data-label-xs="Закр. контр."
+              >
+                {formatNumber(Math.floor(row.contracts))}
+              </td>
+              <td 
+                data-label="Контрактов в работе"
+                data-label-xs="Контр. в раб."
+              >
+                {formatNumber(Math.floor(row.contractsLoaded))}
+              </td>
+              <td 
+                data-label="Прибыль без комиссии"
+                data-label-xs="Приб. без комиссии"
+              >
+                {formatNumber(round(row.incomeWithoutComission, 1))}
+              </td>
+              <td 
+                data-label="Величина комиссии"
+                data-label-xs="Комиссия"
+              >
+                {formatNumber(round(row.comission, 1))}
+              </td>
+              <td 
+                data-label="Накопленная прибыль с учетом комиссии"
+                data-label-xs="Приб. с уч. комисии"
+              >
+                {formatNumber(round(row.incomeWithComission, 1))}
+              </td>
+            </tr>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+};
 
 const SettingsGenerator = props => {
 
@@ -43,28 +132,21 @@ const SettingsGenerator = props => {
       : 0
   );
 
-  // componentDidMount
-  useEffect(() => {
-    createTabs();
-  }, []);
-
-  useEffect(() => {
-
-    setDepo(Math.floor(investorDepo * .25));
-    setSecondaryDepo(Math.floor(investorDepo * .75));
-
-  }, [investorDepo])
-
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
-  const tools = props.tools || [ Tools.create() ];
+  const tools = props.tools.length ? props.tools : [ Tools.create() ];
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
 
-  // Add popup
+  const [presets, setPresets] = useState([
+    { name: "Стандарт",  type: "Стандарт" },
+    { name: "СМС + ТОР", type: "СМС + ТОР" },
+    { name: "Лимитник",  type: "Лимитник" }
+  ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
   const [currentPresetName, setCurrentPresetName] = useState("Стандарт");
+  const currentPreset = presets.find(preset => preset.name == currentPresetName);
 
   // Flags
   const [mirrorOn, setMirrorOn] = useState(false);
@@ -72,12 +154,6 @@ const SettingsGenerator = props => {
   const [menuVisible, setMenuVisible] = useState(false);
 
   const depoAvailable = investorDepo * (load / 100);
-
-  const [presets, setPresets] = useState([
-    { name: "Стандарт" },
-    { name: "СМС + ТОР" },
-    { name: "Лимитник" }
-  ]);
 
   const hasExtraDepo = (depo < depoAvailable);
 
@@ -140,6 +216,86 @@ const SettingsGenerator = props => {
     return value;
     
   };
+
+  let contractsTotal = 0;
+  if (currentTool) {
+    contractsTotal = Math.floor(investorDepo / currentTool.guarantee);
+  }
+
+  let contracts = 0;
+  if (currentTool) {
+    contracts = Math.floor(depoAvailable / currentTool.guarantee);
+  }
+
+  const presetRules = {
+    blockStartIndicies: [0, 4, 8],
+    blockLengths: [4, 4, 16],
+    percents: [9.5, 9.5, 1.5],
+    multipliers: [
+      [2, 3, 5, 8],
+      [13, 15, 18, 20],
+      new Array((100 - 20) / 5 + 1).fill(0).map((v, i) => 20 + (5 * i))
+    ]
+  };
+
+
+  let contractsLeft = contracts;
+  let data = new Array(24).fill(0).map((value, index) => {
+
+    let blockNumber = 1;
+    for (let i = 0; i < presetRules.blockStartIndicies.length; i++) {
+      if (index >= presetRules.blockStartIndicies[i]) {
+        blockNumber = i + 1;
+      }
+    }
+
+
+    const blockLen = presetRules.blockLengths[blockNumber - 1];
+
+    let indexInBlock = ((index + 1) - presetRules.blockStartIndicies[blockNumber - 1]) % blockLen;
+    if (indexInBlock == 0) {
+      indexInBlock = blockLen;
+    }
+
+    let percent = presetRules.percents[blockNumber - 1];
+
+    let points = currentTool.adrDay / currentTool.priceStep;
+    const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
+    const multiplier = blockPointsMultipliers[indexInBlock - 1];
+    points = Math.floor(points * multiplier / 100);
+
+    let _contracts = contracts * percent / 100;
+
+    contractsLeft -= _contracts;
+    let contractsLoaded = contractsLeft;
+    
+    let _comission = _contracts * comission;
+    
+    let incomeWithoutComission = contracts * currentTool.stepPrice * points;
+    let incomeWithComission = incomeWithoutComission - _comission;
+
+    return {
+      percent,
+      points,
+      contracts: _contracts,
+      contractsLoaded,
+      incomeWithoutComission,
+      comission: _comission,
+      incomeWithComission,
+    };
+  });
+
+  // componentDidMount
+  useEffect(() => {
+    createTabs();
+  }, []);
+
+  useEffect(() => {
+
+    setDepo(Math.floor(investorDepo * .25));
+    setSecondaryDepo(Math.floor(investorDepo * .75));
+
+  }, [investorDepo]);
 
   return (
     <>
@@ -248,6 +404,7 @@ const SettingsGenerator = props => {
                   key={Math.random()}
                   className="settings-generator-content-header__title"
                   contentEditable
+                  suppressContentEditableWarning={true}
                   onKeyDown={e => {
                     const key = e.key.toLowerCase();
                     if (key == "enter" || key == "escape") {
@@ -382,24 +539,15 @@ const SettingsGenerator = props => {
                     )
                   };
 
-                  let contractsTotal = 0;
-                  if (currentTool) {
-                    contractsTotal = Math.floor( investorDepo / currentTool.guarantee );
+                  if (depo < depoAvailable) {
+                    contracts = contracts + " " + `
+                      (
+                      ${Math.floor(depo / currentTool.guarantee)}
+                      /
+                      ${Math.floor((depoAvailable - depo) / currentTool.guarantee)}
+                      )
+                    `.replace(/\s+/g, "");
                   }
-
-                  let contracts = 0;
-                  if (currentTool) {
-                    contracts = Math.floor( depoAvailable / currentTool.guarantee );
-                    if (depo < depoAvailable) {
-                      contracts = contracts + " " + `
-                        (
-                        ${Math.floor( depo / currentTool.guarantee )}
-                        /
-                        ${Math.floor( (depoAvailable - depo) / currentTool.guarantee )}
-                        )
-                      `.replace(/\s+/g, "");
-                    }
-                   }
 
                   return (
                     <>
@@ -634,7 +782,7 @@ const SettingsGenerator = props => {
                 checked={mirrorOn} 
                 onChange={val => setMirrorOn(val)}
               />
-              <span className="switch-group__label">Зеркальные докупки</span>
+              <span className="switch-group__label">Прямые профитные докупки</span>
             </label>
 
             <div
@@ -710,7 +858,7 @@ const SettingsGenerator = props => {
                 checked={reversedOn} 
                 onChange={val => setReversedOn(val)}
               />
-              <span className="switch-group__label">Обратные докупки</span>
+              <span className="switch-group__label">Обратные профитные докупки</span>
             </label>
 
             <div 
@@ -845,97 +993,8 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab1"
                    aria-labelledby="settings-generator-tab1-control">
                 
-                <div className="settings-generator-table">
-                  {[1, 2, 3].map((value, index) =>
-                    <table className="settings-generator-table__row">
-                      <tr className="settings-generator-table__row-header">
-                        <th>№</th>
-                        <th>
-                          % закрытия/<br />
-                          докупки
-                        </th>
-                        <th>
-                          Ход в<br />
-                          пунктах
-                        </th>
-                        <th>
-                          Кол-во закрытых/<br />
-                          докупленных контрактов
-                        </th>
-                        <th>
-                          Контрактов<br />
-                          в работе
-                        </th>
-                        <th>
-                          Накопленная прибыль<br />
-                          без комиссии
-                        </th>
-                        <th>
-                          Величина<br />
-                          комиссии
-                        </th>
-                        <th>
-                          Накопленная прибыль<br />
-                          с учетом комиссии
-                        </th>
-                      </tr>
-                      <tr>
-                        <td 
-                          data-label="№"
-                          data-label-xs="№"
-                        >
-                          {index + 1}
-                        </td>
-                        <td 
-                          data-label="% закрытия/докупки"
-                          data-label-xs="% закр./докупки"
-                        >
-                          4.9
-                        </td>
-                        <td 
-                          data-label="Ход в пунктах"
-                          data-label-xs="Ход в пунктах"
-                        >
-                          15
-                        </td>
-                        <td 
-                          data-label="Закрытых/докупленных контрактов"
-                          data-label-xs="Закр./докупл. контр."
-                        >
-                          225
-                        </td>
-                        <td 
-                          data-label="Контрактов в работе"
-                          data-label-xs="Контр. в раб."
-                        >
-                          102
-                        </td>
-                        <td 
-                          data-label="Прибыль без комиссии"
-                          data-label-xs="Приб. без комиссии"
-                        >
-                          1 029 471
-                        </td>
-                        <td 
-                          data-label="Величина комиссии"
-                          data-label-xs="Комиссия"
-                        >
-                          6%
-                        </td>
-                        <td 
-                          data-label="Накопленная прибыль с учетом комиссии"
-                          data-label-xs="Приб. с уч. комисии"
-                        >
-                          967 702
-                        </td>
-                      </tr>
-                      {/* table-row-header */}
-                    </table>
-                  )}
-
-                </div>
-                {/* table */}
-
+                <SGTable data={data} />
+                
               </div>
               {/* tabpanel */}
 
@@ -944,9 +1003,9 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab2"
                    aria-labelledby="settings-generator-tab2-control"
                    hidden>
-                <p>
-                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
-                </p>
+
+                <SGTable data={data} />
+
               </div>
               {/* tabpanel */}
 
@@ -955,9 +1014,9 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab3"
                    aria-labelledby="settings-generator-tab3-control"
                    hidden>
-                <p>
-                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
-                </p>
+                
+                <SGTable data={data} closeMode={false} />
+
               </div>
               {/* tabpanel */}
 
@@ -966,9 +1025,9 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab4"
                    aria-labelledby="settings-generator-tab4-control"
                    hidden>
-                <p>
-                  Nils Frahm is a German musician, composer and record producer based in Berlin. He is known for combining classical and electronic music and for an unconventional approach to the piano in which he mixes a grand piano, upright piano, Roland Juno-60, Rhodes piano, drum machine, and Moog Taurus.
-                </p>
+                
+                <SGTable data={data} closeMode={false} />
+                
               </div>
               {/* tabpanel */}
 
@@ -991,7 +1050,7 @@ const SettingsGenerator = props => {
           const presetsCopy = [...presets];
           let name = makeUnique(newPresetName, presetsCopy.map(preset => preset.name));
 
-          presetsCopy.push({ name });
+          presetsCopy.push({ name, type: newPresetName });
           setPresets(presetsCopy);
           setCurrentPresetName(name);
 

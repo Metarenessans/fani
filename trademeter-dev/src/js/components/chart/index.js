@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from 'react'
+import React, { memo, useState, useEffect } from 'react'
 import { Consumer } from "../../app"
 import { Radio } from "antd/es"
 import roundUp      from "../../../../../common/utils/round-up"
@@ -598,9 +598,11 @@ function updateChart(isInit = false) {
   }
 }
 
-const Chart = (props) => {
+let Chart = memo(props => {
   const { data, currentDay } = props;
   const [scaleMode, setScaleMode] = useState(props.defaultScaleMode);
+
+  console.log('rendering Chart');
   
   useEffect(() => {
     steps = scaleMode;
@@ -654,6 +656,6 @@ const Chart = (props) => {
     )}
     </div>
   )
-}
+}, (prevProps, nextProps) => true);
 
 export { Chart, createChart, updateChart, updateChartTicks, updateChartZoom }

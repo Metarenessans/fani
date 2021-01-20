@@ -17,7 +17,7 @@ export default class Iteration {
   set rate(val) { this.percent = val }
 
   get empty() {
-    return this.rate == null;
+    return this.rate == null && this.income == null;
   }
 
   get period() {
