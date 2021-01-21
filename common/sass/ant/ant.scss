@@ -4913,8 +4913,12 @@ html {
   -webkit-font-feature-settings: 'tnum';
           font-feature-settings: 'tnum';
   position: relative;
-  display: inline-block;
-  line-height: 1;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width:  1em;
+  height: 1em;
+  line-height: .5em;
   white-space: nowrap;
   vertical-align: sub;
   outline: none;
@@ -4938,10 +4942,8 @@ html {
   border: 1px solid var( --primary-color );
   border-radius: 50%;
   visibility: hidden;
-  -webkit-animation: antRadioEffect 0.36s ease-in-out;
-          animation: antRadioEffect 0.36s ease-in-out;
-  -webkit-animation-fill-mode: both;
-          animation-fill-mode: both;
+  // animation: antRadioEffect 3.36s ease-in-out;
+  animation-fill-mode: both;
   content: '';
 }
 .ant-radio:hover::after,
@@ -4949,34 +4951,35 @@ html {
   visibility: visible;
 }
 .ant-radio-inner {
+  --size: 1em;
   position: relative;
-  top: 0;
+  top:  0;
   left: 0;
-  display: block;
-  width: 16px;
-  height: 16px;
+  display: inline-flex;
+  width:  var(--size);
+  height: var(--size);
   background-color: #fff;
   border-color: #d9d9d9;
   border-style: solid;
-  border-width: 1px;
-  border-radius: 100px;
+  border-width: .1em;
+  border-radius: 50%;
   -webkit-transition: all 0.3s;
   transition: all 0.3s;
 }
 .ant-radio-inner::after {
+  --size:   0.45em;
+
   position: absolute;
-  top: 3px;
-  left: 3px;
-  display: table;
-  width: 8px;
-  height: 8px;
+  top:  50%;
+  left: 50%;
+  display: flex;
+  width:  var(--size);
+  height: var(--size);
   background-color: var( --primary-color );
   border-top: 0;
   border-left: 0;
-  border-radius: 8px;
-  -webkit-transform: scale(0);
-      -ms-transform: scale(0);
-          transform: scale(0);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
   opacity: 0;
   -webkit-transition: all 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);
   transition: all 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);
@@ -4996,9 +4999,7 @@ html {
   border-color: var( --primary-color );
 }
 .ant-radio-checked .ant-radio-inner::after {
-  -webkit-transform: scale(1);
-      -ms-transform: scale(1);
-          transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
   -webkit-transition: all 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);
   transition: all 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);

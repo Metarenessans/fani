@@ -243,7 +243,7 @@ $m: .4475;
     }
 
     @mixin group-width {
-      width: 13em;
+      width: 12.6em;
       max-width: 50%;
       max-width: calc(50% - 1em);
     }
@@ -321,7 +321,7 @@ $m: .4475;
       padding: (1.4em * $m) (1.6em * $m);
 
       > * {
-        align-self: stretch;
+        // align-self: stretch;
         margin-bottom: .45em;
 
         &:last-child {
@@ -445,6 +445,22 @@ $m: .4475;
         font-size: 1.4em * $m;
 
         text-transform: uppercase;
+
+        &-modes {
+          padding: .5em 0;
+          font-size: 0.8em;
+
+          &-select {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+
+            @include xs {
+              flex-direction: column;
+              align-items: flex-start;
+            }
+          }
+        }
       }
 
       &-col-half {
@@ -472,6 +488,50 @@ $m: .4475;
       @include xs {
         flex-direction: column;
         align-items: flex-start;
+      }
+    }
+
+    &__opt-row {
+
+      @include xs {
+        flex-wrap: wrap;
+        flex-direction: row;
+      }
+
+      .input-group {
+        flex-shrink: 1;
+        flex-grow: 1;
+        // max-width: 9.2em;
+        max-width: unset;
+        width: unset;
+
+        margin-right: 1.5em;
+
+        @include xs {
+          width: 100%;
+          max-width: 45%;
+          margin-right: 0;
+          margin-bottom: .5em;
+        }
+      }
+
+      .settings-generator-content__print-group {
+        @include xs {
+          max-width: 100%;
+          width: 100%;
+        }
+      }
+
+      &-number {
+        display: inline-block;
+        margin-top: 1em;
+        min-width: 1.2em;
+
+        text-align: center;
+      }
+
+      &-btn {
+        font-size: .7em !important;
       }
     }
 
@@ -508,6 +568,8 @@ $m: .4475;
 
     &__print-group {
       @include group-width();
+      flex-shrink: 0;
+
       display: flex;
       flex-direction: column;
       align-items: center;
