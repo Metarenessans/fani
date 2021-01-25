@@ -4898,7 +4898,8 @@ html {
   -webkit-font-feature-settings: 'tnum';
           font-feature-settings: 'tnum';
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-right: 8px;
   white-space: nowrap;
   cursor: pointer;

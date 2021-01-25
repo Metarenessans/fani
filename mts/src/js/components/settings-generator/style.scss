@@ -450,6 +450,10 @@ $m: .4475;
           padding: .5em 0;
           font-size: 0.8em;
 
+          @include xs {
+            padding-top: 0;
+          }
+
           &-select {
             display: flex;
             flex-wrap: wrap;
@@ -492,31 +496,46 @@ $m: .4475;
     }
 
     &__opt-row {
+      position: relative;
+
+      @include sm {
+        margin-bottom: 1em;
+      }
 
       @include xs {
         flex-wrap: wrap;
         flex-direction: row;
+        justify-content: space-between;
       }
 
       .input-group {
         flex-shrink: 1;
         flex-grow: 1;
-        // max-width: 9.2em;
         max-width: unset;
         width: unset;
 
-        margin-right: 1.5em;
+        margin-right: 2em;
+
+        &:last-of-type {
+          margin-right: 1em;
+        }
 
         @include xs {
           width: 100%;
-          max-width: 45%;
+          max-width: 46%;
           margin-right: 0;
           margin-bottom: .5em;
+
+          &:last-of-type {
+            margin-right: 0;
+          }
         }
       }
 
       .settings-generator-content__print-group {
         @include xs {
+          position: relative;
+          top: 3.5em;
           max-width: 100%;
           width: 100%;
         }
@@ -524,14 +543,35 @@ $m: .4475;
 
       &-number {
         display: inline-block;
-        margin-top: 1em;
-        min-width: 1.2em;
+        margin-top: 1.35em;
+        min-width: 1.75em;
 
+        font-size: .8em;
         text-align: center;
+      }
+
+      &-delete {
+        margin-top: 0.825em;
+        flex-shrink: 0;
+
+        color: currentColor;
+        font-size: 1.25em;
+
+        @include xs {
+          margin-top: 0;
+          position: absolute;
+          right:  -.5em;
+          top:    -.75em;
+        }
       }
 
       &-btn {
         font-size: .7em !important;
+
+        @include xs {
+          position: relative;
+          top: -5em;
+        }
       }
     }
 
@@ -552,6 +592,10 @@ $m: .4475;
       &-val {
         font-size: 1.9em * $m;
         font-weight: 700;
+
+        @include xs {
+          text-align: right;
+        }
       }
 
       &s-wrap {
@@ -593,7 +637,14 @@ $m: .4475;
     }
 
     &__after-slider {
+      // position: relative;
+      // left: 0.4em;
+
       padding-top: 1.2rem;
+
+      .input-group {
+        max-width: 11.25em;
+      }
     }
 
   }

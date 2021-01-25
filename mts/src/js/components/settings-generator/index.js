@@ -42,10 +42,7 @@ const SGTable = ({ data, closeMode = true }) => {
             <tr className="settings-generator-table__row-header">
               <th>№</th>
               <th>% {closeMode ? 'закрытия' : 'докупки'}</th>
-              <th>
-                Ход в<br />
-                пунктах
-              </th>
+              <th>Ход $/₽</th>
               <th>Кол-во {closeMode ? 'закрытых' : 'докупленных'} контрактов</th>
               <th>
                 Контрактов<br />
@@ -78,8 +75,8 @@ const SGTable = ({ data, closeMode = true }) => {
                 {formatNumber(row.percent)}
               </td>
               <td 
-                data-label="Ход в пунктах"
-                data-label-xs="Ход в пунктах"
+                data-label="Ход $/₽"
+                data-label-xs="Ход $/₽"
               >
                 {formatNumber(row.points)}
               </td>
@@ -157,7 +154,6 @@ const SettingsGenerator = props => {
       options: {
         mode: 'evenly', // evenly / custom / fibonacci
         ...optionBase,
-
         customData: [{...optionBase}]
       }
     },
@@ -173,6 +169,8 @@ const SettingsGenerator = props => {
   const [mirrorOn, setMirrorOn] = useState(false);
   const [reversedOn, setReversedOn] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const depoAvailable = investorDepo * (load / 100);
 
@@ -303,14 +301,14 @@ const SettingsGenerator = props => {
       percent = currentPreset.options.customData[index].percent;
     }
 
-    // Ход в пунктах
+    // Ход
     let points = round(
       (
         // контракты * го = объем входа в деньгах
         (contracts * currentTool.guarantee)
         *
         // величина смещения из массива закрытия
-        (percent * (index + 1))
+        (percent / 100 * (index + 1))
         *
         // шаг цены
         currentTool.priceStep
@@ -332,6 +330,16 @@ const SettingsGenerator = props => {
       const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
       const multiplier = blockPointsMultipliers[indexInBlock - 1];
       points = Math.floor(points * multiplier / 100);
+    }
+
+    // Если ход больше желаемого хода - массив заканчивается
+    let preferredStep = currentPreset.options.preferredStep;
+    if (currentPreset.options.mode == 'custom') {
+      preferredStep = currentPreset.options.customData[index].preferredStep;
+    }
+
+    if (currentPreset.options.mode != 'fibonacci' && points > preferredStep) {
+      break;
     }
 
     // кол-во закрытых контрактов
@@ -374,6 +382,9 @@ const SettingsGenerator = props => {
 
   // componentDidMount
   useEffect(() => {
+    window.addEventListener("resize", function () {
+      setIsMobile(window.innerWidth <= 576);
+    });
     createTabs();
   }, []);
 
@@ -615,26 +626,21 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half settings-generator-content__pairs-wrap">
                 {(() => {
-                  const PairJSX = (props) => {
+                  const PairJSX = props => {
+                    let { name, value, formatValue } = props;
+                    if (formatValue == null) {
+                      formatValue = true;
+                    }
+
                     return (
                       <div className="settings-generator-content__pair">
-                        <span className="settings-generator-content__pair-key">{props.name}</span>
+                        <span className="settings-generator-content__pair-key">{name}</span>
                         <span className="settings-generator-content__pair-val">
-                          {formatNumber(props.value)}
+                          {formatValue ? formatNumber(value) : value}
                         </span>
                       </div>
                     )
                   };
-
-                  if (depo < depoAvailable) {
-                    contracts = contracts + " " + `
-                      (
-                      ${Math.floor(depo / currentTool.guarantee)}
-                      /
-                      ${Math.floor((depoAvailable - depo) / currentTool.guarantee)}
-                      )
-                    `.replace(/\s+/g, "");
-                  }
 
                   return (
                     <>
@@ -648,7 +654,22 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX 
                         name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
-                        value={contracts}
+                        value={
+                          <span>
+                            {formatNumber(contracts)}
+                            {depo < depoAvailable &&
+                              <>
+                                {window.innerWidth < 768 ? <br/> : " "}
+                                (
+                                  {formatNumber(Math.floor(depo / currentTool.guarantee))}
+                                  /
+                                  {formatNumber(Math.floor((depoAvailable - depo) / currentTool.guarantee))}
+                                )
+                              </>
+                            }
+                          </span>
+                        }
+                        formatValue={false}
                       />
                       <PairJSX
                         name="Убыток"
@@ -743,7 +764,10 @@ const SettingsGenerator = props => {
                   <>
                     {currentPreset.options.customData
                       .map((d, i) =>
-                        <div className="settings-generator-content__row settings-generator-content__opt-row">
+                        <div 
+                          className="settings-generator-content__row settings-generator-content__opt-row"
+                          key={i}
+                        >
 
                           <span className="settings-generator-content__opt-row-number">
                             {i + 1}
@@ -829,15 +853,28 @@ const SettingsGenerator = props => {
                             />
                           </label>
 
-                          <div 
-                            className="settings-generator-content__print-group"
-                            style={{ visibility: i == 0 ? 'visible' : 'hidden' }}
-                          >
-                            <span>Суммарный % закрытия</span>
-                            <b>{dataList['основной']
-                              .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
-                            }%</b>
-                          </div>
+                          <CrossButton 
+                            style={{ visibility: i > 0 ? 'visible' : 'hidden' }}
+                            className="settings-generator-content__opt-row-delete"
+                            onClick={e => {
+                              const presetsCopy = [...presets];
+                              const currentPresetCopy = {...currentPreset};
+                              currentPresetCopy.options.customData.splice(i, 1);
+                              setPresets(presetsCopy);
+                            }}
+                          />
+                          
+                          {(!isMobile || (isMobile && i == currentPreset.options.customData.length - 1)) &&
+                            <div 
+                              className="settings-generator-content__print-group"
+                              style={!isMobile ? { visibility: i == 0 ? 'visible' : 'hidden' } : {}}
+                            >
+                              <span>Суммарный % закрытия</span>
+                              <b>{dataList['основной']
+                                .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+                              }%</b>
+                            </div>
+                          }
 
                         </div>
                       )

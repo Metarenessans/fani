@@ -10,6 +10,7 @@ export default function CrossButton(props) {
   return (
     <Tooltip title={label}>
       <button
+        {...props}
         className={['cross-button'].concat(props.className).join(' ')}
         aria-label={label}
         onClick={e => onClick(e)}
