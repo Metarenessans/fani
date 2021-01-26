@@ -7,7 +7,7 @@ module.exports = (env, options) => {
 
   const entry = "./src/js/index.js";
   const output = "index";
-  const devtool = prod ? "source-map" : "eval-sourcemap";
+  // const devtool = prod ? "source-map" : "eval-sourcemap";
   const publicPath = "public";
 
   // Rules
@@ -47,17 +47,17 @@ module.exports = (env, options) => {
   const fontRule = {
     test: /\.(woff|woff2|eot|ttf|otf)$/,
     loader: "file-loader",
-    query: {
+    options: {
       name: "[path][name].[ext]"
-    }
+    },
   };
 
   const imageRule = {
     test: /\.(png|jpe?g|gif|webp)$/,
     loader: "file-loader",
-    query: {
+    options: {
       name: "[path][name].[ext]"
-    }
+    },
   };
 
   const plugins = [

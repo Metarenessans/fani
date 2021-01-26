@@ -61,11 +61,13 @@
   }
 
   &__label {
+    justify-content: center;
     min-width: 13em;
     margin: 0;
 
     color: rgba(white, .4);
     font-size: 1.85em;
+    text-align: center;
     letter-spacing: .03em;
 
     transition: color .2s ease;

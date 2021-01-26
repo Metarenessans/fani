@@ -149,7 +149,6 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
 
 function createChart() {
   anychart && anychart.onDocumentReady(() => {
-    
     chart = anychart.line();
 
     updateChart.call(this, true);
@@ -238,6 +237,13 @@ function createChart() {
     series4.tooltip().displayMode("separated");
     series4.tooltip().useHtml(true);
     series4.tooltip().format(e => {
+      const {
+        mode,
+        passiveIncomeTools,
+        currentPassiveIncomeToolIndex,
+      } = this.state;
+      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+
       if (e.index > 0) {
         let svg = `
           <svg viewBox="0 0 10 10" width="1em" height="1em" fill="#40a9ff" style="position: relative; top: 0.1em">
@@ -245,7 +251,13 @@ function createChart() {
           </svg>
         `;
         
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
+        return `
+          ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
+          ${tool
+          ? `<br/>Пассивный доход: ${formatNumber(Math.round(e.value * (tool.rate / 100) / 12))} /месяц`
+            : ""
+          }
+        `.trim().replace(/\s+/, " ");
       }
       else return `<span class="empty-tooltip-row"></span>`;
     });
@@ -260,6 +272,13 @@ function createChart() {
     series2.tooltip().displayMode("separated");
     series2.tooltip().useHtml(true);
     series2.tooltip().format(e => {
+      const {
+        mode,
+        passiveIncomeTools,
+        currentPassiveIncomeToolIndex,
+      } = this.state;
+      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+
       let svg = `
       <svg viewBox="0 0 10 10" width="1em" height="1em" 
       fill="#40a9ff" style="position: relative; top: 0.1em">
@@ -267,7 +286,13 @@ function createChart() {
       </svg>
       `;
       
-      return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
+      return `
+        ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
+        ${tool 
+          ? `<br/>Пассивный доход: ${formatNumber(Math.round(e.value * (tool.rate / 100) / 12))} /месяц` 
+          : ""
+        }
+      `.trim().replace(/\s+/, " ")
     });
     series2.normal().stroke({
       color: "#40a9ff",

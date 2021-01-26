@@ -44,7 +44,7 @@ function draw(data) {
   chart.changeData(data);
 }
 
-export default memo(class Speedometer extends React.Component {
+export default class Speedometer extends React.Component {
   
   constructor(props) {
     super(props);
@@ -133,6 +133,10 @@ export default memo(class Speedometer extends React.Component {
   updateShape() {
     draw(this.creatData());
   }
+
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   return !isEqual(this.props, nextProps)
+  // }
 
   componentDidMount() {
     let { chances } = this.props;
@@ -295,6 +299,7 @@ export default memo(class Speedometer extends React.Component {
 
   render() {
     const { value } = this.state;
+    // console.log('rendering Riskometr');
 
     return (
       <figure
@@ -310,4 +315,4 @@ export default memo(class Speedometer extends React.Component {
       </figure>
     )
   }
-}, (prevProps, nextProps) => prevProps.value == nextProps.value && isEqual(prevProps.tool, nextProps.tool))
+}

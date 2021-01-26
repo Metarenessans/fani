@@ -301,6 +301,14 @@ const SettingsGenerator = props => {
       percent = currentPreset.options.customData[index].percent;
     }
 
+    // Если ход больше желаемого хода - массив заканчивается
+    let preferredStep = currentPreset.options.preferredStep;
+    if (currentPreset.options.mode == 'custom') {
+      preferredStep = currentPreset.options.customData[index].preferredStep;
+    }
+
+    const { stepInPercent } = currentPreset.options;
+
     // Ход
     let points = round(
       (
@@ -308,7 +316,7 @@ const SettingsGenerator = props => {
         (contracts * currentTool.guarantee)
         *
         // величина смещения из массива закрытия
-        (percent / 100 * (index + 1))
+        (stepInPercent / 100 * (index + 1))
         *
         // шаг цены
         currentTool.priceStep
@@ -320,7 +328,32 @@ const SettingsGenerator = props => {
         currentTool.stepPrice
       ),
       1
+    );``
+    console.log(
+      // контракты * го = объем входа в деньгах
+      "объем входа в деньгах",
+      (contracts * currentTool.guarantee),
+      `(${contracts} * ${currentTool.guarantee}),`,
+
+      // величина смещения из массива закрытия
+      "величина смещения из массива закрытия",
+      (stepInPercent / 100 * (index + 1)),
+      `(${stepInPercent / 100} * ${index + 1}),`,
+      
+      // шаг цены
+      "шаг цены",
+      currentTool.priceStep,
+
+      "контрактов",
+      contracts,
+
+      "цена шага",
+      currentTool.stepPrice,
+
+      "=",
+      points
     );
+    
     if (isNaN(points)) {
       points = 0;
     }
@@ -330,12 +363,6 @@ const SettingsGenerator = props => {
       const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
       const multiplier = blockPointsMultipliers[indexInBlock - 1];
       points = Math.floor(points * multiplier / 100);
-    }
-
-    // Если ход больше желаемого хода - массив заканчивается
-    let preferredStep = currentPreset.options.preferredStep;
-    if (currentPreset.options.mode == 'custom') {
-      preferredStep = currentPreset.options.customData[index].preferredStep;
     }
 
     if (currentPreset.options.mode != 'fibonacci' && points > preferredStep) {
@@ -379,6 +406,10 @@ const SettingsGenerator = props => {
       break;
     }
   }
+
+  const totalIncome = dataList['основной'].length
+    ? dataList['основной'][dataList['основной'].length - 1].incomeWithComission
+    : 0;
 
   // componentDidMount
   useEffect(() => {
@@ -650,7 +681,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX 
                         name="Прибыль"
-                        value={round(dataList['основной'][dataList['основной'].length - 1].incomeWithComission, 1)}
+                        value={round(totalIncome, 1)}
                       />
                       <PairJSX 
                         name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}

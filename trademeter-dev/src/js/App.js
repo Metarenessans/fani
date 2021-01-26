@@ -77,7 +77,7 @@ import "../sass/style.sass"
 let lastRealData = {};
 let saveToDonwload;
 
-const shouldLoadFakeSave = true;
+const shouldLoadFakeSave = false;
 const chartVisible       = true;
 
 class App extends Component {
@@ -2433,6 +2433,7 @@ class App extends Component {
 
                         return (
                           <Speedometer
+                            key={pointsForIteration}
                             chances={[
                               tool.points.map(row => row[0]),
                               tool.points.map(row => row[1])
@@ -3568,9 +3569,9 @@ class App extends Component {
                 {/* График */}
                 {chartVisible && (
                   <Chart 
-                    defaultScaleMode={this.state.days[this.state.mode]} 
+                    defaultScaleMode={this.state.days[mode]} 
                     data={this.state.data}
-                    currentDay={this.state.currentDay}
+                    currentDay={currentDay}
                   />
                 )}
 
