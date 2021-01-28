@@ -644,6 +644,10 @@ $m: .4475;
 
       .input-group {
         max-width: 11.25em;
+
+        .ant-input-affix-wrapper {
+          font-size: .5em;
+        }
       }
     }
 

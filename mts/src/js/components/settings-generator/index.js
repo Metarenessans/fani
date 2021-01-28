@@ -23,16 +23,19 @@ import NumericInput from '../../../../../common/components/numeric-input'
 import CustomSlider from '../../../../../common/components/custom-slider'
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
-import round        from '../../../../../common/utils/round'
-import roundUp      from '../../../../../common/utils/round-up'
-import formatNumber from '../../../../../common/utils/format-number'
+import round          from '../../../../../common/utils/round'
+import roundUp        from '../../../../../common/utils/round-up'
+import formatNumber   from '../../../../../common/utils/format-number'
+import fractionLength from '../../../../../common/utils/fraction-length'
 
 import "./style.scss"
 
-const SGTable = ({ data, closeMode = true }) => {
+const SGTable = ({ data, closeMode = true, tool }) => {
   if (data == null || data.length == 0) {
     return null;
   }
+
+  const fraction = fractionLength(tool.priceStep);
   
   return (
     <div className="settings-generator-table">
@@ -78,7 +81,7 @@ const SGTable = ({ data, closeMode = true }) => {
                 data-label="Ход $/₽"
                 data-label-xs="Ход $/₽"
               >
-                {formatNumber(row.points)}
+                {formatNumber(round(row.points, fraction))}
               </td>
               <td 
                 data-label="Закрытых контрактов"
@@ -134,6 +137,7 @@ const SettingsGenerator = props => {
       : 0
   );
 
+  const [risk, setRisk] = useState(0);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
@@ -142,10 +146,10 @@ const SettingsGenerator = props => {
   const currentTool = tools[currentToolIndex];
 
   const optionBase = {
-    preferredStep: currentTool.adrDay,       // Желаемый ход
-    length:        1,                        // Кол-во закрытий 
-    percent:       0,                        // % закрытия
-    stepInPercent: 0,                        // Шаг
+    preferredStep: "",       // Желаемый ход
+    length:        "",       // Кол-во закрытий 
+    percent:       "",       // % закрытия
+    stepInPercent: "",       // Шаг
   };
   const [presets, setPresets] = useState([
     { 
@@ -310,7 +314,7 @@ const SettingsGenerator = props => {
     const { stepInPercent } = currentPreset.options;
 
     // Ход
-    let points = round(
+    let points =
       (
         // контракты * го = объем входа в деньгах
         (contracts * currentTool.guarantee)
@@ -326,33 +330,7 @@ const SettingsGenerator = props => {
         contracts
         *
         currentTool.stepPrice
-      ),
-      1
-    );``
-    console.log(
-      // контракты * го = объем входа в деньгах
-      "объем входа в деньгах",
-      (contracts * currentTool.guarantee),
-      `(${contracts} * ${currentTool.guarantee}),`,
-
-      // величина смещения из массива закрытия
-      "величина смещения из массива закрытия",
-      (stepInPercent / 100 * (index + 1)),
-      `(${stepInPercent / 100} * ${index + 1}),`,
-      
-      // шаг цены
-      "шаг цены",
-      currentTool.priceStep,
-
-      "контрактов",
-      contracts,
-
-      "цена шага",
-      currentTool.stepPrice,
-
-      "=",
-      points
-    );
+      );
     
     if (isNaN(points)) {
       points = 0;
@@ -425,6 +403,22 @@ const SettingsGenerator = props => {
     setSecondaryDepo(Math.floor(investorDepo * .75));
 
   }, [investorDepo]);
+
+  useEffect(() => {
+
+    const presetsCopy = [...presets];
+    const preferredStep = currentPreset.options.preferredStep;
+    const currentPresetCopy = {
+      ...currentPreset,
+      options: {
+        ...currentPreset.options,
+        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay
+      }
+    };
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    setPresets(presetsCopy);
+
+  }, [currentTool.code]);
 
   return (
     <>
@@ -704,7 +698,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX
                         name="Убыток"
-                        value={9999}
+                        value={investorDepo * risk / 100}
                       />
                     </>
                   )
@@ -746,14 +740,11 @@ const SettingsGenerator = props => {
                   <span className="input-group__label">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
-                    key={0}
-                    defaultValue={0}
-                    format={formatNumber}
-                    min={10000}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
+                    key={risk}
+                    defaultValue={risk}
+                    format={val => formatNumber(round(val, 2))}
+                    onBlur={value => setRisk(value)}
+                    suffix="%"
                   />
                 </label>
                 
@@ -944,7 +935,7 @@ const SettingsGenerator = props => {
                       <NumericInput
                         disabled={currentPreset.options.mode == 'fibonacci'}
                         className="input-group__input"
-                        key={currentPreset.options.preferredStep}
+                        key={Math.random()}
                         defaultValue={currentPreset.options.preferredStep}
                         placeholder={currentTool.adrDay}
                         format={formatNumber}
@@ -1338,7 +1329,7 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab1"
                    aria-labelledby="settings-generator-tab1-control">
                 
-                <SGTable data={dataList['основной']} />
+                <SGTable data={dataList['основной']} tool={currentTool} />
                 
               </div>
               {/* tabpanel */}
