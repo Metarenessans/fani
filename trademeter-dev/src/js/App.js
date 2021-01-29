@@ -3650,7 +3650,7 @@ class App extends Component {
                       autoCapitalize="off"
                       spellCheck="false"
                       value={value}
-                      maxLength={20}
+                      maxLength={30}
                       onChange={e => {
                         let { value } = e.target;
                         let { onChange } = this.props;
