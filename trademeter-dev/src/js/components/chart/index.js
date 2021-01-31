@@ -499,7 +499,7 @@ function updateChart(isInit = false) {
     value:      data[0].depoStartTest,
   });
 
-  console.log(planData);
+  // console.log(planData);
 
   // Сопоставляет план 1 к 1 с фактом, если не достает значения
   // то подставляется интерполированное между двумя ближайшими
@@ -537,7 +537,7 @@ function updateChart(isInit = false) {
     // planData[planData.length - 1].customName = "";
   }
   
-  console.table('plan', planData);
+  // console.table('plan', planData);
   if (isInit) {
     chartData2 = anychart.data.set(planData);
   }
