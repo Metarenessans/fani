@@ -1595,7 +1595,6 @@ class App extends Component {
                       <label className="input-group">
                         <span className="input-group__label">Начальный депозит</span>
                         <NumericInput
-                          key={this.state.mode + this.state.depoStart[this.state.mode]}
                           disabled={this.state.saved}
                           className="input-group__input"
                           defaultValue={this.state.depoStart[this.state.mode]}
@@ -1643,7 +1642,6 @@ class App extends Component {
                           <label className="input-group">
                             <span className="input-group__label">Целевой депозит</span>
                             <NumericInput
-                              key={this.state.depoEnd}
                               disabled={this.state.saved}
                               className="input-group__input"
                               defaultValue={this.state.depoEnd}
@@ -1683,7 +1681,6 @@ class App extends Component {
                           <label className="input-group">
                             <span className="input-group__label">Доходность в день</span>
                             <NumericInput
-                              key={this.state.mode + this.state.incomePersantageCustom}
                               disabled={this.state.saved}
                               max={30}
                               className="input-group__input"
@@ -1807,7 +1804,6 @@ class App extends Component {
                         <span className="input-group__label">Пассивный доход</span>
                         <NumericInput
                           className="input-group__input"
-                          key={this.state.mode + this.state.passiveIncomeMonthly[this.state.mode]}
                           disabled={this.state.saved}
                           defaultValue={this.state.passiveIncomeMonthly[this.state.mode]}
                           round="true"
@@ -1950,7 +1946,6 @@ class App extends Component {
                             <label className="input-group">
                               <span className="input-group__label">Вывод</span>
                               <NumericInput
-                                key={this.state.withdrawal[this.state.mode]}
                                 disabled={this.state.saved}
                                 className="input-group__input"
                                 defaultValue={this.state.withdrawal[this.state.mode]}
@@ -2075,7 +2070,6 @@ class App extends Component {
                         <label className="input-group">
                           <span className="input-group__label">Пополнение</span>
                           <NumericInput
-                            key={this.state.payload[this.state.mode]}
                             disabled={this.state.saved}
                             className="input-group__input"
                             defaultValue={this.state.payload[this.state.mode]}
@@ -3099,7 +3093,6 @@ class App extends Component {
 
                                               <NumericInput
                                                 className="iterations-list-item__input"
-                                                key={Math.random()}
                                                 defaultValue={income}
                                                 placeholder={placeholder}
                                                 format={formatNumber}
@@ -3303,7 +3296,6 @@ class App extends Component {
                                     <span className="input-group__label">Вывод</span>
                                     <NumericInput
                                       className="input-group__input"
-                                      key={value + Math.random()}
                                       defaultValue={
                                         data[currentDay - 1].changed && value != null
                                           ? value
@@ -3378,7 +3370,6 @@ class App extends Component {
                                     <span className="input-group__label">Пополнение</span>
                                     <NumericInput
                                       className="input-group__input"
-                                      key={value + Math.random()}
                                       defaultValue={
                                         data[currentDay - 1].changed && value != null
                                           ? value
@@ -3650,7 +3641,7 @@ class App extends Component {
                       autoCapitalize="off"
                       spellCheck="false"
                       value={value}
-                      maxLength={20}
+                      maxLength={30}
                       onChange={e => {
                         let { value } = e.target;
                         let { onChange } = this.props;
@@ -3792,7 +3783,6 @@ class App extends Component {
                 <span className="input-group__label">НДФЛ:</span>
                 <NumericInput
                   className="input-group__input"
-                  key={this.state.tax}
                   defaultValue={this.state.tax}
                   format={formatNumber}
                   suffix="%"

@@ -7,6 +7,7 @@
     "build": "webpack --mode production"
   },
   "devDependencies": {
+    "@ant-design/icons": "^4.4.0",
     "@babel/cli": "^7.12.10",
     "@babel/core": "^7.12.10",
     "@babel/plugin-proposal-numeric-separator": "^7.12.7",
@@ -44,7 +45,6 @@
     "webpack-dev-server": "^3.11.1"
   },
   "dependencies": {
-    "@ant-design/icons": "^4.3.0",
     "antd": "^3.26.20",
     "anychart": "^8.7.1",
     "chart.js": "^2.9.3",
