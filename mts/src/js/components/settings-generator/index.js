@@ -14,6 +14,7 @@ import LockIcon     from "./icons/Lock"
 import DownloadIcon from "./icons/Download"
 import CodeIcon     from "./icons/CodeIcon"
 import CloseIcon    from "./icons/CloseIcon"
+import CodePanel    from "./code-panel"
 
 import createTabs   from "./tabs"
 import BurgerButton from "./burger-button"
@@ -299,10 +300,10 @@ const SettingsGenerator = props => {
     // % закрытия
     let percent = currentPreset.options.percent;
     if (currentPreset.options.mode == 'fibonacci') {
-      percent = presetRules.percents[blockNumber - 1];
+      percent = presetRules.percents[blockNumber - 1] || 0;
     }
     else if (currentPreset.options.mode == 'custom') {
-      percent = currentPreset.options.customData[index].percent;
+      percent = currentPreset.options.customData[index].percent || 0;
     }
 
     // Если ход больше желаемого хода - массив заканчивается
@@ -350,7 +351,7 @@ const SettingsGenerator = props => {
     // кол-во закрытых контрактов
     let _contracts = roundUp(contracts * percent / 100);
     if (currentPreset.options.mode == 'fibonacci') {
-      _contracts = roundUp(contracts * percent / 100)
+      _contracts = contracts * percent / 100
     }
 
     if (contractsLeft - _contracts >= 0) {
@@ -364,6 +365,9 @@ const SettingsGenerator = props => {
 
     // Контрактов в работе
     let contractsLoaded = contractsLeft;
+    if (contractsLoaded == 0) {
+      shouldBreak = true;
+    }
 
     let _comission = _contracts * comission;
 
@@ -1314,12 +1318,20 @@ const SettingsGenerator = props => {
                     Обратные докупки
                   </Button>
 
+                  <Button className="settings-generator-table__show-code"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab5"
+                          id="settings-generator-tab5-control"
+                  >
+                    <span className="visually-hidden">Показать код</span>
+                    <CodeIcon />
+                  </Button>
+                  {/*  */}
+
                 </div>
                 {/* tablist */}
-
-                <button className="settings-generator-table__show-code">
-                  <CodeIcon />
-                </button>
 
               </div>
               {/* header */}
@@ -1363,6 +1375,17 @@ const SettingsGenerator = props => {
                    hidden>
                 
                 <SGTable data={dataList['обратные профит докупки']} closeMode={false} />
+                
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab5"
+                   aria-labelledby="settings-generator-tab5-control"
+                   hidden>
+                
+                <CodePanel data={dataList['основной']} />
                 
               </div>
               {/* tabpanel */}
