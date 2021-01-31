@@ -77,6 +77,7 @@ import "../sass/style.sass"
 let lastRealData = {};
 let saveToDonwload;
 
+// const shouldLoadFakeSave = false;
 const shouldLoadFakeSave = true;
 const chartVisible       = true;
 

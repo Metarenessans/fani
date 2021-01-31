@@ -1,7 +1,11 @@
 @import "../../sass/_mixins.scss";
 
-.ios {
-  padding-right: 1.4rem!important;
+input.ios {
+  padding-right: 1.4em!important;
+}
+
+.ant-input-affix-wrapper input {
+  padding-right: 3.2em !important;
 }
 
 .numeric-input {
@@ -37,3 +41,4 @@
     }
   }
 }
+

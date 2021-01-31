@@ -171,16 +171,12 @@ export default class NumericInput extends React.Component {
     }
   }
 
-  // shouldComponentUpdate(prevProps) {
-  //   return this.props.defaultValue != prevProps.defaultValue
-  // }
-
   render() {
     const { positive, value, errMsg } = this.state;
     const { unsigned } = this.props;
 
     return (
-      <div class="numeric-input-wrap" >
+      <div class="numeric-input-wrap">
         <Tooltip
           title={errMsg}
           visible={errMsg.length > 0}
@@ -189,6 +185,7 @@ export default class NumericInput extends React.Component {
             type="text"
             inputMode={iOS() ? 'text' : 'decimal'}
             placeholder={0}
+            maxLength={25}
             {...this.props}
             className={
               []
@@ -203,7 +200,6 @@ export default class NumericInput extends React.Component {
             onFocus={e => this.onFocus(e)}
             onBlur={e => this.onBlur(e)}
             value={value}
-            maxLength={25}
           />
 
           {!unsigned && isIOS && (
