@@ -35,8 +35,6 @@ const SGTable = ({ data, closeMode = true, tool }) => {
   if (data == null || data.length == 0) {
     return null;
   }
-
-  const fraction = fractionLength(tool.priceStep);
   
   return (
     <div className="settings-generator-table">
@@ -82,7 +80,7 @@ const SGTable = ({ data, closeMode = true, tool }) => {
                 data-label="Ход $/₽"
                 data-label-xs="Ход $/₽"
               >
-                {formatNumber(round(row.points, fraction))}
+                {formatNumber(row.points)}
               </td>
               <td 
                 data-label="Закрытых контрактов"
@@ -138,13 +136,14 @@ const SettingsGenerator = props => {
       : 0
   );
 
-  const [risk, setRisk] = useState(0);
+  const [risk, setRisk] = useState(0.5);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
   const tools = props.tools?.length ? props.tools : [ Tools.create() ];
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
+  const fraction = fractionLength(currentTool.priceStep);
 
   const optionBase = {
     preferredStep: "",       // Желаемый ход
@@ -305,6 +304,8 @@ const SettingsGenerator = props => {
     else if (currentPreset.options.mode == 'custom') {
       percent = currentPreset.options.customData[index].percent || 0;
     }
+    // Округляем
+    percent = round(percent, fraction);
 
     // Если ход больше желаемого хода - массив заканчивается
     let preferredStep = currentPreset.options.preferredStep;
@@ -332,6 +333,7 @@ const SettingsGenerator = props => {
         *
         currentTool.stepPrice
       );
+    points = round(points, fraction);
     
     if (isNaN(points)) {
       points = 0;
@@ -351,7 +353,7 @@ const SettingsGenerator = props => {
     // кол-во закрытых контрактов
     let _contracts = roundUp(contracts * percent / 100);
     if (currentPreset.options.mode == 'fibonacci') {
-      _contracts = contracts * percent / 100
+      _contracts = roundUp(contracts * percent / 100)
     }
 
     if (contractsLeft - _contracts >= 0) {
@@ -390,7 +392,7 @@ const SettingsGenerator = props => {
   }
 
   const totalIncome = dataList['основной'].length
-    ? dataList['основной'][dataList['основной'].length - 1].incomeWithComission
+    ? dataList['основной'][dataList['основной'].length - 1]?.incomeWithComission
     : 0;
 
   // componentDidMount
@@ -677,18 +679,14 @@ const SettingsGenerator = props => {
                         name="Контрактов max."
                         value={contractsTotal}
                       />
-                      <PairJSX 
-                        name="Прибыль"
-                        value={round(totalIncome, 1)}
-                      />
-                      <PairJSX 
+                      <PairJSX
                         name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
                         value={
                           <span>
                             {formatNumber(contracts)}
                             {depo < depoAvailable &&
                               <>
-                                {window.innerWidth < 768 ? <br/> : " "}
+                                {window.innerWidth < 768 ? <br /> : " "}
                                 (
                                   {formatNumber(Math.floor(depo / currentTool.guarantee))}
                                   /
@@ -700,8 +698,12 @@ const SettingsGenerator = props => {
                         }
                         formatValue={false}
                       />
+                      <PairJSX 
+                        name="Прибыль"
+                        value={round(totalIncome, 1)}
+                      />
                       <PairJSX
-                        name="Убыток"
+                        name="Убыток (риск)"
                         value={investorDepo * risk / 100}
                       />
                     </>
@@ -896,8 +898,12 @@ const SettingsGenerator = props => {
                               style={!isMobile ? { visibility: i == 0 ? 'visible' : 'hidden' } : {}}
                             >
                               <span>Суммарный % закрытия</span>
-                              <b>{dataList['основной']
-                                .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+                              <b>{
+                              dataList['основной'][dataList['основной'].length - 1]?.contractsLoaded == 0
+                                ? 100
+                                : dataList['основной']
+                                    .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+
                               }%</b>
                             </div>
                           }
@@ -1039,8 +1045,11 @@ const SettingsGenerator = props => {
 
                     <div className="settings-generator-content__print-group">
                       <span>Суммарный % закрытия</span>
-                      <b>{dataList['основной']
-                        .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+                      <b>{
+                        dataList['основной'][dataList['основной'].length - 1]?.contractsLoaded == 0
+                          ? 100
+                          : dataList['основной']
+                              .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
                       }%</b>
                     </div>
 
