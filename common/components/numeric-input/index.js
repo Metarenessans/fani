@@ -2,18 +2,8 @@ import React from 'react'
 import { Input, Tooltip } from 'antd/es'
 import './style.scss'
 
-function iOS() {
-  return [
-    'iPad Simulator',
-    'iPhone Simulator',
-    'iPod Simulator',
-    'iPad',
-    'iPhone',
-    'iPod'
-  ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-}
-
-let isIOS = iOS();
+let isIPhone = /iPhone/i.test(navigator.userAgent);
+// console.log(isIPhone);
 
 export default class NumericInput extends React.Component {
   constructor(props) {
@@ -187,14 +177,14 @@ export default class NumericInput extends React.Component {
         >
           <Input
             type="text"
-            inputMode={iOS() ? 'text' : 'decimal'}
+            inputMode={isIPhone ? 'text' : 'decimal'}
             placeholder={0}
             maxLength={25}
             {...this.props}
             className={
               []
                 .concat(errMsg.length ? " error" : "")
-                .concat(isIOS ? "ios" : "")
+                .concat(isIPhone ? "ios" : "")
                 .join(" ")
                 .trim()
             }
@@ -205,7 +195,7 @@ export default class NumericInput extends React.Component {
             value={value}
           />
 
-          {!unsigned && isIOS && (
+          {!unsigned && isIPhone && (
             <button
               onClick={(e) => {
                 const parsedValue = +(String(value).replace(/\s+/g, ""));

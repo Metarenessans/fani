@@ -1,6 +1,6 @@
 import roundUp from "./round-up";
 
-test("properly rounds up the number", () => {
+test("Округляет числа в большую сторону", () => {
 
   expect( roundUp(-1.2) ).toBe(-2);
   expect( roundUp(-1) ).toBe(-1);
@@ -11,7 +11,7 @@ test("properly rounds up the number", () => {
 
 });
 
-test("throws an error if given the wrong value type", () => {
+test("Выдаёт ошибку если введён неверный тип значения", () => {
 
   expect( () => roundUp() ).toThrow();
   expect( () => roundUp(null) ).toThrow();
