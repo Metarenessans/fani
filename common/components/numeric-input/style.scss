@@ -1,6 +1,6 @@
 @import "../../sass/_mixins.scss";
 
-input.ios {
+input.iPhone {
   padding-right: 1.4em!important;
 }
 
@@ -42,7 +42,7 @@ input.ios {
 
         fill: green;
 
-        &.red {
+        &.negative {
           margin-top: 0;
           transform: translate(-50%, -50%) rotate(-90deg);
 
