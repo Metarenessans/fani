@@ -3301,6 +3301,7 @@ class App extends Component {
                                           ? value
                                           : ""
                                       }
+                                      unsigned="true"
                                       round="true"
                                       placeholder={placeholder}
                                       format={formatNumber}
@@ -3376,6 +3377,7 @@ class App extends Component {
                                           : ""
                                       }
                                       round="true"
+                                      unsigned="true"
                                       placeholder={placeholder}
                                       format={formatNumber}
                                       onChange={(e, val, jsx) => {
