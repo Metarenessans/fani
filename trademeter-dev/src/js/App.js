@@ -77,8 +77,7 @@ import "../sass/style.sass"
 let lastRealData = {};
 let saveToDonwload;
 
-// const shouldLoadFakeSave = false;
-const shouldLoadFakeSave = true;
+const shouldLoadFakeSave = false;
 const chartVisible       = true;
 
 class App extends Component {
@@ -3786,6 +3785,7 @@ class App extends Component {
                   className="input-group__input"
                   defaultValue={this.state.tax}
                   format={formatNumber}
+                  unsigned="true"
                   suffix="%"
                   onBlur={val => {
                     const { tax } = this.state;

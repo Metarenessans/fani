@@ -123,6 +123,10 @@
           width: $input-width;
         }
 
+        [class^=ant] {
+          font-size: 1em !important;
+        }
+
         &--unstyled {
           // width: $input-width;
           

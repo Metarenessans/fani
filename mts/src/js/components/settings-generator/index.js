@@ -340,7 +340,7 @@ const SettingsGenerator = props => {
     }
 
     if (currentPreset.options.mode == 'fibonacci') {
-      points = currentTool.adrDay / currentTool.priceStep
+      points = currentTool.adrDay / currentTool.priceStep;
       const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
       const multiplier = blockPointsMultipliers[indexInBlock - 1];
       points = Math.floor(points * multiplier / 100);

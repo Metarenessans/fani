@@ -164,17 +164,18 @@ export default class NumericInput extends React.Component {
     const { unsigned } = this.props;
 
     return (
-      <div class={
-        []
-          .concat(this.className)
-          .concat("numeric-input-wrap")
-          .join(" ")
-          .trim()
-      }>
-        <Tooltip
-          title={errMsg}
-          visible={errMsg.length > 0}
-        >
+      <Tooltip
+        title={errMsg}
+        visible={errMsg.length > 0}
+      >
+        <div class={
+          []
+            .concat(this.className)
+            .concat("numeric-input-wrap")
+            .join(" ")
+            .trim()
+        }>
+          
           <Input
             type="text"
             inputMode={isIPhone ? 'text' : 'decimal'}
@@ -183,6 +184,7 @@ export default class NumericInput extends React.Component {
             {...this.props}
             className={
               []
+                .concat("numeric-input")
                 .concat(errMsg.length ? " error" : "")
                 .concat(isIPhone ? "iPhone" : "")
                 .join(" ")
@@ -215,8 +217,8 @@ export default class NumericInput extends React.Component {
             </button>
           )}
 
-        </Tooltip>
-      </div>
+        </div>
+      </Tooltip>
     )
   }
 }
