@@ -299,7 +299,6 @@ function createChart() {
       thickness: "5%"
     });
     
-    // TODO: return after release
     if (true) {
       // turn on X Scroller
       chart.xScroller(true);
@@ -310,12 +309,15 @@ function createChart() {
       chart.xScroller().listen("scrollerchange", e => {
         const step = 1 / (planData.length - 1);
         scaleStart = roundToClosest(e.startRatio, step);
-        scaleEnd   = scaleStart + (step * steps);
+        // scaleEnd   = scaleStart + (step * steps);
+        scaleEnd = roundToClosest(e.endRatio, step);
+
         const ceiling = 1 - step;
         if (scaleEnd >= ceiling) {
           scaleEnd = 1;
         }
 
+        console.log(scaleStart, scaleEnd);
         chart.xZoom().setTo(scaleStart, scaleEnd);
         updateChartScaleY(scaleStart, scaleEnd);
         updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
@@ -428,9 +430,17 @@ function updateChart(isInit = false) {
     }
     return item;
   });
-  // TODO: return after release
   factData.map(item => {
-    item.x = String(Number(item.x) + 1);
+
+    // Прибавляет 1 только если к числу до точки
+    if (item.x.indexOf('.') > -1) {
+      const halfs = item.x.split('.');
+      item.x = (+(halfs[0]) + 1) + "." + halfs[1];
+    }
+    else {
+      item.x = String(+(item.x) + 1);
+    }
+
     if (item.customName.trim() != "" && !isNaN( +item.customName )) {
       item.customName = String(Number(item.customName) + 1);
     }
@@ -488,7 +498,9 @@ function updateChart(isInit = false) {
     x:          "1",
     value:      data[0].depoStartTest,
   });
-  
+
+  // console.log(planData);
+
   // Сопоставляет план 1 к 1 с фактом, если не достает значения
   // то подставляется интерполированное между двумя ближайшими
   for (let i = 0; i < planData.length;) {

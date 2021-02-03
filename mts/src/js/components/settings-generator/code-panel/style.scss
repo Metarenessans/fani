@@ -1,0 +1,41 @@
+.code-panel {
+  font-size: .8em;
+
+  &-group {
+    width: 100%;
+    
+    &-header {
+      margin-bottom: .6em;
+
+      display: inline-flex;
+      align-items: baseline;
+
+      h3 {
+        margin: 0;
+      }
+    }
+
+    &-content {
+      pre {
+        width: 100%;
+        white-space: pre-wrap;
+      }
+    }
+
+    &__copy-btn {
+      margin-left: 1em;
+      background: none;
+      border: none;
+
+      text-decoration: underline;
+
+      cursor: pointer;
+
+      &:focus,
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
+  }
+}

@@ -164,7 +164,13 @@ export default class NumericInput extends React.Component {
     const { unsigned } = this.props;
 
     return (
-      <div class="numeric-input-wrap">
+      <div class={
+        []
+          .concat(this.className)
+          .concat("numeric-input-wrap")
+          .join(" ")
+          .trim()
+      }>
         <Tooltip
           title={errMsg}
           visible={errMsg.length > 0}
@@ -177,7 +183,6 @@ export default class NumericInput extends React.Component {
             {...this.props}
             className={
               []
-                .concat(this.className)
                 .concat(errMsg.length ? " error" : "")
                 .concat(isIPhone ? "iPhone" : "")
                 .join(" ")

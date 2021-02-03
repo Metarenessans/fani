@@ -14,6 +14,7 @@ import LockIcon     from "./icons/Lock"
 import DownloadIcon from "./icons/Download"
 import CodeIcon     from "./icons/CodeIcon"
 import CloseIcon    from "./icons/CloseIcon"
+import CodePanel    from "./code-panel"
 
 import createTabs   from "./tabs"
 import BurgerButton from "./burger-button"
@@ -34,8 +35,6 @@ const SGTable = ({ data, closeMode = true, tool }) => {
   if (data == null || data.length == 0) {
     return null;
   }
-
-  const fraction = fractionLength(tool.priceStep);
   
   return (
     <div className="settings-generator-table">
@@ -81,7 +80,7 @@ const SGTable = ({ data, closeMode = true, tool }) => {
                 data-label="Ход $/₽"
                 data-label-xs="Ход $/₽"
               >
-                {formatNumber(round(row.points, fraction))}
+                {formatNumber(row.points)}
               </td>
               <td 
                 data-label="Закрытых контрактов"
@@ -137,13 +136,14 @@ const SettingsGenerator = props => {
       : 0
   );
 
-  const [risk, setRisk] = useState(0);
+  const [risk, setRisk] = useState(0.5);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
   const tools = props.tools?.length ? props.tools : [ Tools.create() ];
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
+  const fraction = fractionLength(currentTool.priceStep);
 
   const optionBase = {
     preferredStep: "",       // Желаемый ход
@@ -299,11 +299,13 @@ const SettingsGenerator = props => {
     // % закрытия
     let percent = currentPreset.options.percent;
     if (currentPreset.options.mode == 'fibonacci') {
-      percent = presetRules.percents[blockNumber - 1];
+      percent = presetRules.percents[blockNumber - 1] || 0;
     }
     else if (currentPreset.options.mode == 'custom') {
-      percent = currentPreset.options.customData[index].percent;
+      percent = currentPreset.options.customData[index].percent || 0;
     }
+    // Округляем
+    percent = round(percent, fraction);
 
     // Если ход больше желаемого хода - массив заканчивается
     let preferredStep = currentPreset.options.preferredStep;
@@ -331,6 +333,7 @@ const SettingsGenerator = props => {
         *
         currentTool.stepPrice
       );
+    points = round(points, fraction);
     
     if (isNaN(points)) {
       points = 0;
@@ -364,6 +367,9 @@ const SettingsGenerator = props => {
 
     // Контрактов в работе
     let contractsLoaded = contractsLeft;
+    if (contractsLoaded == 0) {
+      shouldBreak = true;
+    }
 
     let _comission = _contracts * comission;
 
@@ -386,7 +392,7 @@ const SettingsGenerator = props => {
   }
 
   const totalIncome = dataList['основной'].length
-    ? dataList['основной'][dataList['основной'].length - 1].incomeWithComission
+    ? dataList['основной'][dataList['основной'].length - 1]?.incomeWithComission
     : 0;
 
   // componentDidMount
@@ -673,18 +679,14 @@ const SettingsGenerator = props => {
                         name="Контрактов max."
                         value={contractsTotal}
                       />
-                      <PairJSX 
-                        name="Прибыль"
-                        value={round(totalIncome, 1)}
-                      />
-                      <PairJSX 
+                      <PairJSX
                         name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
                         value={
                           <span>
                             {formatNumber(contracts)}
                             {depo < depoAvailable &&
                               <>
-                                {window.innerWidth < 768 ? <br/> : " "}
+                                {window.innerWidth < 768 ? <br /> : " "}
                                 (
                                   {formatNumber(Math.floor(depo / currentTool.guarantee))}
                                   /
@@ -696,8 +698,12 @@ const SettingsGenerator = props => {
                         }
                         formatValue={false}
                       />
+                      <PairJSX 
+                        name="Прибыль"
+                        value={round(totalIncome, 1)}
+                      />
                       <PairJSX
-                        name="Убыток"
+                        name="Убыток (риск)"
                         value={investorDepo * risk / 100}
                       />
                     </>
@@ -892,8 +898,12 @@ const SettingsGenerator = props => {
                               style={!isMobile ? { visibility: i == 0 ? 'visible' : 'hidden' } : {}}
                             >
                               <span>Суммарный % закрытия</span>
-                              <b>{dataList['основной']
-                                .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+                              <b>{
+                              dataList['основной'][dataList['основной'].length - 1]?.contractsLoaded == 0
+                                ? 100
+                                : dataList['основной']
+                                    .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+
                               }%</b>
                             </div>
                           }
@@ -1035,8 +1045,11 @@ const SettingsGenerator = props => {
 
                     <div className="settings-generator-content__print-group">
                       <span>Суммарный % закрытия</span>
-                      <b>{dataList['основной']
-                        .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
+                      <b>{
+                        dataList['основной'][dataList['основной'].length - 1]?.contractsLoaded == 0
+                          ? 100
+                          : dataList['основной']
+                              .reduce((acc, curr) => (acc || 0) + (curr.percent || 0), 0)
                       }%</b>
                     </div>
 
@@ -1314,12 +1327,20 @@ const SettingsGenerator = props => {
                     Обратные докупки
                   </Button>
 
+                  <Button className="settings-generator-table__show-code"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab5"
+                          id="settings-generator-tab5-control"
+                  >
+                    <span className="visually-hidden">Показать код</span>
+                    <CodeIcon />
+                  </Button>
+                  {/*  */}
+
                 </div>
                 {/* tablist */}
-
-                <button className="settings-generator-table__show-code">
-                  <CodeIcon />
-                </button>
 
               </div>
               {/* header */}
@@ -1363,6 +1384,17 @@ const SettingsGenerator = props => {
                    hidden>
                 
                 <SGTable data={dataList['обратные профит докупки']} closeMode={false} />
+                
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab5"
+                   aria-labelledby="settings-generator-tab5-control"
+                   hidden>
+                
+                <CodePanel data={dataList['основной']} />
                 
               </div>
               {/* tabpanel */}
