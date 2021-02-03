@@ -171,7 +171,7 @@ export default class NumericInput extends React.Component {
         >
           <Input
             type="text"
-            inputMode={isIPhone ? 'text' : 'decimal'}
+            inputMode={'decimal'}
             placeholder={0}
             maxLength={25}
             {...this.props}
