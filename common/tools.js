@@ -12,7 +12,7 @@ const template = {
   priceStep:       0,
   averageProgress: 0,
   guarantee:       0,
-  currentPrice:    0,
+  currentPrice:    55,
   volume:          0,
   lotSize:         0,
   dollarRate:      0,

@@ -1,5 +1,4 @@
 import React, { memo } from 'react'
-import ReactDOM from 'react-dom'
 import { Button } from 'antd/es'
 
 import CrossButton from "../cross-button"

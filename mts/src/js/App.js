@@ -7,12 +7,10 @@ import {
   Input,
   Pagination,
 } from 'antd/es'
+const { Option } = Select;
 
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
   LoadingOutlined,
-  QuestionCircleFilled,
   SettingFilled,
   WarningOutlined
 } from "@ant-design/icons"
@@ -24,15 +22,8 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import promiseWhile   from "../../../common/utils/promise-while"
+import { Tools, template } from "../../../common/tools"
 
-import { Tools, template }     from "../../../common/tools"
-import Stack                   from "../../../common/components/stack"
-import CustomSlider            from "./components/custom-slider"
-import SettingsGenerator       from "./components/settings-generator"
-import CrossButton             from "../../../common/components/cross-button"
-import NumericInput            from "../../../common/components/numeric-input"
-import { Dialog, dialogAPI }   from "../../../common/components/dialog"
-import Config                  from "../../../common/components/config"
 import {
   Chart,
   updateChartMinMax,
@@ -40,9 +31,16 @@ import {
   updateChartZoom
 } from "./components/chart"
 
-const { Option } = Select;
+import Stack                   from "../../../common/components/stack"
+import CrossButton             from "../../../common/components/cross-button"
+import { Dialog, dialogAPI }   from "../../../common/components/dialog"
 
-import "../sass/style.sass"
+import "../sass/style.sass";
+
+import Config                  from "../../../common/components/config"
+import NumericInput            from "../../../common/components/numeric-input"
+import SettingsGenerator       from "./components/settings-generator"
+import CustomSlider            from "../../../common/components/custom-slider"
 
 class App extends React.Component {
 
@@ -260,7 +258,7 @@ class App extends React.Component {
   }
 
   fetchTools() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       for (let request of [
         "getFutures",
         "getTrademeterInfo"
@@ -1320,7 +1318,7 @@ class App extends React.Component {
             depo={this.state.depo}
             tools={this.getTools()}
             load={percentage}
-            onClose={e => {
+            onClose={() => {
               dialogAPI.close("settings-generator");
             }}
           />

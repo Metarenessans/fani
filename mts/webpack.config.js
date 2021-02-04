@@ -37,8 +37,8 @@ module.exports = (env, options) => {
         prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
         webpackImporter: false,
         sassOptions: {
-          publicPath: "./",
-          outputStyle: "expanded",
+          // publicPath: "./",
+          // outputStyle: "expanded",
         },
       },
     }
@@ -47,17 +47,17 @@ module.exports = (env, options) => {
   const fontRule = {
     test: /\.(woff|woff2|eot|ttf|otf)$/,
     loader: "file-loader",
-    options: {
+    query: {
       name: "[path][name].[ext]"
-    },
+    }
   };
 
   const imageRule = {
     test: /\.(png|jpe?g|gif|webp)$/,
     loader: "file-loader",
-    options: {
+    query: {
       name: "[path][name].[ext]"
-    },
+    }
   };
 
   const plugins = [
@@ -117,6 +117,7 @@ module.exports = (env, options) => {
       contentBase: path.join(__dirname, ""),
       overlay: true,
       hot: true,
+      //host: '192.168.0.129'
     },
     module: {
       rules: [

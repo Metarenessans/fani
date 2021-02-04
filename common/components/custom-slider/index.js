@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 
 import { Slider, Tooltip } from 'antd/es'
 
@@ -11,8 +10,12 @@ export default class CustomSlider extends React.Component {
   constructor(props) {
     super(props);
 
-    const { value, filter } = this.props;
+    const { value, filter, range } = this.props;
 
+    if (range) {
+      this.range = true;
+    }
+    
     this.state = {
       value: value || 0
     };
@@ -29,23 +32,27 @@ export default class CustomSlider extends React.Component {
   }
 
   render() {
-    var { value, precision } = this.props;
-    precision = precision || 0;
+    var { value, precision, className, showValue, tooltipVisible } = this.props;
+    tooltipVisible = tooltipVisible;
+    precision      = precision || 0; 
+    showValue      = showValue || false;
 
     return (
-      <div className="custom-slider">
+      <div className={[].concat("custom-slider").concat(className).join(" ").trim()}>
         <Slider
           { ...this.props }
           className="custom-slider__input"
-          tooltipVisible={false}
+          tooltipVisible={tooltipVisible}
           defaultValue={value}
           onChange={e => this.onChange(e)}
         />
-        <Tooltip title={this.filter( croppNumber(value, 7) )}>
-          <span className="custom-slider__value">
-            { this.filter( croppNumber(value, precision) ) }
-          </span>
-        </Tooltip>
+        {showValue && (
+          <Tooltip title={this.filter( croppNumber(value, 7) )}>
+            <span className="custom-slider__value">
+              { this.filter( croppNumber(value, precision) ) }
+            </span>
+          </Tooltip>
+        )}
       </div>
     )
   }

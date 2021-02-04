@@ -19,6 +19,17 @@
     text-align: center;
   }
 
+  .ant-slider:not(.ant-slider-vertical) {
+    background: pink;
+
+    &-rail,
+    &-step,
+    &-track {
+      height: .2rem
+    }
+    
+  }
+
   // reset defaults
   .ant-slider {
     
@@ -26,11 +37,7 @@
       background-color: #ccc
     }
 
-    &-rail,
-    &-step,
-    &-track {
-      height: .2rem
-    }
+    
     
     &-track {
       background-color: var( --primary-color-lighter );
