@@ -27,7 +27,6 @@ input.iPhone {
 
       margin:  0;
       padding: 0;
-      padding-left: 1rem;
 
       border: none;
       border-radius:  50%;
@@ -38,17 +37,21 @@ input.iPhone {
       right: 0.3rem;
       top: 50%;
       transform:translateY(-50%);
-      margin-top: 0.2em;
+
+      font-size: 1.4em;
     
       svg {
         position: absolute;
         left: 50%;
         top:  50%;
         transform: translate(-50%, -50%) rotate(90deg);
-        margin-top: .05em;
+        // margin-top: .05em;
 
-        height: .4em;
-        width:  .4em;
+        // Дебильный костыль, чтобы иконка встала по центру
+        margin-left: 0.01em;
+
+        height: .35em;
+        width:  .35em;
 
         fill: green;
 

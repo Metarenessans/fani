@@ -9,9 +9,9 @@ export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.round = this.props.round == "true";
-    this.unsigned = this.props.unsigned == "true";
-    this.format = this.props.format || function (val) { return val };
+    this.round     = this.props.round == "true";
+    this.unsigned  = this.props.unsigned == "true";
+    this.format    = this.props.format    || function (val) { return val };
     this.onInvalid = this.props.onInvalid || function () { return "" };
     this.className = this.props.className || "";
 
@@ -163,12 +163,15 @@ export default class NumericInput extends React.Component {
     const { positive, value, errMsg } = this.state;
     const { unsigned } = this.props;
 
+    const safeProps = {...this.props};
+    delete safeProps.format;
+
     return (
       <Tooltip
         title={errMsg}
         visible={errMsg.length > 0}
       >
-        <div class={
+        <div className={
           []
             .concat(this.className)
             .concat("numeric-input-wrap")
@@ -181,7 +184,7 @@ export default class NumericInput extends React.Component {
             inputMode={'decimal'}
             placeholder={0}
             maxLength={25}
-            {...this.props}
+            {...safeProps}
             className={
               []
                 .concat("numeric-input")

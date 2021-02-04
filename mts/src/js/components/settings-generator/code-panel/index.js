@@ -1,4 +1,5 @@
 import React from 'react'
+import { message } from 'antd';
 
 import Stack from "../../../../../../common/components/stack"
 
@@ -30,9 +31,7 @@ export default function CodePanel(props) {
     .map(v => `{${v.percent},${v.points}}`)
     .join(",");
 
-  const textContent = 
-    `GParam.stop_arr = \n` + 
-    `{${parsedData}}`.replace(/\s+/, "");
+  const textContent = `GParam.stop_arr = {${parsedData}}`.replace(/\s+/, "");
 
   return (
     <Stack className="code-panel">
@@ -46,7 +45,10 @@ export default function CodePanel(props) {
               selectElementContent(codeElement.current);
 
               navigator.clipboard.writeText(textContent)
-                .then(() => console.log('Получилось!'))
+                .then(() => {
+                  message.success("Скопировано!");
+                  console.log('Скопировано!');
+                })
                 .catch(err => console.log('Something went wrong', err));
             }}
           >

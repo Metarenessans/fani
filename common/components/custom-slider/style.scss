@@ -2,21 +2,51 @@
   $root: &;
 
   position: relative;
-  padding-right: 10em + 2.5em;
-  padding-left:  0    + 1.5em;
+  padding-right: 10em + 2em;
+  padding-left:  0    + 2em;
 
   user-select: none;
   
   &__value {
     position: absolute;
-    right:     0em;
-    bottom: -0.5em;
-    width:   3.5em;
+    right:   0.4em;
+    bottom: -0.4em;
+    width: 2.5em;
 
     font-family: "Roboto", sans-serif;
     font-size: 3em;
     font-weight: bold;
     text-align: center;
+  }
+
+  .ant-slider-vertical {
+    .ant-slider {
+      &-handle {
+        margin-left: -0.55em;
+      }
+    }
+  }
+
+  .ant-slider:not(.ant-slider-vertical) {
+
+    &-rail,
+    &-step,
+    &-track {
+      height: .2rem
+    }
+
+    .ant-slider {
+      &-handle {
+        margin-top:  -0.55em;
+        margin-left:  0;
+      }
+    }
+
+    &#{$root}__input {
+      width: 100%;
+      height: 1em;
+    }
+    
   }
 
   // reset defaults
@@ -26,19 +56,13 @@
       background-color: #ccc
     }
 
-    &-rail,
-    &-step,
-    &-track {
-      height: .2rem
-    }
-    
     &-track {
       background-color: var( --primary-color-lighter );
     }
     
     &-handle {
-      margin-top:  -0.55em;
-      margin-left:  0;
+      // margin-top:  -0.55em;
+      // margin-left:  0;
       width:  1.35em;
       height: 1.35em;
 
@@ -68,8 +92,5 @@
 
     }
   }
-  
-  &__input {
-    width: 100%;
-  }
+
 }
