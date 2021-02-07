@@ -512,11 +512,10 @@ $m: .4475;
 
       .input-group {
         flex-shrink: 1;
-        // flex-grow: 1;
-        max-width: unset;
+        max-width: 9.5em;
         width: unset;
 
-        margin-right: 2em;
+        margin-right: 1.5em;
 
         &:last-of-type {
           margin-right: 1em;
@@ -534,12 +533,30 @@ $m: .4475;
         }
       }
 
+      &--custom {
+        .input-group {
+          flex-grow: 1;
+          max-width: 21%;
+
+          @include xs {
+            width: 100%;
+            max-width: 46%;
+            margin-right: 0;
+            margin-bottom: .5em;
+
+            &:last-of-type {
+              margin-right: 0;
+            }
+          }
+        }
+      }
+
       .settings-generator-content__print-group {
         margin-left: auto;
 
         @include xs {
-          position: relative;
-          top: 3.5em;
+          // position: relative;
+          // top: 3.5em;
           max-width: 100%;
           width: 100%;
         }
@@ -561,9 +578,15 @@ $m: .4475;
         color: currentColor !important;
         font-size: 1.25em;
 
+        &.hidden {
+          visibility: hidden;
+
+          @include visually-hidden();
+        }
+
         @include xs {
           margin-top: 0;
-          position: absolute;
+          position: absolute !important;
           right:  -.5em;
           top:    -.75em;
         }
@@ -571,20 +594,18 @@ $m: .4475;
 
       &-btn {
         font-size: .7em !important;
-
-        @include xs {
-          position: relative;
-          top: -5em;
-        }
       }
     }
 
     &__step-mode-switcher {
       background: none;
+      display: inline-block;
+      min-width: 1.75em;
       border: none;
-      padding: 0 .6em;
-      margin-left: .4em;
+      padding: 0 .5em;
+      margin-left: .25em;
 
+      color: var(--primary-color);
       font-weight: inherit;
       text-decoration: underline;
 

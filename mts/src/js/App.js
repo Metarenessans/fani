@@ -1010,20 +1010,24 @@ class App extends React.Component {
                       <div className="mts-table">
                         <h3>Статистика КОД</h3>
                         <table>
-                          <tr>
-                            <th>День</th>
-                            <th>План %</th>
-                            <th>Факт %</th>
-                            <th>Доходность</th>
-                          </tr>
-                          {new Array(period).fill(0).map((value, index) =>
+                          <thead>
                             <tr>
-                              <td>{((page - 1) * period) + (index + 1)}</td>
-                              <td>{kod}</td>
-                              <td><Input defaultValue="1"/></td>
-                              <td><Input defaultValue="1"/></td>
+                              <th>День</th>
+                              <th>План %</th>
+                              <th>Факт %</th>
+                              <th>Доходность</th>
                             </tr>
-                          )}
+                          </thead>
+                          <tbody>
+                            {new Array(period).fill(0).map((value, index) =>
+                              <tr key={index}>
+                                <td>{((page - 1) * period) + (index + 1)}</td>
+                                <td>{kod}</td>
+                                <td><Input defaultValue="1"/></td>
+                                <td><Input defaultValue="1"/></td>
+                              </tr>
+                            )}
+                          </tbody>
                         </table>
                         <Pagination
                           key={days}

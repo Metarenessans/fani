@@ -362,6 +362,29 @@ class Tools {
     return tool;
   }
 
+  static createArray() {
+    return [
+      this.create(),
+      this.create({
+        ref:             null,
+        fullName:        "BR-3.21",
+        shortName:       "",
+        code:            "BRH1",
+        stepPrice:       7.46955,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       7407.8,
+        currentPrice:    59.51,
+        volume:          0,
+        lotSize:         10,
+        dollarRate:      0,
+        adrDay:          1.65,
+        adrWeek:         3.71,
+        adrMonth:        8.27,
+      })
+    ]
+  }
+
   static getToolIndexByCode(tools = [], search = "") {
     if (!search || !tools.length) {
       return 0;
