@@ -38,7 +38,7 @@ export default class IterationsContainer extends React.Component {
       }
     }
 
-    const onChange = (iterations = [], shouldFocusLastElement = true) => {
+    const onChange = (iterations = [], shouldFocusLastElement = true, scrolling = true) => {
       const filteredIterations = iterations.filter(it => !it.empty);
   
       const { depoStart } = data[currentDay - 1];
@@ -66,8 +66,10 @@ export default class IterationsContainer extends React.Component {
           lastFocus();
         }
 
-        const list = document.querySelector(".iterations-list");
-        list.scrollTop = 9999;
+        if (scrolling) {
+          const list = document.querySelector(".iterations-list");
+          list.scrollTop = 9999;
+        }
       })
     };
 
@@ -77,142 +79,141 @@ export default class IterationsContainer extends React.Component {
       iterationsToRender = [new Iteration(calculatedRate)];
     }
 
-    
-
       return (
         <>
           <div
             className="iterations"
-
             ref={this.myRef}
           >
             <ol className="iterations-list">
-            {
-              iterationsToRender && iterationsToRender
-                // TODO: rename listItem
-              .map((listItem, index) => {
-                let rate = listItem.getRate(depoStart);
-                if (!changed || rate == null || isNaN(rate)) {
-                  rate = "";
-                }
-  
-                let income = listItem.getIncome(depoStart);
-                if (!changed || income == null || isNaN(income)) {
-                  income = "";
-                }
+              {
+                iterationsToRender && iterationsToRender
+                  // TODO: rename listItem
+                .map((listItem, index) => {
+                  let rate = listItem.getRate(depoStart);
+                  if (!changed || rate == null || isNaN(rate)) {
+                    rate = "";
+                  }
 
-                return (
-                  <li key={index} className="iterations-list-item">
-                    <span className="iterations-list-item__number">
-                      {index + 1}.
-                                              </span>
+                  let income = listItem.getIncome(depoStart);
+                  if (!changed || income == null || isNaN(income)) {
+                    income = "";
+                  }
 
-                    <NumericInput
-                      className="iterations-list-item__input"
-                      defaultValue={income}
-                      placeholder={placeholder}
-                      format={formatNumber}
-                      round="true"
-                      onBlur={(val, textValue) => {
-                        if (!iterations[index]) {
-                          iterations[index] = new Iteration();
-                        }
+                  return (
+                    <li key={index} className="iterations-list-item">
+                      <span className="iterations-list-item__number">
+                        {index + 1}.
+                      </span>
 
-                        let shouldFocusLastElement = false;
-  
-                        
-                        let percent;
-                        if (textValue !== "") {
-                          percent = val / data[currentDay - 1].depoStartTest * 100;
-                          
-                          if (val != income) {
-                            iterations.push(new Iteration());
-                            shouldFocusLastElement = true;
+                      <NumericInput
+                        className="iterations-list-item__input"
+                        defaultValue={income}
+                        placeholder={placeholder}
+                        format={formatNumber}
+                        round="true"
+                        onBlur={(val, textValue) => {
+                          if (!iterations[index]) {
+                            iterations[index] = new Iteration();
                           }
-                        }
 
-                        iterations[index].income = null;
-                        iterations[index].percent = percent;
-                        onChange(iterations, shouldFocusLastElement);
-                      }}
-                    />
-                    <span className="iterations-list-item__separator">~</span>
-                    <span className="iterations-list-item__input iterations-list-item__input--unstyled">
-                      {
-                        formatNumber(round(rate, 3)) + "%"
-                      }
-                    </span>
-  
-                    <Popover
-                      content={
-                        <TimeRangePicker
-                          startTime={listItem.startTime}
-                          endTime={listItem.endTime}
-                          onChange={(startTime, endTime) => {
-                            if (!iterations[index]) {
-                              iterations[index] = new Iteration();
-                            }
-  
-                            if (!isNaN(startTime)) {
-                              iterations[index].startTime = startTime;
-                            }
-                            if (!isNaN(endTime)) {
-                              iterations[index].endTime = endTime;
-                            }
-  
-                            data[currentDay - 1].iterations = iterations;
-                            this.setState({ data });
-                          }}
-                        />
-                      }
-                      trigger="click"
-                      placement="left"
-                      destroyTooltipOnHide={true}
-                    >
-                    <div className="iterations-list-item__clock">
-                      {(() => {
-                        let h = 0;
-                        let m = 0;
-                        let text = "";
+                          let shouldFocusLastElement = false;
+                          let scrolling = false;
 
-                        let { period } = listItem;
-                        if (!isNaN(period) && period != 0) {
-                          const date = new Date(period);
-                          m = date.getUTCMinutes();
-                          text += `${m}м`;
+                          let percent;
+                          if (textValue !== "") {
+                            percent = val / data[currentDay - 1].depoStartTest * 100;
 
-                          h = date.getUTCHours();
-                          if (h != 0) {
-                            text = `${h}ч ` + text;
+                            if (val != income) {
+                              iterations.push(new Iteration());
+                              shouldFocusLastElement = true;
+                              scrolling = true;
+                            }
                           }
-                        }
 
-                        return (
-                          <>
-                            {text == ""
-                              ? <ClockCircleFilled />
-                              : <span className="iterations-list-item__clock-time">{text}</span>
-                            }
-                          </>
-                        )
-                      })()}
-                    </div>
-                    </Popover>
-  
-                    {index > 0 && (
-                      <CrossButton
-                        className="iterations-list-item__delete"
-                        onClick={() => {
-                          const { iterations } = data[currentDay - 1];
-                          iterations.splice(index, 1);
-                          onChange(iterations);
+
+                          iterations[index].income = null;
+                          iterations[index].percent = percent;
+                          onChange(iterations, shouldFocusLastElement, scrolling);
                         }}
                       />
-                    )}
-                  </li>
-                )
-              })
-            }
+                      <span className="iterations-list-item__separator">~</span>
+                      <span className="iterations-list-item__input iterations-list-item__input--unstyled">
+                        {
+                          formatNumber(round(rate, 3)) + "%"
+                        }
+                      </span>
+    
+                      <Popover
+                        content={
+                          <TimeRangePicker
+                            startTime={listItem.startTime}
+                            endTime={listItem.endTime}
+                            onChange={(startTime, endTime) => {
+                              if (!iterations[index]) {
+                                iterations[index] = new Iteration();
+                              }
+    
+                              if (!isNaN(startTime)) {
+                                iterations[index].startTime = startTime;
+                              }
+                              if (!isNaN(endTime)) {
+                                iterations[index].endTime = endTime;
+                              }
+    
+                              data[currentDay - 1].iterations = iterations;
+                              this.setState({ data });
+                            }}
+                          />
+                        }
+                        trigger="click"
+                        placement="left"
+                        destroyTooltipOnHide={true}
+                      >
+                      <div className="iterations-list-item__clock">
+                        {(() => {
+                          let h = 0;
+                          let m = 0;
+                          let text = "";
+
+                          let { period } = listItem;
+                          if (!isNaN(period) && period != 0) {
+                            const date = new Date(period);
+                            m = date.getUTCMinutes();
+                            text += `${m}м`;
+
+                            h = date.getUTCHours();
+                            if (h != 0) {
+                              text = `${h}ч ` + text;
+                            }
+                          }
+
+                          return (
+                            <>
+                              {text == ""
+                                ? <ClockCircleFilled />
+                                : <span className="iterations-list-item__clock-time">{text}</span>
+                              }
+                            </>
+                          )
+                        })()}
+                      </div>
+                      </Popover>
+    
+                      {index > 0 && (
+                        <CrossButton
+                          className="iterations-list-item__delete"
+                          onClick={() => {
+                            const { iterations } = data[currentDay - 1];
+                            iterations.splice(index, 1);
+                            onChange(iterations);
+                          }}
+                        />
+                      )}
+                    </li>
+                  )
+                })
+              }
             </ol>
             <button
               className="iterations-button"
@@ -230,7 +231,8 @@ export default class IterationsContainer extends React.Component {
             
             >
               Добавить
-                                        <span className="visually-hidden">итерацию</span>
+            <span className="visually-hidden">итерацию</span>
+
             </button>
           </div>
         </>
