@@ -120,12 +120,15 @@ export default class IterationsContainer extends React.Component {
 
                         let shouldFocusLastElement = false;
   
+                        
                         let percent;
-                        if (textValue !== "" && val != income) {
+                        if (textValue !== "") {
                           percent = val / data[currentDay - 1].depoStartTest * 100;
-                          iterations.push(new Iteration());
-
-                          shouldFocusLastElement = true;
+                          
+                          if (val != income) {
+                            iterations.push(new Iteration());
+                            shouldFocusLastElement = true;
+                          }
                         }
 
                         iterations[index].income = null;
