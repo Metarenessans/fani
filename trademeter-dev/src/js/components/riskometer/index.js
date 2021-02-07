@@ -1,7 +1,6 @@
-import React, { memo } from 'react'
+import React from 'react'
 import * as antv from '@antv/g2';
 
-import { isEqual } from "lodash"
 import round from "../../utils/round"
 
 import "./style.sass"
@@ -44,13 +43,12 @@ function draw(data) {
   chart.changeData(data);
 }
 
-export default class Speedometer extends React.Component {
+export default class Riskometer extends React.Component {
   
   constructor(props) {
     super(props);
 
     this.state = {
-      p_out: [],
       value: 0,
       id:    Math.random(),
     };
@@ -143,8 +141,8 @@ export default class Speedometer extends React.Component {
     let chance = 100 - ((this.props.value * this.props.tool.priceStep) / this.props.tool.adrDay * 100);
     if (chance < 0) {
       chance = 0
-    } 
-
+    }
+ 
     this.setState({value: chance }, this.createShape);
   }
 
@@ -155,13 +153,13 @@ export default class Speedometer extends React.Component {
     return (
       <figure
         id="anychart-embed-jCekzhX3"
-        className="speedometer anychart-embed anychart-embed-jCekzhX3"
+        className="riskometer anychart-embed anychart-embed-jCekzhX3"
         { ...this.props }
       >
         <div id="container"></div>
-        <figcaption className="speedometer__caption">
+        <figcaption className="riskometer__caption">
           Вероятность хода
-          <span className="speedometer__value">{ round(value, 2) }%</span>
+          <span className="riskometer__value">{ round(value, 2) }%</span>
         </figcaption>
       </figure>
     )

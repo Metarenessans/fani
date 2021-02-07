@@ -1,4 +1,4 @@
-import React, { Component, memo } from "react"
+import React, { Component } from "react"
 const { Provider, Consumer } = React.createContext();
 import {
   Button,
@@ -60,7 +60,7 @@ import CustomSlider    from "./components/custom-slider"
 import Header          from "./components/header"
 import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
-import Speedometer     from "./components/riskometer"
+import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
 import TimeRangePicker from "./components/time-range-picker"
 import ToolSelect      from "./components/tool-select"
@@ -73,6 +73,8 @@ import {
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
 import "../sass/style.sass"
+
+import IterationsContainer from "./components/iterations-container"
 
 let lastRealData = {};
 let saveToDonwload;
@@ -280,7 +282,7 @@ class App extends Component {
          * Массив с данными для каждого дня
          * @type {Array<{}>}
          */
-        data: [],
+         data: [],
         
         /**
          * Массив с сохранениям
@@ -1462,7 +1464,7 @@ class App extends Component {
     // let value = Math.round( depoStart * (scale / 100) );
     let value = depoStart * (scale / 100);
 
-    if (data[day - 1].customIncome != null) {
+    if (data[day - 1].customIncome != null ) {
       value = data[day - 1].customIncome;
     }
 
@@ -2426,12 +2428,8 @@ class App extends Component {
                         let pointsForIteration = this.getPointsForIteration();
 
                         return (
-                          <Speedometer
+                          <Riskometer
                             key={pointsForIteration}
-                            chances={[
-                              tool.points.map(row => row[0]),
-                              tool.points.map(row => row[1])
-                            ]}
                             value={pointsForIteration}
                             tool={tool}
                           />
@@ -3012,7 +3010,7 @@ class App extends Component {
                                 : "Добавить"
                               : "Сохранить"
                           }
-                        </Button>
+                        </Button >
 
                         <button
                           disabled={dataLength - currentDay < 5}
@@ -3033,190 +3031,17 @@ class App extends Component {
                         <div className="result-col result-col-iterations card">
                           <h3 className="result-col__title">Итерации</h3>
                           <div className="result-col__content">
-                            {(() => {
-                              const onChange = (iterations = []) => {
-                                const filteredIterations = iterations.filter(it => !it.empty);
-
-                                const { depoStart } = data[currentDay - 1];
-
-                                let rate;
-                                let income;
-                                if (filteredIterations.length) {
-                                  rate = filteredIterations
-                                    .map(it => it.rate)
-                                    .reduce((prev, curr) => prev + curr);
-
-                                  income = filteredIterations
-                                    .map(it => it.getIncome(depoStart))
-                                    .reduce((prev, curr) => prev + curr);
-                                }
-
-                                data[currentDay - 1].rate = rate;
-                                data[currentDay - 1].income = income;
-                                data[currentDay - 1].iterations = iterations;
-
-                                data[currentDay - 1].changed = data[currentDay - 1].isChanged;
-
+                            <IterationsContainer
+                              data={data}
+                              currentDay={currentDay}
+                              placeholder={placeholder}
+                              callback={(data, callback) => {
                                 this.setStateAsync({ data })
+                                  .then(() => callback())
                                   .then(() => this.updateData())
                                   .then(() => chartVisible && updateChart.call(this))
-                              };
-
-                              let { iterations, calculatedRate, depoStart, changed } = data[currentDay - 1];
-                              let iterationsToRender = iterations.map(it => it.copy());
-                              if (iterationsToRender.length == 0) {
-                                iterationsToRender = [new Iteration(calculatedRate)];
-                              }
-
-                              return (
-                                <div className="iterations">
-                                  <ol className="iterations-list">
-                                    {
-                                      iterationsToRender && iterationsToRender
-                                        // TODO: rename listItem
-                                        .map((listItem, index) => {
-                                          let rate = listItem.getRate(depoStart);
-                                          if (!changed || rate == null || isNaN(rate)) {
-                                            rate = "";
-                                          }
-
-                                          let income = listItem.getIncome(depoStart);
-                                          if (!changed || income == null || isNaN(income)) {
-                                            income = "";
-                                          }
-
-                                          return (
-                                            <li key={index} className="iterations-list-item">
-                                              <span className="iterations-list-item__number">
-                                                {index + 1}.
-                                              </span>
-
-                                              <NumericInput
-                                                className="iterations-list-item__input"
-                                                defaultValue={income}
-                                                placeholder={placeholder}
-                                                format={formatNumber}
-                                                round="true"
-                                                onBlur={(val, textValue) => {
-                                                  if (!iterations[index]) {
-                                                    iterations[index] = new Iteration();
-                                                  }
-
-                                                  let percent;
-                                                  if (textValue !== "") {
-                                                    percent = val / data[currentDay - 1].depoStartTest * 100;
-                                                  }
-
-                                                  iterations[index].income  = null;
-                                                  iterations[index].percent = percent;
-                                                  onChange(iterations);
-                                                }}
-                                              />
-                                              <span className="iterations-list-item__separator">~</span>
-                                              <span className="iterations-list-item__input iterations-list-item__input--unstyled">
-                                                {
-                                                  formatNumber(round(rate, 3)) + "%"
-                                                }
-                                              </span>
-
-                                              <Popover
-                                                content={
-                                                  <TimeRangePicker
-                                                    startTime={listItem.startTime}
-                                                    endTime={listItem.endTime}
-                                                    onChange={(startTime, endTime) => {
-                                                      if (!iterations[index]) {
-                                                        iterations[index] = new Iteration();
-                                                      }
-
-                                                      if (!isNaN(startTime)) {
-                                                        iterations[index].startTime = startTime;
-                                                      }
-                                                      if (!isNaN(endTime)) {
-                                                        iterations[index].endTime = endTime;
-                                                      }
-
-                                                      data[currentDay - 1].iterations = iterations;
-                                                      this.setState({ data });
-                                                    }}
-                                                  />
-                                                }
-                                                trigger="click"
-                                                placement="left"
-                                                destroyTooltipOnHide={true}
-                                              >
-                                                <div className="iterations-list-item__clock">
-
-                                                  {(() => {
-                                                    let h = 0;
-                                                    let m = 0;
-                                                    let text = "";
-
-                                                    let { period } = listItem;
-                                                    if (!isNaN(period) && period != 0) {
-                                                      const date = new Date(period);
-                                                      m = date.getUTCMinutes();
-                                                      text += `${m}м`;
-
-                                                      h = date.getUTCHours();
-                                                      if (h != 0) {
-                                                        text = `${h}ч ` + text;
-                                                      }
-                                                    }
-
-                                                    return (
-                                                      <>
-                                                        {text == ""
-                                                          ? <ClockCircleFilled/>
-                                                          : <span className="iterations-list-item__clock-time">{text}</span>
-                                                        }
-                                                      </>
-                                                    )
-                                                  })()}
-
-                                                </div>
-                                              </Popover>
-
-                                              {index > 0 && (
-                                                <CrossButton
-                                                  className="iterations-list-item__delete"
-                                                  onClick={e => {
-                                                    const { iterations } = data[currentDay - 1];
-                                                    iterations.splice(index, 1);
-                                                    onChange(iterations);
-                                                  }}
-                                                />
-                                              )}
-                                            </li>
-                                          )
-                                        })
-                                    }
-                                  </ol>
-                                  <button
-                                    className="iterations-button"
-                                    onClick={() => {
-                                      if (iterations.length == 0) {
-                                        iterations = [new Iteration(
-                                          data[currentDay - 1].isChanged
-                                            ? calculatedRate
-                                            : null
-                                        )];
-                                      }
-                                      iterations.push(new Iteration());
-                                      onChange(iterations);
-
-                                      this.setState({ data }, () => {
-                                        const list = document.querySelector(".iterations-list");
-                                        list.scrollTop = 9999;
-                                      });
-                                    }}
-                                  >
-                                    Добавить
-                                    <span className="visually-hidden">итерацию</span>
-                                  </button>
-                                </div>
-                              );
-                            })()}
+                              }}
+                            />
                           </div>
                         </div>
 
@@ -3836,7 +3661,7 @@ class App extends Component {
             Вы уверены, что хотите удалить {this.getTitle()}?
           </Dialog>
           {/* Delete Popup */}
-          
+
           {(() => {
             const { errorMessage } = this.state;
             return (
