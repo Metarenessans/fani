@@ -20,7 +20,6 @@ export default class CustomSlider extends React.Component {
 
     this.filter = filter || (value => value);
   }
-
   shouldComponentUpdate(nextProps, nextState) {
     if (isEqual(this.props, nextProps) == false) {
       return true
