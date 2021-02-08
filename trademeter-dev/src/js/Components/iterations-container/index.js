@@ -26,6 +26,11 @@ export default class IterationsContainer extends React.Component {
   shouldComponentUpdate(nextProps, nextState) {
     return !isEqual(this.props, nextProps);
   }
+  
+  componentDidUpdate() {
+    const list = document.querySelector(".iterations-list");
+    list.scrollTop = 9999;
+  }
 
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
@@ -61,7 +66,7 @@ export default class IterationsContainer extends React.Component {
 
       data[currentDay - 1].changed = data[currentDay - 1].isChanged;
 
-      callback(data, () => {
+      callback(data,  () => {
         if (shouldFocusLastElement) {
           lastFocus();
         }
@@ -103,7 +108,7 @@ export default class IterationsContainer extends React.Component {
                   return (
                     <li key={index} className="iterations-list-item">
                       <span className="iterations-list-item__number">
-                        {index + 1}.
+                        {index + 1}
                       </span>
 
                       <NumericInput
@@ -119,19 +124,34 @@ export default class IterationsContainer extends React.Component {
 
                           let shouldFocusLastElement = false;
                           let scrolling = false;
-
+                          let lastIteration = iterations[iterations.length - 1];
+                          let shouldCreateNewIteration = false;
                           let percent;
-                          if (textValue !== "") {
-                            percent = val / data[currentDay - 1].depoStartTest * 100;
 
+                          if (textValue !== "" ) {
+                            percent = val / data[currentDay - 1].depoStartTest * 100;
+                            shouldCreateNewIteration = true;
+                            
+                            if (iterations.length == 1) {
+                              shouldCreateNewIteration = true;
+                            }
+                            
                             if (val != income) {
-                              iterations.push(new Iteration());
-                              shouldFocusLastElement = true;
                               scrolling = true;
+                              shouldFocusLastElement = true;
                             }
                           }
+                          
+                          if ( index != iterations.length - 1 && lastIteration.empty ) {
+                            shouldCreateNewIteration = false;
+                            scrolling = true;
+                            shouldFocusLastElement = true;
+                          }
 
-
+                          if (shouldCreateNewIteration) {
+                            iterations.push(new Iteration());
+                          }
+                          
                           iterations[index].income = null;
                           iterations[index].percent = percent;
                           onChange(iterations, shouldFocusLastElement, scrolling);
@@ -143,7 +163,7 @@ export default class IterationsContainer extends React.Component {
                           formatNumber(round(rate, 3)) + "%"
                         }
                       </span>
-    
+
                       <Popover
                         content={
                           <TimeRangePicker

@@ -36,7 +36,9 @@ export default class Data extends Array {
       let day = i + 1;
 
       let expanded = fallbackBoolean(this[i]?.expanded, false);
-      // expanded = true;
+      if (dev) {
+        expanded = true;
+      }
       let saved    = fallbackBoolean(this[i]?.saved, false);
       let changed  = fallbackBoolean(this[i]?.changed, false);
 
