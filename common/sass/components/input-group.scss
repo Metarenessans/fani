@@ -28,7 +28,7 @@
   }
 
   &__label {
-    display: block;
+    display: flex;
     margin-bottom: .5em;
 
     @include font("Roboto");

@@ -1034,7 +1034,11 @@ const SettingsGenerator = props => {
                           presetsCopy[currentPresetIndex] = currentPresetCopy;
                           setPresets(presetsCopy);
                         }}
-                        suffix={currentPreset.options.inPercent ? "%" : undefined}
+                        suffix={
+                          currentPreset.options.mode != 'fibonacci' && currentPreset.options.inPercent 
+                            ? "%" 
+                            : undefined
+                        }
                       />
                     </label>
 
