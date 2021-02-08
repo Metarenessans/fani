@@ -137,15 +137,14 @@ export default class IterationsContainer extends React.Component {
                             }
                             
                             if (val != income) {
-                              scrolling = true;
+                              scrolling = false;
                               shouldFocusLastElement = true;
                             }
                           }
                           
                           if ( index != iterations.length - 1 && lastIteration.empty ) {
+                            shouldFocusLastElement = false;
                             shouldCreateNewIteration = false;
-                            scrolling = true;
-                            shouldFocusLastElement = true;
                           }
 
                           if (shouldCreateNewIteration) {
