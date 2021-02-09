@@ -27,11 +27,13 @@ export default class IterationsContainer extends React.Component {
     return !isEqual(this.props, nextProps);
   }
   
-  componentDidUpdate() {
-    const list = document.querySelector(".iterations-list");
-    list.scrollTop = 9999;
+  componentDidUpdate(prevProps) {
+    if (this.props.currentDay != prevProps.currentDay) {
+      const list = document.querySelector(".iterations-list");
+      list.scrollTop = 9999;
+    }
   }
-
+  
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
     
@@ -127,22 +129,19 @@ export default class IterationsContainer extends React.Component {
                           let lastIteration = iterations[iterations.length - 1];
                           let shouldCreateNewIteration = false;
                           let percent;
-
-                          if (textValue !== "" ) {
+                          if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
                             shouldCreateNewIteration = true;
-                            
                             if (iterations.length == 1) {
                               shouldCreateNewIteration = true;
                             }
-                            
-                            if (val != income) {
-                              scrolling = false;
+
+                            if (textValue !== "" && iterations.length >= 1 ) {
                               shouldFocusLastElement = true;
                             }
                           }
-                          
-                          if ( index != iterations.length - 1 && lastIteration.empty ) {
+
+                          if (index != iterations.length - 1 && lastIteration.empty) {
                             shouldFocusLastElement = false;
                             shouldCreateNewIteration = false;
                           }
@@ -150,7 +149,7 @@ export default class IterationsContainer extends React.Component {
                           if (shouldCreateNewIteration) {
                             iterations.push(new Iteration());
                           }
-                          
+
                           iterations[index].income = null;
                           iterations[index].percent = percent;
                           onChange(iterations, shouldFocusLastElement, scrolling);
