@@ -1,7 +1,5 @@
 @import "../../../../../common/sass/_mixins.scss";
 
-
-
 .iterations {
   position: relative;
   width:  100%;
@@ -22,7 +20,8 @@
     flex-grow: 1;
     overflow-y: scroll;
     padding: .1em 1em;
-    margin: 1em 0;
+    margin-top: 1em;
+    margin-bottom: 0.6em;
 
     &-item {
       position: relative;
@@ -38,7 +37,7 @@
       font-size: .85em;
 
       &:last-child {
-        margin-bottom: 0;
+        margin-bottom: 0.4em!important;
       }
 
       &__number {
@@ -153,7 +152,6 @@
     width: 100%;
     border: none;
     background: var(--primary-color);
-    margin-top: -0.1rem;
     padding: .5em 2em;
 
     color: #fff;
