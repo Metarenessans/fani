@@ -2984,9 +2984,11 @@ class App extends Component {
                           onClick={e => {
                             let { data, currentDay, saved } = this.state;
                             const { expanded } = data[currentDay - 1];
-                            
+                            const list = document.querySelector(".iterations-list");
+
+                            list.scrollTop = 9999;
+
                             if (expanded) {
-                              const list = document.querySelector(".iterations-list");
                               list.scrollTop = 9999;
 
                               if (!saved) {
@@ -2996,7 +2998,6 @@ class App extends Component {
                                 this.update(this.getTitle());
                                 data[currentDay - 1].expanded = !expanded;
                               }
-                              
                             }
                             else {
                               data[currentDay - 1].expanded = !expanded;
