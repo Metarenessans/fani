@@ -23,7 +23,7 @@ export default class IterationsContainer extends React.Component {
   }
 
   //TODO: нужна передача конкретного дня, а не даты
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps) {
     return !isEqual(this.props, nextProps);
   }
 
@@ -41,14 +41,13 @@ export default class IterationsContainer extends React.Component {
       const list = document.querySelector(".iterations-list");
       list.scrollTop = 9999;
     }
-
   }
   
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
     
     const lastFocus = () => {
-      if (this.myRef.current != null) {
+      if (this.myRef.current != null && !data[currentDay - 1]) {
         let arr = this.myRef.current.querySelectorAll("input");
         let lastElement = arr[arr.length - 1]
         lastElement.focus();
@@ -129,6 +128,7 @@ export default class IterationsContainer extends React.Component {
                         placeholder={placeholder}
                         format={formatNumber}
                         round="true"
+
                         onBlur={(val, textValue) => {
                           if (!iterations[index]) {
                             iterations[index] = new Iteration();
