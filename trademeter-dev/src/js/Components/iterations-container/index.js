@@ -28,15 +28,20 @@ export default class IterationsContainer extends React.Component {
   }
 
   componentDidMount () {
-    const list = document.querySelector(".iterations-list");
-    list.scrollTop = 9999;
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.currentDay != prevProps.currentDay) {
+    const { data, currentDay } = this.props;
+    if (data[currentDay - 1].expanded) {
       const list = document.querySelector(".iterations-list");
       list.scrollTop = 9999;
     }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { expanded, currentDay } = this.props;
+    if (expanded != prevProps.expanded || currentDay != prevProps.currentDay) {
+      const list = document.querySelector(".iterations-list");
+      list.scrollTop = 9999;
+    }
+
   }
   
   render() {

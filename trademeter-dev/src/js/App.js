@@ -49,7 +49,7 @@ import typeOf              from "../../../common/utils/type-of"
 import { Tools, template } from "../../../common/tools"
 
 import Iteration from "./utils/iteration"
-import Data      from "./utils/data"
+import Data      from "./utils/data" 
 
 import Stack           from "./components/stack"
 import BigNumber       from "./components/BigNumber"
@@ -79,7 +79,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDonwload;
 
-const shouldLoadFakeSave = false;
+const shouldLoadFakeSave = true;
 const chartVisible       = true;
 
 class App extends Component {
@@ -2984,12 +2984,8 @@ class App extends Component {
                           onClick={e => {
                             let { data, currentDay, saved } = this.state;
                             const { expanded } = data[currentDay - 1];
-                            const list = document.querySelector(".iterations-list");
-
-                            list.scrollTop = 9999;
 
                             if (expanded) {
-                              list.scrollTop = 9999;
 
                               if (!saved) {
                                 dialogAPI.open("dialog1", e.target);
@@ -3002,7 +2998,7 @@ class App extends Component {
                             else {
                               data[currentDay - 1].expanded = !expanded;
                             }
-                            
+
                             this.setState(data);
                           }}
                         >
@@ -3035,6 +3031,7 @@ class App extends Component {
                           <h3 className="result-col__title">Итерации</h3>
                           <div className="result-col__content">
                             <IterationsContainer
+                              expanded={data[currentDay - 1].expanded}
                               data={data}
                               currentDay={currentDay}
                               placeholder={placeholder}
