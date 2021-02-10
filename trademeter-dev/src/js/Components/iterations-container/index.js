@@ -26,7 +26,12 @@ export default class IterationsContainer extends React.Component {
   shouldComponentUpdate(nextProps, nextState) {
     return !isEqual(this.props, nextProps);
   }
-  
+
+  componentDidMount () {
+    const list = document.querySelector(".iterations-list");
+    list.scrollTop = 9999;
+  }
+
   componentDidUpdate(prevProps) {
     if (this.props.currentDay != prevProps.currentDay) {
       const list = document.querySelector(".iterations-list");
