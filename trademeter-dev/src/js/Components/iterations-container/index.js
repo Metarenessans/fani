@@ -45,9 +45,8 @@ export default class IterationsContainer extends React.Component {
   
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
-    
     const lastFocus = () => {
-      if (this.myRef.current != null && !data[currentDay - 1]) {
+      if (this.myRef.current != null) {
         let arr = this.myRef.current.querySelectorAll("input");
         let lastElement = arr[arr.length - 1]
         lastElement.focus();
@@ -128,7 +127,7 @@ export default class IterationsContainer extends React.Component {
                         placeholder={placeholder}
                         format={formatNumber}
                         round="true"
-
+                        
                         onBlur={(val, textValue) => {
                           if (!iterations[index]) {
                             iterations[index] = new Iteration();
@@ -142,10 +141,10 @@ export default class IterationsContainer extends React.Component {
                           if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
                             shouldCreateNewIteration = true;
+                            
                             if (iterations.length == 1) {
                               shouldCreateNewIteration = true;
                             }
-
                             if (textValue !== "" && iterations.length >= 1 ) {
                               shouldFocusLastElement = true;
                             }
@@ -234,7 +233,7 @@ export default class IterationsContainer extends React.Component {
                           onClick={() => {
                             const { iterations } = data[currentDay - 1];
                             iterations.splice(index, 1);
-                            onChange(iterations);
+                            onChange(iterations, false);
                           }}
                         />
                       )}
@@ -251,8 +250,8 @@ export default class IterationsContainer extends React.Component {
                     data[currentDay - 1].isChanged
                       ? calculatedRate
                       : null
-                  )];
-                }
+                    )];
+                  }
                 iterations.push(new Iteration());
                 onChange(iterations);
               }}
