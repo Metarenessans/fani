@@ -2986,6 +2986,8 @@ class App extends Component {
                             const { expanded } = data[currentDay - 1];
                             
                             if (expanded) {
+                              const list = document.querySelector(".iterations-list");
+                              list.scrollTop = 9999;
 
                               if (!saved) {
                                 dialogAPI.open("dialog1", e.target);
