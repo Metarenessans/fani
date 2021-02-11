@@ -5,7 +5,7 @@ import formatNumber   from '../../../../../../common/utils/format-number'
 
 import "./style.scss"
 
-export default function Table ({ data, closeMode = true }) {
+export default function Table ({ data, isBying = false, isReversed = false }) {
   if (data == null || data.length == 0) {
     return null;
   }
@@ -21,23 +21,34 @@ export default function Table ({ data, closeMode = true }) {
             <thead>
               <tr className="settings-generator-table__row-header">
                 <th>№</th>
-                <th>% {closeMode ? 'закрытия' : 'докупки'}</th>
-                <th>Ход $/₽</th>
-                <th>Кол-во {closeMode ? 'закрытых' : 'докупленных'} контрактов</th>
+                <th>% {!isBying ? 'закрытия' : 'докупки'}</th>
+                <th>{!isBying ? 'Ход' : <>Обратный<br/> ход</>} $/₽</th>
+                <th>Контрактов<br />{!isBying ? " закрыто" : " докуплено"}</th>
                 <th>
-                  Контрактов<br />
-                  в работе
+                  {!isBying 
+                    ? 
+                      <span>
+                        Контрактов<br/>
+                        в работе
+                      </span>
+                    :
+                      <span>
+                        Доступно<br/>
+                        контрактов<br/>
+                        на докупку
+                      </span>
+                  }
                 </th>
                 <th>
-                  Накопленная прибыль<br />
+                  {!isBying ? 'Прибыль' : 'Убыток'}<br/>
                   без комиссии
                 </th>
                 <th>
-                  Величина<br />
+                  Величина<br/>
                   комиссии
                 </th>
                 <th>
-                  Накопленная прибыль<br />
+                  {!isBying ? 'Прибыль' : 'Убыток'}<br/>
                   с учетом комиссии
                 </th>
               </tr>
@@ -51,8 +62,8 @@ export default function Table ({ data, closeMode = true }) {
                   {index + 1}
                 </td>
                 <td
-                  data-label="% закрытия"
-                  data-label-xs="% закр."
+                  data-label={"% " + (!isBying ? "закрытия" : "докупки")}
+                  data-label-xs={"% " + (!isBying ? "закр." : "докуп.")}
                 >
                   {formatNumber(row.percent)}
                 </td>
@@ -63,8 +74,8 @@ export default function Table ({ data, closeMode = true }) {
                   {formatNumber(row.points)}
                 </td>
                 <td
-                  data-label="Закрытых контрактов"
-                  data-label-xs="Закр. контр."
+                  data-label={(!isBying ? "Закрытых" : "Докупленных") + " контрактов"}
+                  data-label-xs={(!isBying ? "Закр." : "Докуп.") + " контр."}
                 >
                   {formatNumber(Math.floor(row.contracts))}
                 </td>
@@ -87,7 +98,7 @@ export default function Table ({ data, closeMode = true }) {
                   {formatNumber(round(row.comission, 1))}
                 </td>
                 <td
-                  data-label="Накопленная прибыль с учетом комиссии"
+                  data-label="Прибыль с учетом комиссии"
                   data-label-xs="Приб. с уч. комисии"
                 >
                   {formatNumber(round(row.incomeWithComission, 1))}

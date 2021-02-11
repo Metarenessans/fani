@@ -3,13 +3,12 @@ import { Input, Tooltip } from 'antd/es'
 import './style.scss'
 
 let isIPhone = /iPhone/i.test(navigator.userAgent);
-// console.log(isIPhone);
 
 export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.round     = this.props.round == "true";
+    this.round     = this.props.round    == "true";
     this.unsigned  = this.props.unsigned == "true";
     this.format    = this.props.format    || function (val) { return val };
     this.onInvalid = this.props.onInvalid || function () { return "" };

@@ -10,19 +10,14 @@ import {
   Statistic,
   Switch,
   Tooltip,
-  Popover,
 } from "antd/es"
 const { Option } = Select;
 
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
-  LoadingOutlined,
   QuestionCircleFilled,
-  SettingFilled,
-  ClockCircleFilled,
-  CheckCircleFilled
-} from "@ant-design/icons"
+  SettingFilled} from "@ant-design/icons"
 
 import {
   merge,
@@ -54,7 +49,6 @@ import Data      from "./utils/data"
 import Stack           from "./components/stack"
 import BigNumber       from "./components/BigNumber"
 import Config          from "../../../common/components/config";
-import CrossButton     from "../../../common/components/cross-button"
 import CustomSelect    from "../../../common/components/custom-select"
 import CustomSlider    from "./components/custom-slider"
 import Header          from "./components/header"
@@ -62,7 +56,6 @@ import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
-import TimeRangePicker from "./components/time-range-picker"
 import ToolSelect      from "./components/tool-select"
 import {
   Chart,
@@ -311,9 +304,9 @@ class App extends Component {
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
     if (dev) {
-      this.fetchSaveById = (page, id) => {
+      this.fetchSaveById = () => {
         console.log('executing custom fetchSaveById');
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           resolve({
             data: {
               id: 1122,
@@ -333,10 +326,8 @@ class App extends Component {
 
   getDataOptions() {
     const {
-      data,
       mode,
       depoStart,
-      days,
       dataLength,
       withdrawal,
       withdrawalInterval,
@@ -596,7 +587,7 @@ class App extends Component {
     return json;
   }
 
-  validateSave(save) {
+  validateSave() {
     let valid = true;
 
     try {
@@ -921,7 +912,6 @@ class App extends Component {
   }
 
   recalc(rebuild = true) {
-    let { mode, days } = this.state;
 
     // const period = days[mode];
     return new Promise((resolve, reject) => {
@@ -975,7 +965,7 @@ class App extends Component {
   }
 
   getMaxPaymentValue(frequency, rate = this.getRate()) {
-    const { withdrawalInterval, depoStart, mode, depoPersentageStart } = this.state;
+    const { withdrawalInterval, depoStart, mode } = this.state;
 
     frequency = frequency || withdrawalInterval[mode];
 
@@ -1265,7 +1255,6 @@ class App extends Component {
     const depoStart  = this.state.depoStart[mode];
     const withdrawal = this.state.withdrawal[mode];
     const payload    = this.state.payload[mode];
-    const days       = this.state.days[mode];
 
     const rate = this.getRateFull();
 
@@ -1493,7 +1482,6 @@ class App extends Component {
     let {
       mode,
       data,
-      dataLength,
       currentDay,
       isLong,
       saved,
@@ -2082,8 +2070,6 @@ class App extends Component {
                             max={99999999}
                             onBlur={val => {
                               let { mode, days, payload, payloadInterval } = this.state;
-                              const depoEnd = this.getDepoEnd();
-                              const periodicity = days[mode] / payloadInterval[mode];
 
                               if (val === payload[mode]) {
                                 return;
@@ -2111,7 +2097,7 @@ class App extends Component {
                             min={1}
                             max={2600}
                             onChange={value => {
-                              let { mode, days, payload, payloadInterval } = this.state;
+                              let { mode, payloadInterval } = this.state;
                               payloadInterval[mode] = value;
                               this.setState({ payloadInterval }, this.recalc);
                             }}
@@ -2639,7 +2625,7 @@ class App extends Component {
                             До цели
                           </header>
                           {(() => {
-                            const { mode, dataLength } = this.state;
+                            const { dataLength } = this.state;
 
                             let sum   = 0;
                             let total = 0;
@@ -2764,7 +2750,6 @@ class App extends Component {
 
                 {(() => {
                   const {
-                    mode,
                     data,
                     dataLength,
                     currentDay,
@@ -2773,11 +2758,9 @@ class App extends Component {
                     currentPassiveIncomeToolIndex
                   } = this.state;
 
-                  let iterations = Math.min(this.state.iterations * (directUnloading ? 1 : 2), 100);
 
                   const rate  = this.getRate();
                   const lastFilledDay = data.lastFilledDay?.day || 0;
-                  const planIncome = data[currentDay - 1].goal;
 
                   const onBlur = (prop, val) => {
                     if (val === "") {

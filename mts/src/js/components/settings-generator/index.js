@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Button, Input, Select, Slider, Switch, Tooltip, Tabs, Radio
+  Button, Input, Select, Switch, Tooltip, Radio
 } from 'antd/es'
 
 import {
@@ -17,22 +17,23 @@ import CodeIcon     from "./icons/CodeIcon"
 import CloseIcon    from "./icons/CloseIcon"
 import CodePanel    from "./code-panel"
 
-import createTabs   from "./tabs"
-import BurgerButton from "./burger-button"
-import Table        from "./table"
-import { Tools }    from '../../../../../common/tools'
-import CrossButton  from '../../../../../common/components/cross-button'
-import NumericInput from '../../../../../common/components/numeric-input'
-import CustomSlider from '../../../../../common/components/custom-slider'
+import createTabs       from "./tabs"
+import BurgerButton     from "./burger-button"
+import TemplateRow      from "./template-row"
+import ReversedByingRow from "./reversed-bying-row"
+import Table            from "./table"
+import { Tools }        from '../../../../../common/tools'
+import CrossButton      from '../../../../../common/components/cross-button'
+import NumericInput     from '../../../../../common/components/numeric-input'
+import CustomSlider     from '../../../../../common/components/custom-slider'
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import stepConverter from './step-converter'
+import createData    from './data'
 
 import round          from '../../../../../common/utils/round'
-import roundUp        from '../../../../../common/utils/round-up'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
-import croppNumber    from '../../../../../common/utils/cropp-number'
 
 const SettingsGenerator = props => {
 
@@ -52,7 +53,7 @@ const SettingsGenerator = props => {
 
   const [risk, setRisk] = useState(0.5);
   const [comission, setComission] = useState(0);
-  const [load, setLoad] = useState(props.load || 0);
+  const [load, setLoad] = useState(dev ? 10 : props.load || 0);
 
   const tools = props.tools?.length ? props.tools : Tools.createArray();
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
@@ -61,35 +62,52 @@ const SettingsGenerator = props => {
 
   const optionBase = {
     inPercent:  false,
-    preferredStep: "",       // Желаемый ход
-    length:        "",       // Кол-во закрытий 
-    percent:       "",       // % закрытия
-    stepInPercent: "",       // Шаг
+    preferredStep: "",                  // Желаемый ход
+    length:        dev ? 10 : "",       // Кол-во закрытий 
+    percent:       dev ? 5  : "",       // % закрытия
+    stepInPercent: dev ? 2  : "",       // Шаг
   };
   const [presets, setPresets] = useState([
     { 
       name: "Стандарт", 
       type: "Стандарт",
       options: {
-        mode: 'evenly', // evenly / custom / fibonacci
+        mode: 'evenly',
         ...optionBase,
         customData: [{...optionBase, length: 1}]
       }
     },
     { name: "СМС + ТОР", type: "СМС + ТОР" },
-    { name: "Лимитник",  type: "Лимитник" }
+    { 
+      name: "Лимитник",
+      type: "Лимитник",
+      options: {
+        "основной": {
+          mode: 'evenly',
+          ...optionBase,
+          customData: [{ ...optionBase, length: 1 }]
+        },
+        "Обратные докупки (ТОР)": {
+          ...optionBase
+        }
+      }
+    }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState("Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState("Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
-  // Flags
-  const [mirrorOn, setMirrorOn] = useState(false);
-  const [reversedOn, setReversedOn] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  // Прямые профитные докупки 
+  const [isProfitableBying, setProfitableBying] = useState(false);
+  // Обратные профитные докупки 
+  const [isReversedProfitableBying, setReversedProfitableBying] = useState(false);
+  // Зеркальные докупки 
+  const [isMirrorBying, setMirrorBying] = useState(false);
+  // Обратные докупки (ТОР)
+  const [isReversedBying, setReversedBying] = useState(dev ? true : false);
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const depoAvailable = investorDepo * (load / 100);
 
@@ -165,210 +183,48 @@ const SettingsGenerator = props => {
     contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
-  const { mode } = currentPreset.options;
-
-  const presetRules = {
-    blockStartIndicies: [0, 4, 8],
-    blockLengths: [4, 4, 16],
-    percents: [9.5, 9.5, 1.5],
-    multipliers: [
-      [2, 3, 5, 8],
-      [13, 15, 18, 20],
-      new Array((100 - 20) / 5 + 1).fill(0).map((v, i) => 20 + (5 * i))
-    ]
+  const options = {
+    currentPreset,
+    currentTool,
+    contractsTotal,
+    contracts,
+    comission
   };
 
-  let contractsLeft = contracts;
+  let data = [];
+  data['основной'] = createData('основной', options);
+  data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', { ...options, isBying: true });
 
-  // ЗАКРЫТИЕ ОСНОВНОГО ДЕПОЗИТА
-  let dataList = [];
-  dataList['основной'] = [];
-  let length = currentPreset.options.length || 1;
-  if (length == null) {
-    length = 1;
-  }
+  const mainData = data['основной'];
 
-  if (mode == 'fibonacci') {
-    length = 24;
-  }
-  else if (mode == 'custom') {
-    length = currentPreset.options.customData.length || 1;
-  }
-
-  let subIndex = -1;
-
-  for (let index = 0; index < length; index++) {
-
-    let subLength = 1;
-
-    let currentOptions;
-    if (mode == 'custom') {
-      currentOptions = {...currentPreset.options.customData[index]};
-      subLength = (currentOptions.length || 1);
-    }
-
-    let shouldBreak = false;
-
-    for (let j = 0; j < subLength; j++) {
-
-      subIndex++;
-  
-      let blockNumber = 1;
-      for (let i = 0; i < presetRules.blockStartIndicies.length; i++) {
-        if (index >= presetRules.blockStartIndicies[i]) {
-          blockNumber = i + 1;
-        }
-      }
-  
-      const blockLen = presetRules.blockLengths[blockNumber - 1];
-  
-      let indexInBlock = ((index + 1) - presetRules.blockStartIndicies[blockNumber - 1]) % blockLen;
-      if (indexInBlock == 0) {
-        indexInBlock = blockLen;
-      }
-  
-      // % закрытия
-      let percent = currentPreset.options.percent;
-      if (mode == 'fibonacci') {
-        percent = presetRules.percents[blockNumber - 1] || 0;
-      }
-      else if (mode == 'custom') {
-        percent = currentOptions.percent || 0;
-      }
-      // Округляем
-      percent = round(percent, fraction);
-  
-      let { preferredStep, inPercent } = currentPreset.options;
-      if (inPercent) {
-        preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
-      }
-  
-      if (mode == 'custom') {
-        preferredStep = currentOptions.preferredStep;
-        let inPercent = currentOptions.inPercent;
-        if (inPercent) {
-          preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
-        }
-      }
-  
-      let { stepInPercent } = currentPreset.options;
-  
-      // Ход
-      let points =
-        (
-          // контракты * го = объем входа в деньгах
-          (contracts * currentTool.guarantee)
-          *
-          // величина смещения из массива закрытия
-          (stepInPercent / 100 * (index + 1))
-          *
-          // шаг цены
-          currentTool.priceStep
-        )
-        / 
-        (
-          contracts
-          *
-          currentTool.stepPrice
-        );
-      points = round(points, fraction);
-      
-      if (isNaN(points)) {
-        points = 0;
-      }
-  
-      if (mode == 'fibonacci') {
-        const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
-        const multiplier = blockPointsMultipliers[indexInBlock - 1];
-        points = Math.floor(currentTool.adrDay * currentTool.currentPrice * (multiplier / 100));
-      }
-  
-      if (mode == 'custom') {
-        let preferredStepInPercent = currentOptions.preferredStep;
-        const { inPercent } = currentOptions;
-        if (!inPercent || currentOptions.preferredStep == "") {
-          preferredStepInPercent = stepConverter.fromStepToPercents(
-            (preferredStep || currentTool.adrDay),
-            currentTool.currentPrice
-          );
-        }
-  
-        points = croppNumber((preferredStepInPercent / currentOptions.length) * (j + 1), fraction);
-      }
-  
-      // Если ход больше желаемого хода - массив заканчивается
-      if (
-        (mode != 'fibonacci' && mode != 'custom') && 
-        points > (preferredStep || currentTool.adrDay)
-      ) {
-        shouldBreak = true;
-        break;
-      }
-  
-      // кол-во закрытых контрактов
-      let _contracts = roundUp(contracts * percent / 100);
-      if (mode == 'fibonacci') {
-        _contracts = roundUp(contracts * percent / 100)
-      }
-  
-      if (contractsLeft - _contracts >= 0) {
-        contractsLeft -= _contracts;
-      }
-      else {
-        _contracts = contractsLeft;
-        contractsLeft = 0;
-        shouldBreak = true;
-      }
-  
-      // Контрактов в работе
-      let contractsLoaded = contractsLeft;
-      if (contractsLoaded == 0) {
-        shouldBreak = true;
-      }
-  
-      let _comission = _contracts * comission;
-  
-      let incomeWithoutComission = contracts * currentTool.stepPrice * points;
-      let incomeWithComission = incomeWithoutComission - _comission;
-  
-      dataList['основной'][subIndex] = {
-        percent,
-        points,
-        contracts: _contracts,
-        contractsLoaded,
-        incomeWithoutComission,
-        comission: _comission,
-        incomeWithComission,
-      };
-
-      if (mode == 'custom') {
-        dataList['основной'][subIndex] = {
-          ...dataList['основной'][subIndex],
-          group: index
-        };
-      }
-  
-      if (shouldBreak) {
-        break;
-      }
-    }
-    
-    if (shouldBreak) {
-      break;
-    }
-  }
-
-  const currentData = dataList['основной'];
-
-  const totalIncome = currentData.length
-    ? currentData[currentData.length - 1]?.incomeWithComission
+  const totalIncome = mainData.length
+    ? mainData[mainData.length - 1]?.incomeWithComission
     : 0;
+
+  function updatePresetProperty(subtype, property, value) {
+    const presetsCopy = [...presets];
+
+    let insert = { [property]: value };
+    if (typeof property == 'object') {
+      insert = property;
+    }
+
+    const currentPresetCopy = {
+      ...currentPreset,
+      options: {
+        ...currentPreset.options,
+        [subtype]: {
+          ...currentPreset.options[subtype],
+          ...insert
+        }
+      }
+    };
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    setPresets(presetsCopy);
+  }
 
   // componentDidMount
   useEffect(() => {
-    window.addEventListener("resize", function () {
-      setIsMobile(window.innerWidth <= 576);
-    });
     createTabs();
   }, []);
 
@@ -379,26 +235,29 @@ const SettingsGenerator = props => {
 
   }, [investorDepo]);
 
+  // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
 
     const presetsCopy = [...presets];
 
+    // TODO: Не забыть!
     // Меняем желаемый ход
-    const { preferredStep, customData } = currentPreset.options;
-    const currentPresetCopy = {
-      ...currentPreset,
-      options: {
-        ...currentPreset.options,
-        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+    // const { preferredStep, customData } = currentPreset.options;
+    // const currentPresetCopy = {
+    //   ...currentPreset,
+    //   options: {
+    //     ...currentPreset.options,
 
-        customData: customData.map(row => {
-          row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
-          return row;
-        })
-      }
-    };
-    presetsCopy[currentPresetIndex] = currentPresetCopy;
-    setPresets(presetsCopy);
+    //     preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+
+    //     customData: customData.map(row => {
+    //       row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
+    //       return row;
+    //     })
+    //   }
+    // };
+    // presetsCopy[currentPresetIndex] = currentPresetCopy;
+    // setPresets(presetsCopy);
 
   }, [currentTool.code]);
 
@@ -448,7 +307,7 @@ const SettingsGenerator = props => {
               <li 
                 className={
                   ["settings-generator-menu-list-item"]
-                    .concat(index == 0 ? "selected" : "")
+                    .concat(index == currentPresetIndex ? "selected" : "")
                     .join(" ")
                     .trim()
                 }
@@ -546,9 +405,6 @@ const SettingsGenerator = props => {
               <ul className="settings-generator-content-header-options">
                 <li>
                   <Button className="custom-btn">Сохранить</Button>
-                </li>
-                <li>
-                  <Button className="custom-btn" disabled>Отменить</Button>
                 </li>
               </ul>
 
@@ -681,7 +537,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX
                         name="Убыток (риск)"
-                        value={investorDepo * risk / 100}
+                        value={round(investorDepo * risk / 100, fraction)}
                       />
                     </>
                   )
@@ -724,10 +580,70 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={risk}
-                    format={val => formatNumber(round(val, 2))}
+                    format={val => formatNumber(round(val, fraction))}
                     unsigned="true"
-                    onBlur={value => setRisk(value)}
+                    onBlur={value => {
+                      if (value == round(risk, fraction)) {
+                        value = risk;
+                      }
+                      setRisk(value)
+                    }}
                     suffix="%"
+                  />
+                </label>
+
+                <label className="input-group">
+                  <span className="input-group__label">Риск (стоп)</span>
+                  <NumericInput
+                    className="input-group__input"
+                    defaultValue={
+                      (investorDepo * risk / 100)
+                      /
+                      currentTool.stepPrice
+                      /
+                      (contracts || 1)
+                    }
+                    format={val => formatNumber(round(val, fraction))}
+                    unsigned="true"
+                    onBlur={riskInSteps => {
+                      const currentRiskInSteps =
+                        (investorDepo * risk / 100)
+                        /
+                        currentTool.stepPrice
+                        /
+                        (contracts || 1);
+
+                      if (riskInSteps == round(currentRiskInSteps, fraction)) {
+                        riskInSteps = currentRiskInSteps;
+                      }
+
+                      setRisk(
+                        riskInSteps
+                        *
+                        currentTool.stepPrice
+                        *
+                        (contracts || 1)
+                        /
+                        investorDepo
+                        *
+                        100
+                      );
+                    }}
+                    suffix="п"
+                  />
+                </label>
+
+                <label className="input-group">
+                  <span className="input-group__label">Риск (стоп)</span>
+                  <NumericInput
+                    className="input-group__input"
+                    defaultValue={investorDepo * risk / 100}
+                    format={value => formatNumber(round(value, fraction))}
+                    unsigned="true"
+                    onBlur={riskInMoney => {
+                      setRisk(riskInMoney / investorDepo * 100);
+                    }}
+                    suffix="₽/$"
                   />
                 </label>
                 
@@ -743,19 +659,8 @@ const SettingsGenerator = props => {
               <div className="settings-generator-content__row-header-modes">
                 <Radio.Group
                   className="settings-generator-content__row-header-modes-select"
-                  value={currentPreset.options.mode}
-                  onChange={e => {
-                    const presetsCopy = [...presets];
-                    const currentPresetCopy = {
-                      ...currentPreset,
-                      options: {
-                        ...currentPreset.options,
-                        mode: e.target.value
-                      }
-                    };
-                    presetsCopy[currentPresetIndex] = currentPresetCopy;
-                    setPresets(presetsCopy);
-                  }}
+                  value={currentPreset.options["основной"].mode}
+                  onChange={e => updatePresetProperty("основной", "mode", e.target.value)}
                 >
                   <Radio value={'evenly'}>равномерно</Radio>
                   <Radio value={'custom'}>задать самому</Radio>
@@ -764,11 +669,11 @@ const SettingsGenerator = props => {
               </div>
 
               {
-                currentPreset.options.mode == 'custom'
+                currentPreset.options["основной"].mode == 'custom'
                   ? 
                   <>
-                    {currentPreset.options.customData
-                      .map((d, i) =>
+                    {currentPreset.options["основной"].customData
+                      .map((customDataRow, i) =>
                         <div 
                           className="settings-generator-content__row settings-generator-content__opt-row settings-generator-content__opt-row--custom"
                           key={i}
@@ -782,7 +687,7 @@ const SettingsGenerator = props => {
                               <button
                                 className="settings-generator-content__step-mode-switcher"
                                 onClick={e => {
-                                  let { inPercent, preferredStep } = currentPreset.options.customData[i];
+                                  let { inPercent, preferredStep } = currentPreset.options["основной"].customData[i];
 
                                   if (preferredStep) {
                                     // Были в процентах, теперь переводим в доллары
@@ -795,55 +700,40 @@ const SettingsGenerator = props => {
                                     }
                                   }
 
-                                  const presetsCopy = [...presets];
-                                  const currentCustomDataCopy = [...currentPreset.options.customData];
-                                  currentCustomDataCopy[i] = {
-                                    ...currentCustomDataCopy[i],
+                                  const customDataCopy = [...currentPreset.options["основной"].customData];
+                                  customDataCopy[i] = {
+                                    ...customDataCopy[i],
+                                    preferredStep,
                                     inPercent: !inPercent,
-                                    preferredStep
                                   };
 
-                                  const currentPresetCopy = {
-                                    ...currentPreset,
-                                    options: {
-                                      ...currentPreset.options,
-                                      customData: currentCustomDataCopy
-                                    }
-                                  };
-                                  presetsCopy[currentPresetIndex] = currentPresetCopy;
-                                  setPresets(presetsCopy);
+                                  updatePresetProperty("основной", "customData", customDataCopy);
                                 }}
                               >
-                                {!currentPreset.options.customData[i].inPercent ? "$" : "%"}
+                                {!customDataRow.inPercent ? "$" : "%"}
                               </button>
                             </span>
                             <NumericInput
                               className="input-group__input"
-                              defaultValue={currentPreset.options.customData[i].preferredStep}
+                              defaultValue={customDataRow.preferredStep}
                               placeholder={
-                                currentPreset.options.customData[i].inPercent
+                                customDataRow.inPercent
                                   ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
                                   : currentTool.adrDay
                               }
                               format={formatNumber}
                               unsigned="true"
                               min={0}
-                              onBlur={value => {
-                                const presetsCopy = [...presets];
-                                const currentCustomDataCopy = [...currentPreset.options.customData];
-                                currentCustomDataCopy[i] = { ...currentCustomDataCopy[i], preferredStep: value };
-
-                                const currentPresetCopy = {
-                                  ...currentPreset,
-                                  options: {
-                                    ...currentPreset.options,
-                                    customData: currentCustomDataCopy
-                                  }
+                              onBlur={preferredStep => {
+                                const customDataCopy = [...currentPreset.options["основной"].customData];
+                                customDataCopy[i] = {
+                                  ...customDataCopy[i],
+                                  preferredStep,
                                 };
-                                presetsCopy[currentPresetIndex] = currentPresetCopy;
-                                setPresets(presetsCopy);
+
+                                updatePresetProperty("основной", "customData", customDataCopy);
                               }}
-                              suffix={currentPreset.options.customData[i].inPercent ? "%" : undefined}
+                              suffix={customDataRow.inPercent ? "%" : undefined}
                             />
                           </label>
 
@@ -851,24 +741,18 @@ const SettingsGenerator = props => {
                             <span className="input-group__label">% закрытия</span>
                             <NumericInput
                               className="input-group__input"
-                              defaultValue={currentPreset.options.customData[i].percent}
+                              defaultValue={customDataRow.percent}
                               format={formatNumber}
                               unsigned="true"
                               min={0}
-                              onBlur={value => {
-                                const presetsCopy = [...presets];
-                                const currentCustomDataCopy = [...currentPreset.options.customData];
-                                currentCustomDataCopy[i] = { ...currentCustomDataCopy[i], percent: value };
-
-                                const currentPresetCopy = {
-                                  ...currentPreset,
-                                  options: {
-                                    ...currentPreset.options,
-                                    customData: currentCustomDataCopy
-                                  }
+                              onBlur={percent => {
+                                const customDataCopy = [...currentPreset.options["основной"].customData];
+                                customDataCopy[i] = {
+                                  ...customDataCopy[i],
+                                  percent,
                                 };
-                                presetsCopy[currentPresetIndex] = currentPresetCopy;
-                                setPresets(presetsCopy);
+
+                                updatePresetProperty("основной", "customData", customDataCopy);
                               }}
                             />
                           </label>
@@ -877,27 +761,18 @@ const SettingsGenerator = props => {
                             <span className="input-group__label">Кол-во закрытий</span>
                             <NumericInput
                               className="input-group__input"
-                              defaultValue={currentPreset.options.customData[i].length}
+                              defaultValue={customDataRow.length}
                               format={formatNumber}
                               unsigned="true"
                               min={1}
-                              onBlur={value => {
-                                const presetsCopy = [...presets];
-                                const currentCustomDataCopy = [...currentPreset.options.customData];
-                                currentCustomDataCopy[i] = {
-                                  ...currentCustomDataCopy[i],
-                                  length: value
+                              onBlur={length => {
+                                const customDataCopy = [...currentPreset.options["основной"].customData];
+                                customDataCopy[i] = {
+                                  ...customDataCopy[i],
+                                  length,
                                 };
 
-                                const currentPresetCopy = {
-                                  ...currentPreset,
-                                  options: {
-                                    ...currentPreset.options,
-                                    customData: currentCustomDataCopy
-                                  }
-                                };
-                                presetsCopy[currentPresetIndex] = currentPresetCopy;
-                                setPresets(presetsCopy);
+                                updatePresetProperty("основной", "customData", customDataCopy);
                               }}
                             />
                           </label>
@@ -912,7 +787,7 @@ const SettingsGenerator = props => {
                             onClick={e => {
                               const presetsCopy = [...presets];
                               const currentPresetCopy = {...currentPreset};
-                              currentPresetCopy.options.customData.splice(i, 1);
+                              currentPresetCopy.options["основной"].customData.splice(i, 1);
                               setPresets(presetsCopy);
                             }}
                           />
@@ -920,10 +795,8 @@ const SettingsGenerator = props => {
                           <div className="settings-generator-content__print-group">
                             <span>Суммарный % закрытия</span>
                             <b>{(() => {
-                              const currentOptions = currentPreset.options.customData[i];
-
                               return round(
-                                currentData
+                                mainData
                                   .filter(row => row.group == i)
                                   .map(row => row.contracts)
                                   .reduce((prev, next) => prev + next, 0)
@@ -933,12 +806,6 @@ const SettingsGenerator = props => {
                                 100,
                                 1
                               );
-
-                              return round(
-                                currentOptions.percent *
-                                currentOptions.length,
-                                1
-                              )
                             })()}%</b>
                           </div>
 
@@ -948,19 +815,12 @@ const SettingsGenerator = props => {
                     <Button
                       className="custom-btn settings-generator-content__opt-row-btn"
                       onClick={e => {
-                        const presetsCopy = [...presets];
-                        const currentPresetCopy = {
-                          ...currentPreset,
-                          options: {
-                            ...currentPreset.options,
-                            customData: [
-                              ...currentPreset.options.customData,
-                              {...optionBase, length: 1}
-                            ]
-                          }
-                        };
-                        presetsCopy[currentPresetIndex] = currentPresetCopy;
-                        setPresets(presetsCopy);
+                        updatePresetProperty("основной", {
+                          customData: [
+                            ...currentPreset.options["основной"].customData,
+                            { ...optionBase, length: 1 }
+                          ]
+                        } );
                       }}
                     >
                       + закрытие
@@ -972,11 +832,11 @@ const SettingsGenerator = props => {
                     <label className="input-group">
                       <span className="input-group__label">
                         Желаемый ход
-                        {currentPreset.options.mode != 'fibonacci' &&
+                        {currentPreset.options["основной"].mode != 'fibonacci' &&
                           <button
                             className="settings-generator-content__step-mode-switcher"
                             onClick={e => {
-                              let { inPercent, preferredStep } = currentPreset.options;
+                              let { inPercent, preferredStep } = currentPreset.options["основной"];
 
                               if (preferredStep) {
                                 // Были в процентах, теперь переводим в доллары
@@ -989,17 +849,10 @@ const SettingsGenerator = props => {
                                 }
                               }
 
-                              const presetsCopy = [...presets];
-                              const currentPresetCopy = {
-                                ...currentPreset,
-                                options: {
-                                  ...currentPreset.options,
-                                  inPercent: !inPercent,
-                                  preferredStep,
-                                }
-                              };
-                              presetsCopy[currentPresetIndex] = currentPresetCopy;
-                              setPresets(presetsCopy);
+                              updatePresetProperty("основной", {
+                                inPercent:     !inPercent,
+                                preferredStep: preferredStep,
+                              });
                             }}
                           >
                             {!currentPreset.options.inPercent ? "$" : "%"}
@@ -1008,34 +861,26 @@ const SettingsGenerator = props => {
                       </span>
                       <NumericInput
                         className="input-group__input"
-                        disabled={currentPreset.options.mode == 'fibonacci'}
+                        disabled={currentPreset.options["основной"].mode == 'fibonacci'}
                         defaultValue={
-                          currentPreset.options.mode == 'fibonacci'
+                          currentPreset.options["основной"].mode == 'fibonacci'
                             ? currentTool.adrDay
-                            : currentPreset.options.preferredStep
+                            : currentPreset.options["основной"].preferredStep
                         }
                         placeholder={
-                          currentPreset.options.inPercent
+                          currentPreset.options["основной"].inPercent
                             ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
                             : currentTool.adrDay
                         }
                         format={formatNumber}
                         unsigned="true"
                         min={0}
-                        onBlur={value => {
-                          const presetsCopy = [...presets];
-                          const currentPresetCopy = {
-                            ...currentPreset,
-                            options: {
-                              ...currentPreset.options,
-                              preferredStep: value
-                            }
-                          };
-                          presetsCopy[currentPresetIndex] = currentPresetCopy;
-                          setPresets(presetsCopy);
+                        onBlur={preferredStep => {
+                          updatePresetProperty("основной", { preferredStep })
                         }}
                         suffix={
-                          currentPreset.options.mode != 'fibonacci' && currentPreset.options.inPercent 
+                          currentPreset.options["основной"].mode != 'fibonacci' && 
+                          currentPreset.options["основной"].inPercent 
                             ? "%" 
                             : undefined
                         }
@@ -1046,27 +891,18 @@ const SettingsGenerator = props => {
                       <span className="input-group__label">Кол-во закрытий</span>
                       <NumericInput
                         className="input-group__input"
-                        disabled={currentPreset.options.mode == 'fibonacci'}
+                        disabled={currentPreset.options["основной"].mode == 'fibonacci'}
                         defaultValue={
-                          currentPreset.options.mode == 'fibonacci'
-                            ? currentData.length
-                            : currentPreset.options.length
+                          currentPreset.options["основной"].mode == 'fibonacci'
+                            ? mainData.length
+                            : currentPreset.options["основной"].length
                         }
                         format={formatNumber}
                         unsigned="true"
                         placeholder="1"
                         min={1}
-                        onBlur={value => {
-                          const presetsCopy = [...presets];
-                          const currentPresetCopy = {
-                            ...currentPreset,
-                            options: {
-                              ...currentPreset.options,
-                              length: value
-                            }
-                          };
-                          presetsCopy[currentPresetIndex] = currentPresetCopy;
-                          setPresets(presetsCopy);
+                        onBlur={length => {
+                          updatePresetProperty("основной", { length });
                         }}
                       />
                     </label>
@@ -1075,59 +911,37 @@ const SettingsGenerator = props => {
                       <span className="input-group__label">% закрытия</span>
                       <NumericInput
                         className="input-group__input"
-                        disabled={currentPreset.options.mode == 'fibonacci'}
-                        defaultValue={currentPreset.options.percent}
+                        disabled={currentPreset.options["основной"].mode == 'fibonacci'}
+                        defaultValue={currentPreset.options["основной"].percent}
                         format={formatNumber}
                         unsigned="true"
                         min={0}
-                        onBlur={value => {
-                          const presetsCopy = [...presets];
-                          const currentPresetCopy = {
-                            ...currentPreset,
-                            options: {
-                              ...currentPreset.options,
-                              percent: value
-                            }
-                          };
-                          presetsCopy[currentPresetIndex] = currentPresetCopy;
-                          setPresets(presetsCopy);
+                        onBlur={percent => {
+                          updatePresetProperty("основной", { percent });
                         }}
                       />
                     </label>
 
-                    {currentPreset.options.mode == 'custom'
-                      ? null
-                      : 
-                      <label className="input-group">
-                        <span className="input-group__label">Шаг в %</span>
-                        <NumericInput
-                          className="input-group__input"
-                          disabled={currentPreset.options.mode == 'fibonacci'}
-                          defaultValue={currentPreset.options.stepInPercent}
-                          format={formatNumber}
-                          unsigned="true"
-                          min={0}
-                          onBlur={value => {
-                            const presetsCopy = [...presets];
-                            const currentPresetCopy = {
-                              ...currentPreset,
-                              options: {
-                                ...currentPreset.options,
-                                stepInPercent: value
-                              }
-                            };
-                            presetsCopy[currentPresetIndex] = currentPresetCopy;
-                            setPresets(presetsCopy);
-                          }}
-                        />
-                      </label>
-                    }
+                    <label className="input-group">
+                      <span className="input-group__label">Шаг в %</span>
+                      <NumericInput
+                        className="input-group__input"
+                        disabled={currentPreset.options["основной"].mode == 'fibonacci'}
+                        defaultValue={currentPreset.options["основной"].stepInPercent}
+                        format={formatNumber}
+                        unsigned="true"
+                        min={0}
+                        onBlur={stepInPercent => {
+                          updatePresetProperty("основной", { stepInPercent });
+                        }}
+                      />
+                    </label>
 
                     <div className="settings-generator-content__print-group">
                       <span>Суммарный % закрытия</span>
                       <b>{
                         round(
-                          currentData
+                          mainData
                             .map(row => row.contracts)
                             .reduce((acc, curr) => acc + curr, 0)
                           /
@@ -1143,221 +957,69 @@ const SettingsGenerator = props => {
               }
             </div>
 
-            <div hidden={!hasExtraDepo}>
+            <div style={{ width: '100%' }} hidden={!hasExtraDepo}>
               <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
-
-              <div className="settings-generator-content__row">
-
-                <div className="settings-generator-content__row-col-half">
-
-                  <label className="input-group">
-                    <span className="input-group__label">Кол-во закрытий</span>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={0}
-                      format={formatNumber}
-                      unsigned="true"
-                      min={1}
-                      max={Infinity}
-                      onBlur={val => {}}
-                    />
-                  </label>
-
-                  <label className="input-group">
-                    <span className="input-group__label">% закрытия</span>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={0}
-                      format={formatNumber}
-                      unsigned="true"
-                      min={0}
-                      max={Infinity}
-                      onBlur={val => {}}
-                    />
-                  </label>
-
-                </div>
-                {/* half */}
-
-                <div className="settings-generator-content__row-col-half">
-
-                  <label className="input-group">
-                    <span className="input-group__label">Шаг</span>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={0}
-                      format={formatNumber}
-                      unsigned="true"
-                      min={0}
-                      max={Infinity}
-                      onBlur={val => {}}
-                    />
-                  </label>
-
-                  <div className="settings-generator-content__print-group">
-                    <span>Суммарный % закрытия</span>
-                    <b>59%</b>
-                  </div>
-
-                </div>
-                {/* half */}
-
-              </div>
-              {/* row */}
+              <TemplateRow />
             </div>
 
             <label className="switch-group">
               <Switch 
-                checked={mirrorOn} 
-                onChange={val => setMirrorOn(val)}
+                checked={isProfitableBying} 
+                onChange={val => setProfitableBying(val)}
               />
               <span className="switch-group__label">Прямые профитные докупки</span>
             </label>
 
-            <div
-              className="settings-generator-content__row"
-              hidden={!mirrorOn}
-            >
-
-              <div className="settings-generator-content__row-col-half">
-
-                <label className="input-group">
-                  <span className="input-group__label">Кол-во закрытий</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-                <label className="input-group">
-                  <span className="input-group__label">% закрытия</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-              </div>
-              {/* half */}
-
-              <div className="settings-generator-content__row-col-half">
-
-                <label className="input-group">
-                  <span className="input-group__label">Шаг</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-                <div className="settings-generator-content__print-group">
-                  <span>Суммарный % закрытия</span>
-                  <b>59%</b>
-                </div>
-
-              </div>
-              {/* half */}
-
+            <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+              <TemplateRow />
             </div>
-            {/* row */}
 
             <label className="switch-group">
               <Switch 
-                checked={reversedOn} 
-                onChange={val => setReversedOn(val)}
+                checked={isReversedProfitableBying} 
+                onChange={val => setReversedProfitableBying(val)}
               />
               <span className="switch-group__label">Обратные профитные докупки</span>
             </label>
 
-            <div 
-              className="settings-generator-content__row"
-              hidden={!reversedOn}
-            >
-
-              <div className="settings-generator-content__row-col-half">
-
-                <label className="input-group">
-                  <span className="input-group__label">Кол-во докупок</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-                <label className="input-group">
-                  <span className="input-group__label">% докупки</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-              </div>
-              {/* half */}
-
-              <div className="settings-generator-content__row-col-half">
-
-                <label className="input-group">
-                  <span className="input-group__label">Шаг</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={0}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
-
-                <div className="settings-generator-content__print-group">
-                  <span>Суммарный % докупки</span>
-                  <b>59%</b>
-                </div>
-                
-              </div>
-              {/* half */}
-
+            <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+              <TemplateRow />
             </div>
-            {/* row */}
 
+            <label className="switch-group">
+              <Switch
+                checked={isMirrorBying}
+                onChange={val => setMirrorBying(val)}
+              />
+              <span className="switch-group__label">Зеркальные докупки</span>
+            </label>
+
+            <label className="switch-group">
+              <Switch
+                checked={isReversedBying}
+                onChange={val => setReversedBying(val)}
+              />
+              <span className="switch-group__label">Обратные докупки (ТОР)</span>
+            </label>
+
+            <div style={{ width: '100%' }} hidden={!isReversedBying}>
+              <ReversedByingRow
+                data={data["Обратные докупки (ТОР)"]}
+                contracts={contractsTotal - contracts}
+                options={currentPreset.options["Обратные докупки (ТОР)"]}
+                onPercentChange={percent => 
+                  updatePresetProperty("Обратные докупки (ТОР)", { percent })
+                }
+                onLengthChange={length => 
+                  updatePresetProperty("Обратные докупки (ТОР)", { length })
+                }
+                onStepInPercentChange={stepInPercent =>
+                  updatePresetProperty("Обратные докупки (ТОР)", { stepInPercent })
+                }
+              />
+            </div>
+
+            {/* Начало таблицы */}
             <div className="settings-generator-table-wrap">
 
               <div className="settings-generator-table-header">
@@ -1393,7 +1055,7 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab3"
                           id="settings-generator-tab3-control"
-                          hidden={!mirrorOn}>
+                          hidden={!isProfitableBying}>
                     Прямые докупки
                   </Button>
 
@@ -1403,16 +1065,36 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab4"
                           id="settings-generator-tab4-control"
-                          hidden={!reversedOn}>
+                          hidden={!isReversedProfitableBying}>
                     Обратные докупки
+                  </Button>
+
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab5"
+                          id="settings-generator-tab5-control"
+                          hidden={!isMirrorBying}>
+                    Зеркальные докупки
+                  </Button>
+
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab6"
+                          id="settings-generator-tab6-control"
+                          hidden={!isReversedBying}>
+                    Обратные докупки (ТОР)
                   </Button>
 
                   <Button className="settings-generator-table__show-code"
                           tabIndex="-1"
                           role="tab"
                           aria-selected="false"
-                          aria-controls="settings-generator-tab5"
-                          id="settings-generator-tab5-control"
+                          aria-controls="settings-generator-code"
+                          id="settings-generator-code-control"
                   >
                     <span className="visually-hidden">Показать код</span>
                     <CodeIcon />
@@ -1430,7 +1112,7 @@ const SettingsGenerator = props => {
                    id="settings-generator-tab1"
                    aria-labelledby="settings-generator-tab1-control">
                 
-                <Table data={currentData} tool={currentTool} />
+                <Table data={mainData} />
                 
               </div>
               {/* tabpanel */}
@@ -1441,7 +1123,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab2-control"
                    hidden>
 
-                <Table data={dataList['плечевой']} />
+                <Table data={data['плечевой']} />
 
               </div>
               {/* tabpanel */}
@@ -1452,7 +1134,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab3-control"
                    hidden>
                 
-                <Table data={dataList['прямые профит докупки']} closeMode={false} />
+                <Table data={data['прямые профит докупки']} isBying={true} />
 
               </div>
               {/* tabpanel */}
@@ -1463,7 +1145,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab4-control"
                    hidden>
                 
-                <Table data={dataList['обратные профит докупки']} closeMode={false} />
+                <Table data={data['обратные профит докупки']} isBying={true} />
                 
               </div>
               {/* tabpanel */}
@@ -1474,7 +1156,29 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab5-control"
                    hidden>
                 
-                <CodePanel data={currentData} />
+                <Table data={data['Зеркальные докупки']} isBying={true} />
+                
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab6"
+                   aria-labelledby="settings-generator-tab6-control"
+                   hidden>
+                
+                <Table data={data['Обратные докупки (ТОР)']} isBying={true} />
+                
+              </div>
+              {/* tabpanel */}
+
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-code"
+                   aria-labelledby="settings-generator-code-control"
+                   hidden>
+                
+                <CodePanel data={mainData} />
                 
               </div>
               {/* tabpanel */}

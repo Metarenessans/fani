@@ -4,14 +4,14 @@ import { Popover } from "antd/es"
 import { ClockCircleFilled } from "@ant-design/icons"
 
 import formatNumber from "../../../../../common/utils/format-number"
-import round from "../../../../../common/utils/round"
+import round        from "../../../../../common/utils/round"
 
 import Iteration from "../../utils/iteration"
+import isEqual   from "../../utils/is-equal"
 
-import CrossButton from "../../../../../common/components/cross-button"
-import NumericInput from "../../../../../common/components/numeric-input"
-import   TimeRangePicker from "../time-range-picker"
-import isEqual from "../../utils/is-equal"
+import CrossButton     from "../../../../../common/components/cross-button"
+import NumericInput    from "../../../../../common/components/numeric-input"
+import TimeRangePicker from "../time-range-picker"
 
 import './style.scss'
 
@@ -27,7 +27,7 @@ export default class IterationsContainer extends React.Component {
     return !isEqual(this.props, nextProps);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     const { data, currentDay } = this.props;
     if (data[currentDay - 1].expanded) {
       const list = document.querySelector(".iterations-list");
@@ -37,12 +37,13 @@ export default class IterationsContainer extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { expanded, currentDay, data} = this.props;
+
     if (expanded != prevProps.expanded || currentDay != prevProps.currentDay) {
       const list = document.querySelector(".iterations-list");
       list.scrollTop = 9999;
     }
+
     if (expanded != prevProps.expanded && expanded && !data[currentDay - 1].changed) {
-      console.log("!");
       if (this.myRef.current != null) {
         let arr = this.myRef.current.querySelectorAll("input");
         let lastElement = arr[arr.length - 1]
@@ -53,6 +54,7 @@ export default class IterationsContainer extends React.Component {
   
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
+
     const lastFocus = () => {
       if (this.myRef.current != null) {
         let arr = this.myRef.current.querySelectorAll("input");
@@ -84,7 +86,7 @@ export default class IterationsContainer extends React.Component {
 
       data[currentDay - 1].changed = data[currentDay - 1].isChanged;
 
-      callback(data,  () => {
+      callback(data, () => {
         if (shouldFocusLastElement) {
           lastFocus();
         }
@@ -102,29 +104,31 @@ export default class IterationsContainer extends React.Component {
       iterationsToRender = [new Iteration(calculatedRate)];
     }
 
-      return (
-        <>
-          <div
-            className="iterations"
-            ref={this.myRef}
-          >
-            <ol className="iterations-list">
-              {
-                iterationsToRender && iterationsToRender
-                  // TODO: rename listItem
-                .map((listItem, index) => {
-                  let rate = listItem.getRate(depoStart);
+    return (
+      <>
+        <div
+          className="iterations"
+          ref={this.myRef}
+        >
+          <ol className="iterations-list">
+            {
+              iterationsToRender && iterationsToRender
+                .map((currentIteration, index) => {
+                  let rate = currentIteration.getRate(depoStart);
                   if (!changed || rate == null || isNaN(rate)) {
                     rate = "";
                   }
 
-                  let income = listItem.getIncome(depoStart);
+                  let income = currentIteration.getIncome(depoStart);
                   if (!changed || income == null || isNaN(income)) {
                     income = "";
                   }
 
                   return (
-                    <li key={index} className="iterations-list-item">
+                    <li 
+                      className="iterations-list-item"
+                      key={Math.random()}
+                    >
                       <span className="iterations-list-item__number">
                         {index + 1}
                       </span>
@@ -135,7 +139,6 @@ export default class IterationsContainer extends React.Component {
                         placeholder={placeholder}
                         format={formatNumber}
                         round="true"
-                        
                         onBlur={(val, textValue) => {
                           if (!iterations[index]) {
                             iterations[index] = new Iteration();
@@ -147,15 +150,16 @@ export default class IterationsContainer extends React.Component {
                           let shouldCreateNewIteration = false;
                           let percent;
 
-                          //инпут не пустой
+                          // Инпут не пустой
                           if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
 
-                            //больше одной стороки
+                            // Больше одной стороки
                             if (iterations.length > 1) {
                               shouldFocusLastElement = true
                             }
-                            //последняя строка
+
+                            // Последняя строка
                             if (index == iterations.length - 1) {
                               shouldCreateNewIteration = true;
                             }
@@ -163,6 +167,7 @@ export default class IterationsContainer extends React.Component {
                               shouldFocusLastElement = false;
                             }
                           }
+
                           // if (iterations.length == 1 ) {
                           //   shouldCreateNewIteration = true;
                           // }
@@ -170,7 +175,6 @@ export default class IterationsContainer extends React.Component {
                           //   shouldFocusLastElement = true;
                           // }
                           
-                          // console.log(index != iterations.length - 1, lastIteration.empty, );
                           if (index < iterations.length - 1 && lastIteration.empty) {
                             shouldFocusLastElement = false;
                             shouldCreateNewIteration = false;
@@ -195,8 +199,8 @@ export default class IterationsContainer extends React.Component {
                       <Popover
                         content={
                           <TimeRangePicker
-                            startTime={listItem.startTime}
-                            endTime={listItem.endTime}
+                            startTime={currentIteration.startTime}
+                            endTime={currentIteration.endTime}
                             onChange={(startTime, endTime) => {
                               if (!iterations[index]) {
                                 iterations[index] = new Iteration();
@@ -224,7 +228,7 @@ export default class IterationsContainer extends React.Component {
                           let m = 0;
                           let text = "";
 
-                          let { period } = listItem;
+                          let { period } = currentIteration;
                           if (!isNaN(period) && period != 0) {
                             const date = new Date(period);
                             m = date.getUTCMinutes();
@@ -261,29 +265,29 @@ export default class IterationsContainer extends React.Component {
                     </li>
                   )
                 })
-              }
-            </ol>
-            <button
-              className="iterations-button"
-              onClick={() => {
-                if (iterations.length == 0) {
-                  iterations = [new Iteration(
-                    data[currentDay - 1].isChanged
-                      ? calculatedRate
-                      : null
-                    )];
-                  }
-                iterations.push(new Iteration());
-                onChange(iterations);
-              }}
-            
-            >
-              Добавить
-            <span className="visually-hidden">итерацию</span>
+            }
+          </ol>
+          <button
+            className="iterations-button"
+            onClick={() => {
+              if (iterations.length == 0) {
+                iterations = [new Iteration(
+                  data[currentDay - 1].isChanged
+                    ? calculatedRate
+                    : null
+                  )];
+                }
+              iterations.push(new Iteration());
+              onChange(iterations);
+            }}
+          
+          >
+            Добавить
+          <span className="visually-hidden">итерацию</span>
 
-            </button>
-          </div>
-        </>
-      );
+          </button>
+        </div>
+      </>
+    );
   }
 }
