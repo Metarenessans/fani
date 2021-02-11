@@ -37,7 +37,7 @@ export default class Data extends Array {
 
       let expanded = fallbackBoolean(this[i]?.expanded, false);
       if (dev) {
-        expanded = true;
+        // expanded = true;
       }
       let saved    = fallbackBoolean(this[i]?.saved, false);
       let changed  = fallbackBoolean(this[i]?.changed, false);

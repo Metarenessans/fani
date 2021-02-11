@@ -36,10 +36,18 @@ export default class IterationsContainer extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { expanded, currentDay } = this.props;
+    const { expanded, currentDay, data} = this.props;
     if (expanded != prevProps.expanded || currentDay != prevProps.currentDay) {
       const list = document.querySelector(".iterations-list");
       list.scrollTop = 9999;
+    }
+    if (expanded != prevProps.expanded && expanded && !data[currentDay - 1].changed) {
+      console.log("!");
+      if (this.myRef.current != null) {
+        let arr = this.myRef.current.querySelectorAll("input");
+        let lastElement = arr[arr.length - 1]
+        lastElement.focus();
+      }
     }
   }
   
@@ -138,19 +146,32 @@ export default class IterationsContainer extends React.Component {
                           let lastIteration = iterations[iterations.length - 1];
                           let shouldCreateNewIteration = false;
                           let percent;
+
+                          //инпут не пустой
                           if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
-                            shouldCreateNewIteration = true;
-                            
-                            if (iterations.length == 1) {
+
+                            //больше одной стороки
+                            if (iterations.length > 1) {
+                              shouldFocusLastElement = true
+                            }
+                            //последняя строка
+                            if (index == iterations.length - 1) {
                               shouldCreateNewIteration = true;
                             }
-                            if (textValue !== "" && iterations.length >= 1 ) {
-                              shouldFocusLastElement = true;
+                            else {
+                              shouldFocusLastElement = false;
                             }
                           }
-
-                          if (index != iterations.length - 1 && lastIteration.empty) {
+                          // if (iterations.length == 1 ) {
+                          //   shouldCreateNewIteration = true;
+                          // }
+                          // else {
+                          //   shouldFocusLastElement = true;
+                          // }
+                          
+                          // console.log(index != iterations.length - 1, lastIteration.empty, );
+                          if (index < iterations.length - 1 && lastIteration.empty) {
                             shouldFocusLastElement = false;
                             shouldCreateNewIteration = false;
                           }
@@ -233,7 +254,7 @@ export default class IterationsContainer extends React.Component {
                           onClick={() => {
                             const { iterations } = data[currentDay - 1];
                             iterations.splice(index, 1);
-                            onChange(iterations, false);
+                            onChange(iterations, false, false);
                           }}
                         />
                       )}
