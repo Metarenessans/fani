@@ -15,6 +15,14 @@ import TimeRangePicker from "../time-range-picker"
 
 import './style.scss'
 
+const focusLastInputIn = node => {
+  if (node != null) {
+    let arr = node.querySelectorAll("input");
+    let lastElement = arr[arr.length - 1]
+    lastElement.focus();
+  }
+}
+
 export default class IterationsContainer extends React.Component {
   constructor(props) {
     super(props);
@@ -44,24 +52,12 @@ export default class IterationsContainer extends React.Component {
     }
 
     if (expanded != prevProps.expanded && expanded && !data[currentDay - 1].changed) {
-      if (this.myRef.current != null) {
-        let arr = this.myRef.current.querySelectorAll("input");
-        let lastElement = arr[arr.length - 1]
-        lastElement.focus();
-      }
+      focusLastInputIn(this.myRef.current);
     }
   }
   
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
-
-    const lastFocus = () => {
-      if (this.myRef.current != null) {
-        let arr = this.myRef.current.querySelectorAll("input");
-        let lastElement = arr[arr.length - 1]
-        lastElement.focus();
-      }
-    }
 
     const onChange = (iterations = [], shouldFocusLastElement = true, scrolling = true) => {
       const filteredIterations = iterations.filter(it => !it.empty);
@@ -88,7 +84,7 @@ export default class IterationsContainer extends React.Component {
 
       callback(data, () => {
         if (shouldFocusLastElement) {
-          lastFocus();
+         focusLastInputIn(this.myRef.current);
         }
 
         if (scrolling) {
@@ -109,6 +105,7 @@ export default class IterationsContainer extends React.Component {
         <div
           className="iterations"
           ref={this.myRef}
+          key={currentDay}
         >
           <ol className="iterations-list">
             {
@@ -127,7 +124,7 @@ export default class IterationsContainer extends React.Component {
                   return (
                     <li 
                       className="iterations-list-item"
-                      key={Math.random()}
+                      key={index}
                     >
                       <span className="iterations-list-item__number">
                         {index + 1}
@@ -156,24 +153,18 @@ export default class IterationsContainer extends React.Component {
 
                             // Больше одной стороки
                             if (iterations.length > 1) {
-                              shouldFocusLastElement = true
+                              shouldFocusLastElement = true;
                             }
 
                             // Последняя строка
                             if (index == iterations.length - 1) {
                               shouldCreateNewIteration = true;
+                              shouldFocusLastElement = true;
                             }
                             else {
                               shouldFocusLastElement = false;
                             }
                           }
-
-                          // if (iterations.length == 1 ) {
-                          //   shouldCreateNewIteration = true;
-                          // }
-                          // else {
-                          //   shouldFocusLastElement = true;
-                          // }
                           
                           if (index < iterations.length - 1 && lastIteration.empty) {
                             shouldFocusLastElement = false;
