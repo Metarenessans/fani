@@ -83,7 +83,7 @@ const SettingsGenerator = props => {
       type: "Лимитник",
       options: {
         "основной": {
-          mode: 'evenly',
+          mode: dev ? 'custom' : 'evenly',
           ...optionBase,
           customData: [{ ...optionBase, length: 1 }]
         },
@@ -603,20 +603,9 @@ const SettingsGenerator = props => {
                       /
                       (contracts || 1)
                     }
-                    format={val => formatNumber(round(val, fraction))}
+                    format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
-                      const currentRiskInSteps =
-                        (investorDepo * risk / 100)
-                        /
-                        currentTool.stepPrice
-                        /
-                        (contracts || 1);
-
-                      if (riskInSteps == round(currentRiskInSteps, fraction)) {
-                        riskInSteps = currentRiskInSteps;
-                      }
-
                       setRisk(
                         riskInSteps
                         *
@@ -643,7 +632,7 @@ const SettingsGenerator = props => {
                     onBlur={riskInMoney => {
                       setRisk(riskInMoney / investorDepo * 100);
                     }}
-                    suffix="₽/$"
+                    suffix="₽"
                   />
                 </label>
                 
@@ -654,7 +643,19 @@ const SettingsGenerator = props => {
             {/* row */}
 
             <div style={{ width: '100%' }}>
-              <h3 className="settings-generator-content__row-header">Закрытие основного депозита</h3>
+              <div className="settings-generator-content__row-header-wrap">
+                <h3 className="settings-generator-content__row-header">
+                  Закрытие основного депозита
+                </h3>
+
+                <label className="switch-group">
+                  <Switch
+                    checked={isMirrorBying}
+                    onChange={val => setMirrorBying(val)}
+                  />
+                  <span className="switch-group__label">Зеркальные докупки</span>
+                </label>
+              </div>
 
               <div className="settings-generator-content__row-header-modes">
                 <Radio.Group
@@ -761,7 +762,8 @@ const SettingsGenerator = props => {
                             <span className="input-group__label">Кол-во закрытий</span>
                             <NumericInput
                               className="input-group__input"
-                              defaultValue={customDataRow.length}
+                              defaultValue={customDataRow.length || 1}
+                              placeholder={"1"}
                               format={formatNumber}
                               unsigned="true"
                               min={1}
@@ -985,14 +987,6 @@ const SettingsGenerator = props => {
             <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
               <TemplateRow />
             </div>
-
-            <label className="switch-group">
-              <Switch
-                checked={isMirrorBying}
-                onChange={val => setMirrorBying(val)}
-              />
-              <span className="switch-group__label">Зеркальные докупки</span>
-            </label>
 
             <label className="switch-group">
               <Switch

@@ -323,7 +323,7 @@ $m: .4475;
 
       > * {
         // align-self: stretch;
-        margin-bottom: .45em;
+        margin-bottom: .6em;
 
         &:last-child {
           margin-bottom: 0;
@@ -446,6 +446,25 @@ $m: .4475;
         font-size: 1.4em * $m;
 
         text-transform: uppercase;
+
+        &-wrap {
+          display: flex;
+          align-items: center;
+
+          @include xs {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          h3 {
+            margin-right: 2.25em;
+            margin-bottom: 0;
+
+            @include xs {
+              margin-right: 0;
+            }
+          }
+        }
 
         &-modes {
           padding: .5em 0;
@@ -590,6 +609,9 @@ $m: .4475;
       }
 
       &-btn {
+        margin-top: 1em;
+        position: relative;
+        top: 0.2em;
         font-size: .7em !important;
       }
     }
@@ -635,7 +657,6 @@ $m: .4475;
 
       &s-wrap {
         padding-top: 2em * $m;
-        padding-left: 2em * $m;
         gap: 0;
 
         @include xs {
@@ -664,18 +685,19 @@ $m: .4475;
       }
 
       b {
-        margin-top: .15em;
+        margin-top: .25em;
 
         color: #131313;
         font-size: 1.725em;
+        line-height: 1;
       }
     }
 
     &__after-slider {
+      gap: 0;
       justify-content: flex-start;
       align-items: flex-end;
       flex-wrap: nowrap;
-      // padding-top: 1.2rem;
       margin-bottom: 0.3em;
 
       @include xs {

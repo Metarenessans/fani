@@ -52,6 +52,7 @@ const createData = (type, options) => {
   }
 
   let subIndex = -1;
+  let lastRowInGroupIndex = -1;
 
   for (let index = 0; index < length; index++) {
 
@@ -149,7 +150,20 @@ const createData = (type, options) => {
           );
         }
 
-        points = croppNumber((preferredStepInPercent / currentOptions.length) * (j + 1), fraction);
+        const groupLength = currentOptions.length || 1;
+
+        if (j == groupLength - 1) {
+          lastRowInGroupIndex = subIndex;
+        }
+
+        points = croppNumber(
+          (preferredStepInPercent / groupLength) * (j + 1)
+          +
+          // Добавляем последнее значение из предыдущего блока
+          (index > 0 ? data[lastRowInGroupIndex - 1].points : 0)
+          ,
+          fraction
+        );
       }
 
       if (type == "Обратные докупки (ТОР)") {
