@@ -350,7 +350,7 @@
       display: block;
       margin: 0;
 
-      font-size: 1.93em!important;
+      font-size: 2em!important;
       color: #777;
       font-weight: 700;
 
@@ -386,8 +386,14 @@
       }
 
       .ant-progress {
+        &-inner {
+          height: 100%!important;
+        }
         &-bg {
-          height: 0.71em !important;
+          height: .8em!important;
+          @include md {
+            height: .63em!important;
+          }
         }
 
         &-text {
