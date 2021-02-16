@@ -34,7 +34,7 @@ export default class IterationsContainer extends React.Component {
   shouldComponentUpdate(nextProps) {
     return !isEqual(this.props, nextProps);
   }
-
+  
   componentDidMount() {
     const { data, currentDay } = this.props;
     if (data[currentDay - 1].expanded) {
@@ -42,7 +42,7 @@ export default class IterationsContainer extends React.Component {
       list.scrollTop = 9999;
     }
   }
-
+  
   componentDidUpdate(prevProps) {
     const { expanded, currentDay, data} = this.props;
 
