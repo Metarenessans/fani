@@ -258,6 +258,15 @@ $m: .4475;
         font-weight: normal;
       }
 
+      tbody tr td {
+        width: 6em;
+        
+        &:first-of-type {
+          width: 3em;
+        }
+        
+      }
+
       &:nth-child(n + 2) thead {
         visibility: collapse;
         padding: 0 !important;

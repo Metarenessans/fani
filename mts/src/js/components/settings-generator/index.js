@@ -38,18 +38,6 @@ import fractionLength from '../../../../../common/utils/fraction-length'
 const SettingsGenerator = props => {
 
   const { onClose } = props;
-  
-  const investorDepo = props.depo != null ? props.depo : 1_000_000;
-  const [depo, setDepo] = useState(
-    investorDepo != null 
-      ? Math.floor(investorDepo * .25) 
-      : 0
-  );
-  const [secondaryDepo, setSecondaryDepo] = useState(
-    investorDepo != null 
-      ? Math.floor(investorDepo * .75)
-      : 0
-  );
 
   const [risk, setRisk] = useState(0.5);
   const [comission, setComission] = useState(0);
@@ -98,6 +86,26 @@ const SettingsGenerator = props => {
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
+  let investorDepo = props?.depo || 1_000_000;
+
+  const [depo, setDepo] = useState(
+    investorDepo != null
+      ? currentPreset.type == "Лимитник"
+        ? Math.floor(investorDepo)
+        : Math.floor(investorDepo * .25)
+      : 0
+  );
+
+  if (currentPreset.type == "Лимитник") {
+    investorDepo = depo;
+  }
+
+  const [secondaryDepo, setSecondaryDepo] = useState(
+    investorDepo != null
+      ? Math.floor(investorDepo * .75)
+      : 0
+  );
+
   // Прямые профитные докупки 
   const [isProfitableBying, setProfitableBying] = useState(false);
   // Обратные профитные докупки 
@@ -111,7 +119,7 @@ const SettingsGenerator = props => {
 
   const depoAvailable = investorDepo * (load / 100);
 
-  const hasExtraDepo = (depo < depoAvailable);
+  const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -230,8 +238,12 @@ const SettingsGenerator = props => {
 
   useEffect(() => {
 
-    setDepo(Math.floor(investorDepo * .25));
-    setSecondaryDepo(Math.floor(investorDepo * .75));
+    if (currentPreset.type == "Лимитник") {
+      setDepo(investorDepo);
+    }
+    
+    // setDepo(Math.floor(investorDepo * .25));
+    // setSecondaryDepo(Math.floor(investorDepo * .75));
 
   }, [investorDepo]);
 
@@ -470,20 +482,23 @@ const SettingsGenerator = props => {
                   />
                 </label>
 
-                <label className="input-group">
-                  <span className="input-group__label">Плечевой депо</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={secondaryDepo}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={10000}
-                    max={Infinity}
-                    onBlur={val => {
-                      
-                    }}
-                  />
-                </label>
+                {
+                  currentPreset.type != "Лимитник" &&
+                    <label className="input-group">
+                      <span className="input-group__label">Плечевой депо</span>
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={secondaryDepo}
+                        format={formatNumber}
+                        unsigned="true"
+                        min={10000}
+                        max={Infinity}
+                        onBlur={val => {
+                          
+                        }}
+                      />
+                    </label>
+                }
 
               </div>
               {/* row-col-half */}
@@ -857,7 +872,7 @@ const SettingsGenerator = props => {
                               });
                             }}
                           >
-                            {!currentPreset.options.inPercent ? "$" : "%"}
+                            {!currentPreset.options["основной"].inPercent ? "$" : "%"}
                           </button>
                         }
                       </span>
@@ -1033,15 +1048,17 @@ const SettingsGenerator = props => {
                     Закрытие основного депо
                   </Button>
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab2"
-                          id="settings-generator-tab2-control"
-                          hidden={!hasExtraDepo}>
-                    Закрытие плечевого депо
-                  </Button>
+                  {currentPreset.type != "Лимитник" &&
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab2"
+                            id="settings-generator-tab2-control"
+                            hidden={!hasExtraDepo}>
+                      Закрытие плечевого депо
+                    </Button>
+                  }
 
                   <Button className="custom-btn"
                           tabIndex="-1"
@@ -1111,15 +1128,17 @@ const SettingsGenerator = props => {
               </div>
               {/* tabpanel */}
 
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab2"
-                   aria-labelledby="settings-generator-tab2-control"
-                   hidden>
+              {currentPreset.type != "Лимитник" &&
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab2"
+                    aria-labelledby="settings-generator-tab2-control"
+                    hidden>
 
-                <Table data={data['плечевой']} />
+                  <Table data={data['плечевой']} />
 
-              </div>
+                </div>
+              }
               {/* tabpanel */}
 
               <div tabIndex="0"

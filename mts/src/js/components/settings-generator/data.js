@@ -124,10 +124,34 @@ const createData = (type, options) => {
         )
         /
         (
+          // кол-во контрактов на заданную загрузку
           contracts
           *
+          // стоимость шага цены
           currentTool.stepPrice
         );
+      
+      // Если акции - применяю другую формулу 
+      // https://docs.google.com/document/d/1wuO5RF_VH1PD-XxjHXLYDW124L5R2EuHt9b_PNeRiG0/edit#bookmark=id.vpv7265cfmik
+      if (currentTool.dollarRate >= 1) {
+        points =
+          (
+            // контракты * го = объем входа в деньгах
+            (contracts * currentTool.guarantee)
+            *
+            // величина смещения из массива закрытия
+            (stepInPercent / 100 * (index + 1))
+          )
+          /
+          (
+            // кол-во контрактов на заданную загрузку
+            contracts
+            *
+            // лот
+            currentTool.lotSize
+          )
+      }
+
       points = round(points, fraction);
 
       if (isNaN(points)) {
