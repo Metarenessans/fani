@@ -17,7 +17,7 @@ export default class NumericInput extends React.Component {
     this.state = {
       value: this.format(this.props.defaultValue === "" ? "" : this.props.defaultValue),
       errMsg: "",
-      positive: true
+      positive: this.props.defaultValue >= 0
     };
 
     if (this.props.onRef) {
@@ -138,7 +138,7 @@ export default class NumericInput extends React.Component {
 
     this.setState({ value: this.format(val) });
     if (this.props.onBlur) {
-      this.props.onBlur(val, value);
+      this.props.onBlur(val, value, this);
     }
   }
 
