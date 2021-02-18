@@ -26,11 +26,12 @@ const focusLastInputIn = node => {
 export default class IterationsContainer extends React.Component {
   constructor(props) {
     super(props);
+    // TODO: переименовать во что-то более осмысленное
     this.myRef = React.createRef();
     this.state = {};
   }
 
-  //TODO: нужна передача конкретного дня, а не даты
+  // NOTE: в идеале нужна передача конкретного дня, а не всей даты
   shouldComponentUpdate(nextProps) {
     return !isEqual(this.props, nextProps);
   }
@@ -89,6 +90,8 @@ export default class IterationsContainer extends React.Component {
 
         if (scrolling) {
           const list = document.querySelector(".iterations-list");
+          // TODO: не универсально
+          // TODO: вынести скроллинг в отдельную функцию, т.к. сейчас дублируется в 3 разных местах
           list.scrollTop = 9999;
         }
       })
@@ -109,7 +112,6 @@ export default class IterationsContainer extends React.Component {
         >
           <ol className="iterations-list">
             {
-              // ▲
               iterationsToRender && iterationsToRender
                 .map((currentIteration, index) => {
                   let rate = currentIteration.getRate(depoStart);
@@ -172,6 +174,7 @@ export default class IterationsContainer extends React.Component {
                           const { payment, payload } = data[currentDay - 1]
 
                           // массив из значений инпутов итераций
+                          // TODO: бессмысленное название
                           let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
                           // замяем значение под текущим индексом на 0
                           ArrayValue[index] = 0;

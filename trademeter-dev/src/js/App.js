@@ -1285,6 +1285,24 @@ class App extends Component {
         rateSuggest: rate / 100
       }
     );
+    console.log(
+      depoStart,
+      Math.round(this.getDepoEnd()),
+      withdrawal,
+      withdrawalInterval[mode],
+      payload,
+      payloadInterval[mode],
+      options.length,
+      withdrawalInterval[mode],
+      payloadInterval[mode],
+      0,
+      realData,
+      {
+        rateSuggest: rate / 100
+      },
+      "=",
+      recommendedData
+    );
 
     if (recommendedData.extraDays != this.state.extraDays) {
       this.setState({ extraDays: recommendedData.extraDays });
@@ -1543,8 +1561,10 @@ class App extends Component {
                   let days = this.state.days[mode];
                   let state = {
                     extraDays: 0,
-                    daysDiff:  null,
+                    daysDiff:  null, 
                   };
+
+                  let dataLength = data.length;
 
                   if (Object.keys(lastRealData).length) {
                     const tempRealData = clone(realData);
@@ -1558,16 +1578,18 @@ class App extends Component {
 
                   // В новой вкладке меньше дней, чем в предыдущей
                   if (days < data.length) {
+                    dataLength = days;
                     // Текущий день больше, чем макс кол-во дней в новой вкладке
                     if (currentDay > days) {
                       // Текущий день становится последним
                       currentDay = days;
-                      Object.assign(state, { currentDay });
+                      state = { ...state, currentDay };
                     }
                   }
 
-
-                  this.setState(Object.assign(state, { mode, realData }), () => {
+                  state = { ...state, ...{ mode, realData, dataLength } };
+                  console.log(state);
+                  this.setState(state, () => {
                     // TODO: вернуть?
                     // params.set("mode", value);
 
@@ -2626,9 +2648,7 @@ class App extends Component {
                         </Col>
 
                         <Col className="section4-col">
-                          <header className="section4-header">
-                            До цели
-                          </header>
+                          <header className="section4-header">До цели</header>
                           {(() => {
                             const { dataLength } = this.state;
 
