@@ -726,7 +726,7 @@ const SettingsGenerator = props => {
                                   updatePresetProperty("основной", "customData", customDataCopy);
                                 }}
                               >
-                                {!customDataRow.inPercent ? "$" : "%"}
+                                {!customDataRow.inPercent ? "$/₽" : "%"}
                               </button>
                             </span>
                             <NumericInput
@@ -744,7 +744,7 @@ const SettingsGenerator = props => {
                                 const customDataCopy = [...currentPreset.options["основной"].customData];
                                 customDataCopy[i] = {
                                   ...customDataCopy[i],
-                                  preferredStep,
+                                  preferredStep: round(preferredStep, fraction),
                                 };
 
                                 updatePresetProperty("основной", "customData", customDataCopy);
@@ -872,7 +872,7 @@ const SettingsGenerator = props => {
                               });
                             }}
                           >
-                            {!currentPreset.options["основной"].inPercent ? "$" : "%"}
+                            {!currentPreset.options["основной"].inPercent ? "$/₽" : "%"}
                           </button>
                         }
                       </span>
@@ -893,7 +893,9 @@ const SettingsGenerator = props => {
                         unsigned="true"
                         min={0}
                         onBlur={preferredStep => {
-                          updatePresetProperty("основной", { preferredStep })
+                          updatePresetProperty("основной", { 
+                            preferredStep: round(preferredStep, fraction) 
+                          })
                         }}
                         suffix={
                           currentPreset.options["основной"].mode != 'fibonacci' && 

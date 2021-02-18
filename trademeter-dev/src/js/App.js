@@ -72,7 +72,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDonwload;
 
-const shouldLoadFakeSave = true;
+const shouldLoadFakeSave = false;
 const chartVisible       = true;
 
 class App extends Component {
@@ -322,6 +322,9 @@ class App extends Component {
     else {
       this.fetchSaveById = fetchSaveById.bind(this, "Trademeter");
     }
+
+    this.incomePersantageCustomInput = React.createRef();
+    this.withdrawalInput             = React.createRef();
   }
 
   getDataOptions() {
@@ -1538,7 +1541,10 @@ class App extends Component {
                   let { data, realData, currentDay } = this.state;
                   // TODO: looks weird. simplify it?
                   let days = this.state.days[mode];
-                  let state = {};
+                  let state = {
+                    extraDays: 0,
+                    daysDiff:  null,
+                  };
 
                   if (Object.keys(lastRealData).length) {
                     const tempRealData = clone(realData);
@@ -1618,9 +1624,9 @@ class App extends Component {
 
                             let errMessages = this.checkFn(withdrawal, val, days);
                             if (mode == 1) {
-                              this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                              this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                             }
-                            this.withdrawalInput.setErrorMsg(errMessages[0]);
+                            this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                           }}
                           format={formatNumber}
                         />
@@ -1671,6 +1677,7 @@ class App extends Component {
                           <label className="input-group">
                             <span className="input-group__label">Доходность в день</span>
                             <NumericInput
+                              ref={this.incomePersantageCustomInput}
                               disabled={this.state.saved}
                               max={30}
                               className="input-group__input"
@@ -1688,9 +1695,9 @@ class App extends Component {
                                 let errMessages = this.checkFn(withdrawal[mode], depoStart[mode], days[mode], percentage);
 
                                 if (mode == 1) {
-                                  this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                  this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                                 }
-                                this.withdrawalInput.setErrorMsg(errMessages[0]);
+                                this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
 
                                 this.setState({ incomePersantageCustom: val }, () => {
                                   this.recalc()
@@ -1726,11 +1733,10 @@ class App extends Component {
                                 let errMessages = this.checkFn(withdrawal[mode], depoStart[mode], days[mode], percentage);
 
                                 if (mode == 1) {
-                                  this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                  this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                                 }
-                                this.withdrawalInput.setErrorMsg(errMessages[0]);
+                                this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                               }}
-                              onRef={ref => this.incomePersantageCustomInput = ref}
                               format={formatNumber}
                               suffix="%"
                             />
@@ -1776,11 +1782,11 @@ class App extends Component {
                             let depoStart  = this.state.depoStart[mode];
 
                             if (mode == 1) {
-                              this.incomePersantageCustomInput.setErrorMsg(
+                              this.incomePersantageCustomInput?.current?.setErrorMsg(
                                 this.checkFn2(this.state.incomePersantageCustom, value)
                               );
                             }
-                            this.withdrawalInput.setErrorMsg(this.checkFn(withdrawal, depoStart, value)[0]);
+                            this.withdrawalInput?.current?.setErrorMsg(this.checkFn(withdrawal, depoStart, value)[0]);
                           }}
                         />
                       </label>
@@ -1936,6 +1942,7 @@ class App extends Component {
                             <label className="input-group">
                               <span className="input-group__label">Вывод</span>
                               <NumericInput
+                                ref={this.withdrawalInput}
                                 disabled={this.state.saved}
                                 className="input-group__input"
                                 defaultValue={this.state.withdrawal[this.state.mode]}
@@ -1962,9 +1969,9 @@ class App extends Component {
                                   }
 
                                   let errMessages = this.checkFn(val, depoStart, days);
-                                  this.withdrawalInput.setErrorMsg(errMessages[0]);
+                                  this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                                   if (mode == 1) {
-                                    this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                    this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                                   }
 
                                   const frequency = this.state.withdrawalInterval[mode];
@@ -1982,19 +1989,17 @@ class App extends Component {
                                   let days = this.state.days[mode];
 
                                   let errMessages = this.checkFn(val, depoStart, days);
-                                  this.withdrawalInput.setErrorMsg(errMessages[0]);
+                                  this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                                   if (mode == 1) {
-                                    this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                    console.log(this.incomePersantageCustomInput);
+                                    this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                                   }
 
                                   const frequency = this.state.withdrawalInterval[mode];
                                   const paymentOverflowMsg = this.validatePayment(val, frequency);
                                   if (paymentOverflowMsg) {
-                                    this.withdrawalInput.setErrorMsg(paymentOverflowMsg);
+                                    this.withdrawalInput?.current?.setErrorMsg(paymentOverflowMsg);
                                   }
-                                }}
-                                onRef={ref => {
-                                  this.withdrawalInput = ref;
                                 }}
                               />
                             </label>
@@ -2021,9 +2026,9 @@ class App extends Component {
                                 errMessages = ["Слишком большой вывод!", "Слишком маленькая доходность!"];
                               }
 
-                              this.withdrawalInput.setErrorMsg(errMessages[0]);
+                              this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                               if (mode == 1) {
-                                this.incomePersantageCustomInput.setErrorMsg(errMessages[1]);
+                                this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                               }
                             }}
                             onChange={value => {
@@ -2036,13 +2041,13 @@ class App extends Component {
                               if (payment > max) {
                                 this.setWithdrawal(max - 1);
                                 if (mode == 1) {
-                                  this.incomePersantageCustomInput.setErrorMsg("");
+                                  this.incomePersantageCustomInput?.current?.setErrorMsg("");
                                 }
                               }
                                                         
                               const paymentOverflowMsg = this.validatePayment(payment, frequency);
                               if (paymentOverflowMsg) {
-                                this.withdrawalInput.setErrorMsg(paymentOverflowMsg);
+                                this.withdrawalInput?.current?.setErrorMsg(paymentOverflowMsg);
                               }
 
                               withdrawalInterval[mode] = value;

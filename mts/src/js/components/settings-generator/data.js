@@ -165,29 +165,41 @@ const createData = (type, options) => {
       }
 
       if (mode == 'custom') {
-        let preferredStepInPercent = currentOptions.preferredStep;
+        let preferredStepInMoney = currentOptions.preferredStep;
         const { inPercent } = currentOptions;
-        if (!inPercent || currentOptions.preferredStep == "") {
-          preferredStepInPercent = stepConverter.fromStepToPercents(
-            (preferredStep || currentTool.adrDay),
-            currentTool.currentPrice
-          );
+        if (inPercent) {
+          if (preferredStepInMoney == "") {
+            preferredStepInMoney = currentTool.adrDay;
+          }
+          else {
+            preferredStepInMoney = stepConverter.fromPercentsToStep(
+              preferredStepInMoney,
+              currentTool.currentPrice
+            );
+          }
+        }
+        else {
+          if (preferredStepInMoney == "") {
+            preferredStepInMoney = currentTool.adrDay;
+          }
         }
 
         const groupLength = currentOptions.length || 1;
 
-        if (j == groupLength - 1) {
-          lastRowInGroupIndex = subIndex;
-        }
+        const base = preferredStepInMoney / groupLength;
 
         points = croppNumber(
-          (preferredStepInPercent / groupLength) * (j + 1)
+          base * (j + 1)
           +
           // Добавляем последнее значение из предыдущего блока
-          (index > 0 ? data[lastRowInGroupIndex - 1].points : 0)
+          (index > 0 ? data[lastRowInGroupIndex].points : 0)
           ,
           fraction
         );
+
+        if (j == groupLength - 1) {
+          lastRowInGroupIndex = subIndex;
+        }
       }
 
       if (type == "Обратные докупки (ТОР)") {
@@ -224,11 +236,19 @@ const createData = (type, options) => {
       }
 
       let _comission = _contracts * comission;
+      // Прибавляем все комиссии из предыдущих строк
+      _comission += data
+        .map(row => row.comission)
+        .reduce((acc, curr) => acc + curr, 0);
 
       let incomeWithoutComission = contracts * currentTool.stepPrice * points;
+      // Прибавляем все доходы/убытки из предыдущих строк
+      incomeWithoutComission += data
+        .map(row => row.incomeWithoutComission)
+        .reduce((acc, curr) => acc + curr, 0);
+
       let incomeWithComission = 
-        incomeWithoutComission + 
-        (_comission * (type == "Обратные докупки (ТОР)" ? 1 : -1));
+        incomeWithoutComission + (_comission * (type == "Обратные докупки (ТОР)" ? 1 : -1));
 
       data[subIndex] = {
         percent,
