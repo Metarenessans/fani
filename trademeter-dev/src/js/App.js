@@ -44,7 +44,7 @@ import typeOf              from "../../../common/utils/type-of"
 import { Tools, template } from "../../../common/tools"
 
 import Iteration from "./utils/iteration"
-import Data      from "./utils/data" 
+import Data      from "./utils/data"
 
 import Stack           from "./components/stack"
 import BigNumber       from "./components/BigNumber"
@@ -100,7 +100,7 @@ class App extends Component {
 
       // TODO: в идеале realData не нужна, все значения из факта можно хранить в data
       realData: {},
-      
+
       /**
        * Начальный депозит
        * @type {Array<Number>}
@@ -3049,7 +3049,6 @@ class App extends Component {
                                   }
 
                                   const percent = round(scale, 3) / round(rateRequired, 3) * 100;
-
                                   return (
                                     <Progress
                                       className="result-round-progress"
@@ -3064,7 +3063,7 @@ class App extends Component {
                                           <span>
                                             {
                                               data[currentDay - 1].changed && scale != null
-                                                ? formatNumber(round(scale, 3)) + "%"
+                                                ? formatNumber(round(scale, scale > 100? 0 : 3)) + "%"
                                                 : placeholder
                                             }
                                           </span>

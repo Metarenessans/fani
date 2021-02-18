@@ -34,7 +34,7 @@ export default class IterationsContainer extends React.Component {
   shouldComponentUpdate(nextProps) {
     return !isEqual(this.props, nextProps);
   }
-  
+
   componentDidMount() {
     const { data, currentDay } = this.props;
     if (data[currentDay - 1].expanded) {
@@ -42,7 +42,7 @@ export default class IterationsContainer extends React.Component {
       list.scrollTop = 9999;
     }
   }
-  
+
   componentDidUpdate(prevProps) {
     const { expanded, currentDay, data} = this.props;
 
@@ -55,27 +55,27 @@ export default class IterationsContainer extends React.Component {
       focusLastInputIn(this.myRef.current);
     }
   }
-  
+
   render() {
     const { data, currentDay, placeholder, callback} = this.props;
 
     const onChange = (iterations = [], shouldFocusLastElement = true, scrolling = true) => {
       const filteredIterations = iterations.filter(it => !it.empty);
-  
+
       const { depoStart } = data[currentDay - 1];
 
       let rate;
       let income;
-      if (filteredIterations.length) {
+      if (filteredIterations.length > 0) {
         rate = filteredIterations
           .map(it => it.rate)
           .reduce((prev, curr) => prev + curr);
-  
+
         income = filteredIterations
           .map(it => it.getIncome(depoStart))
           .reduce((prev, curr) => prev + curr);
       }
-  
+
       data[currentDay - 1].rate = rate;
       data[currentDay - 1].income = income;
       data[currentDay - 1].iterations = iterations;
@@ -109,6 +109,7 @@ export default class IterationsContainer extends React.Component {
         >
           <ol className="iterations-list">
             {
+              // ▲
               iterationsToRender && iterationsToRender
                 .map((currentIteration, index) => {
                   let rate = currentIteration.getRate(depoStart);
@@ -131,12 +132,33 @@ export default class IterationsContainer extends React.Component {
                       </span>
 
                       <NumericInput
+                        key={income}
                         className="iterations-list-item__input"
                         defaultValue={income}
                         placeholder={placeholder}
                         format={formatNumber}
                         round="true"
+                        onChange={(e, val, jsx) => {
+                          const {payment, payload } = data[currentDay - 1]
+                          let errMsg = "";
+                          // массив из значений инпутов итераций
+                          let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
+                          // замяем значение под текущим индексом на актуальное 
+                          ArrayValue[index] = Number(val)
+                          // суммируем все значения итераций
+                          let iterationsSum = ArrayValue
+                            .filter((value) => !isNaN(value))
+                            .reduce((acc, curr) => acc + curr, 0)
+
+                          if ( ((Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95) + iterationsSum <= 0 ) {
+                            errMsg = "максимальный убыток -95%";
+                          }
+
+                          jsx.setState({ errMsg });
+                        }}
+
                         onBlur={(val, textValue) => {
+                          
                           if (!iterations[index]) {
                             iterations[index] = new Iteration();
                           }
@@ -147,11 +169,32 @@ export default class IterationsContainer extends React.Component {
                           let shouldCreateNewIteration = false;
                           let percent;
 
+                          const { payment, payload } = data[currentDay - 1]
+
+                          // массив из значений инпутов итераций
+                          let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
+                          // замяем значение под текущим индексом на 0
+                          ArrayValue[index] = 0;
+                          // суммируем все значения итераций
+                          let iterationsSumWithoutCurrent = ArrayValue
+                            .filter((value) => !isNaN(value))
+                            .reduce((acc, curr) => acc + curr, 0);
+
+                          // Сумма итераций с текущим
+                          const iterationsSumWithCurrent = iterationsSumWithoutCurrent + Number(val);
+
+                          //Депо для слива
+                          const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
+                          
+                          if (minDepo + iterationsSumWithCurrent <= 0) {
+                            val = -(minDepo + iterationsSumWithoutCurrent);
+                          }
+
                           // Инпут не пустой
                           if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
 
-                            // Больше одной стороки
+                            // Больше одной сторок
                             if (iterations.length > 1) {
                               shouldFocusLastElement = true;
                             }
