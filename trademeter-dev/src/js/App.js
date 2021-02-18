@@ -72,8 +72,8 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDonwload;
 
-let shouldLoadFakeSave = true;
-let chartVisible       = true;
+let shouldLoadFakeSave = false;
+let chartVisible       = false;
 if (!dev) {
   chartVisible = true;
 }

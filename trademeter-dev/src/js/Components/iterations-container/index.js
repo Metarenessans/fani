@@ -28,7 +28,7 @@ export default class IterationsContainer extends React.Component {
     super(props);
     // TODO: переименовать во что-то более осмысленное
     this.myRef = React.createRef();
-    this.state = {};
+    this.state = { changedIndex: -1 };
   }
 
   // NOTE: в идеале нужна передача конкретного дня, а не всей даты
@@ -187,10 +187,12 @@ export default class IterationsContainer extends React.Component {
                         // Депо для слива
                         const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
                         
+                        let changedIndex = -1;
                         if (minDepo + iterationsSumWithCurrent <= 0) {
                           val = -(minDepo + iterationsSumWithoutCurrent);
-                          this.setState({ changedIndex: index });
+                          changedIndex = index;
                         }
+                        this.setState({ changedIndex });
                         
                         // Инпут не пустой
                         if (textValue !== "") {
