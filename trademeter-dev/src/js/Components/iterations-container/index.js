@@ -104,227 +104,225 @@ export default class IterationsContainer extends React.Component {
     }
 
     return (
-      <>
-        <div
-          className="iterations"
-          ref={this.myRef}
-          key={currentDay}
-        >
-          <ol className="iterations-list">
-            {
-              iterationsToRender && iterationsToRender
-                .map((currentIteration, index) => {
-                  let rate = currentIteration.getRate(depoStart);
-                  if (!changed || rate == null || isNaN(rate)) {
-                    rate = "";
-                  }
+      <div
+        key={currentDay}
+        className="iterations"
+        ref={this.myRef}
+      >
+        <ol className="iterations-list">
+          {
+            iterationsToRender && iterationsToRender
+              .map((currentIteration, index) => {
+                let rate = currentIteration.getRate(depoStart);
+                if (!changed || rate == null || isNaN(rate)) {
+                  rate = "";
+                }
 
-                  let income = currentIteration.getIncome(depoStart);
-                  if (!changed || income == null || isNaN(income)) {
-                    income = "";
-                  }
+                let income = currentIteration.getIncome(depoStart);
+                if (!changed || income == null || isNaN(income)) {
+                  income = "";
+                }
 
-                  return (
-                    <li 
-                      className="iterations-list-item"
-                      key={index}
-                    >
-                      <span className="iterations-list-item__number">
-                        {index + 1}
-                      </span>
+                return (
+                  <li 
+                    key={index}
+                    className="iterations-list-item"
+                  >
+                    <span className="iterations-list-item__number">
+                      {index + 1}
+                    </span>
 
-                      <NumericInput
-                        key={Math.random()}
-                        className="iterations-list-item__input"
-                        defaultValue={income}
-                        placeholder={placeholder}
-                        format={formatNumber}
-                        round="true"
-                        onChange={(e, val, jsx) => {
-                          const {payment, payload } = data[currentDay - 1]
-                          let errMsg = "";
-                          // массив из значений инпутов итераций
-                          let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
-                          // замяем значение под текущим индексом на актуальное 
-                          ArrayValue[index] = Number(val)
-                          // суммируем все значения итераций
-                          let iterationsSum = ArrayValue
-                            .filter((value) => !isNaN(value))
-                            .reduce((acc, curr) => acc + curr, 0)
-
-                          if ( ((Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95) + iterationsSum <= 0 ) {
-                            errMsg = "максимальный убыток -95%";
-                          }
-
-                          jsx.setState({ errMsg });
-                        }}
-
-                        onBlur={(val, textValue) => {
-                          
-                          if (!iterations[index]) {
-                            iterations[index] = new Iteration();
-                          }
-
-                          let shouldFocusLastElement = false;
-                          let scrolling = false;
-                          let lastIteration = iterations[iterations.length - 1];
-                          let shouldCreateNewIteration = false;
-                          let percent;
-                          
-                          const { payment, payload } = data[currentDay - 1]
-                          // массив из значений инпутов итераций
-                          // TODO: бессмысленное название
-                          let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
-                          // замяем значение под текущим индексом на 0
-                          ArrayValue[index] = 0;
-                          // суммируем все значения итераций
-                          let iterationsSumWithoutCurrent = ArrayValue
+                    <NumericInput
+                      // Искусственно обновляем инпут, если его значение отбросилось к сейфовому 
+                      key={this.state?.changedIndex == index ? Math.random() : undefined}
+                      className="iterations-list-item__input"
+                      defaultValue={income}
+                      placeholder={placeholder}
+                      format={formatNumber}
+                      round="true"
+                      onChange={(e, val, jsx) => {
+                        const {payment, payload } = data[currentDay - 1]
+                        let errMsg = "";
+                        // массив из значений инпутов итераций
+                        let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
+                        // замяем значение под текущим индексом на актуальное 
+                        ArrayValue[index] = Number(val)
+                        // суммируем все значения итераций
+                        let iterationsSum = ArrayValue
                           .filter((value) => !isNaN(value))
-                          .reduce((acc, curr) => acc + curr, 0);
-                          
-                          // Сумма итераций с текущим
-                          const iterationsSumWithCurrent = iterationsSumWithoutCurrent + Number(val);
-                          
-                          //Депо для слива
-                          const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
-                          
-                          if (minDepo + iterationsSumWithCurrent <= 0) {
-                            val = -(minDepo + iterationsSumWithoutCurrent);
-                          }
-                          console.log(val);
-                          
-                          // Инпут не пустой
-                          if (textValue !== "") {
-                            percent = val / data[currentDay - 1].depoStartTest * 100;
+                          .reduce((acc, curr) => acc + curr, 0)
 
-                            // Больше одной сторок
-                            if (iterations.length > 1) {
-                              shouldFocusLastElement = true;
-                            }
+                        if ( ((Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95) + iterationsSum <= 0 ) {
+                          errMsg = "максимальный убыток -95%";
+                        }
 
-                            // Последняя строка
-                            if (index == iterations.length - 1) {
-                              shouldCreateNewIteration = true;
-                              shouldFocusLastElement = true;
-                            }
-                            else {
-                              shouldFocusLastElement = false;
-                            }
+                        jsx.setState({ errMsg });
+                      }}
+                      onBlur={(val, textValue) => {
+                        
+                        if (!iterations[index]) {
+                          iterations[index] = new Iteration();
+                        }
+
+                        let shouldFocusLastElement = false;
+                        let scrolling = false;
+                        let lastIteration = iterations[iterations.length - 1];
+                        let shouldCreateNewIteration = false;
+                        let percent;
+                        
+                        const { payment, payload } = data[currentDay - 1]
+                        // массив из значений инпутов итераций
+                        // TODO: бессмысленное название
+                        let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
+                        // замяем значение под текущим индексом на 0
+                        ArrayValue[index] = 0;
+                        // суммируем все значения итераций
+                        let iterationsSumWithoutCurrent = ArrayValue
+                        .filter((value) => !isNaN(value))
+                        .reduce((acc, curr) => acc + curr, 0);
+                        
+                        // Сумма итераций с текущим
+                        const iterationsSumWithCurrent = iterationsSumWithoutCurrent + Number(val);
+                        
+                        // Депо для слива
+                        const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
+                        
+                        if (minDepo + iterationsSumWithCurrent <= 0) {
+                          val = -(minDepo + iterationsSumWithoutCurrent);
+                          this.setState({ changedIndex: index });
+                        }
+                        
+                        // Инпут не пустой
+                        if (textValue !== "") {
+                          percent = val / data[currentDay - 1].depoStartTest * 100;
+
+                          // Больше одной сторок
+                          if (iterations.length > 1) {
+                            shouldFocusLastElement = true;
                           }
-                          
-                          if (index < iterations.length - 1 && lastIteration.empty) {
+
+                          // Последняя строка
+                          if (index == iterations.length - 1) {
+                            shouldCreateNewIteration = true;
+                            shouldFocusLastElement = true;
+                          }
+                          else {
                             shouldFocusLastElement = false;
-                            shouldCreateNewIteration = false;
                           }
-
-                          if (shouldCreateNewIteration) {
-                            iterations.push(new Iteration());
-                          }
-
-                          iterations[index].income = null;
-                          iterations[index].percent = percent;
-                          onChange(iterations, shouldFocusLastElement, scrolling);
-                        }}
-                      />
-                      <span className="iterations-list-item__separator">~</span>
-                      <span className="iterations-list-item__input iterations-list-item__input--unstyled">
-                        {
-                          formatNumber(round(rate, 3)) + "%"
                         }
-                      </span>
-
-                      <Popover
-                        content={
-                          <TimeRangePicker
-                            startTime={currentIteration.startTime}
-                            endTime={currentIteration.endTime}
-                            onChange={(startTime, endTime) => {
-                              if (!iterations[index]) {
-                                iterations[index] = new Iteration();
-                              }
-    
-                              if (!isNaN(startTime)) {
-                                iterations[index].startTime = startTime;
-                              }
-                              if (!isNaN(endTime)) {
-                                iterations[index].endTime = endTime;
-                              }
-    
-                              data[currentDay - 1].iterations = iterations;
-                              this.setState({ data });
-                            }}
-                          />
+                        
+                        if (index < iterations.length - 1 && lastIteration.empty) {
+                          shouldFocusLastElement = false;
+                          shouldCreateNewIteration = false;
                         }
-                        trigger="click"
-                        placement="left"
-                        destroyTooltipOnHide={true}
-                      >
-                      <div className="iterations-list-item__clock">
-                        {(() => {
-                          let h = 0;
-                          let m = 0;
-                          let text = "";
 
-                          let { period } = currentIteration;
-                          if (!isNaN(period) && period != 0) {
-                            const date = new Date(period);
-                            m = date.getUTCMinutes();
-                            text += `${m}м`;
+                        if (shouldCreateNewIteration) {
+                          iterations.push(new Iteration());
+                        }
 
-                            h = date.getUTCHours();
-                            if (h != 0) {
-                              text = `${h}ч ` + text;
+                        iterations[index].income = null;
+                        iterations[index].percent = percent;
+                        onChange(iterations, shouldFocusLastElement, scrolling);
+                      }}
+                    />
+                    <span className="iterations-list-item__separator">~</span>
+                    <span className="iterations-list-item__input iterations-list-item__input--unstyled">
+                      {
+                        formatNumber(round(rate, 3)) + "%"
+                      }
+                    </span>
+
+                    <Popover
+                      content={
+                        <TimeRangePicker
+                          startTime={currentIteration.startTime}
+                          endTime={currentIteration.endTime}
+                          onChange={(startTime, endTime) => {
+                            if (!iterations[index]) {
+                              iterations[index] = new Iteration();
                             }
-                          }
-
-                          return (
-                            <>
-                              {text == ""
-                                ? <ClockCircleFilled />
-                                : <span className="iterations-list-item__clock-time">{text}</span>
-                              }
-                            </>
-                          )
-                        })()}
-                      </div>
-                      </Popover>
-    
-                      {index > 0 && (
-                        <CrossButton
-                          className="iterations-list-item__delete"
-                          onClick={() => {
-                            const { iterations } = data[currentDay - 1];
-                            iterations.splice(index, 1);
-                            onChange(iterations, false, false);
+  
+                            if (!isNaN(startTime)) {
+                              iterations[index].startTime = startTime;
+                            }
+                            if (!isNaN(endTime)) {
+                              iterations[index].endTime = endTime;
+                            }
+  
+                            data[currentDay - 1].iterations = iterations;
+                            this.setState({ data });
                           }}
                         />
-                      )}
-                    </li>
-                  )
-                })
-            }
-          </ol>
-          <button
-            className="iterations-button"
-            onClick={() => {
-              if (iterations.length == 0) {
-                iterations = [new Iteration(
-                  data[currentDay - 1].isChanged
-                    ? calculatedRate
-                    : null
-                  )];
-                }
-              iterations.push(new Iteration());
-              onChange(iterations);
-            }}
-          
-          >
-            Добавить
-          <span className="visually-hidden">итерацию</span>
+                      }
+                      trigger="click"
+                      placement="left"
+                      destroyTooltipOnHide={true}
+                    >
+                    <div className="iterations-list-item__clock">
+                      {(() => {
+                        let h = 0;
+                        let m = 0;
+                        let text = "";
 
-          </button>
-        </div>
-      </>
+                        let { period } = currentIteration;
+                        if (!isNaN(period) && period != 0) {
+                          const date = new Date(period);
+                          m = date.getUTCMinutes();
+                          text += `${m}м`;
+
+                          h = date.getUTCHours();
+                          if (h != 0) {
+                            text = `${h}ч ` + text;
+                          }
+                        }
+
+                        return (
+                          <>
+                            {text == ""
+                              ? <ClockCircleFilled />
+                              : <span className="iterations-list-item__clock-time">{text}</span>
+                            }
+                          </>
+                        )
+                      })()}
+                    </div>
+                    </Popover>
+  
+                    {index > 0 && (
+                      <CrossButton
+                        className="iterations-list-item__delete"
+                        onClick={() => {
+                          const { iterations } = data[currentDay - 1];
+                          iterations.splice(index, 1);
+                          onChange(iterations, false, false);
+                        }}
+                      />
+                    )}
+                  </li>
+                )
+              })
+          }
+        </ol>
+        <button
+          className="iterations-button"
+          onClick={() => {
+            if (iterations.length == 0) {
+              iterations = [new Iteration(
+                data[currentDay - 1].isChanged
+                  ? calculatedRate
+                  : null
+                )];
+              }
+            iterations.push(new Iteration());
+            onChange(iterations);
+          }}
+        
+        >
+          Добавить
+        <span className="visually-hidden">итерацию</span>
+
+        </button>
+      </div>
     );
   }
 }
