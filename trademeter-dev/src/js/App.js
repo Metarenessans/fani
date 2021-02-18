@@ -72,7 +72,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDonwload;
 
-const shouldLoadFakeSave = false;
+const shouldLoadFakeSave = true;
 const chartVisible       = true;
 
 class App extends Component {

@@ -134,7 +134,7 @@ export default class IterationsContainer extends React.Component {
                       </span>
 
                       <NumericInput
-                        key={income}
+                        key={Math.random()}
                         className="iterations-list-item__input"
                         defaultValue={income}
                         placeholder={placeholder}
@@ -170,9 +170,8 @@ export default class IterationsContainer extends React.Component {
                           let lastIteration = iterations[iterations.length - 1];
                           let shouldCreateNewIteration = false;
                           let percent;
-
+                          
                           const { payment, payload } = data[currentDay - 1]
-
                           // массив из значений инпутов итераций
                           // TODO: бессмысленное название
                           let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
@@ -180,19 +179,20 @@ export default class IterationsContainer extends React.Component {
                           ArrayValue[index] = 0;
                           // суммируем все значения итераций
                           let iterationsSumWithoutCurrent = ArrayValue
-                            .filter((value) => !isNaN(value))
-                            .reduce((acc, curr) => acc + curr, 0);
-
+                          .filter((value) => !isNaN(value))
+                          .reduce((acc, curr) => acc + curr, 0);
+                          
                           // Сумма итераций с текущим
                           const iterationsSumWithCurrent = iterationsSumWithoutCurrent + Number(val);
-
+                          
                           //Депо для слива
                           const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
                           
                           if (minDepo + iterationsSumWithCurrent <= 0) {
                             val = -(minDepo + iterationsSumWithoutCurrent);
                           }
-
+                          console.log(val);
+                          
                           // Инпут не пустой
                           if (textValue !== "") {
                             percent = val / data[currentDay - 1].depoStartTest * 100;
