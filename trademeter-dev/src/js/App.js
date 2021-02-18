@@ -1285,24 +1285,6 @@ class App extends Component {
         rateSuggest: rate / 100
       }
     );
-    console.log(
-      depoStart,
-      Math.round(this.getDepoEnd()),
-      withdrawal,
-      withdrawalInterval[mode],
-      payload,
-      payloadInterval[mode],
-      options.length,
-      withdrawalInterval[mode],
-      payloadInterval[mode],
-      0,
-      realData,
-      {
-        rateSuggest: rate / 100
-      },
-      "=",
-      recommendedData
-    );
 
     if (recommendedData.extraDays != this.state.extraDays) {
       this.setState({ extraDays: recommendedData.extraDays });
@@ -1588,7 +1570,6 @@ class App extends Component {
                   }
 
                   state = { ...state, ...{ mode, realData, dataLength } };
-                  console.log(state);
                   this.setState(state, () => {
                     // TODO: вернуть?
                     // params.set("mode", value);
@@ -2013,7 +1994,6 @@ class App extends Component {
                                   let errMessages = this.checkFn(val, depoStart, days);
                                   this.withdrawalInput?.current?.setErrorMsg(errMessages[0]);
                                   if (mode == 1) {
-                                    console.log(this.incomePersantageCustomInput);
                                     this.incomePersantageCustomInput?.current?.setErrorMsg(errMessages[1]);
                                   }
 
