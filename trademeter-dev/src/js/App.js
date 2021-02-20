@@ -346,24 +346,25 @@ class App extends Component {
     }
 
     this.fetchInitialData();
+
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
-    .then(response => {
-      let data = response.data;
-      if (data) {
-        let toolArr = data.map((tool) => {
-          tool.rate = tool.income;
-          delete tool.income;
-          return tool;
-        })
-        // сортировка от большего к меньшему
-        let sortedTools = toolArr.sort((a, b) => b.rate - a.rate);
-        this.setState({ passiveIncomeTools: sortedTools});
-      }
-      else {
-        reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-      }
-    })
+      .then(response => {
+        let data = response.data;
+        if (data) {
+          let toolArr = data.map(tool => {
+            tool.rate = Number(tool.income);
+            delete tool.income;
+            return tool;
+          })
+          // сортировка от большего к меньшему
+          let sortedTools = toolArr.sort((a, b) => b.rate - a.rate);
+          this.setState({ passiveIncomeTools: sortedTools });
+        }
+        else {
+          reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
+        }
+      })
   }
 
   bindEvents() {
@@ -1885,7 +1886,7 @@ class App extends Component {
 
                         <Select
                           id="passive-tools"
-                          key={this.state.mode + this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+                          key={this.state.passiveIncomeTools}
                           defaultValue={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
                           onChange={index => {
                             let { mode, currentPassiveIncomeToolIndex } = this.state;
