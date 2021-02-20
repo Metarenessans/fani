@@ -26,3 +26,4 @@ export default function fetch(url = "", method = "GET", data = {}) {
     });
   });
 }
+
