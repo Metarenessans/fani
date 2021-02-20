@@ -1,4 +1,5 @@
 import React, { Component } from "react"
+import { ajax } from "jquery"
 const { Provider, Consumer } = React.createContext();
 import {
   Button,
@@ -203,28 +204,7 @@ class App extends Component {
       // --------------------
       // Passive income tools
       // --------------------
-      passiveIncomeTools: [
-        {
-          name: "ОФЗ 26214",
-          rate: 4.99,
-        },
-        {
-          name: "ОФЗ 26205",
-          rate: 5.78,
-        },
-        {
-          name: "ОФЗ 26217",
-          rate: 5.99,
-        },
-        {
-          name: "ОФЗ 26209",
-          rate: 6.26,
-        },
-        {
-          name: "ОФЗ 26220",
-          rate: 6.41,
-        },
-      ],
+      passiveIncomeTools: [],
       customPassiveIncomeTools: [],
       currentPassiveIncomeToolIndex: [-1, -1],
 
@@ -366,6 +346,24 @@ class App extends Component {
     }
 
     this.fetchInitialData();
+    // вызов метода под инструмент ОФЗ
+    fetch("getBonds")
+    .then(response => {
+      let data = response.data;
+      if (data) {
+        let toolArr = data.map((tool) => {
+          tool.rate = tool.income;
+          delete tool.income;
+          return tool;
+        })
+        // сортировка от большего к меньшему
+        let sortedTools = toolArr.sort((a, b) => b.rate - a.rate);
+        this.setState({ passiveIncomeTools: sortedTools});
+      }
+      else {
+        reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
+      }
+    })
   }
 
   bindEvents() {
