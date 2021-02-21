@@ -1886,8 +1886,7 @@ class App extends Component {
 
                         <Select
                           id="passive-tools"
-                          key={this.state.passiveIncomeTools}
-                          defaultValue={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+                          value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
                           onChange={index => {
                             let { mode, currentPassiveIncomeToolIndex } = this.state;
                             currentPassiveIncomeToolIndex[mode] = index;
