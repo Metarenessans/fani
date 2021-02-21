@@ -73,7 +73,7 @@ class Config extends React.Component {
           title={title}
           confirmText="Добавить"
           onConfirm={() => {
-            let tool = Tools.create({});
+            let tool = { ...template };
             toolsInfo
               .map(info => info.prop)
               .map((prop, index) => {

@@ -353,11 +353,13 @@ class App extends Component {
         if (data) {
           const passiveIncomeTools = data
             .map(tool => {
-              tool.rate = Number(tool.income);
-              delete tool.income;
+              tool.rate = Number(tool.yield);
+              delete tool.yield;
               return tool;
             })
-            // сортировка от большего к меньшему
+            // убирает все инструменты с годовой ставкой <= нуля
+            .filter(tool => tool.rate > 0)
+            // сортировка по убыванию годовой ставки
             .sort((a, b) => b.rate - a.rate);
 
           this.setState({ passiveIncomeTools });
@@ -519,6 +521,9 @@ class App extends Component {
 
   }
 
+  /**
+   * Пакует данные в JSON файл, готовый к отправке на сервер
+   */
   packSave() {
     let {
       tax,
@@ -533,9 +538,9 @@ class App extends Component {
       payloadInterval,
       directUnloading,
       customTools,
-      passiveIncomeTools,
       currentPassiveIncomeToolIndex,
-      currentToolCode
+      currentToolCode,
+      customPassiveIncomeTools
     } = this.state;
 
     const json = {
@@ -556,7 +561,7 @@ class App extends Component {
         payload:                       [ payload[0], payload[1] ],
         payloadInterval:               [ payloadInterval[0], payloadInterval[1] ],
         passiveIncome:                 [ passiveIncomeMonthly[0], passiveIncomeMonthly[1] ],
-        passiveIncomeTools:            this.getPassiveIncomeTools(),
+        customPassiveIncomeTools,
         currentPassiveIncomeToolIndex: [ currentPassiveIncomeToolIndex[0], currentPassiveIncomeToolIndex[1] ],
         mode:                          mode,
         customTools:                   customTools,
@@ -579,7 +584,7 @@ class App extends Component {
           il:  item.iterations,
           pi: (() => {
             let val = data[index].depoEnd;
-            let tool = passiveIncomeTools[currentPassiveIncomeToolIndex];
+            let tool = this.getPassiveIncomeTools()[currentPassiveIncomeToolIndex];
             if (tool) {
               let percent = tool.rate / 365 * (365 / 260) / 100;
               return Math.round(val * percent)
@@ -606,6 +611,9 @@ class App extends Component {
     return valid;
   }
 
+  /**
+   * Распаковывает данные из сейва и записывает их в стейт
+   **/
   extractSave(save) {
     const onError = e => {
       this.showAlert(String(e));
@@ -737,8 +745,7 @@ class App extends Component {
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
       
-      // passiveIncomeTools - устарелое свойство, там всегда лежат 5 шаблонных инструментов 
-      state.customPassiveIncomeTools = (staticParsed.passiveIncomeTools || initialState.passiveIncomeTools);
+      state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
 
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
@@ -1413,6 +1420,14 @@ class App extends Component {
     return [].concat(passiveIncomeTools).concat(customPassiveIncomeTools);
   }
 
+  /**
+   * Возращает текущий инструмент пассивного дохода 
+   */
+  getCurrentPassiveIncomeTool() {
+    const {currentPassiveIncomeToolIndex, mode} = this.state
+    return this.getPassiveIncomeTools()[currentPassiveIncomeToolIndex[mode]];
+  }
+
   getPayment(d) {
     const { mode, withdrawal, withdrawalInterval } = this.state;
     return (d !== 0 && d % withdrawalInterval[mode] == 0)
@@ -1661,7 +1676,6 @@ class App extends Component {
                                 const { 
                                   mode,
                                   depoEnd,
-                                  passiveIncomeTools,
                                   currentPassiveIncomeToolIndex,
                                 } = this.state;
                                 
@@ -1675,7 +1689,7 @@ class App extends Component {
 
                                 let passiveIncomeMonthly = this.state.passiveIncomeMonthly;
                                 if (currentPassiveIncomeToolIndex[mode] > -1) {
-                                  let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                                  let tool = this.getCurrentPassiveIncomeTool();
                                   let persantage = tool.rate / 365 * (365 / 260) / 100;
                                   passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                                 }
@@ -1717,7 +1731,6 @@ class App extends Component {
                                     .then(() => {
                                       const {
                                         mode,
-                                        passiveIncomeTools,
                                         currentPassiveIncomeToolIndex,
                                       } = this.state;
 
@@ -1725,7 +1738,7 @@ class App extends Component {
 
                                       let passiveIncomeMonthly = this.state.passiveIncomeMonthly;
                                       if (currentPassiveIncomeToolIndex[mode] > -1) {
-                                        let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                                        let tool = this.getCurrentPassiveIncomeTool();
                                         let persantage = tool.rate / 365 * (365 / 260) / 100;
                                         passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                                       }
@@ -1821,7 +1834,6 @@ class App extends Component {
                           onBlur={val => {
                             const {
                               mode,
-                              passiveIncomeTools,
                               passiveIncomeMonthly,
                               currentPassiveIncomeToolIndex,
                             } = this.state;
@@ -1841,7 +1853,7 @@ class App extends Component {
                             let cb = () => {
                               this.setState({ pitError });
 
-                              let currentPassiveIncomeTool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                              let currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
                               this.recalcDepoEnd(val, currentPassiveIncomeTool);
                             };
 
@@ -1905,7 +1917,6 @@ class App extends Component {
                               const {
                                 mode,
                                 passiveIncomeMonthly,
-                                passiveIncomeTools,
                                 currentPassiveIncomeToolIndex
                               } = this.state;
 
@@ -1916,7 +1927,7 @@ class App extends Component {
                               }
 
                               let depoEnd = this.getDepoEnd();
-                              let currentPassiveIncomeTool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                              let currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
                               let persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
                               passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                               this.setState({ passiveIncomeMonthly })
@@ -1931,7 +1942,6 @@ class App extends Component {
                         >
                           <Option key={-1} value={-1}>Не выбран</Option>
                           {
-                            // ~~
                             this.getPassiveIncomeTools()
                               .map((tool, index) =>
                                 <Option key={index} value={index}>
@@ -2558,7 +2568,7 @@ class App extends Component {
                           {(() => {
                             const { mode } = this.state;
                             let val = data[currentDay - 1].depoEnd;
-                            let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                            let tool = this.getCurrentPassiveIncomeTool();
                             if (tool) {
                               let persantage = tool.rate / 12 * (365 / 260) / 100;
 
@@ -3263,7 +3273,7 @@ class App extends Component {
                                   {(() => {
                                     const { mode } = this.state;
                                     let val = data[currentDay - 1].depoEnd;
-                                    let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+                                    let tool = this.getCurrentPassiveIncomeTool();
                                     if (tool) {
                                       let persantage = tool.rate / 12 * (365 / 260) / 100;
 
@@ -3639,7 +3649,10 @@ class App extends Component {
               { name: "Ставка",   prop: "rate", defaultValue: 0            },
             ]}
             customTools={this.state.customPassiveIncomeTools}
-            onChange={customPassiveIncomeTools => this.setState({ customPassiveIncomeTools })}
+            onChange={customPassiveIncomeTools => {
+              this.setState({ customPassiveIncomeTools })
+              console.log('Updated in config:', customPassiveIncomeTools);
+            }}
           />
           {/* Инструменты пассивного дохода */}
           
