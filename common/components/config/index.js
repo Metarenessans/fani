@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import { Button, Input, Tooltip } from 'antd/es'
 
-import { isEqual } from 'lodash'
+import isEqual from '../../utils/is-equal'
 
 import croppString  from "../../utils/cropp-string"
 
@@ -33,7 +33,16 @@ class Config extends React.Component {
 
   componentDidMount() {
     document.getElementById(this.ref.current.id);
-    console.log();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!isEqual(prevProps.customTools, this.props.customTools)) {
+      this.setState({ customTools: this.props.customTools })
+    }
+
+    if (!isEqual(prevProps.tools, this.props.tools)) {
+      this.setState({ tools: this.props.tools })
+    }
   }
 
   render() {
@@ -89,7 +98,11 @@ class Config extends React.Component {
             }
 
             customTools.push(tool);
-            this.setState({ customTools, changed: true }, () => {
+            this.setState({ 
+              customTools,
+              changed: true,
+              showMax: Infinity
+            }, () => {
               const currentDialog = dialogAPI.getCurrentDialog();
               const tableWrap = currentDialog.querySelector(".config-table-wrap");
               tableWrap.scrollTop = 99999;
@@ -274,6 +287,5 @@ class Config extends React.Component {
 }
 
 export default memo(Config, (prevProps, nextProps) => {
-  return isEqual(prevProps.tools, nextProps.tools) &&
-         isEqual(prevProps.customTools, nextProps.customTools)
+  return isEqual(prevProps.tools, nextProps.tools) && isEqual(prevProps.customTools, nextProps.customTools)
 });

@@ -73,12 +73,11 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDonwload;
 
-let shouldLoadFakeSave = false;
+let shouldLoadFakeSave = true;
 let chartVisible       = false;
 if (!dev) {
   chartVisible = true;
 }
-
 
 class App extends Component {
   
@@ -350,16 +349,18 @@ class App extends Component {
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
       .then(response => {
-        let data = response.data;
+        const data = response.data;
         if (data) {
-          let toolArr = data.map(tool => {
-            tool.rate = Number(tool.income);
-            delete tool.income;
-            return tool;
-          })
-          // сортировка от большего к меньшему
-          let sortedTools = toolArr.sort((a, b) => b.rate - a.rate);
-          this.setState({ passiveIncomeTools: sortedTools });
+          const passiveIncomeTools = data
+            .map(tool => {
+              tool.rate = Number(tool.income);
+              delete tool.income;
+              return tool;
+            })
+            // сортировка от большего к меньшему
+            .sort((a, b) => b.rate - a.rate);
+
+          this.setState({ passiveIncomeTools });
         }
         else {
           reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
@@ -736,7 +737,8 @@ class App extends Component {
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
       
-      state.passiveIncomeTools = staticParsed.passiveIncomeTools || initialState.passiveIncomeTools;
+      // passiveIncomeTools - устарелое свойство, там всегда лежат 5 шаблонных инструментов 
+      state.customPassiveIncomeTools = (staticParsed.passiveIncomeTools || initialState.passiveIncomeTools);
 
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
@@ -1401,9 +1403,14 @@ class App extends Component {
     return title;
   }
 
+  /**
+   * Возвращает полный массив инстурментов пассивного дохода:
+   * 
+   * статик с бэка + кастомные инструменты
+   */
   getPassiveIncomeTools() {
-    const { passiveIncomeTools } = this.state;
-    return passiveIncomeTools;
+    const { passiveIncomeTools, customPassiveIncomeTools } = this.state;
+    return [].concat(passiveIncomeTools).concat(customPassiveIncomeTools);
   }
 
   getPayment(d) {
@@ -1924,6 +1931,7 @@ class App extends Component {
                         >
                           <Option key={-1} value={-1}>Не выбран</Option>
                           {
+                            // ~~
                             this.getPassiveIncomeTools()
                               .map((tool, index) =>
                                 <Option key={index} value={index}>
@@ -3624,14 +3632,14 @@ class App extends Component {
               name: "Инструмент",
               rate: 0
             }}
-            tools={[]}
+            tools={this.state.passiveIncomeTools}
             currentToolIndex={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
             toolsInfo={[
               { name: "Название", prop: "name", defaultValue: "Инструмент" },
               { name: "Ставка",   prop: "rate", defaultValue: 0            },
             ]}
-            customTools={this.state.passiveIncomeTools}
-            onChange={passiveIncomeTools => this.setState({ passiveIncomeTools })}
+            customTools={this.state.customPassiveIncomeTools}
+            onChange={customPassiveIncomeTools => this.setState({ customPassiveIncomeTools })}
           />
           {/* Инструменты пассивного дохода */}
           
