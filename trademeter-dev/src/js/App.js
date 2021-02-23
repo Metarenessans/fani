@@ -1,5 +1,4 @@
 import React, { Component } from "react"
-import { ajax } from "jquery"
 const { Provider, Consumer } = React.createContext();
 import {
   Button,
@@ -33,6 +32,8 @@ import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
+import extRateReal         from "./utils/rate"
+import isEqual             from "./utils/is-equal"
 import extRate             from "../../../common/utils/rate"
 import rateRecommended     from "../../../common/utils/rate-recommended"
 import fallbackProp        from "../../../common/utils/fallback-prop"
@@ -71,10 +72,10 @@ import "../sass/style.sass"
 import IterationsContainer from "./components/iterations-container"
 
 let lastRealData = {};
-let saveToDonwload;
+let saveToDownload;
 
 let shouldLoadFakeSave = true;
-let chartVisible       = false;
+let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
 }
@@ -321,7 +322,7 @@ class App extends Component {
       payloadInterval,
       depoPersentageStart
     } = this.state;
-    const rate = this.getRate();
+    const rate = this.getRateFull();
 
     return {
       $start:           depoStart[mode],
@@ -380,7 +381,7 @@ class App extends Component {
 
     window.addEventListener("keyup", e => {
       if (e.ctrlKey && e.shiftKey && e.keyCode == 191) {
-        const file = new Blob([objToPlainText(saveToDonwload)], { type: 'text/plain' });
+        const file = new Blob([objToPlainText(saveToDownload)], { type: 'text/plain' });
         
         const link = document.createElement("a");
         link.href = URL.createObjectURL(file);
@@ -543,6 +544,8 @@ class App extends Component {
       customPassiveIncomeTools
     } = this.state;
 
+    const rate = this.getRate();
+
     const json = {
       static: {
         depoStart:                     [ this.getDepoStart(0), this.getDepoStart(1) ],
@@ -552,10 +555,7 @@ class App extends Component {
         days:                          [ days[0], days[1] ],
         dataLength:                    Math.max( days[mode], data.length ),
         dataExtendedFrom:              data.extendedFrom,
-        minDailyIncome:                [
-          round(this.getRate(0), 3),
-          round(this.getRate(1), 3)
-        ],
+        minDailyIncome:                [round(rate, 3), round(rate, 3)],
         payment:                       [ withdrawal[0], withdrawal[1] ],
         paymentInterval:               [ withdrawalInterval[0], withdrawalInterval[1] ],
         payload:                       [ payload[0], payload[1] ],
@@ -637,7 +637,7 @@ class App extends Component {
       return -1;
     };
 
-    saveToDonwload = { ...save };
+    saveToDownload = { ...save };
 
     const savePure = clone(save);
     delete savePure.static;
@@ -745,13 +745,40 @@ class App extends Component {
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
       
+      // Кастомные инструменты пассивного дохода
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
-
+      
+      // Индекс выбранного инструмента пассивного дохода
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
         const temp = state.currentPassiveIncomeToolIndex;
         state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
         state.currentPassiveIncomeToolIndex[m] = Number(temp);
+      }
+
+      if (state.currentPassiveIncomeToolIndex[m] == -1 && isEqual(state.customPassiveIncomeTools, [
+        {
+          name: "ОФЗ 26214",
+          rate: 4.99,
+        },
+        {
+          name: "ОФЗ 26205",
+          rate: 5.78,
+        },
+        {
+          name: "ОФЗ 26217",
+          rate: 5.99,
+        },
+        {
+          name: "ОФЗ 26209",
+          rate: 6.26,
+        },
+        {
+          name: "ОФЗ 26220",
+          rate: 6.41,
+        },
+      ])) {
+        state.customPassiveIncomeTools = [];
       }
 
       // В старых сейвах указан currentToolIndex (number)
@@ -760,7 +787,6 @@ class App extends Component {
         state.currentToolIndex = staticParsed.currentToolIndex || 0;
       }
 
-      
       state.dataLength = staticParsed.dataLength;
       if (state.dataLength == null) {
         state.dataLength = Math.max(state.days[m], dynamicParsed.length);
@@ -1188,79 +1214,37 @@ class App extends Component {
   /**
    * @returns {number} минимальная доходность в день
    */
-  getRate(mode) {
-    const {
-      depoEnd,
-      payloadInterval,
-      withdrawalInterval,
-      incomePersantageCustom,
-    } = this.state;
-    mode = mode || this.state.mode;
-
-    const depoStart  = this.state.depoStart[mode];
-    const withdrawal = this.state.withdrawal[mode];
-    const payload    = this.state.payload[mode];
-    const days       = this.state.days[mode];
-
-    let rate = [
-      extRate(
-        depoStart,
-        depoEnd,
-        withdrawal,
-        withdrawalInterval[mode],
-        payload,
-        payloadInterval[mode],
-        days,
-        withdrawalInterval[mode],
-        payloadInterval[mode]
-      ) * 100,
-
-      incomePersantageCustom
-    ]
-
-    return round(rate[mode], 3);
+  getRate() {
+    return round(this.getRateFull(), 3);
   }
 
   getRateFull(mode) {
-    const {
-      depoEnd,
-      payloadInterval,
-      withdrawalInterval,
-      incomePersantageCustom,
-    } = this.state;
-    mode = mode || this.state.mode;
+    return this.useRate().rate
+  }
 
-    const depoStart = this.state.depoStart[mode];
-    const withdrawal = this.state.withdrawal[mode];
-    const payload = this.state.payload[mode];
-    const days = this.state.days[mode];
-
-    let rate = [
-      extRate(
-        depoStart,
-        depoEnd,
-        withdrawal,
-        withdrawalInterval[mode],
-        payload,
-        payloadInterval[mode],
-        days,
-        withdrawalInterval[mode],
-        payloadInterval[mode]
-      ) * 100,
-
-      incomePersantageCustom
-    ]
-
-    return rate[mode];
+  _getRealData() {
+    const { data } = this.state;
+    return data
+      .filledDays
+      .map(item => ({
+        scale:   item.calculatedRate / 100,
+        payment: item.payment || 0,
+        payload: item.payload || 0,
+      }));
   }
   
   getRateRecommended(options = {}) {
+    return this.useRate(options).rateRecommended;
+  }
+
+  useRate(options = {}) {
     const {
+      tax,
       mode,
-      data,
+      dataLength,
       payloadInterval,
       withdrawalInterval,
-      dataLength
+      incomePersantageCustom,
     } = this.state;
 
     if (!options.length) {
@@ -1270,20 +1254,10 @@ class App extends Component {
     const depoStart  = this.state.depoStart[mode];
     const withdrawal = this.state.withdrawal[mode];
     const payload    = this.state.payload[mode];
-
-    const rate = this.getRateFull();
-
-    const realData = data
-      .filledDays
-      .map(item => ({
-        scale:   item.calculatedRate / 100,
-        payment: item.payment || 0,
-        payload: item.payload || 0,
-      }));
     
-    const recommendedData = rateRecommended(
+    const result = extRateReal(
       depoStart,
-      Math.round( this.getDepoEnd() ),
+      Math.round(this.getDepoEnd()),
       withdrawal,
       withdrawalInterval[mode],
       payload,
@@ -1292,26 +1266,19 @@ class App extends Component {
       withdrawalInterval[mode],
       payloadInterval[mode],
       0,
-      realData,
+      this._getRealData(),
       {
-        rateSuggest: rate / 100
+        customRate: mode == 0 ? undefined : incomePersantageCustom,
+        tax
       }
     );
 
-    if (recommendedData.extraDays != this.state.extraDays) {
-      this.setState({ extraDays: recommendedData.extraDays });
+    if (mode == 0) {
+      result.rate *= 100;
+      result.rateRecommended *= 100;
     }
 
-    if (recommendedData.daysDiff != this.state.daysDiff) {
-      this.setState({ daysDiff: recommendedData.daysDiff });
-    }
-
-    let value = recommendedData.rate * 100;
-    if (Math.abs(rate - value) < .0008) {
-      value = rate;
-    }
-
-    return value;
+    return result;
   }
 
   /**
@@ -1337,11 +1304,10 @@ class App extends Component {
   }
 
   /**
-   * Получить выбранный торговый инструмент
+   * Возвращает выбранный торговый инструмент
    */
   getCurrentTool() {
-    const tools = this.getTools();
-    return tools[this.getCurrentToolIndex()] || Tools.create();
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.create();
   }
 
   /**
@@ -1513,12 +1479,16 @@ class App extends Component {
       currentDay,
       isLong,
       saved,
-      extraDays,
-      daysDiff,
+      // extraDays,
+      // daysDiff,
     } = this.state; 
 
-    const rate = this.getRate();
-    const rateRecomm = this.getRateRecommended();
+    // const rate = this.getRate();
+    // const rateRecomm = this.getRateRecommended();
+
+    const obj = this.useRate();
+    const { rate, rateRecommended, extraDays, daysDiff } = obj;
+    const rateRecomm = rateRecommended;
 
     const placeholder = "—";
 
@@ -1916,9 +1886,7 @@ class App extends Component {
                             }, () => {
                               const {
                                 mode,
-                                passiveIncomeMonthly,
-                                currentPassiveIncomeToolIndex
-                              } = this.state;
+                                passiveIncomeMonthly                              } = this.state;
 
                               if (index < 0) {
                                 passiveIncomeMonthly[mode] = 0;
@@ -2096,7 +2064,7 @@ class App extends Component {
                             min={0}
                             max={99999999}
                             onBlur={val => {
-                              let { mode, days, payload, payloadInterval } = this.state;
+                              let { mode, payload } = this.state;
 
                               if (val === payload[mode]) {
                                 return;
@@ -2213,7 +2181,7 @@ class App extends Component {
                             </h3>
                             <div className="stats-val">
                               <Value format={val => +val.toFixed(3) + "%"}>
-                                { this.getRate() / (iterations * (directUnloading ? 1 : 2)) }
+                                { rate / (iterations * (directUnloading ? 1 : 2)) }
                               </Value>
                             </div>
                           </Col>
@@ -2226,7 +2194,7 @@ class App extends Component {
                           <span aria-label="Минимальная">Мин.</span> доходность в день
                         </h2>
                         <p className="stats-subtitle">
-                          <BigNumber val={round( this.getRate(), 3 )} threshold={1e9} suffix="%" />
+                          <BigNumber val={round(rate, 3)} threshold={1e9} suffix="%" />
                         </p>
 
                         <footer className="stats-footer">
@@ -2489,8 +2457,6 @@ class App extends Component {
                 {(() => {
                   let {
                     data,
-                    passiveIncomeTools,
-                    currentPassiveIncomeToolIndex,
                     depoPersentageStart,
                     directUnloading,
                     iterations
@@ -2566,7 +2532,6 @@ class App extends Component {
 
                           {/* Show if we have passive income */}
                           {(() => {
-                            const { mode } = this.state;
                             let val = data[currentDay - 1].depoEnd;
                             let tool = this.getCurrentPassiveIncomeTool();
                             if (tool) {
@@ -2777,14 +2742,9 @@ class App extends Component {
                   const {
                     data,
                     dataLength,
-                    currentDay,
-                    directUnloading,
-                    passiveIncomeTools,
-                    currentPassiveIncomeToolIndex
+                    currentDay
                   } = this.state;
 
-
-                  const rate  = this.getRate();
                   const lastFilledDay = data.lastFilledDay?.day || 0;
 
                   const onBlur = (prop, val) => {
@@ -3271,7 +3231,6 @@ class App extends Component {
                               <div className="result-col-additional-row__side">
                                 <Value>
                                   {(() => {
-                                    const { mode } = this.state;
                                     let val = data[currentDay - 1].depoEnd;
                                     let tool = this.getCurrentPassiveIncomeTool();
                                     if (tool) {

@@ -254,7 +254,7 @@ function createChart() {
         return `
           ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
           ${tool
-          ? `<br/>Пассивный доход: ${formatNumber(Math.round(e.value * (tool.rate / 100) / 12))} /месяц`
+            ? "<br/>Пассивный доход: " + formatNumber(Math.round(e.value * (tool.rate / 100) / 12)) + " /месяц"
             : ""
           }
         `.trim().replace(/\s+/, " ");
@@ -358,7 +358,6 @@ function updatePlanEndLine(start, length, value) {
 
 function updateChart(isInit = false) {
   const { data, days, mode, currentDay } = this.state;
-  const rate = this.getRate();
 
   // ----
   // Факт
@@ -580,7 +579,6 @@ function updateChart(isInit = false) {
         }
       });
       
-      // TODO: return after release
       recommendData.map(item => {
         item.x = String(Number(item.x) + 1);
         return item;
@@ -589,6 +587,7 @@ function updateChart(isInit = false) {
       // recommendData[recommendData.length - 1].customName = "";
     }
     
+    // console.table('recommend', recommendData);
     if (isInit) {
       chartData3 = anychart.data.set(recommendData);
     }
