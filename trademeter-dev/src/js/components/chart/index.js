@@ -210,9 +210,6 @@ function createChart() {
     series3.tooltip().displayMode("separated");
     series3.tooltip().useHtml(true);
     series3.tooltip().format(e => {
-      // console.log(e.index);
-      // const lastFilledDay = this.getLastFilledDayNumber() - 1;
-      
       if (e.index > 0) {
         let svg = `
         <svg viewBox="0 0 10 10" width="1em" height="1em" 

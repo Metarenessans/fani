@@ -17,7 +17,8 @@ import {
   ArrowDownOutlined,
   ArrowUpOutlined,
   QuestionCircleFilled,
-  SettingFilled} from "@ant-design/icons"
+  SettingFilled
+} from "@ant-design/icons"
 
 import {
   merge,
@@ -34,8 +35,6 @@ import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import extRateReal         from "./utils/rate"
 import isEqual             from "./utils/is-equal"
-import extRate             from "../../../common/utils/rate"
-import rateRecommended     from "../../../common/utils/rate-recommended"
 import fallbackProp        from "../../../common/utils/fallback-prop"
 import formatNumber        from "../../../common/utils/format-number"
 import num2str             from "../../../common/utils/num2str"
@@ -86,8 +85,8 @@ class App extends Component {
     super(props);
 
     // Считываем значения из адресной строки
-    const depoStart = Number( params.get("start") ) || 1000000;
-    const depoEnd   = Number( params.get("end") )   || 3000000;
+    const depoStart = Number( params.get("start") ) || 1_000_000;
+    const depoEnd   = Number( params.get("end") )   || 3_000_000;
     const mode      = Number( params.get("mode") )  || 0;
     const days      = Number( params.get("days") )  || 260;
     
@@ -232,9 +231,6 @@ class App extends Component {
       changed: false,
 
       directUnloading: true,
-
-      // TODO: remove?
-      isSafe: true,
 
       /**
        * Включен ли режим LONG TODO: узнать получше о том, что это и как это назвать на английском
@@ -1194,23 +1190,6 @@ class App extends Component {
   // Getters
   // ==================
 
-  getLastFilledDayNumber() {
-    const { realData } = this.state;
-    let number = 0;
-    for (let n of Object.keys(realData).map(value => Number(value))) {
-      if (
-        realData[n] &&
-        Object.keys(realData[n])
-          .map(prop => realData[n][prop])
-          .filter(value => value != null)
-          .length
-      ) {
-        number = n;
-      }
-    }
-    return number;
-  }
-
   /**
    * @returns {number} минимальная доходность в день
    */
@@ -1219,7 +1198,11 @@ class App extends Component {
   }
 
   getRateFull(mode) {
-    return this.useRate().rate
+    const { days } = this.state;
+    if (mode == null) {
+      mode = this.state.mode;
+    }
+    return this.useRate({ length: days[mode] }).rate;
   }
 
   _getRealData() {
@@ -1268,15 +1251,13 @@ class App extends Component {
       0,
       this._getRealData(),
       {
-        customRate: mode == 0 ? undefined : incomePersantageCustom,
+        customRate: mode == 0 ? undefined : incomePersantageCustom / 100,
         tax
       }
     );
 
-    if (mode == 0) {
-      result.rate *= 100;
-      result.rateRecommended *= 100;
-    }
+    result.rate            *= 100;
+    result.rateRecommended *= 100;
 
     return result;
   }
@@ -1475,20 +1456,27 @@ class App extends Component {
   render() {
     let {
       mode,
+      days,
       data,
       currentDay,
       isLong,
       saved,
-      // extraDays,
-      // daysDiff,
+      dataLength,
     } = this.state; 
 
-    // const rate = this.getRate();
-    // const rateRecomm = this.getRateRecommended();
-
-    const obj = this.useRate();
-    const { rate, rateRecommended, extraDays, daysDiff } = obj;
+    let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
+    if (mode == 0) {
+      rate = this.useRate({ length: days[mode] }).rate;
+    }
     const rateRecomm = rateRecommended;
+
+    const daysAdded = dataLength - days[mode];
+    daysDiff  = Math.max(daysDiff -  daysAdded, 0);
+    extraDays = Math.max(extraDays - daysAdded, 0);
+    if ((data.lastFilledDay?.day || 1) == days[mode]) {
+      daysDiff = 0;
+    }
+    // console.log("daysDiff", daysDiff, "extraDays", extraDays);
 
     const placeholder = "—";
 
@@ -2318,7 +2306,6 @@ class App extends Component {
                               iterations: this.state.directUnloading 
                                 ? Math.round(val)
                                 : Math.round(val / 2),
-                              isSafe: false,
                             });
                           }}
                         />
@@ -2615,27 +2602,17 @@ class App extends Component {
                         <Col className="section4-col">
                           <header className="section4-header">До цели</header>
                           {(() => {
-                            const { dataLength } = this.state;
-
                             let sum   = 0;
                             let total = 0;
-                            let avg   = 0;
-                            let printArr = [];
                             for (let dataItem of data) {
-                              if (dataItem.changed) {
+                              if (dataItem.isChanged) {
                                 let r = (dataItem.calculatedRate != null) ? dataItem.calculatedRate : rate;
                                 sum += r;
-                                printArr.push(r);
                                 total++;
                               }
                             }
 
-                            if (total > 0 && (sum / total) != 0) {
-                              avg = sum / total;
-                            }
-                            else {
-                              avg = round(rate, 3);  
-                            }
+                            const avg = total > 0 ? sum / total : rate;
 
                             let printedDays = daysDiff;
                             if (currentDay == dataLength) {

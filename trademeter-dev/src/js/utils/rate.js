@@ -1,26 +1,11 @@
 // CHANGELOG
 // 3.2 - realdata, dayoffirstpayload, dayoffirstpayload   do   ZERO based !
+// 3.21 - change to ||
 
-export default function extRateReal(
-  present,
-  future,
-  payment,
-  paymentper,
-  payload,
-  payloadper,
-  periods,
-  dayoffirstpayment = 1,
-  dayoffirstpayload = 1,
-  comission = 0,
-  realdata = {},
-  options = { 
-    customRate: undefined,
-    fmode: 0,
-    tax: 0.13
-  }) {
+export default function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13 }) {
 
   //////////////////////// 
-  //  Version 3.2 beta  //
+  //  Version 3.21 beta  //
   ////////////////////////
 
   // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
@@ -33,7 +18,8 @@ export default function extRateReal(
   var iterMax = 1500;
 
   // ставка НДФЛ
-  const NDFL = options?.tax || 0.13;
+  const NDFL = options.tax || 0.13;
+  const extraDaysMode0 = options.extraDaysMode0 || 0;
 
   payment = payment * (1 + comission);
 
@@ -155,11 +141,14 @@ export default function extRateReal(
 
   var rateRecommended = 0;
 
+  var current = 0;
+
   var drd = 0;
   var rdgtp = false;
   for (var x = 1; x <= periods; x++) {
     if (realdata[x + RD_modifier] !== undefined) drd++;
   }
+  if (drd >= periods) rdgtp = true;;
 
   if (options.customRate !== undefined) {
 
@@ -168,12 +157,14 @@ export default function extRateReal(
     if (drd >= periods) rateRecommended = options.customRate;
     else rateRecommended = getRate(realdata);
 
-    var current = ffFull(options.customRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+    current = ffFull(options.customRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
 
     if (current.sum == 0) {
       rateRecommended = 0.3;
       current = ffFull(rateRecommended, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
     }
+
+    if (!rdgtp && !extraDaysMode0) current.extraDays = 0;
 
     return { rate: options.customRate, extraDays: current.extraDays, rateRecommended, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
   }
@@ -183,22 +174,11 @@ export default function extRateReal(
   if (drd >= periods) rateRecommended = baseRate;
   else rateRecommended = getRate(realdata);
 
-  var current = ffFull(baseRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
-  return {
-    rate: baseRate,
-    rateRecommended,
-    extraDays: current.extraDays,
-    daysDiff: current.daysDiff,
-    future,
-    sum: current.sum,
-    periods: current.periods,
-    ndflSum: current.ndflSum,
-    purePayment: current.purePayment
-  };
+  current = ffFull(baseRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+
+  if (!rdgtp && !extraDaysMode0) current.extraDays = 0;
+
+  return { rate: baseRate, rateRecommended, extraDays: current.extraDays, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
 }
 
 // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}
-
-/////////////////////////// 
-//  ^ END extRateReal ^  //
-///////////////////////////
