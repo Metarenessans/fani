@@ -744,10 +744,11 @@ class App extends Component {
       state.customTools = staticParsed.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
-      
+      // ▲
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
-
+      console.log(state.customPassiveIncomeTools);
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
+      
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
         const temp = state.currentPassiveIncomeToolIndex;
         state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;

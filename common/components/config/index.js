@@ -159,7 +159,7 @@ class Config extends React.Component {
                           </th>
                         )
                     }
-                    {customTools && customTools.length ? <th></th> : null}
+                    {customTools && customTools.length ? <th className="config-th"></th> : null}
                   </tr>
                 </thead>
                 <tbody className="table-body">
