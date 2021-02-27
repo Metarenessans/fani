@@ -1349,6 +1349,9 @@ class App extends Component {
     return roundUp(pointsForIteration);
   }
 
+  /**
+   * Возвращает название текущего сейва (по дефолту возвращает строку "Трейдометр")
+   */
   getTitle() {
     const { saves, currentSaveIndex } = this.state;
     let title = "Трейдометр";
@@ -3344,26 +3347,35 @@ class App extends Component {
           {/* /.main */}
 
           {(() => {
-            let { saves, id } = this.state;
+            const { saves, id } = this.state;
+            const currentTitle = this.getTitle();
             let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? this.getTitle() : "Новый трейдометр";
+            let name = id ? currentTitle : "Новый трейдометр";
 
-            function validate(str = "") {
-              str = str.trim();
+            /**
+             * Проверяет, может ли данная строка быть использована как название сейва
+             * 
+             * @param {String} nameToValidate
+             * 
+             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
+             */
+            const validate = (nameToValidate = "") => {
+              nameToValidate = nameToValidate.trim();
 
               let errors = [];
-
-              let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
-              if (str.length < 3) {
-                errors.push("Имя должно содержать не меньше трех символов!");
+              if (nameToValidate != currentTitle) {
+                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
+                if (nameToValidate.length < 3) {
+                  errors.push("Имя должно содержать не меньше трех символов!");
+                }
+                else if (test) {
+                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
+                }
+                if (namesTaken.indexOf(nameToValidate) > -1) {
+                  console.log();
+                  errors.push(`Сохранение с таким именем уже существует!`);
+                }
               }
-              else if (test) {
-                errors.push(`Нельзя использовать символ "${test[0]}"!`);
-              }
-              if (namesTaken.indexOf(str) > -1) {
-                errors.push(`Сохранение с таким именем уже существует!`);
-              }
-
               return errors;
             }
 
