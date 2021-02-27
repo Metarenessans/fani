@@ -73,7 +73,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = true;
+let shouldLoadFakeSave = false;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -467,7 +467,10 @@ class App extends Component {
           }
         }
       })
-      .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
+      .catch(reason => {
+        console.log(reason);
+        this.showAlert(`Не удалось получить сохранения! ${reason}`);
+      });
   }
 
   fetchInitialData() {
@@ -1472,11 +1475,9 @@ class App extends Component {
 
     const daysAdded = dataLength - days[mode];
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
-    extraDays = Math.max(extraDays - daysAdded, 0);
     if ((data.lastFilledDay?.day || 1) == days[mode]) {
       daysDiff = 0;
-    }
-    // console.log("daysDiff", daysDiff, "extraDays", extraDays);
+    }    
 
     const placeholder = "—";
 
@@ -3345,7 +3346,7 @@ class App extends Component {
           {(() => {
             let { saves, id } = this.state;
             let namesTaken = saves.slice().map(save => save.name);
-            let name = (id) ? this.getTitle() : "Новый трейдометр";
+            let name = id ? this.getTitle() : "Новый трейдометр";
 
             function validate(str = "") {
               str = str.trim();

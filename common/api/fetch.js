@@ -16,11 +16,14 @@ export default function fetch(url = "", method = "GET", data = {}) {
           resolve(parsed);
         }
         catch (e) {
-          console.log("Couldn't parse response", response);
+          console.log("Couldn't parse JSON", response);
           reject(e);
         }
       },
       error: error => {
+        if (error.status == 0) {
+          return;
+        }
         reject(error);
       }
     });
