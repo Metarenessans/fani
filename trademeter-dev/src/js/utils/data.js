@@ -1,10 +1,10 @@
 import fallbackBoolean from "../../../../common/utils/fallback-boolean"
-import roundUp         from "../../../../common/utils/round-up"
 import round           from "../../../../common/utils/round"
 
 export default class Data extends Array {
 
   build({
+    $mode            = 0,
     $startFrom       = 0,
     $percent         = 100,
     $start           = 1_000_000,
@@ -36,9 +36,6 @@ export default class Data extends Array {
       let day = i + 1;
 
       let expanded = fallbackBoolean(this[i]?.expanded, false);
-      if (dev) {
-        // expanded = true;
-      }
       let saved    = fallbackBoolean(this[i]?.saved, false);
       let changed  = fallbackBoolean(this[i]?.changed, false);
 
@@ -81,6 +78,10 @@ export default class Data extends Array {
 
       let depoEnd     = depoStart     + _income;
       let depoEndPlan = depoStartPlan +  incomePlan;
+      if ($mode == 1) {
+        depoEndPlan += payload || 0;
+        depoEndPlan -= payment || 0;
+      }
 
       /* Tool-related stuff */
 
@@ -135,8 +136,13 @@ export default class Data extends Array {
         get iterationsList() { return this.iterations },
 
 
-        get realDepoEnd() {
-          return this.depoStart + this.goal - this.paymentPlan + this.payloadPlan;
+        getRealDepoEnd(mode = 0) {
+          let result = this.depoStart + this.goal - this.paymentPlan + this.payloadPlan;
+          if (mode == 1) {
+            result -= this.payment || 0;
+            result += this.payload || 0;
+          }
+          return result;
         },
 
         get realIncome() {

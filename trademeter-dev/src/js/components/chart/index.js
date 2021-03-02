@@ -581,7 +581,6 @@ function updateChart(isInit = false) {
         return item;
       });
       
-      // recommendData[recommendData.length - 1].customName = "";
     }
     
     // console.table('recommend', recommendData);
@@ -635,8 +634,6 @@ let Chart = memo(props => {
   const { data, currentDay } = props;
   const [scaleMode, setScaleMode] = useState(props.defaultScaleMode);
 
-  console.log('rendering Chart');
-  
   useEffect(() => {
     steps = scaleMode;
     if (chart) {
@@ -691,4 +688,4 @@ let Chart = memo(props => {
   )
 }, (prevProps, nextProps) => true);
 
-export { Chart, createChart, updateChart, updateChartTicks, updateChartZoom }
+export { Chart, createChart, updateChart, updateChartTicks, updateChartZoom, recommendData }

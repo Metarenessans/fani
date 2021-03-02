@@ -31,6 +31,7 @@ const template = {
 };
 
 class Tool {
+
   constructor(toCopy = {}) {
     Object.keys(toCopy).forEach(key => {
       this[key] = toCopy[key];
@@ -344,8 +345,8 @@ class Tools {
       stepPrice:       0.1,
       priceStep:       0.01,
       averageProgress: 0,
-      guarantee:       738.1,
-      currentPrice:    205.03,
+      guarantee:       2702.2,
+      currentPrice:    270.22,
       volume:          0,
       lotSize:         10,
       dollarRate:      1,

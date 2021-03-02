@@ -63,6 +63,7 @@ import {
   createChart,
   updateChart,
   updateChartTicks,
+  recommendData
 } from "./components/chart"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
@@ -321,6 +322,7 @@ class App extends Component {
     const rate = this.getRateFull();
 
     return {
+      $mode:            mode,
       $start:           depoStart[mode],
       $percent:         depoPersentageStart,
       $length:          dataLength,
@@ -1474,7 +1476,6 @@ class App extends Component {
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
     }
-    const rateRecomm = rateRecommended;
 
     const daysAdded = dataLength - days[mode];
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
@@ -1878,7 +1879,8 @@ class App extends Component {
                             }, () => {
                               const {
                                 mode,
-                                passiveIncomeMonthly                              } = this.state;
+                                passiveIncomeMonthly
+                              } = this.state;
 
                               if (index < 0) {
                                 passiveIncomeMonthly[mode] = 0;
@@ -2497,8 +2499,7 @@ class App extends Component {
                           {/* /.row */}
                           <div className="section4-row">
                             <div className="section4-l">Целевой депо</div>
-                            {/* <div className="section4-r">{formatNumber(data[currentDay - 1].depoStart + data[currentDay - 1].goal)}</div> */}
-                            <div className="section4-r">{formatNumber(data[currentDay - 1].realDepoEnd)}</div>
+                            <div className="section4-r">{formatNumber(data[currentDay - 1].getRealDepoEnd(mode))}</div>
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
@@ -2678,7 +2679,7 @@ class App extends Component {
                                   })()}
 
                                   {(() => {
-                                    let value = rateRecomm;
+                                    let value = rateRecommended;
                                     if ( String(value).indexOf("e") > -1 ) {
                                       value = value.toExponential(3);
                                     }
@@ -2687,7 +2688,6 @@ class App extends Component {
 
                                     return (
                                       <Statistic
-
                                         title={
                                           <span>
                                             рекомендуемая<br />
@@ -2695,7 +2695,24 @@ class App extends Component {
                                           </span>
                                         }
                                         value={formatNumber(round(value, 3))}
-                                        formatter={node => node}
+                                        formatter={node => {
+                                          const value = recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
+
+                                          return value != null
+                                            ?
+                                              <Tooltip
+                                                title={
+                                                <span style={{ whiteSpace: "nowrap" }}>
+                                                    Рекомендументая дох-ть<br/>
+                                                    на конец {currentDay} {num2str(currentDay, ["дня:", "дня:", "дня:"])} {formatNumber(Math.round(value || 0))}
+                                                  </span>
+                                                }
+                                              >
+                                                {node}
+                                              </Tooltip>
+                                            :
+                                              node
+                                        }}
                                         valueStyle={{
                                           color: `var( ${valid ? "--success-color" : "--danger-color"} )`
                                         }}
@@ -2975,7 +2992,6 @@ class App extends Component {
                         className="result"
                         hidden={!data[currentDay - 1].expanded}
                       >
-
                         <div className="result-col result-col-iterations card">
                           <h3 className="result-col__title">Итерации</h3>
                           <div className="result-col__content">
@@ -2989,6 +3005,8 @@ class App extends Component {
                                   .then(() => callback())
                                   .then(() => this.updateData())
                                   .then(() => chartVisible && updateChart.call(this))
+                                  // Worse fucking shit i've ever done please kill me
+                                  .then(() => this.forceUpdate())
                               }}
                             />
                           </div>
@@ -3155,7 +3173,8 @@ class App extends Component {
                                       format={formatNumber}
                                       onChange={(e, val, jsx) => {
                                         let errMsg = "";
-                                        if (val >= max) {
+                                        // Сообщение может появиться только в первом режиме
+                                        if (mode == 0 && val >= max) {
                                           errMsg = "Пополнение не может превышать разницу между текущим и целевым депозитом";
                                         }
                                         jsx.setState({ errMsg });
@@ -3313,7 +3332,7 @@ class App extends Component {
                                     }
                                     {" "}/{" "}
                                     {
-                                      formatNumber(data[currentDay - 1].realDepoEnd)
+                                      formatNumber(data[currentDay - 1].getRealDepoEnd(mode))
                                     }
                                   </span>
 
