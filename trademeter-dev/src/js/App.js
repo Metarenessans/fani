@@ -1092,7 +1092,10 @@ class App extends Component {
     });
   }
 
-  update(name = "") {
+  update(name) {
+    if (!name) {
+      name = this.getTitle()
+    }
     const { id } = this.state;
     return new Promise((resolve, reject) => {
       if (!id) {
@@ -2703,7 +2706,7 @@ class App extends Component {
                                               <Tooltip
                                                 title={
                                                 <span style={{ whiteSpace: "nowrap" }}>
-                                                    Рекомендументая дох-ть<br/>
+                                                    Рекомендуемый депозит<br/>
                                                     на конец {currentDay} {num2str(currentDay, ["дня:", "дня:", "дня:"])} {formatNumber(Math.round(value || 0))}
                                                   </span>
                                                 }
@@ -3519,7 +3522,7 @@ class App extends Component {
                     currentSaveIndex: index,
                   });
                 };
-                
+                // ~~
                 this.save(name)
                   .then(onResolve)
                   .catch(err => this.showAlert(err));
@@ -3578,7 +3581,7 @@ class App extends Component {
               { name: "Курс доллара", prop: "dollarRate"      },
             ]}
             customTools={this.state.customTools}
-            onChange={customTools => this.setState({ customTools })}
+            onChange={customTools => this.setState({ customTools }, () => this.update())}
 
             insertBeforeDialog={
               <label className="input-group input-group--fluid trademeter-config__depo">
@@ -3617,8 +3620,9 @@ class App extends Component {
               { name: "Ставка",   prop: "rate", defaultValue: 0            },
             ]}
             customTools={this.state.customPassiveIncomeTools}
+
             onChange={customPassiveIncomeTools => {
-              this.setState({ customPassiveIncomeTools })
+              this.setState({ customPassiveIncomeTools }, () => this.update())
               console.log('Updated in config:', customPassiveIncomeTools);
             }}
           />

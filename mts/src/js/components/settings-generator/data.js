@@ -37,8 +37,9 @@ const createData = (type, options) => {
     ]
   };
 
-  // ЗАКРЫТИЕ ОСНОВНОГО ДЕПОЗИТА
   let data = [];
+  data.isBying = isBying;
+
   let length = currentPreset.options[type].length || 1;
   if (length == null) {
     length = 1;
@@ -102,7 +103,7 @@ const createData = (type, options) => {
 
       if (mode == 'custom') {
         preferredStep = currentOptions.preferredStep;
-        let inPercent = currentOptions.inPercent;
+        inPercent = currentOptions.inPercent;
         if (inPercent) {
           preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
         }
@@ -131,7 +132,7 @@ const createData = (type, options) => {
           currentTool.stepPrice
         );
       
-      // Если акции - применяю другую формулу 
+      // Если выбрана акция - применяю другую формулу 
       // https://docs.google.com/document/d/1wuO5RF_VH1PD-XxjHXLYDW124L5R2EuHt9b_PNeRiG0/edit#bookmark=id.vpv7265cfmik
       if (currentTool.dollarRate >= 1) {
         points =
@@ -149,7 +150,17 @@ const createData = (type, options) => {
             *
             // лот
             currentTool.lotSize
-          )
+          );
+
+        console.log(
+          // контракты * го = объем входа в деньгах
+          (contracts * currentTool.guarantee),
+          (stepInPercent / 100 * (index + 1)),
+          contracts,
+          currentTool.lotSize,
+          "=",
+          points
+        );
       }
 
       points = round(points, fraction);
@@ -236,21 +247,18 @@ const createData = (type, options) => {
       }
 
       let _comission = _contracts * comission;
-      // Прибавляем все комиссии из предыдущих строк
-      _comission += data
-        .map(row => row.comission)
-        .reduce((acc, curr) => acc + curr, 0);
+      // Прибавляем комиссию из предыдущей строки
+      _comission += data[subIndex - 1]?.comission || 0;
 
       let incomeWithoutComission = contracts * currentTool.stepPrice * points;
-      // Прибавляем все доходы/убытки из предыдущих строк
-      incomeWithoutComission += data
-        .map(row => row.incomeWithoutComission)
-        .reduce((acc, curr) => acc + curr, 0);
+      // Прибавляем доход/убыток из предыдущей строки
+      incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
 
       let incomeWithComission = 
-        incomeWithoutComission + (_comission * (type == "Обратные докупки (ТОР)" ? 1 : -1));
+        incomeWithoutComission + (_comission * (isBying ? 1 : -1));
 
       data[subIndex] = {
+        inPercent,
         percent,
         points,
         contracts: _contracts,

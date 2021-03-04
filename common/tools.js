@@ -416,6 +416,23 @@ class Tools {
         adrDay:          3.03,
         adrWeek:         5.11,
         adrMonth:        16.51,
+      }),
+      this.create({
+        ref:             null,
+        fullName:        "Abbvie Inc",
+        shortName:       "",
+        code:            "ABBV",
+        stepPrice:       0.74,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       7974.4,
+        currentPrice:    107.85,
+        volume:          1,
+        lotSize:         1,
+        dollarRate:      73.94,
+        adrDay:          2.39,
+        adrWeek:         4.66,
+        adrMonth:        11.9,
       })
     ]
   }

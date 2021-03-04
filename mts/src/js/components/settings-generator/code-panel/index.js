@@ -2,6 +2,7 @@ import React from 'react'
 import { message } from 'antd';
 
 import Stack from "../../../../../../common/components/stack"
+import stepConverter from "../step-converter"
 
 import "./style.scss"
 
@@ -23,22 +24,30 @@ function selectElementContent(node) {
 
 export default function CodePanel(props) {
 
-  const { data } = props;
-
+  const { currentTab, data, tool } = props;
+  
   const codeElement = React.createRef();
-
-  const parsedData = data
-    .map(v => `{${v.percent},${v.points}}`)
+  
+  let parsedData = (data || [])
+    .map(v => {
+      let { percent, points } = v;
+      let pointsInPercents = stepConverter.fromStepToPercents(points, tool.currentPrice);
+      return `{${percent},${pointsInPercents}}`;
+    })
     .join(",");
+  
+  if (currentTab == "Зеркальные докупки") {
+    parsedData = "true";
+  }
 
-  const textContent = `GParam.stop_arr = {${parsedData}}`.replace(/\s+/, "");
+  const textContent = `GParam.${currentTab == "Обратные докупки (ТОР)" ? "aaperc" : "stop_arr"} = {${parsedData}}`.replace(/\s+/, "");
 
   return (
     <Stack className="code-panel">
 
       <div className="code-panel-group">
         <div className="code-panel-group-header">
-          <h3>Массив закрытия основного депозита</h3>
+          <h3>Массив {!data.isBying ? "закрытия" : "докупок"}:</h3>
           <button 
             className="code-panel-group__copy-btn"
             onClick={e => {
