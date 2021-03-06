@@ -837,14 +837,15 @@ class App extends Component {
   }
 
   updateData(length, rebuild = false, start = 0) {
+    let { dataLength } = this.state;
+
     if (length == null) {
-      length = this.state.dataLength;
+      length = dataLength;
     }
 
     return new Promise(resolve => {
-      let { days } = this.state;
       const data = this.buildData(length, rebuild, start);
-      this.setState({ data, days }, () => resolve());
+      this.setState({ data }, () => resolve());
     })
   }
 
@@ -1259,13 +1260,39 @@ class App extends Component {
       0,
       this._getRealData(),
       {
-        customRate: mode == 0 ? undefined : incomePersantageCustom / 100,
-        tax
+        customRate:     mode == 0 ? undefined : incomePersantageCustom / 100,
+        customBaseRate: options?.customBaseRate,
+        customFuture:   options?.customFuture,
+        tax,
       }
     );
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
+
+    if (false && options.test) {
+      console.log(
+        depoStart,
+        Math.round(this.getDepoEnd()),
+        withdrawal,
+        withdrawalInterval[mode],
+        payload,
+        payloadInterval[mode],
+        options.length,
+        withdrawalInterval[mode],
+        payloadInterval[mode],
+        0,
+        this._getRealData(),
+        {
+          customRate:     mode == 0 ? undefined : incomePersantageCustom / 100,
+          customBaseRate: options?.customBaseRate,
+          customFuture:   options?.customFuture,
+          tax,
+        },
+        "=",
+        result
+      );
+    }
 
     return result;
   }
@@ -1475,10 +1502,25 @@ class App extends Component {
       dataLength,
     } = this.state; 
 
-    let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
+    let { rate, rateRecommended, extraDays, daysDiff, future, sum } = this.useRate();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
     }
+    else {
+      const customFuture = this.useRate({ length: days[mode] }).future;
+
+      const obj = this.useRate({
+        // length: days[mode],
+        customFuture,
+        test: true,
+      });
+
+      rate            = obj.rate;
+      rateRecommended = obj.rateRecommended;
+    }
+
+    this.rateRecommended = rateRecommended;
+    // console.log(round(rateRecommended, 3));
 
     const daysAdded = dataLength - days[mode];
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
@@ -1532,16 +1574,16 @@ class App extends Component {
                   let { data, realData, currentDay } = this.state;
                   // TODO: looks weird. simplify it?
                   let days = this.state.days[mode];
-                  let state = {
-                    extraDays: 0,
-                    daysDiff:  null, 
-                  };
+                  let state = {};
 
-                  let dataLength = data.length;
+                  let dataLength = this.state.dataLength;
+                  if (mode != this.state.mode) {
+                    dataLength = days;
+                  }
 
                   if (Object.keys(lastRealData).length) {
                     const tempRealData = clone(realData);
-                    realData = clone(lastRealData);
+                    realData     = clone(lastRealData);
                     lastRealData = clone(tempRealData);
                   }
                   else {
@@ -1566,7 +1608,7 @@ class App extends Component {
                     // params.set("mode", value);
 
                     // TODO: optimize because this.recalc() already uses this.updateChart()
-                    this.recalc()
+                    this.recalc(true)
                       .then(() => this.setState({ realData }))
                       .then(() => updateChart.call(this));
                   });
@@ -2823,13 +2865,14 @@ class App extends Component {
                                 dataLength: data.length + extraDays
                               })
                                 .then(() => {
-                                  const r = this.getRateRecommended({ length: dataLength + extraDays });
+                                  // const r = this.getRateRecommended({ length: dataLength + extraDays });
+                                  // console.log(r, rateRecommended);
                                   return this.setStateAsync({
                                     data: data.extend({
                                       ...this.getDataOptions(),
-                                      $extraDays: extraDays,
-                                      $rateRequired: r,
-                                      $rate:         r,
+                                      $extraDays:    extraDays,
+                                      $rateRequired: rateRecommended,
+                                      $rate:         rateRecommended,
                                     })
                                   })
                                 })
@@ -3184,7 +3227,7 @@ class App extends Component {
                                       }}
                                       onBlur={val => {
                                         if (val) {
-                                          if (Number(val) >= max) {
+                                          if (mode == 0 && Number(val) >= max) {
                                             val = max;
                                           }
                                         }
@@ -3620,7 +3663,6 @@ class App extends Component {
               { name: "Ставка",   prop: "rate", defaultValue: 0            },
             ]}
             customTools={this.state.customPassiveIncomeTools}
-
             onChange={customPassiveIncomeTools => {
               this.setState({ customPassiveIncomeTools }, () => this.update())
               console.log('Updated in config:', customPassiveIncomeTools);

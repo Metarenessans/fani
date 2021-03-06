@@ -468,6 +468,8 @@ function updateChart(isInit = false) {
   // ----
   // План
   // ----
+
+  console.log(days[mode], data);
   
   planData = new Array(days[mode]).fill().map((v, i) => ({
     x:     String(i + 1),
@@ -551,7 +553,7 @@ function updateChart(isInit = false) {
     if (factDays.length) {
       const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
       
-      const rateRecommended = this.getRateRecommended();
+      const rateRecommended = this.rateRecommended;
       
       const lastFilledDayNumber = (data.lastFilledDay?.day || 0) - 1;
       recommendData = new Array(data.length - lastFilledDayNumber).fill(0);

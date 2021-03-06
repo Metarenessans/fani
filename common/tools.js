@@ -433,6 +433,23 @@ class Tools {
         adrDay:          2.39,
         adrWeek:         4.66,
         adrMonth:        11.9,
+      }),
+      this.create({
+        ref:             null,
+        fullName:        "Abiomed Inc.",
+        shortName:       "",
+        code:            "ABMD",
+        stepPrice:       0.74,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       21812.9,
+        currentPrice:    296.11,
+        volume:          1,
+        lotSize:         1,
+        dollarRate:      73.665,
+        adrDay:          8.91,
+        adrWeek:         23.51,
+        adrMonth:        60.91,
       })
     ]
   }

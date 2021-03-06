@@ -151,16 +151,6 @@ const createData = (type, options) => {
             // лот
             currentTool.lotSize
           );
-
-        console.log(
-          // контракты * го = объем входа в деньгах
-          (contracts * currentTool.guarantee),
-          (stepInPercent / 100 * (index + 1)),
-          contracts,
-          currentTool.lotSize,
-          "=",
-          points
-        );
       }
 
       points = round(points, fraction);
@@ -250,7 +240,7 @@ const createData = (type, options) => {
       // Прибавляем комиссию из предыдущей строки
       _comission += data[subIndex - 1]?.comission || 0;
 
-      let incomeWithoutComission = contracts * currentTool.stepPrice * points;
+      let incomeWithoutComission = contracts * points / currentTool.priceStep * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
 

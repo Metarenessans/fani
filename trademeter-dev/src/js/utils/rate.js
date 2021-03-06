@@ -1,11 +1,12 @@
-// CHANGELOG
-// 3.2 - realdata, dayoffirstpayload, dayoffirstpayload   do   ZERO based !
-// 3.21 - change to ||
+export default // CHANGELOG
+  // 3.2 - realdata, dayoffirstpayload, dayoffirstpayload   do   ZERO based !
+  // 3.21 - change to ||
+  // 3.22 - change to baseRate
 
-export default function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13 }) {
+  function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13 }) {
 
   //////////////////////// 
-  //  Version 3.21 beta  //
+  //  Version 3.23 beta  //
   ////////////////////////
 
   // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
@@ -152,7 +153,11 @@ export default function extRateReal(present, future, payment, paymentper, payloa
 
   if (options.customRate !== undefined) {
 
-    future = ff3(options.customRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+    if (options.customFuture === undefined) {
+      future = ff3(options.customRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+    } else {
+      future = options.customFuture;
+    }
 
     if (drd >= periods) rateRecommended = options.customRate;
     else rateRecommended = getRate(realdata);
@@ -169,7 +174,8 @@ export default function extRateReal(present, future, payment, paymentper, payloa
     return { rate: options.customRate, extraDays: current.extraDays, rateRecommended, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
   }
 
-  var baseRate = getRate();
+
+  var baseRate = options.customBaseRate || getRate();
 
   if (drd >= periods) rateRecommended = baseRate;
   else rateRecommended = getRate(realdata);
@@ -182,3 +188,7 @@ export default function extRateReal(present, future, payment, paymentper, payloa
 }
 
 // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}
+
+/////////////////////////// 
+//  ^ END extRateReal ^  //
+///////////////////////////

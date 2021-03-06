@@ -354,6 +354,7 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
+          <div className="dashboard-col__wrap">
           <span className="dashboard-key">
             К депо
             <SortButton prop="incomePercentage" />

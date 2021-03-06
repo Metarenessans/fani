@@ -176,11 +176,26 @@
 
   &-key {
     position: relative;
+    text-align: center;
 
+    box-sizing: content-box;
+    padding: 0.25rem;
+    width: 100%;
     display: none;
     margin-bottom: .5em;
 
     font-weight: bold;
+
+    &.scroll {
+      z-index:  2;
+      position: fixed;
+      top: 0.1rem;
+      margin-top: -.1rem;
+
+      width: inherit;
+      background-color: pink;
+      background: white;
+    }
 
     @include xs {
       display: block;
