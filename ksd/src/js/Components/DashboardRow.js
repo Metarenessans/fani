@@ -214,7 +214,6 @@ export default class DashboardRow extends React.Component {
 
     return (
       <div className="dashboard-row">
-
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
@@ -354,7 +353,6 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <div className="dashboard-col__wrap">
           <span className="dashboard-key">
             К депо
             <SortButton prop="incomePercentage" />
@@ -394,7 +392,6 @@ export default class DashboardRow extends React.Component {
           className={["dashboard-row__delete"].concat(index == 0 ? "invisible" : "").join(" ").trim()}
           onClick={e => onDelete(index)}
         />
-
       </div>
     )
   }

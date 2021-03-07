@@ -368,7 +368,7 @@ function updateChart(isInit = false) {
   if (data.hasNoGaps) {
     if (factDays.length) {
       for (let i = 0; i < factDays.length; i++) {
-        factArray[i] = data[i].depoEnd;
+        factArray[i] = data[i].depoEndReal;
         
         const iterations = [...data[i].iterations].filter(it => it.rate != null);
         if (iterations && iterations.length > 1) {
@@ -469,8 +469,6 @@ function updateChart(isInit = false) {
   // План
   // ----
 
-  console.log(days[mode], data);
-  
   planData = new Array(days[mode]).fill().map((v, i) => ({
     x:     String(i + 1),
     value: data[i].depoEndPlan

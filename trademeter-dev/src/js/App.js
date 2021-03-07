@@ -74,7 +74,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = false;
+let shouldLoadFakeSave = true;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -1343,7 +1343,7 @@ class App extends Component {
     const { data, days, depoStart, depoEnd } = this.state;
     mode = mode || this.state.mode;
 
-    if (mode === 0) {
+    if (mode == 0) {
       return depoEnd;
     }
     else {
@@ -1351,7 +1351,7 @@ class App extends Component {
       if (data.length) {
         depo += data
           .slice(0, days[mode])
-          .map(d => d.incomePlan)
+          .map(d => d.incomePlan - (d.payment || 0) + (d.payload || 0))
           .reduce((acc, curr) => acc + curr);
       }
       return depo;
@@ -1502,25 +1502,30 @@ class App extends Component {
       dataLength,
     } = this.state; 
 
-    let { rate, rateRecommended, extraDays, daysDiff, future, sum } = this.useRate();
+    let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
+    const realData = this._getRealData();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
+      rateRecommended = this.useRate({ 
+        customBaseRate: rate / 100,
+        length: realData.length == dataLength 
+          ? dataLength + extraDays 
+          : undefined
+      }).rateRecommended;
     }
     else {
       const customFuture = this.useRate({ length: days[mode] }).future;
-
-      const obj = this.useRate({
-        // length: days[mode],
-        customFuture,
-        test: true,
+      const obj = this.useRate({ 
+        customFuture, 
+        length: realData.length == dataLength 
+          ? dataLength + extraDays 
+          : undefined
       });
-
       rate            = obj.rate;
       rateRecommended = obj.rateRecommended;
     }
 
     this.rateRecommended = rateRecommended;
-    // console.log(round(rateRecommended, 3));
 
     const daysAdded = dataLength - days[mode];
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
@@ -2535,7 +2540,7 @@ class App extends Component {
                             </div>
                             <div className="section4-r">
                               {
-                                formatNumber(Math.round(data[currentDay - 1].depoStart * (depoPersentageStart / 100)))
+                                formatNumber(Math.round(data[currentDay - 1].depoStartReal * (depoPersentageStart / 100)))
                                 +
                                 ` (${ round(depoPersentageStart, 3) }%)`
                               }
@@ -2865,8 +2870,6 @@ class App extends Component {
                                 dataLength: data.length + extraDays
                               })
                                 .then(() => {
-                                  // const r = this.getRateRecommended({ length: dataLength + extraDays });
-                                  // console.log(r, rateRecommended);
                                   return this.setStateAsync({
                                     data: data.extend({
                                       ...this.getDataOptions(),
@@ -3306,6 +3309,7 @@ class App extends Component {
                                 paymentPlan,
                                 payload,
                                 payloadPlan,
+                                depoEndReal,
                               } = data[currentDay - 1];
                               const planIncome = goal - (paymentPlan || 0) + (payloadPlan || 0);
                               const income = (realIncome || 0) - (payment || 0) + (payload || 0);
@@ -3369,9 +3373,9 @@ class App extends Component {
                                         ? (
                                           <Value
                                             format={val => formatNumber(Math.round(val))}
-                                            neutral={data[currentDay - 1].depoEnd <= data[currentDay - 1].depoStart}
+                                            neutral={depoEndReal <= data[currentDay - 1].depoStart}
                                           >
-                                            {data[currentDay - 1].depoEnd}
+                                            {depoEndReal}
                                           </Value>
                                         )
                                         : placeholder
@@ -3565,7 +3569,7 @@ class App extends Component {
                     currentSaveIndex: index,
                   });
                 };
-                // ~~
+                
                 this.save(name)
                   .then(onResolve)
                   .catch(err => this.showAlert(err));

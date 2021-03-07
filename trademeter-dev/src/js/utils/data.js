@@ -41,9 +41,11 @@ export default class Data extends Array {
 
       let depoStart     = $start;
       let depoStartPlan = $start;
+      let depoStartReal = $start;
       if (i > 0) {
         depoStart     = this[i - 1].depoEnd;
         depoStartPlan = this[i - 1].depoEndPlan;
+        depoStartReal = this[i - 1].depoEndReal;
       }
 
       let paymentPlan = (i + 1) % $paymentInterval == 0 ? $payment : 0;
@@ -65,19 +67,30 @@ export default class Data extends Array {
       let _income = income != null 
         ? income 
         : Math.round(depoStart * (rate != null ? rate : $rate) / 100);
+
+      let incomeReal = Math.round(depoStartReal * (rate != null ? rate : 0) / 100);
       
       if (iterations.filter(it => it.rate != null).length) {
-        _income = iterations
-          .filter(it => it.rate != null)
-          .map(it => it.getIncome( depoStart ))
-          .reduce((acc, curr) => acc + curr, 0);
+        _income    =
+        incomeReal = 
+          iterations
+            .filter(it => it.rate != null)
+            .map(it => it.getIncome( depoStart ))
+            .reduce((acc, curr) => acc + curr, 0);
       }
 
       _income -= payment || 0;
       _income += payload || 0;
 
-      let depoEnd     = depoStart     + _income;
-      let depoEndPlan = depoStartPlan +  incomePlan;
+      incomeReal -= payment || 0;
+      incomeReal += payload || 0;
+
+      // Плановый целевой депозит с учетом контекста предыдущих дней (если не указан rate - берется дефолтный)
+      let depoEnd = depoStart + _income;
+      // Плановый целевой депозит с учетом контекста предыдущих дней (если не указан rate - берется 0)
+      let depoEndReal = depoStartReal + incomeReal;
+      // Плановый целевой депозит без учета факта
+      let depoEndPlan = depoStartPlan + incomePlan;
       if ($mode == 1) {
         depoEndPlan += payload || 0;
         depoEndPlan -= payment || 0;
@@ -110,8 +123,10 @@ export default class Data extends Array {
         rateRequired,
         depoStart,
         depoStartPlan,
+        depoStartReal,
         depoEnd,
         depoEndPlan,
+        depoEndReal,
         goal,
         income,
         incomePlan,
@@ -135,18 +150,36 @@ export default class Data extends Array {
         set customIncome(val) { this.income = val },
         get iterationsList() { return this.iterations },
 
-
         getRealDepoEnd(mode = 0) {
-          let result = this.depoStart + this.goal - this.paymentPlan + this.payloadPlan;
+          const { depoStart, goal, payment, paymentPlan, payload, payloadPlan } = this;
+          let result = (this[i - 1]?.getRealDepoEnd(mode) || depoStart) + goal - paymentPlan + payloadPlan;
           if (mode == 1) {
-            result -= this.payment || 0;
-            result += this.payload || 0;
+            result -= payment || 0;
+            result += payload || 0;
           }
           return result;
         },
 
+        get pureIncome() {
+          if (this.income != null) {
+            return this.income;
+          }
+          else if (this.iterations.filter(it => it.rate != null).length) {
+            return this.iterations
+              .filter(it => it.rate != null)
+              .map(it => it.getIncome( this.depoStart ))
+              .reduce((acc, curr) => acc + curr, 0);
+          }
+          return Math.round(this.depoStart * (this.rate != null ? this.rate : 0) / 100)
+        },
+
         get realIncome() {
           return Math.round(this.depoStart * this.calculatedRate / 100);
+        },
+
+        get depoEndFinal() {
+          const { depoStart, calculatedRate, payment, payload } = this;
+          return Math.round(depoStart + (depoStart * calculatedRate / 100) - (payment || 0) + (payload || 0));
         },
 
         get calculatedRate() {
@@ -163,19 +196,6 @@ export default class Data extends Array {
             return this.income / this.depoStart * 100
           }
           return 0;
-        },
-
-        get pureIncome() {
-          if (this.income != null) {
-            return this.income;
-          }
-          else if (this.iterations.filter(it => it.rate != null).length) {
-            return this.iterations
-              .filter(it => it.rate != null)
-              .map(it => it.getIncome( this.depoStart ))
-              .reduce((acc, curr) => acc + curr, 0);
-          }
-          return Math.round(this.depoStart * (this.rate != null ? this.rate : 0) / 100)
         },
 
         get isChanged() {
