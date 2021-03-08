@@ -253,8 +253,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
-            Цена / ГО
-            <SortButton prop="guarantee" />
+            <span className="dashboard-key-inner">
+              Цена / ГО
+              <SortButton prop="guarantee" />
+            </span>
           </span>
           <span className="dashboard-val dashboard-val--wrap">
             <span className="no-wrap">{formatNumber(this.getCurrentTool().currentPrice)}</span>
@@ -354,8 +356,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            К депо
-            <SortButton prop="incomePercentage" />
+            <span className="dashboard-key-inner">
+              К депо
+              <SortButton prop="incomePercentage" />
+            </span>
           </span>
           <span className="dashboard-val">
             { formatNumber(round(incomePercentage, 2)) }%
@@ -364,8 +368,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            К загрузке
-            <SortButton prop="loadingPercentage" />
+            <span className="dashboard-key-inner">
+              К загрузке
+              <SortButton prop="loadingPercentage" />
+            </span>
           </span>
           <span className="dashboard-val">
             { formatNumber(round(loadingPercentage, 2)) }%
