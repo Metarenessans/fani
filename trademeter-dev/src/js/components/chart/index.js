@@ -374,10 +374,10 @@ function updateChart(isInit = false) {
         if (iterations && iterations.length > 1) {
           let endValue = factArray[i];
           factArray[i] = [];
-          let start = data[i].depoStart;
+          let start = data[i].depoStartReal;
           
           for (let j = 0; j < iterations.slice(0, -1).length; j++) {
-            start += iterations[j].getIncome( data[currentDay - 1].depoStart );
+            start += iterations[j].getIncome( data[currentDay - 1].depoStartReal );
             factArray[i].push(start);
           }
           factArray[i].push(endValue);

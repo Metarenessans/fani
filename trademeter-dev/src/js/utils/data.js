@@ -70,13 +70,16 @@ export default class Data extends Array {
 
       let incomeReal = Math.round(depoStartReal * (rate != null ? rate : 0) / 100);
       
-      if (iterations.filter(it => it.rate != null).length) {
-        _income    =
-        incomeReal = 
-          iterations
-            .filter(it => it.rate != null)
-            .map(it => it.getIncome( depoStart ))
-            .reduce((acc, curr) => acc + curr, 0);
+      if (iterations.filter(it => !it.empty).length) {
+        _income = iterations
+          .filter(it => !it.empty)
+          .map(it => it.getIncome( depoStart ))
+          .reduce((acc, curr) => acc + curr, 0);
+
+        incomeReal = iterations
+          .filter(it => !it.empty)
+          .map(it => it.getIncome( depoStartReal ))
+          .reduce((acc, curr) => acc + curr, 0); 
       }
 
       _income -= payment || 0;

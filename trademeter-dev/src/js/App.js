@@ -1246,8 +1246,8 @@ class App extends Component {
     const depoStart  = this.state.depoStart[mode];
     const withdrawal = this.state.withdrawal[mode];
     const payload    = this.state.payload[mode];
-    
-    const result = extRateReal(
+
+    const args = [
       depoStart,
       Math.round(this.getDepoEnd()),
       withdrawal,
@@ -1258,40 +1258,22 @@ class App extends Component {
       withdrawalInterval[mode],
       payloadInterval[mode],
       0,
-      this._getRealData(),
+      options?.realData || this._getRealData(),
       {
         customRate:     mode == 0 ? undefined : incomePersantageCustom / 100,
         customBaseRate: options?.customBaseRate,
         customFuture:   options?.customFuture,
         tax,
       }
-    );
+    ];
+    
+    const result = extRateReal(...args);
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
 
-    if (false && options.test) {
-      console.log(
-        depoStart,
-        Math.round(this.getDepoEnd()),
-        withdrawal,
-        withdrawalInterval[mode],
-        payload,
-        payloadInterval[mode],
-        options.length,
-        withdrawalInterval[mode],
-        payloadInterval[mode],
-        0,
-        this._getRealData(),
-        {
-          customRate:     mode == 0 ? undefined : incomePersantageCustom / 100,
-          customBaseRate: options?.customBaseRate,
-          customFuture:   options?.customFuture,
-          tax,
-        },
-        "=",
-        result
-      );
+    if (options.test) {
+      console.log(...args, "=", result);
     }
 
     return result;
@@ -1514,8 +1496,11 @@ class App extends Component {
       }).rateRecommended;
     }
     else {
+      // Если не обнуляю realdata - future расчитывается с учетом выводов и пополнений (а мы вроде хотим дефолтный future)
+      // Но когда я его обнуляю - получается дефолтный future (как и хотели), но тогда неправильно расчитывается daysDiff
       const customFuture = this.useRate({ length: days[mode] }).future;
-      const obj = this.useRate({ 
+      const obj = this.useRate({
+        // test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 
@@ -1523,6 +1508,7 @@ class App extends Component {
       });
       rate            = obj.rate;
       rateRecommended = obj.rateRecommended;
+      daysDiff        = obj.daysDiff;
     }
 
     this.rateRecommended = rateRecommended;

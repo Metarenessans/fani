@@ -79,3 +79,64 @@ test("Целевой депозит последнего дня совпадае
       depoEnd + (depoEnd / 1_000)
     );
 })
+
+test("Кейс второй режим, 1млн по 1% за 3 дня", () => {
+  const depoStart = 1_000_000;
+  const days = 3;
+  const { rate } = extRateReal(
+    depoStart,
+    null,
+    0, 20,
+    0, 20,
+    days,
+    20,
+    20,
+    0,
+    {},
+    { customRate: 0.01 },
+  );
+
+  const settings = {
+    $mode:            1,
+    $start:           depoStart,
+    $percent:         10,
+    $length:          days,
+    $rate:            rate * 100,
+    $rateRequired:    null,
+    $payment:         0,
+    $paymentInterval: 20,
+    $payload:         0,
+    $payloadInterval: 20,
+    $tool:            Tools.create()
+  };
+  const data = new Data();
+  data.build(settings);
+
+  // План был равен 1 010 000
+  expect(data[0].depoEndPlan).toEqual(1_010_000);
+
+  // Докидываем 10 тысяч в первый день
+  data[0].payload = 10_000;
+  data.build(settings);
+  
+  // После пополнения план равен 1 020 000
+  expect(data[0].depoEndReal).toEqual(1_010_000);
+
+  expect(data[0].depoEndPlan).toEqual(1_020_000);
+  expect(data[0].getRealDepoEnd(1)).toEqual(1_020_000);
+  
+  // На второй день целевой депозит должен быть равен 1 032 000
+  expect(data[1].depoEndPlan).toEqual(1_030_200);
+  expect(data[1].getRealDepoEnd(1)).toEqual(1_030_200);
+  
+  // Докидываем еще 10 тысяч во второй день
+  data[1].payload = 10_000;
+  data.build(settings);
+
+  // console.log(data[1]);
+
+  expect(data[1].depoEndReal      ).toEqual(1_020_000);
+  
+  expect(data[1].depoEndPlan      ).toEqual(1_040_200);
+  expect(data[1].getRealDepoEnd(1)).toEqual(1_040_200);
+})
