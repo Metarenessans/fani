@@ -121,7 +121,7 @@
       .dashboard-key.scroll::after {
         z-index: -1;
         position: absolute;
-        left: 0;
+        left: .2rem;
         top:  0;
         
         content: "";
@@ -209,14 +209,6 @@
 
     font-weight: bold;
 
-    &:first-child {
-      padding-left:  .2rem;
-    }
-
-    &:last-child {
-      padding-right: .2rem;
-    }
-
     &-inner {
       position: relative;
     }
@@ -228,7 +220,6 @@
       margin-top: -.1rem;
 
       width: inherit;
-      // background: white;
     }
     @include xs {
       width: initial;
