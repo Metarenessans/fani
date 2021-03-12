@@ -74,8 +74,8 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = true;
-let chartVisible       = true;
+let shouldLoadFakeSave = false;
+let chartVisible       = false;
 if (!dev) {
   chartVisible = true;
 }
@@ -1816,11 +1816,18 @@ class App extends Component {
                     </div>
 
                     <div className="card controls-card2 controls__card2">
-                      <h2 className="visually-hidden">Пассивный доход</h2>
+                        <h2 className="visually-hidden">Пассивный доход</h2>
                       
                       {/* Пассивный доход */}
                       <label className="input-group controls__passive-income">
-                        <span className="input-group__label">Пассивный доход</span>
+                        
+                          <span className="input-group__label">
+                            <Tooltip
+                              title={"Пассивный доход в месяц с целевого депозита"}
+                            >
+                              Пассивный доход
+                            </Tooltip>
+                          </span>
                         <NumericInput
                           className="input-group__input"
                           disabled={this.state.saved}
@@ -1959,7 +1966,11 @@ class App extends Component {
                         {(() => {
                           return (
                             <label className="input-group">
-                              <span className="input-group__label">Вывод</span>
+                                <span className="input-group__label">
+                                  <Tooltip title={"Cумма планового вывода"}>
+                                    Вывод
+                                  </Tooltip>
+                                </span>
                               <NumericInput
                                 ref={this.withdrawalInput}
                                 disabled={this.state.saved}
@@ -2081,7 +2092,11 @@ class App extends Component {
                           style={{ marginTop: "3.5em" }}>
 
                         <label className="input-group">
-                          <span className="input-group__label">Пополнение</span>
+                          <span className="input-group__label">
+                            <Tooltip title={"Cумма планового пополнения"}>
+                              Пополнение
+                            </Tooltip>
+                          </span>
                           <NumericInput
                             disabled={this.state.saved}
                             className="input-group__input"
@@ -2167,7 +2182,9 @@ class App extends Component {
 
                       <Col span={12} className="stats-col">
                         <h2 className="main__h2 stats-title">
+                          <Tooltip title={"Депозит при условии условии соблюдения мин. доходности на протяжении всего периода"}>
                           Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
+                        </Tooltip>
                         </h2>
                         <p className="stats-subtitle">
                           <BigNumber val={Math.round(this.getDepoEnd())} format={formatNumber} />
@@ -2219,7 +2236,9 @@ class App extends Component {
 
                       <Col span={12} className="stats-col">
                         <h2 className="main__h2 stats-title">
-                          <span aria-label="Минимальная">Мин.</span> доходность в день
+                          <Tooltip title={"Ставка дневной доходности на весь период"}>
+                            <span aria-label="Минимальная">Мин.</span> доходность в день
+                          </Tooltip>
                         </h2>
                         <p className="stats-subtitle">
                           <BigNumber val={round(rate, 3)} threshold={1e9} suffix="%" />
@@ -2358,7 +2377,9 @@ class App extends Component {
                       <div className="input-group section3__tool-select">
                         <header className="section3__tool-select-header">
                           <h2 className="input-group__label input-group__label--centered main__h2 section3__tool-title">
-                            Торговый инструмент
+                            <Tooltip title={"Биржевой инструмент для совершения сделок"}>
+                              Торговый инструмент
+                            </Tooltip>
                           </h2>
                           
                           <Tooltip title="Настроить инструменты">
@@ -2497,7 +2518,11 @@ class App extends Component {
 
                   return (
                     <section className="section4 main__section4">
-                      <h2 className="section4__title">План на день</h2>
+                      <h2 className="section4__title">
+                        <Tooltip title={"Расчётные значения для ежедневного движения к целевому депозиту"}>
+                          План на день
+                        </Tooltip>
+                      </h2>
 
                       <Col className="section4-col">
                         <header className="section4-header section4-header--first">
@@ -2537,7 +2562,19 @@ class App extends Component {
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
-                            <div className="section4-l">Вывод / Пополнение</div>
+                            <div className="section4-l">
+                              <span>
+                                <Tooltip title={"Cумма планового вывода"}>
+                                  Вывод 
+                                </Tooltip>
+                              </span>
+                              <span> / </span>
+                              <span>
+                                <Tooltip title={"Cумма планового пополнения"}>
+                                   Пополнение
+                                </Tooltip>
+                              </span>
+                            </div>
                             <div className="section4-r">
                               {(() => {
                                 let { paymentPlan } = data[currentDay - 1];
@@ -2595,24 +2632,25 @@ class App extends Component {
                                 })}
                               />
                             </label>
+                            <Tooltip title={"Направление позиции"}>
+                              <Switch
+                                className="section4__switch-long-short"
+                                key={isLong + ""}
+                                checkedChildren="LONG"
+                                unCheckedChildren="SHORT"
+                                defaultChecked={isLong}
+                                onChange={isLong => {
+                                  const { tools } = this.state;
+                                  const investorInfo = this.state.investorInfo;
+                                  investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                            <Switch
-                              className="section4__switch-long-short"
-                              key={isLong + ""}
-                              checkedChildren="LONG"
-                              unCheckedChildren="SHORT"
-                              defaultChecked={isLong}
-                              onChange={isLong => {
-                                const { tools } = this.state;
-                                const investorInfo = this.state.investorInfo;
-                                investorInfo.type = isLong ? "LONG" : "SHORT";
-
-                                this.setStateAsync({ investorInfo })
-                                  .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
-                                  .then(() => this.updateDepoPersentageStart())
-                                  .then(() => this.recalc(false))
-                              }}
-                            />
+                                  this.setStateAsync({ investorInfo })
+                                    .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
+                                    .then(() => this.updateDepoPersentageStart())
+                                    .then(() => this.recalc(false))
+                                }}
+                              />
+                            </Tooltip>
                           </header>
                           <div className="section4-content card">
                             <div className="section4-row">
@@ -2631,7 +2669,11 @@ class App extends Component {
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
-                              <div className="section4-l">Торговая цель</div>
+                              <div className="section4-l">
+                                <Tooltip title={"Требуемая сумма прибыли для достижения дневной целии"}>
+                                  Торговая цель
+                                </Tooltip>
+                                </div>
                               <div className="section4-r">{formatNumber(data[currentDay - 1].goal) }</div>
                             </div>
                             {/* /.row */}
@@ -2724,8 +2766,10 @@ class App extends Component {
                                       <Statistic
                                         title={
                                           <span>
-                                            рекомендуемая<br />
-                                            <span aria-label="доходность">дох-ть</span>
+                                            <Tooltip title={"Рекомендуемая ставка доходности для достижения цели в заданный срок"}>
+                                              рекомендуемая<br />
+                                              <span aria-label="доходность">дох-ть</span>
+                                            </Tooltip>
                                           </span>
                                         }
                                         value={formatNumber(round(value, 3))}
@@ -3026,7 +3070,11 @@ class App extends Component {
                         hidden={!data[currentDay - 1].expanded}
                       >
                         <div className="result-col result-col-iterations card">
-                          <h3 className="result-col__title">Итерации</h3>
+                          <h3 className="result-col__title">
+                            <Tooltip title={"Результат торговых сделок (сумма прибыли или убытка"}>
+                              Итерации
+                            </Tooltip>
+                          </h3>
                           <div className="result-col__content">
                             <IterationsContainer
                               expanded={data[currentDay - 1].expanded}
@@ -3091,7 +3139,9 @@ class App extends Component {
                                   )
                                 })()}
                                 <p className="result-round-progress__subtitle">
-                                  До цели:
+                                  <Tooltip title={"Сумма необходимая для достижения торговой цели"}>
+                                    До цели:
+                                  </Tooltip>
                                   <span>
                                     {
                                       formatNumber(
@@ -3117,7 +3167,12 @@ class App extends Component {
 
                                 return (
                                   <label className="input-group">
-                                    <span className="input-group__label">Вывод</span>
+                                      <span className="input-group__label">
+                                        <Tooltip title={"Cумма планового вывода"}>
+                                          Вывод
+                                        </Tooltip>
+                                      </span>
+
                                     <NumericInput
                                       className="input-group__input"
                                       defaultValue={
@@ -3192,7 +3247,11 @@ class App extends Component {
 
                                 return (
                                   <label className="input-group">
-                                    <span className="input-group__label">Пополнение</span>
+                                    <span className="input-group__label">
+                                      <Tooltip title={"Cумма планового пополнения"}>
+                                        Пополнение
+                                      </Tooltip>
+                                    </span>
                                     <NumericInput
                                       className="input-group__input"
                                       defaultValue={
@@ -3260,7 +3319,11 @@ class App extends Component {
                             </div>
 
                             <div className="result-col-additional-row">
-                              <span className="result-col-additional-row__main">Пассивный доход</span>
+                                <span className="result-col-additional-row__main">
+                                  <Tooltip title={"Пассивный доход в месяц с целевого депозита"}>
+                                    Пассивный доход
+                                  </Tooltip>
+                                </span>
                               <div className="result-col-additional-row__side">
                                 <Value>
                                   {(() => {
@@ -3282,7 +3345,11 @@ class App extends Component {
                         </div>
 
                         <div className="result-col">
-                          <h3 className="result-col__title result-col__title--large">Дневная цель</h3>
+                          <h3 className="result-col__title result-col__title--large">
+                            <Tooltip title={"Сумма прибыли или убытка"}>
+                              Дневная цель
+                            </Tooltip>
+                          </h3>
                           <div className="result-col__content">
 
                             {(() => {

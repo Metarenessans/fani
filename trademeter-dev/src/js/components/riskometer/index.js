@@ -2,7 +2,9 @@ import React from 'react'
 import * as antv from '@antv/g2';
 
 import round from "../../utils/round"
-
+import {
+  Tooltip,
+} from "antd/es"
 import "./style.sass"
 
 let chart;
@@ -158,7 +160,9 @@ export default class Riskometer extends React.Component {
       >
         <div id="container"></div>
         <figcaption className="riskometer__caption">
-          Вероятность хода
+          <Tooltip title={"Средний шанс движения цены инструмента на заданную величину в течение дня"}>
+            Вероятность хода
+          </Tooltip>
           <span className="riskometer__value">{ round(value, 2) }%</span>
         </figcaption>
       </figure>
