@@ -16,7 +16,7 @@
   text-transform: uppercase;
 
   &:focus {
-    border: var(--focus-outline-width) solid var(--primary-color);
+    border: var(--focus-outline-width) solid var(--bg-color);
     background: none;
     box-shadow: none;
 
@@ -48,6 +48,7 @@
 
   &--secondary {
     color: white;
+    border: var(--outline-width) solid var(--bg-color);
 
     &:focus,
     &:hover {

@@ -58,6 +58,24 @@ const defaultToolData = {
   selectedToolName: "SBER"
 };
 
+const onScroll = () => {
+  if (innerWidth <= 768) {
+    return;
+  }
+  const dashboardElement = document.querySelector(".dashboard");
+  const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
+  const headerElements = dashboardElement.querySelectorAll(".dashboard-row:first-child .dashboard-key");
+  if (pageYOffset > dashboardElementStart) {
+    for (let i = 0; i < headerElements.length; i++) {
+      headerElements[i].classList.add("scroll");
+    }
+  } else {
+    for (let i = 0; i < headerElements.length; i++) {
+      headerElements[i].classList.remove("scroll");
+    }
+  }
+}
+
 class App extends React.Component {
 
   constructor(props) {
@@ -114,21 +132,11 @@ class App extends React.Component {
     this.bindEvents();
     this.fetchInitialData();
 
-    window.addEventListener("scroll", function() {
-      const dashboardElement = document.querySelector(".dashboard");
-      const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
-      const headerElements = dashboardElement.querySelectorAll(".dashboard-row:first-child .dashboard-key");
+    window.addEventListener("scroll", onScroll);
+  }
 
-      if (pageYOffset > dashboardElementStart) {
-        for (let i = 0; i < headerElements.length; i++) {
-          headerElements[i].classList.add("scroll");
-        }
-      } else {
-        for (let i = 0; i < headerElements.length; i++) {
-          headerElements[i].classList.remove("scroll");
-        }
-      }
-    });
+  componentDidUpdate() {
+    onScroll();
   }
 
   setStateAsync(state = {}) {
@@ -152,7 +160,7 @@ class App extends React.Component {
       let { saves } = this.state;
       let save = {
         dateCreate: 1595544839,
-        static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR-9.20"},{"percentage":60,"selectedToolName":"BR-1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN-9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT-9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"}],"customTools":[],"current_date":"#"}`,
+        static: `{"depo":1500000,"sortProp":"guaranteeValue","sortDESC":true,"mode":0,"data":[{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"VTBR-9.20"},{"percentage":60,"selectedToolName":"BR-1.21","planIncome":10,"guaranteeValue":1559.71,"contracts":577,"income":5770,"incomePercentage":0.38466666666666666,"loadingPercentage":0.6411111111111112,"risk":63.431533333333334,"freeMoney":-23.431533333333334},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"TATN-9.20"},{"percentage":10,"guaranteeValue":1559.71,"contracts":96,"planIncome":815,"income":78240,"incomePercentage":5.216,"loadingPercentage":52.160000000000004,"risk":10.553600000000001,"freeMoney":79.4464,"selectedToolName":"AFLT-9.20"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"},{"percentage":10,"guaranteeValue":1658.45,"contracts":90,"planIncome":815,"income":10724679.540000001,"incomePercentage":714.978636,"loadingPercentage":7149.78636,"risk":5.52682872,"freeMoney":84.47317128,"selectedToolName":"SBER"}],"customTools":[],"current_date":"#"}`,
         data: {
           id: 20,
           name: "Отсортированный",
@@ -479,6 +487,9 @@ class App extends React.Component {
   render() {
     const { mode, data, sortProp, sortDESC, isLong } = this.state;
 
+
+    console.log(this.state.tools)
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -614,7 +625,7 @@ class App extends React.Component {
                               }}
                               onDelete={index => {
                                 data.splice(index, 1);
-                                this.setState({ data })
+                                this.setState({ data, changed: true })
                               }}
                             />
                           )
@@ -635,10 +646,11 @@ class App extends React.Component {
                 <footer className="main__footer">
 
                   <Button className="custom-btn main__save"
+                    key={Math.random()}
                     onClick={() => {
                       const { data } = this.state;
                       data.push({ ...defaultToolData });
-                      this.setState({ data })
+                      this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
                     }}>
                     <PlusOutlined aria-label="Добавить" />
                     инструмент
