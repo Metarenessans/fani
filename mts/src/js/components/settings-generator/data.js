@@ -240,7 +240,7 @@ const createData = (type, options) => {
       // Прибавляем комиссию из предыдущей строки
       _comission += data[subIndex - 1]?.comission || 0;
 
-      let incomeWithoutComission = contracts * points / currentTool.priceStep * currentTool.stepPrice;
+      let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
 

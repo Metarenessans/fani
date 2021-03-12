@@ -6,7 +6,7 @@ import formatNumber   from '../../../../../../common/utils/format-number'
 import "./style.scss"
 
 export default function Table ({ data, isBying = false, isReversed = false }) {
-  if (data == null || data.length == 0) {
+  if (!data || data == null || data.length == 0) {
     return null;
   }
 

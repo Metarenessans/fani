@@ -450,7 +450,24 @@ class Tools {
         adrDay:          8.91,
         adrWeek:         23.51,
         adrMonth:        60.91,
-      })
+      }),
+      this.create({
+        ref:             null,
+        fullName:        "Apple Inc",
+        shortName:       "",
+        code:            "AAPL",
+        stepPrice:       0.73,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       8810.1,
+        currentPrice:    119.98,
+        volume:          1,
+        lotSize:         1,
+        dollarRate:      73.665,
+        adrDay:          3,
+        adrWeek:         8.45,
+        adrMonth:        12.18,
+      }),
     ]
   }
 

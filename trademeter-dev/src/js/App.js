@@ -1496,11 +1496,9 @@ class App extends Component {
       }).rateRecommended;
     }
     else {
-      // Если не обнуляю realdata - future расчитывается с учетом выводов и пополнений (а мы вроде хотим дефолтный future)
-      // Но когда я его обнуляю - получается дефолтный future (как и хотели), но тогда неправильно расчитывается daysDiff
       const customFuture = this.useRate({ length: days[mode] }).future;
       const obj = this.useRate({
-        // test: true,
+        test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 

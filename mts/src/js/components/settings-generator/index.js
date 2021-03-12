@@ -34,6 +34,7 @@ import createData    from './data'
 import round          from '../../../../../common/utils/round'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
+import { keys } from 'lodash'
 
 const SettingsGenerator = props => {
 
@@ -74,7 +75,7 @@ const SettingsGenerator = props => {
       type: "Лимитник",
       options: {
         [initialCurrentTab]: {
-          mode: dev ? 'custom' : 'evenly',
+          mode: "evenly",
           ...optionBase,
           customData: [{ ...optionBase, length: 1 }]
         },
@@ -203,9 +204,11 @@ const SettingsGenerator = props => {
   };
 
   let data = [];
-  data[initialCurrentTab]        = createData(initialCurrentTab,             options);
-  data['Зеркальные докупки']     = createData(initialCurrentTab,        { ...options, isBying: true });
-  data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', { ...options, isBying: true });
+  data[initialCurrentTab] = createData(initialCurrentTab, options);
+  data['Зеркальные докупки'] = 
+    (isMirrorBying && createData(initialCurrentTab, { ...options, isBying: true })) || [];
+  data['Обратные докупки (ТОР)'] = 
+    (isReversedBying && createData('Обратные докупки (ТОР)', { ...options, isBying: true })) || [];
 
   const mainData = data[initialCurrentTab];
 
@@ -218,7 +221,7 @@ const SettingsGenerator = props => {
 
     let insert = { [property]: value };
     if (typeof property == 'object') {
-      insert = property;
+      insert = { ...property };
     }
 
     const currentPresetCopy = {
@@ -232,6 +235,7 @@ const SettingsGenerator = props => {
       }
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
+    console.log("!!", subtype, insert, presetsCopy[currentPresetIndex]);
     setPresets(presetsCopy);
   }
 
@@ -254,26 +258,39 @@ const SettingsGenerator = props => {
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
 
-    const presetsCopy = [...presets];
-
     // TODO: Не забыть!
     // Меняем желаемый ход
-    // const { preferredStep, customData } = currentPreset.options;
-    // const currentPresetCopy = {
-    //   ...currentPreset,
-    //   options: {
-    //     ...currentPreset.options,
 
-    //     preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+    const presetsCopy = [...presets];
 
-    //     customData: customData.map(row => {
-    //       row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
-    //       return row;
-    //     })
-    //   }
-    // };
-    // presetsCopy[currentPresetIndex] = currentPresetCopy;
-    // setPresets(presetsCopy);
+    let currentPresetCopy = { ...currentPreset };
+    
+    keys(currentPreset.options).map(key => {
+      const { preferredStep, customData } = currentPreset.options[key];
+
+      const obj = {
+        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+        customData: customData?.map(row => {
+          row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
+          return row;
+        })
+      };
+
+      currentPresetCopy = {
+        ...currentPresetCopy,
+        options: {
+          ...currentPresetCopy.options,
+          [key]: {
+            ...currentPresetCopy.options[key],
+            ...obj
+          }
+        }
+      };
+
+    });
+
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    setPresets(presetsCopy);
 
   }, [currentTool.code]);
 
@@ -1177,11 +1194,8 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-code-control"
                    hidden>
                 
-                <CodePanel
-                  currentTab={currentTab}
-                  presetOptions={currentPreset.options[currentTab]} 
-                  data={data[currentTab]} 
-                  tool={currentTool} />
+                <CodePanel data={data} 
+                           tool={currentTool}/>
                 
               </div>
               {/* tabpanel */}
