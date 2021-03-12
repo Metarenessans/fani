@@ -312,6 +312,7 @@ export default class DashboardRow extends React.Component {
                       key={Math.random()}
                       className="dashboard__input"
                       defaultValue={planIncome}
+                      unsigned="true"
                       format={value => {
                         value = Number(value);
                         return formatNumber(value.toFixed(fraction))

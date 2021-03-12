@@ -58,6 +58,24 @@ const defaultToolData = {
   selectedToolName: "SBER"
 };
 
+const onScroll = () => {
+  if (innerWidth <= 768) {
+    return;
+  }
+  const dashboardElement = document.querySelector(".dashboard");
+  const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
+  const headerElements = dashboardElement.querySelectorAll(".dashboard-row:first-child .dashboard-key");
+  if (pageYOffset > dashboardElementStart) {
+    for (let i = 0; i < headerElements.length; i++) {
+      headerElements[i].classList.add("scroll");
+    }
+  } else {
+    for (let i = 0; i < headerElements.length; i++) {
+      headerElements[i].classList.remove("scroll");
+    }
+  }
+}
+
 class App extends React.Component {
 
   constructor(props) {
@@ -114,23 +132,11 @@ class App extends React.Component {
     this.bindEvents();
     this.fetchInitialData();
 
-    window.addEventListener("scroll", function() {
-      if (innerWidth <= 768) {
-        return;
-      }
-      const dashboardElement = document.querySelector(".dashboard");
-      const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
-      const headerElements = dashboardElement.querySelectorAll(".dashboard-row:first-child .dashboard-key");
-      if (pageYOffset > dashboardElementStart) {
-        for (let i = 0; i < headerElements.length; i++) {
-          headerElements[i].classList.add("scroll");
-        }
-      } else {
-        for (let i = 0; i < headerElements.length; i++) {
-          headerElements[i].classList.remove("scroll");
-        }
-      }
-    });
+    window.addEventListener("scroll", onScroll);
+  }
+
+  componentDidUpdate() {
+    onScroll();
   }
 
   setStateAsync(state = {}) {
@@ -481,6 +487,9 @@ class App extends React.Component {
   render() {
     const { mode, data, sortProp, sortDESC, isLong } = this.state;
 
+
+    console.log(this.state.tools)
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -616,7 +625,7 @@ class App extends React.Component {
                               }}
                               onDelete={index => {
                                 data.splice(index, 1);
-                                this.setState({ data })
+                                this.setState({ data, changed: true })
                               }}
                             />
                           )
@@ -637,10 +646,11 @@ class App extends React.Component {
                 <footer className="main__footer">
 
                   <Button className="custom-btn main__save"
+                    key={Math.random()}
                     onClick={() => {
                       const { data } = this.state;
                       data.push({ ...defaultToolData });
-                      this.setState({ data })
+                      this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
                     }}>
                     <PlusOutlined aria-label="Добавить" />
                     инструмент

@@ -72,6 +72,7 @@ const Header = ({
                   <div className="main-top__footer">
 
                     <Button
+                      key={Math.random()}
                       className={
                         [
                           "custom-btn",
