@@ -1498,7 +1498,7 @@ class App extends Component {
     else {
       const customFuture = this.useRate({ length: days[mode] }).future;
       const obj = this.useRate({
-        test: true,
+        // test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 
@@ -2326,14 +2326,8 @@ class App extends Component {
                               step={step}
                               precision={2}
                               filter={val => val + "%"}
-                              onChange={val => {
-                                const { mode, days } = this.state;
-        
-                                this.setState({ depoPersentageStart: val }, () => {
-                                  setTimeout(() => {
-                                    this.updateData(days[mode]);
-                                  }, 0);
-                                });
+                              onChange={depoPersentageStart => {
+                                this.setState({ depoPersentageStart }, () => this.updateData());
                               }}
                             />
                           )
@@ -2504,15 +2498,12 @@ class App extends Component {
 
                 {(() => {
                   let {
-                    data,
                     depoPersentageStart,
                     directUnloading,
                     iterations
                   } = this.state;
 
                   let days = this.state.days[this.state.mode];
-                  
-                  const { currentDay } = this.state;
 
                   let pointsForIteration = this.getPointsForIteration();
 
@@ -2528,11 +2519,8 @@ class App extends Component {
                         <header className="section4-header section4-header--first">
                           <CustomSelect
                             className="section4__day-select"
-                            options={
-                              new Array(data.length).fill(0).map((val, index) => index + 1)
-                            }
-                            format={val => val}
-                            value={this.state.currentDay}
+                            options={new Array(data.length).fill(0).map((val, index) => index + 1)}
+                            value={currentDay}
                             min={1}
                             max={data.length}
                             onChange={value => this.setCurrentDay(value)}

@@ -129,7 +129,6 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.bindEvents();
     this.fetchInitialData();
 
     window.addEventListener("scroll", onScroll);
@@ -244,10 +243,6 @@ class App extends React.Component {
         dialogAPI.open("dialog-msg");
       });
     }
-  }
-
-  bindEvents() {
-    
   }
 
   packSave() {
