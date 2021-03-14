@@ -1,11 +1,19 @@
 let fakeSave =
 
+// {
+//     id: 1270,
+//     name: 'с багом',
+//     dateCreate: 1615284912,
+//     static: '{"depoStart":[1000000,1000000],"depoEnd":[957523,957523],"tax":13,"currentDay":2,"days":[260,10],"dataLength":10,"minDailyIncome":[0.89,0.89],"payment":[0,0],"paymentInterval":[20,20],"payload":[0,0],"payloadInterval":[20,20],"passiveIncome":[0,0],"customPassiveIncomeTools":[],"currentPassiveIncomeToolIndex":[-1,-1],"mode":1,"customTools":[],"currentToolCode":"SBER","current_date":"#"}',
+//     dynamic: '[{"d":1,"s":0.12340000000000001,"rr":null,"ci":1234,"c":true,"i":2,"il":[{"percent":0.12340000000000001,"income":null},{"income":null}],"pi":0,"du":true},{"d":2,"s":1.2329785045254156,"rr":null,"ci":12345,"pmt":178225,"pld":52345,"c":true,"i":2,"il":[{"percent":1.2329785045254156,"income":null},{"income":null}],"pi":0,"du":true}]',
+// }
+
 {
-    id: 1270,
-    name: 'с багом',
-    dateCreate: 1615284912,
-    static: '{"depoStart":[1000000,1000000],"depoEnd":[957523,957523],"tax":13,"currentDay":2,"days":[260,10],"dataLength":10,"minDailyIncome":[0.89,0.89],"payment":[0,0],"paymentInterval":[20,20],"payload":[0,0],"payloadInterval":[20,20],"passiveIncome":[0,0],"customPassiveIncomeTools":[],"currentPassiveIncomeToolIndex":[-1,-1],"mode":1,"customTools":[],"currentToolCode":"SBER","current_date":"#"}',
-    dynamic: '[{"d":1,"s":0.12340000000000001,"rr":null,"ci":1234,"c":true,"i":2,"il":[{"percent":0.12340000000000001,"income":null},{"income":null}],"pi":0,"du":true},{"d":2,"s":1.2329785045254156,"rr":null,"ci":12345,"pmt":178225,"pld":52345,"c":true,"i":2,"il":[{"percent":1.2329785045254156,"income":null},{"income":null}],"pi":0,"du":true}]',
+    id: 1241,
+    name: '3 дня',
+    dateCreate: 1614261352,
+    static: '{"depoStart":[1000000,1000000],"depoEnd":[3000000,null],"tax":13,"currentDay":4,"days":[3,260],"dataLength":5,"dataExtendedFrom":3,"minDailyIncome":[44.268,44.225],"payment":[0,0],"paymentInterval":[20,20],"payload":[0,0],"payloadInterval":[20,20],"passiveIncome":[0,0],"passiveIncomeTools":[{"name":"ОФЗ 26214","rate":4.99},{"name":"ОФЗ 26205","rate":5.78},{"name":"ОФЗ 26217","rate":5.99},{"name":"ОФЗ 26209","rate":6.26},{"name":"ОФЗ 26220","rate":6.41}],"currentPassiveIncomeToolIndex":[-1,-1],"mode":0,"customTools":[],"currentToolCode":"SBER","current_date":"#"}',
+    dynamic: '[{"d":1,"rr":null,"ci":361346,"c":true,"i":14,"il":[{"percent":0.0123},{"percent":0.2133},{"percent":2.1111999999999997},{"percent":12.3121},{"percent":0.012199999999999999},{"percent":0.0322},{"percent":0.0322},{"percent":0.3323},{"percent":6.567399999999999},{"percent":3.4533},{"percent":3.2564},{"percent":4.5645},{"percent":3.2352},{}],"pi":0,"du":true},{"d":2,"rr":null,"ci":375631,"c":true,"i":5,"il":[{"percent":0.3174064492054188},{"percent":0.8897076863633492},{"percent":9.149474123404337},{"percent":17.236029635375576},{}],"pi":0,"du":true},{"d":3,"rr":null,"ci":560697,"c":true,"i":6,"il":[{"percent":7.1055057148137255},{"percent":23.743089286732065},{"percent":0.715150517249221},{"percent":0.006966125630909333},{"percent":0.7093358173424288},{}],"pi":0,"du":true},{"d":4,"s":19.059927561525264,"rr":30.566888327326236,"ci":437935,"c":true,"i":6,"il":[{"percent":9.188596815736263},{"percent":0.0483532476756929},{"percent":0.48409826633369224},{"percent":9.275641366007537},{"percent":0.05840689323202508},{"percent":0.004830972540055726}],"pi":0,"du":true}]',
 }
 
 // {
