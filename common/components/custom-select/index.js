@@ -2,7 +2,8 @@ import React, { memo } from 'react'
 import { Select } from 'antd/es'
 const { Option } = Select;
 
-import round from '../../utils/round';
+import round   from '../../utils/round';
+import isEqual from "../../utils/is-equal";
 
 import "./style.sass";
 
@@ -35,9 +36,13 @@ export default memo(class CustomSelect extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { value } = this.props;
+    const { value, options } = this.props;
     if (value != prevProps.value) {
       this.onSelect(this.parseValue(value));
+    }
+
+    if (!isEqual(options, prevProps.options)) {
+      this.setState({ options }, () => this.onSelect(this.parseValue(value)));
     }
   }
 

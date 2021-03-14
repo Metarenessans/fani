@@ -150,9 +150,7 @@ const parseTool = tool => {
     }
   }
   // Фьючерсы
-  else if (dollarRate == 0) {
-
-  }
+  else if (dollarRate == 0) {}
   // Америка
   else {
     priceStep = 0.01;

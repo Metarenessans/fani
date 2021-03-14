@@ -40,7 +40,7 @@ export default class DashboardRow extends React.Component {
   }
 
   getPlanIncome() {
-    const { mode, item, index } = this.props;
+    const { mode, item } = this.props;
     const currentTool = this.getCurrentTool();
     const realSelectedToolName = currentTool.getSortProperty();
     
@@ -48,7 +48,9 @@ export default class DashboardRow extends React.Component {
 
     if (mode == 0) {
       // В приоритете введенное значение, если его нет - откатываемся к дефолтному
-      planIncome = item.planIncome != null && item.realSelectedToolName == realSelectedToolName ? item.planIncome : currentTool.adrDay;
+      planIncome = item.planIncome != null && item.realSelectedToolName == realSelectedToolName 
+        ? item.planIncome 
+        : currentTool.adrDay;
     }
     else {
       var m;

@@ -6,6 +6,7 @@ export default class Data extends Array {
   build({
     $mode            = 0,
     $startFrom       = 0,
+    // Процент депозита на вход в сделку
     $percent         = 100,
     $start           = 1_000_000,
     $length          = 0,
@@ -17,8 +18,9 @@ export default class Data extends Array {
     $payloadInterval = 20,
     $tool            = { guarantee: 1, stepPrice: 1 }
   }) {
+
     if ($startFrom > this.length) {
-      console.warn(`Невозможно начать страить массив с ${$startFrom}ого дня!`);
+      console.warn(`Невозможно начать строить массив с ${$startFrom}ого дня!`);
       $startFrom = 0;
     }
 
@@ -102,6 +104,7 @@ export default class Data extends Array {
       /* Tool-related stuff */
 
       let contracts = round(depoStart * $percent / 100, 1) / $tool.guarantee;
+
       if (isNaN(contracts)) {
         // TODO: handle this error properly
         console.warn( `Количество контрактов равно NaN! depoStart (${depoStart}) / tool.guarantee (${$tool.guarantee})` );

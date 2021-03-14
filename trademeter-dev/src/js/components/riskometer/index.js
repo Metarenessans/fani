@@ -67,7 +67,6 @@ export default class Riskometer extends React.Component {
     antv.registerShape('point', 'pointer', {
       draw(cfg, container) {
         const group = container.addGroup({});
-        
         return group;
       },
     });
@@ -132,23 +131,19 @@ export default class Riskometer extends React.Component {
     draw(this.creatData());
   }
 
-  // shouldComponentUpdate(nextProps, nextState) {
-  //   return !isEqual(this.props, nextProps)
-  // }
-
   componentDidMount() {
+    const { value, tool } = this.props;
 
-    let chance = 100 - ((this.props.value * this.props.tool.priceStep) / this.props.tool.adrDay * 100);
+    let chance = 100 - ((value * tool.priceStep) / tool.adrDay * 100);
     if (chance < 0) {
       chance = 0
     }
  
-    this.setState({value: chance }, this.createShape);
+    this.setState({ value: chance }, this.createShape);
   }
 
   render() {
     const { value } = this.state;
-    // console.log('rendering Riskometr');
 
     return (
       <figure
