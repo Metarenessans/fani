@@ -8,8 +8,6 @@ export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.round     = this.props.round    == "true";
-    this.unsigned  = this.props.unsigned == "true";
     this.format    = this.props.format    || function (val) { return val };
     this.onInvalid = this.props.onInvalid || function () { return "" };
     this.className = this.props.className || "";
@@ -22,6 +20,21 @@ export default class NumericInput extends React.Component {
 
     if (this.props.onRef) {
       this.props.onRef(this);
+    }
+  }
+
+  get round() {
+    return this.props.round == "true"
+  }
+
+  get unsigned() {
+    return this.props.unsigned == "true"
+  }
+
+  componentDidUpdate(prevProps) {
+    const { defaultValue } = this.props;
+    if (defaultValue != prevProps.defaultValue) {
+      this.setState({ value: this.format(defaultValue) })
     }
   }
 
@@ -42,7 +55,7 @@ export default class NumericInput extends React.Component {
 
     // regexp start
     var regexpCode = "^";
-    if (this.unsigned != true) {
+    if (!this.unsigned) {
       regexpCode += "-?";
     }
 
@@ -59,6 +72,7 @@ export default class NumericInput extends React.Component {
     if (regexp.test(value)) {
       this.setState({ value });
       if (onChange) {
+        // TODO: отправлять вторым аргументом this.parse(value)
         onChange(e, String(value).replace(/\,/g, "."), this);
       }
     }
@@ -73,8 +87,8 @@ export default class NumericInput extends React.Component {
     }
   }
 
-  parse(val) {
-    let { min, max, placeholder } = this.props;
+  parse(val, test) {
+    let { min, max } = this.props;
 
     let value = val
       .replace(/\s+/g, "")
@@ -86,15 +100,16 @@ export default class NumericInput extends React.Component {
     }
 
     if (
-      !this.round &&
-      value.indexOf(".") < 0 &&
-      value.length > 1 &&
+      !this.round                   &&
+      value.indexOf(".") < 0        &&
+      value.length > 1              &&
       value[0] == "0"
     ) {
       var before = value.substring(0, 1);
-      var after = value.substring(1, value.length);
+      var after  = value.substring(1, value.length);
       value = before + "." + after;
     }
+
     value = Number(value) + "";
 
     if (min) {
@@ -149,12 +164,6 @@ export default class NumericInput extends React.Component {
     ].indexOf(e.keyCode) > -1) {
       e.target.blur();
       e.stopPropagation();
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.defaultValue != prevProps.defaultValue) {
-      this.setState({ value: this.format(this.props.defaultValue) })
     }
   }
 

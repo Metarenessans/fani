@@ -32,11 +32,11 @@ export default function CodePanel(props) {
       {Object.keys(data).map((key, index) => {
         const arr = data[key];
 
-        if (!arr) {
+        if (!arr.on) {
           return null;
         }
 
-        const codeElement = React.createRef();
+        let title = `Массив ${!arr.isBying ? "закрытия" : "докупок"}:`;
 
         let parsedData = (arr || [])
           .map(v => {
@@ -45,19 +45,28 @@ export default function CodePanel(props) {
             return `{${percent},${pointsInPercents}}`;
           })
           .join(",");
+        parsedData = `{${parsedData}}`;
 
-        if (key == "Зеркальные докупки") {
-          parsedData = "true";
+        let param = "stop_arr";
+        if (key == "Обратные докупки (ТОР)") {
+          param = "aaperc";
+        }
+        else if (key == "Зеркальные докупки") {
+          param = "flagmirroradd";
+          parsedData = String(arr.on);
+          title = "Массив зеркальных докупок";
         }
 
-        const textContent = `GParam.${key == "Обратные докупки (ТОР)" ? "aaperc" : "stop_arr"} = {${parsedData}}`;
+        const textContent = `GParam.${param} = ${parsedData}`;
+
+        const codeElement = React.createRef();
 
         return (
           <div className="code-panel-group"
                key={index}>
 
             <div className="code-panel-group-header">
-              <h3>Массив {!arr.isBying ? "закрытия" : "докупок"}:</h3>
+              <h3>{title}</h3>
               <button
                 className="code-panel-group__copy-btn"
                 onClick={e => {

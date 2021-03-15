@@ -11,10 +11,12 @@ export default function ReversedByingRow({
   data,
   contracts,
   options,
-  onPercentChange,
-  onLengthChange,
-  onStepInPercentChange,
+  onPropertyChange,
 }) {
+  const contractsSum = data
+    .map(row => row.contracts)
+    .reduce((acc, curr) => acc + curr, 0);
+
   return (
     <div className="settings-generator-content__row settings-generator-content__opt-row">
 
@@ -27,7 +29,7 @@ export default function ReversedByingRow({
           unsigned="true"
           placeholder="1"
           min={1}
-          onBlur={value => onLengthChange(value)}
+          onBlur={length => onPropertyChange({ length })}
         />
       </label>
 
@@ -39,7 +41,7 @@ export default function ReversedByingRow({
           format={formatNumber}
           unsigned="true"
           min={0}
-          onBlur={value => onPercentChange(value)}
+          onBlur={formatNumber => onPropertyChange({ formatNumber })}
         />
       </label>
 
@@ -51,24 +53,13 @@ export default function ReversedByingRow({
           format={formatNumber}
           unsigned="true"
           min={0}
-          onBlur={value => onStepInPercentChange(value)}
+          onBlur={stepInPercent => onPropertyChange({ stepInPercent })}
         />
       </label>
 
       <div className="settings-generator-content__print-group">
         <span>Суммарный % докупки</span>
-        <b>{
-          round(
-            data
-              .map(row => row.contracts)
-              .reduce((acc, curr) => acc + curr, 0)
-            /
-            (contracts || 1)
-            *
-            100
-            , 1
-          )
-        }%</b>
+        <b>{round(contractsSum / (contracts || 1) * 100, 1)}%</b>
       </div>
 
     </div>

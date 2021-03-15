@@ -16,6 +16,7 @@ import DownloadIcon from "./icons/Download"
 import CodeIcon     from "./icons/CodeIcon"
 import CloseIcon    from "./icons/CloseIcon"
 import CodePanel    from "./code-panel"
+import SGRow        from "./sgrow"
 
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
@@ -60,16 +61,23 @@ const SettingsGenerator = props => {
     stepInPercent: dev ? 2  : "",       // Шаг
   };
   const [presets, setPresets] = useState([
-    { 
-      name: "Стандарт", 
-      type: "Стандарт",
+    {
+      name: "СМС + ТОР",
+      type: "СМС + ТОР",
       options: {
-        mode: 'evenly',
-        ...optionBase,
-        customData: [{...optionBase, length: 1}]
+        [initialCurrentTab]: {
+          mode: "evenly",
+          ...optionBase,
+          customData: [{ ...optionBase, length: 1 }]
+        },
+        "Закрытие плечевого депозита": {
+          mode: "evenly",
+          ...optionBase,
+          customData: [{ ...optionBase, length: 1 }]
+        },
+        "Обратные докупки (ТОР)": { ...optionBase },
       }
     },
-    { name: "СМС + ТОР", type: "СМС + ТОР" },
     { 
       name: "Лимитник",
       type: "Лимитник",
@@ -79,9 +87,7 @@ const SettingsGenerator = props => {
           ...optionBase,
           customData: [{ ...optionBase, length: 1 }]
         },
-        "Обратные докупки (ТОР)": {
-          ...optionBase
-        },
+        "Обратные докупки (ТОР)": { ...optionBase },
       }
     }
   ]);
@@ -90,7 +96,7 @@ const SettingsGenerator = props => {
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
-  let investorDepo = props?.depo || 1_000_000;
+  const investorDepo = props?.depo || 1_000_000;
 
   const [depo, setDepo] = useState(
     investorDepo != null
@@ -99,10 +105,6 @@ const SettingsGenerator = props => {
         : Math.floor(investorDepo * .25)
       : 0
   );
-
-  if (currentPreset.type == "Лимитник") {
-    investorDepo = depo;
-  }
 
   const [secondaryDepo, setSecondaryDepo] = useState(
     investorDepo != null
@@ -117,7 +119,8 @@ const SettingsGenerator = props => {
   // Зеркальные докупки 
   const [isMirrorBying, setMirrorBying] = useState(false);
   // Обратные докупки (ТОР)
-  const [isReversedBying, setReversedBying] = useState(dev ? true : false);
+  // По дефолту включен в СМС + ТОР
+  const [isReversedBying, setReversedBying] = useState(currentPreset.type == "СМС + ТОР");
 
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -195,6 +198,11 @@ const SettingsGenerator = props => {
     contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
+  let contractsSecondary = 0;
+  if (currentTool) {
+    contractsSecondary = Math.floor((depoAvailable - depo) / currentTool.guarantee);
+  }
+
   const options = {
     currentPreset,
     currentTool,
@@ -205,10 +213,23 @@ const SettingsGenerator = props => {
 
   let data = [];
   data[initialCurrentTab] = createData(initialCurrentTab, options);
-  data['Зеркальные докупки'] = 
-    (isMirrorBying && createData(initialCurrentTab, { ...options, isBying: true })) || [];
-  data['Обратные докупки (ТОР)'] = 
-    (isReversedBying && createData('Обратные докупки (ТОР)', { ...options, isBying: true })) || [];
+  if (currentPreset.type != "Лимитник") {
+    data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
+      ...options,
+      on: hasExtraDepo,
+      contracts: contractsSecondary,
+    });
+  }
+  data['Зеркальные докупки'] = createData(initialCurrentTab, {
+    ...options,
+    isBying: true,
+    on: isMirrorBying
+  });
+  data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
+    ...options,
+    isBying: true,
+    on: isReversedBying
+  });
 
   const mainData = data[initialCurrentTab];
 
@@ -235,7 +256,6 @@ const SettingsGenerator = props => {
       }
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
-    console.log("!!", subtype, insert, presetsCopy[currentPresetIndex]);
     setPresets(presetsCopy);
   }
 
@@ -245,15 +265,14 @@ const SettingsGenerator = props => {
   }, []);
 
   useEffect(() => {
-
     if (currentPreset.type == "Лимитник") {
       setDepo(investorDepo);
     }
-    
-    // setDepo(Math.floor(investorDepo * .25));
-    // setSecondaryDepo(Math.floor(investorDepo * .75));
-
-  }, [investorDepo]);
+    else {
+      setDepo(Math.floor(investorDepo * .25));
+      setSecondaryDepo(Math.floor(investorDepo * .75));
+    }
+  }, [currentPreset, investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -346,7 +365,8 @@ const SettingsGenerator = props => {
                 }
                 key={index}
               >
-                <button className="settings-generator-menu-list-item__name">
+                <button className="settings-generator-menu-list-item__name"
+                        onClick={e => setCurrentPresetName(preset.name)}>
                   {preset.name}
                 </button>
                 <ItemOptions 
@@ -504,6 +524,7 @@ const SettingsGenerator = props => {
                 </label>
 
                 {
+                  // В лимитнике нет плечевого депо
                   currentPreset.type != "Лимитник" &&
                     <label className="input-group">
                       <span className="input-group__label">Плечевой депо</span>
@@ -559,7 +580,7 @@ const SettingsGenerator = props => {
                                 (
                                   {formatNumber(Math.floor(depo / currentTool.guarantee))}
                                   /
-                                  {formatNumber(Math.floor((depoAvailable - depo) / currentTool.guarantee))}
+                                  {formatNumber(contractsSecondary)}
                                 )
                               </>
                             }
@@ -678,6 +699,7 @@ const SettingsGenerator = props => {
             </div>
             {/* row */}
 
+            {/* Закрытие основного депозита */}
             <div style={{ width: '100%' }}>
               <div className="settings-generator-content__row-header-wrap">
                 <h3 className="settings-generator-content__row-header">
@@ -693,339 +715,43 @@ const SettingsGenerator = props => {
                 </label>
               </div>
 
-              <div className="settings-generator-content__row-header-modes">
-                <Radio.Group
-                  className="settings-generator-content__row-header-modes-select"
-                  value={currentPreset.options[initialCurrentTab].mode}
-                  onChange={e => updatePresetProperty(initialCurrentTab, "mode", e.target.value)}
-                >
-                  <Radio value={'evenly'}>равномерно</Radio>
-                  <Radio value={'custom'}>задать самому</Radio>
-                  {/* <Radio value={'fibonacci'}>по Фибоначчи</Radio> */}
-                </Radio.Group>
-              </div>
+              <SGRow
+                modes={["evenly", "custom"]}
+                options={currentPreset.options[initialCurrentTab]}
+                onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
+                onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
+                data={data[initialCurrentTab]}
+                contracts={contracts}
+                currentTool={currentTool}
+              />
 
-              {
-                currentPreset.options[initialCurrentTab].mode == 'custom'
-                  ? 
-                  <>
-                    {currentPreset.options[initialCurrentTab].customData
-                      .map((customDataRow, i) =>
-                        <div 
-                          className="settings-generator-content__row settings-generator-content__opt-row settings-generator-content__opt-row--custom"
-                          key={i}
-                        >
-
-                          <span className="settings-generator-content__opt-row-number">{i + 1}</span>
-
-                          <label className="input-group">
-                            <span className="input-group__label">
-                              Желаемый ход
-                              <button
-                                className="settings-generator-content__step-mode-switcher"
-                                onClick={e => {
-                                  let { inPercent, preferredStep } = currentPreset.options[initialCurrentTab].customData[i];
-
-                                  if (preferredStep) {
-                                    // Были в процентах, теперь переводим в доллары
-                                    if (inPercent) {
-                                      preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
-                                    }
-                                    // переводим в проценты
-                                    else {
-                                      preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
-                                    }
-                                  }
-
-                                  const customDataCopy = [...currentPreset.options[initialCurrentTab].customData];
-                                  customDataCopy[i] = {
-                                    ...customDataCopy[i],
-                                    preferredStep,
-                                    inPercent: !inPercent,
-                                  };
-
-                                  updatePresetProperty(initialCurrentTab, "customData", customDataCopy);
-                                }}
-                              >
-                                {!customDataRow.inPercent ? "$/₽" : "%"}
-                              </button>
-                            </span>
-                            <NumericInput
-                              className="input-group__input"
-                              defaultValue={customDataRow.preferredStep}
-                              placeholder={
-                                customDataRow.inPercent
-                                  ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
-                                  : currentTool.adrDay
-                              }
-                              format={formatNumber}
-                              unsigned="true"
-                              min={0}
-                              onBlur={preferredStep => {
-                                const customDataCopy = [...currentPreset.options[initialCurrentTab].customData];
-                                customDataCopy[i] = {
-                                  ...customDataCopy[i],
-                                  preferredStep: round(preferredStep, fraction),
-                                };
-
-                                updatePresetProperty(initialCurrentTab, "customData", customDataCopy);
-                              }}
-                              suffix={customDataRow.inPercent ? "%" : undefined}
-                            />
-                          </label>
-
-                          <label className="input-group">
-                            <span className="input-group__label">% закрытия</span>
-                            <NumericInput
-                              className="input-group__input"
-                              defaultValue={customDataRow.percent}
-                              format={formatNumber}
-                              unsigned="true"
-                              min={0}
-                              onBlur={percent => {
-                                const customDataCopy = [...currentPreset.options[initialCurrentTab].customData];
-                                customDataCopy[i] = {
-                                  ...customDataCopy[i],
-                                  percent,
-                                };
-
-                                updatePresetProperty(initialCurrentTab, "customData", customDataCopy);
-                              }}
-                            />
-                          </label>
-
-                          <label className="input-group">
-                            <span className="input-group__label">Кол-во закрытий</span>
-                            <NumericInput
-                              className="input-group__input"
-                              defaultValue={customDataRow.length || 1}
-                              placeholder={"1"}
-                              format={formatNumber}
-                              unsigned="true"
-                              min={1}
-                              onBlur={length => {
-                                const customDataCopy = [...currentPreset.options[initialCurrentTab].customData];
-                                customDataCopy[i] = {
-                                  ...customDataCopy[i],
-                                  length,
-                                };
-
-                                updatePresetProperty(initialCurrentTab, "customData", customDataCopy);
-                              }}
-                            />
-                          </label>
-
-                          <CrossButton 
-                            className={
-                              []
-                                .concat("settings-generator-content__opt-row-delete")
-                                .concat(i == 0 ? "hidden" : "")
-                                .join(" ")
-                            }
-                            onClick={e => {
-                              const presetsCopy = [...presets];
-                              const currentPresetCopy = {...currentPreset};
-                              currentPresetCopy.options[initialCurrentTab].customData.splice(i, 1);
-                              setPresets(presetsCopy);
-                            }}
-                          />
-                          
-                          <div className="settings-generator-content__print-group">
-                            <span>Суммарный % закрытия</span>
-                            <b>{(() => {
-                              return round(
-                                mainData
-                                  .filter(row => row.group == i)
-                                  .map(row => row.contracts)
-                                  .reduce((prev, next) => prev + next, 0)
-                                /
-                                (contracts || 1)
-                                *
-                                100,
-                                1
-                              );
-                            })()}%</b>
-                          </div>
-
-                        </div>
-                      )
-                    }
-                    <Button
-                      className="custom-btn settings-generator-content__opt-row-btn"
-                      onClick={e => {
-                        updatePresetProperty(initialCurrentTab, {
-                          customData: [
-                            ...currentPreset.options[initialCurrentTab].customData,
-                            { ...optionBase, length: 1 }
-                          ]
-                        } );
-                      }}
-                    >
-                      + закрытие
-                    </Button>
-                  </>
-                  :
-                  <div className="settings-generator-content__row settings-generator-content__opt-row">
-
-                    <label className="input-group">
-                      <span className="input-group__label">
-                        Желаемый ход
-                        {currentPreset.options[initialCurrentTab].mode != 'fibonacci' &&
-                          <button
-                            className="settings-generator-content__step-mode-switcher"
-                            onClick={e => {
-                              let { inPercent, preferredStep } = currentPreset.options[initialCurrentTab];
-
-                              if (preferredStep) {
-                                // Были в процентах, теперь переводим в доллары
-                                if (inPercent) {
-                                  preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
-                                }
-                                // переводим в проценты
-                                else {
-                                  preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
-                                }
-                              }
-
-                              updatePresetProperty(initialCurrentTab, {
-                                inPercent:     !inPercent,
-                                preferredStep: preferredStep,
-                              });
-                            }}
-                          >
-                            {!currentPreset.options[initialCurrentTab].inPercent ? "$/₽" : "%"}
-                          </button>
-                        }
-                      </span>
-                      <NumericInput
-                        className="input-group__input"
-                        disabled={currentPreset.options[initialCurrentTab].mode == 'fibonacci'}
-                        defaultValue={
-                          currentPreset.options[initialCurrentTab].mode == 'fibonacci'
-                            ? currentTool.adrDay
-                            : currentPreset.options[initialCurrentTab].preferredStep
-                        }
-                        placeholder={
-                          currentPreset.options[initialCurrentTab].inPercent
-                            ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
-                            : currentTool.adrDay
-                        }
-                        format={formatNumber}
-                        unsigned="true"
-                        min={0}
-                        onBlur={preferredStep => {
-                          updatePresetProperty(initialCurrentTab, { 
-                            preferredStep: round(preferredStep, fraction) 
-                          })
-                        }}
-                        suffix={
-                          currentPreset.options[initialCurrentTab].mode != 'fibonacci' && 
-                          currentPreset.options[initialCurrentTab].inPercent 
-                            ? "%" 
-                            : undefined
-                        }
-                      />
-                    </label>
-
-                    <label className="input-group">
-                      <span className="input-group__label">Кол-во закрытий</span>
-                      <NumericInput
-                        className="input-group__input"
-                        disabled={currentPreset.options[initialCurrentTab].mode == 'fibonacci'}
-                        defaultValue={
-                          currentPreset.options[initialCurrentTab].mode == 'fibonacci'
-                            ? mainData.length
-                            : currentPreset.options[initialCurrentTab].length
-                        }
-                        format={formatNumber}
-                        unsigned="true"
-                        placeholder="1"
-                        min={1}
-                        onBlur={length => {
-                          updatePresetProperty(initialCurrentTab, { length });
-                        }}
-                      />
-                    </label>
-
-                    <label className="input-group">
-                      <span className="input-group__label">% закрытия</span>
-                      <NumericInput
-                        className="input-group__input"
-                        disabled={currentPreset.options[initialCurrentTab].mode == 'fibonacci'}
-                        defaultValue={currentPreset.options[initialCurrentTab].percent}
-                        format={formatNumber}
-                        unsigned="true"
-                        min={0}
-                        onBlur={percent => {
-                          updatePresetProperty(initialCurrentTab, { percent });
-                        }}
-                      />
-                    </label>
-
-                    <label className="input-group">
-                      <span className="input-group__label">Шаг в %</span>
-                      <NumericInput
-                        className="input-group__input"
-                        disabled={currentPreset.options[initialCurrentTab].mode == 'fibonacci'}
-                        defaultValue={currentPreset.options[initialCurrentTab].stepInPercent}
-                        format={formatNumber}
-                        unsigned="true"
-                        min={0}
-                        onBlur={stepInPercent => {
-                          updatePresetProperty(initialCurrentTab, { stepInPercent });
-                        }}
-                      />
-                    </label>
-
-                    <div className="settings-generator-content__print-group">
-                      <span>Суммарный % закрытия</span>
-                      <b>{
-                        round(
-                          mainData
-                            .map(row => row.contracts)
-                            .reduce((acc, curr) => acc + curr, 0)
-                          /
-                          (contracts || 1)
-                          *
-                          100
-                          , 1
-                        )
-                      }%</b>
-                    </div>
-
-                  </div>
-              }
             </div>
 
+            {/* Закрытие плечевого депозита */}
             <div style={{ width: '100%' }} hidden={!hasExtraDepo}>
               <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
               <TemplateRow />
             </div>
 
-            <label className="switch-group">
-              <Switch
-                checked={isReversedBying}
-                onChange={val => setReversedBying(val)}
-              />
-              <span className="switch-group__label">Обратные докупки (ТОР)</span>
-            </label>
+            {/* Обратные докупки (ТОР) */}
+            <>
+              <label className="switch-group">
+                <Switch
+                  checked={isReversedBying}
+                  onChange={checked => setReversedBying(checked)}
+                />
+                <span className="switch-group__label">Обратные докупки (ТОР)</span>
+              </label>
 
-            <div style={{ width: '100%' }} hidden={!isReversedBying}>
-              <ReversedByingRow
-                data={data["Обратные докупки (ТОР)"]}
-                contracts={contractsTotal - contracts}
-                options={currentPreset.options["Обратные докупки (ТОР)"]}
-                onPercentChange={percent => 
-                  updatePresetProperty("Обратные докупки (ТОР)", { percent })
-                }
-                onLengthChange={length => 
-                  updatePresetProperty("Обратные докупки (ТОР)", { length })
-                }
-                onStepInPercentChange={stepInPercent =>
-                  updatePresetProperty("Обратные докупки (ТОР)", { stepInPercent })
-                }
-              />
-            </div>
+              <div style={{ width: '100%' }} hidden={!isReversedBying}>
+                <ReversedByingRow
+                  data={data["Обратные докупки (ТОР)"]}
+                  contracts={contractsTotal - contracts}
+                  options={currentPreset.options["Обратные докупки (ТОР)"]}
+                  onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
+                />
+              </div>
+            </>
 
             {/* Начало таблицы */}
             <div className="settings-generator-table-wrap">
@@ -1104,12 +830,11 @@ const SettingsGenerator = props => {
                   </Button>
 
                   <Button className="settings-generator-table__show-code"
+                          id="settings-generator-code-control"
                           tabIndex="-1"
                           role="tab"
                           aria-selected="false"
-                          aria-controls="settings-generator-code"
-                          id="settings-generator-code-control"
-                  >
+                          aria-controls="settings-generator-code">
                     <span className="visually-hidden">Показать код</span>
                     <CodeIcon />
                   </Button>

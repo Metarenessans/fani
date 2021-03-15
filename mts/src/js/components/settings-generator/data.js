@@ -1,7 +1,8 @@
-import round          from "../../../../../common/utils/round"
-import roundUp        from "../../../../../common/utils/round-up"
-import fractionLength from '../../../../../common/utils/fraction-length'
-import croppNumber    from '../../../../../common/utils/cropp-number'
+import round           from "../../../../../common/utils/round"
+import roundUp         from "../../../../../common/utils/round-up"
+import fractionLength  from '../../../../../common/utils/fraction-length'
+import croppNumber     from '../../../../../common/utils/cropp-number'
+import fallbackBoolean from '../../../../../common/utils/fallback-boolean'
 
 import stepConverter from './step-converter'
 
@@ -12,7 +13,8 @@ const createData = (type, options) => {
     currentTool,
     contractsTotal,
     contracts,
-    comission
+    comission,
+    on,
   } = options;
 
   const isBying = options.isBying || false;
@@ -37,8 +39,14 @@ const createData = (type, options) => {
     ]
   };
 
+  on = fallbackBoolean(on, true);
+
   let data = [];
   data.isBying = isBying;
+  data.on      = on;
+  if (!on) {
+    return data;
+  }
 
   let length = currentPreset.options[type].length || 1;
   if (length == null) {
