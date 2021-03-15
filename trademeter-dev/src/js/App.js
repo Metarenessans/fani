@@ -2190,7 +2190,7 @@ class App extends Component {
 
                       <Col span={12} className="stats-col">
                         <h2 className="main__h2 stats-title">
-                          <Tooltip title={"Депозит при условии условии соблюдения мин. доходности на протяжении всего периода"}>
+                          <Tooltip title={"Депозит при условии соблюдения мин. доходности на протяжении всего периода"}>
                           Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
                         </Tooltip>
                         </h2>
