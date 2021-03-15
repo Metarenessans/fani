@@ -256,7 +256,10 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
             <span className="dashboard-key-inner">
-              Цена / ГО
+              Цена /{" "}
+              <Tooltip title={"Гарантийное обеспечение"}>
+                ГО
+              </Tooltip>
               <SortButton prop="guarantee" />
             </span>
           </span>
@@ -268,7 +271,11 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Загрузка</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Объём депозита в процентах на вход в сделку"}>
+              Загрузка
+            </Tooltip>  
+          </span>
           <span className="dashboard-val">
             <CustomSelect
               key={percentage}
@@ -292,7 +299,12 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
-          <span className="dashboard-key">Ход $/₽</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Предполагаемые изменения цены"}>
+              Ход
+            </Tooltip>
+            {" "}$/₽
+          </span>
           <span className="dashboard-val">
             {(() => {
               const fraction = fractionLength(currentTool.priceStep);
@@ -351,7 +363,11 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Руб.</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Прибыль в рублях к депозиту на заданную загрузку при предполагаемом ходе цены"}>
+              Руб.
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { formatNumber( Math.round(income) ) }
           </span>
@@ -382,14 +398,22 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Риск</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Процент убытка при движении цены в противоположную от позиции сторону"}>
+              Риск
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { round(risk, 2) }%
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Свободно</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Доступные средства на депозите с учётом загрузки и риска"}>
+              Свободно
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { round(freeMoney, 2) }%
           </span>

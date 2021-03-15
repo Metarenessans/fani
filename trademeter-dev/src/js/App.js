@@ -2201,7 +2201,9 @@ class App extends Component {
                         <footer className="stats-footer">
                           <Col span={12} className="stats-footer-row">
                             <h3 className="stats-key main__h3">
-                              <span aria-label="Доходность">Дох-ть</span> на конец периода
+                              <Tooltip title={"Плановый прирост к начальному депозиту к концу периода"}>
+                                <span aria-label="Доходность">Дох-ть</span> на конец периода
+                              </Tooltip>
                             </h3>
                             <div className="stats-val">
                               {
@@ -2299,9 +2301,8 @@ class App extends Component {
                     <Row className="card">
                       <div className="slider-block" key={1}>
                         <span className="slider-block__label">
-                          Процент депозита<br className="xs-only" /> на вход в сделку
                           <Tooltip title="Максимальный объем входа в сделку">
-                            <QuestionCircleFilled className="slider-block__info" />
+                            Процент депозита<br className="xs-only" /> на вход в сделку
                           </Tooltip>
                         </span>
 
@@ -2345,9 +2346,8 @@ class App extends Component {
 
                       <div className="slider-block" key={2}>
                         <span className="slider-block__label">
-                          Количество итераций<br className="xs-only" /> в день
                           <Tooltip title="Количество повторений сделки">
-                            <QuestionCircleFilled className="slider-block__info" />
+                            Количество итераций<br className="xs-only" /> в день
                           </Tooltip>
                         </span>
 
@@ -2666,7 +2666,7 @@ class App extends Component {
                             {/* /.row */}
                             <div className="section4-row">
                               <div className="section4-l">
-                                <Tooltip title={"Требуемая сумма прибыли для достижения дневной целии"}>
+                                <Tooltip title={"Требуемая сумма прибыли для достижения дневной цели"}>
                                   Торговая цель
                                 </Tooltip>
                                 </div>
@@ -3094,7 +3094,9 @@ class App extends Component {
                         {(() => {
                           return (
                             <div className="result-col card">
-                              <h3 className="result-col__title">Торговая цель</h3>
+                              <Tooltip title={"Требуемая сумма прибыли для достижения дневной цели"}>
+                                <h3 className="result-col__title">Торговая цель</h3>
+                              </Tooltip>
                               <div className="result-col__content">
                                 {(() => {
                                   let { scale, rateRequired } = data[currentDay - 1];
@@ -3154,7 +3156,9 @@ class App extends Component {
                         })()}
 
                         <div className="result-col result-col-additional card">
-                          <h3 className="result-col__title">Дополнительно</h3>
+                          <Tooltip title={"Запланированные и внеплановые выводы / пополнения, а также возможный пассивный доход с текущей суммы"}>
+                            <h3 className="result-col__title">Дополнительно</h3>
+                          </Tooltip>
                           <div className="result-col__content">
 
                             <div className="result-col-additional-row">
@@ -3344,7 +3348,7 @@ class App extends Component {
 
                         <div className="result-col">
                           <h3 className="result-col__title result-col__title--large">
-                            <Tooltip title={"Сумма прибыли или убытка"}>
+                            <Tooltip title={"Итоговая сумма прибыли или убытка за день с учётом торговли, выводов и пополнений"}>
                               Дневная цель
                             </Tooltip>
                           </h3>

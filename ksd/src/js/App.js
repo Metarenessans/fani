@@ -561,21 +561,23 @@ class App extends React.Component {
               <div className="container">
 
                 <div className="main-content__switch-long-short-wrapper">
-                  <Switch
-                    className="main-content__switch-long-short"
-                    key={isLong + ""}
-                    checkedChildren="LONG"
-                    unCheckedChildren="SHORT"
-                    defaultChecked={isLong}
-                    onChange={isLong => {
-                      const { tools } = this.state;
-                      const investorInfo = this.state.investorInfo;
-                      investorInfo.type = isLong ? "LONG" : "SHORT";
+                  <Tooltip title={"Направление позиции"}>
+                    <Switch
+                      className="main-content__switch-long-short"
+                      key={isLong + ""}
+                      checkedChildren="LONG"
+                      unCheckedChildren="SHORT"
+                      defaultChecked={isLong}
+                      onChange={isLong => {
+                        const { tools } = this.state;
+                        const investorInfo = this.state.investorInfo;
+                        investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                      this.setStateAsync({ investorInfo })
-                        .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
-                    }}
-                  />
+                        this.setStateAsync({ investorInfo })
+                          .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
+                      }}
+                    />
+                  </Tooltip>
                 </div>
 
                 <div className="dashboard">
