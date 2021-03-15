@@ -6,7 +6,7 @@ export default // CHANGELOG
   function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13 }) {
 
   //////////////////////// 
-  //  Version 3.23 beta  //
+  //  Version 3.31 beta  //
   ////////////////////////
 
   // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
@@ -28,6 +28,10 @@ export default // CHANGELOG
   const RD_modifier = -1; // realdata[0] - same realdata[1] in past 
   dayoffirstpayment++;
   dayoffirstpayload++;
+
+  // костыль для отрицательных процентов
+  const rateInc = 100000;
+  var negativeGrow = (present >= future);
 
   ///////////////////////////////////////////
   function ff(rate, periods, present, payment, paymentper, payload, payloadper, p1 = 1, p2 = 1, realdata = []) {
@@ -89,12 +93,21 @@ export default // CHANGELOG
           purePayment += payment;
         }
       }
-      if (res >= future && factDay == -1) factDay = x;
+
+      if (options.customRate === undefined) { if (res >= future && factDay == -1) factDay = x; }
+      else if (x > lastRDDay && res >= future && factDay == -1) factDay = x;
     }
     x--;
     var extraDays = 0;
     var res1 = res;
+
     var t = 0;
+
+    if (negativeGrow && options.customRate === undefined) {
+      if (lastRDDay >= periods) t = 9999;
+      else t = 10000;
+    }
+
     while (res < future && t < 10000 && res >= -payload) {
       t++;
       extraDays++;
@@ -106,6 +119,7 @@ export default // CHANGELOG
         purePayment += payment;
       }
     }
+
     ndflSum = purePayment * NDFL;
     purePayment = purePayment - ndflSum;
     if (factDay === -1) factDay = x + extraDays;
@@ -118,8 +132,18 @@ export default // CHANGELOG
     var maxrate = 0;
     var current = ff(rate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
 
+    var negativeFlag = false;
+
     while (((current > (future + deltaMax)) || (current < future)) && (iterMax > 0)) {
       current = ff(rate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+
+      if (rate < 0) {
+        negativeFlag = true;
+        rate += rateInc;
+        maxrate += rateInc;
+        minrate += rateInc;
+      }
+
       if (current > (future + deltaMax)) {
         maxrate = rate;
         rate = minrate + (maxrate - minrate) / 2;
@@ -130,6 +154,16 @@ export default // CHANGELOG
         else rate = minrate + (maxrate - minrate) * 2;
       }
       iterMax--;
+
+      if (negativeFlag) {
+        negativeFlag = false;
+        rate -= rateInc;
+        maxrate -= rateInc;
+        minrate -= rateInc;
+      }
+
+      //console.log('---', current, rate);
+
     }
     return rate;
   }
@@ -146,10 +180,14 @@ export default // CHANGELOG
 
   var drd = 0;
   var rdgtp = false;
+  var lastRDDay = -1;
   for (var x = 1; x <= periods; x++) {
-    if (realdata[x + RD_modifier] !== undefined) drd++;
+    if (realdata[x + RD_modifier] !== undefined) {
+      drd++;
+      lastRDDay = x;
+    }
   }
-  if (drd >= periods) rdgtp = true;;
+  if (drd >= periods) rdgtp = true;
 
   if (options.customRate !== undefined) {
 
@@ -158,6 +196,7 @@ export default // CHANGELOG
     } else {
       future = options.customFuture;
     }
+    var negativeGrow = (present >= future);
 
     if (drd >= periods) rateRecommended = options.customRate;
     else rateRecommended = getRate(realdata);
@@ -165,6 +204,7 @@ export default // CHANGELOG
     current = ffFull(options.customRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
 
     if (current.sum == 0) {
+      console.log('вход в пустоту');
       rateRecommended = 0.3;
       current = ffFull(rateRecommended, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
     }
@@ -173,7 +213,6 @@ export default // CHANGELOG
 
     return { rate: options.customRate, extraDays: current.extraDays, rateRecommended, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
   }
-
 
   var baseRate = options.customBaseRate || getRate();
 

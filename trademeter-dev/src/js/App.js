@@ -75,7 +75,7 @@ let lastRealData = {};
 let saveToDownload;
 
 let shouldLoadFakeSave = true;
-let chartVisible       = false;
+let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
 }
@@ -1266,7 +1266,7 @@ class App extends Component {
         tax,
       }
     ];
-    
+
     const result = extRateReal(...args);
 
     result.rate            *= 100;
@@ -1496,9 +1496,13 @@ class App extends Component {
       }).rateRecommended;
     }
     else {
-      const customFuture = this.useRate({ length: days[mode] }).future;
+      const tempObj = this.useRate({ length: days[mode] });
+      const customFuture = tempObj.future;
+      if (realData.length == dataLength) {
+        extraDays = this.useRate({ customFuture }).extraDays;
+      }
+
       const obj = this.useRate({
-        // test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 
@@ -1507,6 +1511,9 @@ class App extends Component {
       rate            = obj.rate;
       rateRecommended = obj.rateRecommended;
       daysDiff        = obj.daysDiff;
+      if (realData.length != dataLength) {
+        extraDays = obj.extraDays;
+      }
     }
 
     this.rateRecommended = rateRecommended;
@@ -1707,6 +1714,7 @@ class App extends Component {
                               className="input-group__input"
                               defaultValue={this.state.incomePersantageCustom}
                               placeholder={(this.state.minDailyIncome).toFixed(3)}
+                              round="false"
                               unsigned="true"
                               onBlur={val => {
                                 const { days, withdrawal, depoStart, mode } = this.state;
@@ -1745,10 +1753,10 @@ class App extends Component {
 
                                 });
                               }}
-                              onChange={(e, val) => {
+                              onChange={(e, textValue, jsx) => {
                                 const { days, withdrawal, depoStart, mode } = this.state;
 
-                                let percentage = +val;
+                                let percentage = jsx.parse(textValue);
                                 if (isNaN(percentage)) {
                                   percentage = undefined;
                                 }
@@ -2750,44 +2758,46 @@ class App extends Component {
                                     
                                     const valid = value >= rate;
 
-                                    return (
-                                      <Statistic
-                                        title={
-                                          <span>
-                                            <Tooltip title={"Рекомендуемая ставка доходности для достижения цели в заданный срок"}>
-                                              рекомендуемая<br />
-                                              <span aria-label="доходность">дох-ть</span>
-                                            </Tooltip>
-                                          </span>
-                                        }
-                                        value={formatNumber(round(value, 3))}
-                                        formatter={node => {
-                                          const value = recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
-
-                                          return value != null
-                                            ?
-                                              <Tooltip
-                                                title={
-                                                <span style={{ whiteSpace: "nowrap" }}>
-                                                    Рекомендуемый депозит<br/>
-                                                    на конец {currentDay} {num2str(currentDay, ["дня:", "дня:", "дня:"])} {formatNumber(Math.round(value || 0))}
-                                                  </span>
-                                                }
-                                              >
-                                                {node}
+                                    if (data[currentDay - 1].depoEndReal < this.getDepoEnd()) {
+                                      return (
+                                        <Statistic
+                                          title={
+                                            <span>
+                                              <Tooltip title={"Рекомендуемая ставка доходности для достижения цели в заданный срок"}>
+                                                рекомендуемая<br />
+                                                <span aria-label="доходность">дох-ть</span>
                                               </Tooltip>
-                                            :
-                                              node
-                                        }}
-                                        valueStyle={{
-                                          color: `var( ${valid ? "--success-color" : "--danger-color"} )`
-                                        }}
-                                        prefix={
-                                          valid ? <ArrowUpOutlined /> : <ArrowDownOutlined />
-                                        }
-                                        suffix="%"
-                                      />
-                                    );
+                                            </span>
+                                          }
+                                          value={formatNumber(round(value, 3))}
+                                          formatter={node => {
+                                            const value = recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
+  
+                                            return value != null
+                                              ?
+                                                <Tooltip
+                                                  title={
+                                                  <span style={{ whiteSpace: "nowrap" }}>
+                                                      Рекомендуемый депозит<br/>
+                                                      на конец {currentDay} {num2str(currentDay, ["дня:", "дня:", "дня:"])} {formatNumber(Math.round(value || 0))}
+                                                    </span>
+                                                  }
+                                                >
+                                                  {node}
+                                                </Tooltip>
+                                              :
+                                                node
+                                          }}
+                                          valueStyle={{
+                                            color: `var( ${valid ? "--success-color" : "--danger-color"} )`
+                                          }}
+                                          prefix={
+                                            valid ? <ArrowUpOutlined /> : <ArrowDownOutlined />
+                                          }
+                                          suffix="%"
+                                        />
+                                      );
+                                    }
                                   })()}
                                 </Stack>
 
