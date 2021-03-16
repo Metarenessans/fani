@@ -752,12 +752,12 @@ class App extends React.Component {
                         <span className="mts-slider1-top">
                           <b>{formatNumber(round(max, fraction))}</b>
                           &nbsp;
-                          (+{round(percent / currentTool.currentPrice * 100, fraction)}%)
+                          (+{round(percent / currentTool.currentPrice * 100, 2)}%)
                         </span>
                         <span className="mts-slider1-bottom">
                           <b>{formatNumber(round(min, fraction))}</b>
                           &nbsp;
-                          (-{round(percent / currentTool.currentPrice * 100, fraction)}%)
+                          (-{round(percent / currentTool.currentPrice * 100, 2)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
@@ -960,6 +960,7 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
+                          disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />

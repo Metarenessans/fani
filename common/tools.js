@@ -1,7 +1,8 @@
 import { merge, round, cloneDeep } from "lodash";
 import fractionLength from "./utils/fraction-length"
-import readyTools    from "./adr.json"
-import readyToolsNew from "./adr-new.json"
+import readyTools      from "./adr.json"
+import readyToolsNew   from "./adr-new.json"
+import readyToolsMarch from "./adr-march.json"
 
 const template = {
   ref:             null,
@@ -166,9 +167,13 @@ const parseTool = tool => {
   var found = false;
   
   // Check if we already have pre-written tool
-  const check = readyTools => {
+  const check = (readyTools, strict = false) => {
     for (let readyTool of readyTools) {
-      const lastCompareIndex = (readyTool.isFutures && dollarRate == 0) ? 2 : undefined;
+      const lastCompareIndex = strict
+        ? undefined
+        : (readyTool.isFutures && dollarRate == 0) 
+          ? 2 
+          : undefined;
       const toolCode = tool.code.toLowerCase().slice(0, lastCompareIndex);
       const readyToolCode = readyTool.code.replace(".US", "").toLowerCase().slice(0, lastCompareIndex);
 
@@ -190,8 +195,8 @@ const parseTool = tool => {
     }
   };
 
-  const filterFn = t => {
-    if (t.adrWeek == "" && t.adrMonth == "") {
+  const filterFn = tool => {
+    if (tool.adrWeek == "" && tool.adrMonth == "") {
       return false;
     }
     return true;
@@ -199,6 +204,7 @@ const parseTool = tool => {
 
   check(readyTools.filter(filterFn));
   check(readyToolsNew.filter(filterFn));
+  check(readyToolsMarch.filter(filterFn), true);
 
   // We didn't find the tool in pre-written tools
   if (!found) {
@@ -222,11 +228,9 @@ const parseTool = tool => {
     adrMonth = +(adrMonth).toFixed(fraction);
   }
 
-
   return {
     ref:       tool,
     code:      tool.code,
-    // id:        tool.code + (dollarRate == 1) ? ".RU" : ".US",
     fullName:  tool.fullName  || tool.name,
     shortName: tool.shortName,
     stepPrice,
@@ -243,6 +247,8 @@ const parseTool = tool => {
     adrDay,
     adrWeek,
     adrMonth,
+
+    matched: found
   };
 };
 
@@ -275,14 +281,22 @@ class Tools {
     let investorInfo = options.investorInfo || {};
     
     let parsedTools = [];
+    let unmatchedTools = [];
     for (const rowData of tools) {
       if (shouldBeSkipped(rowData)) {
         continue;
       }
 
       let tool = new Tool(merge(cloneDeep(template), parseTool(rowData, options)));
+      if (!tool.matched) {
+        unmatchedTools.push(tool);
+      }
       tool = tool.update(investorInfo);
       parsedTools.push(tool);
+    }
+
+    if (unmatchedTools.length) {
+      console.warn("Не сметчились", unmatchedTools);
     }
 
     return parsedTools;

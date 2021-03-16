@@ -9,13 +9,9 @@ import {
 } from 'antd/es'
 
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
-  LoadingOutlined,
-  QuestionCircleFilled,
   SettingFilled,
-  WarningOutlined
-} from "@ant-design/icons"
+  WarningOutlined,
+} from '@ant-design/icons'
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
@@ -28,7 +24,6 @@ import promiseWhile   from "../../../common/utils/promise-while"
 import { Tools, template }     from "../../../common/tools"
 import Stack                   from "../../../common/components/stack"
 import CustomSlider            from "./components/custom-slider"
-import SettingsGenerator       from "./components/settings-generator"
 import CrossButton             from "../../../common/components/cross-button"
 import NumericInput            from "../../../common/components/numeric-input"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
@@ -285,12 +280,7 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(error => {
-        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
-        if (dev) {
-          this.setState({ depo: 12_000_000 });
-        }
-      });
+      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
 
   updatePriceRange(tool) {
@@ -488,25 +478,6 @@ class App extends React.Component {
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools)
-  }
-
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-
-    return index;
-  }
-
-  getCurrentToolIndex() {
-    let { currentToolCode } = this.state;
-    return this.getToolIndexByCode(currentToolCode);
   }
 
   getToolByCode(code) {
@@ -710,10 +681,8 @@ class App extends React.Component {
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
                         <Select
-                          value={this.getCurrentToolIndex()}
-                          onChange={currentToolIndex => {
-                            const tools = this.getTools();
-                            const currentToolCode = tools[currentToolIndex].code; 
+                          value={this.state.currentToolCode}
+                          onChange={currentToolCode => {
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
                               .then(() => this.fetchCompanyQuotes());
@@ -727,20 +696,14 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            let tools = this.getTools();
-                            if (tools.length) {
-                              return tools
-                                .map(tool => String(tool))
-                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
-                            }
-                            else {
-                              return (
-                                <Option key={0} value={0}>
-                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
-                                  Загрузка...
-                                </Option>
+                            const tools = this.getTools();
+                            return tools.length > 0
+                              ? (
+                                tools.map((tool, index) => (
+                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
+                                ))
                               )
-                            }
+                              : <Option key={0} value={0}>Загрузка...</Option>
                           })()}
                         </Select>
                       </label>
@@ -958,16 +921,6 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
-
-                        <button
-                          className="settings-button js-open-modal main-content-options__settings"
-                          disabled
-                          onClick={e => dialogAPI.open("settings-generator", e.target)}
-                        >
-                          <span className="visually-hidden">Открыть конфиг</span>
-                          <SettingFilled className="settings-button__icon" />
-                        </button>
-
                       </div>
 
                       <div className="main-content-options__row">
@@ -1312,21 +1265,6 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
-
-        <Dialog
-          id="settings-generator"
-          pure={true}
-        >
-          <SettingsGenerator
-            depo={this.state.depo}
-            tools={this.getTools()}
-            load={percentage}
-            onClose={e => {
-              dialogAPI.close("settings-generator");
-            }}
-          />
-        </Dialog>
-        {/* ГЕНА */}
 
       </div>
     );

@@ -3679,6 +3679,9 @@ class App extends Component {
               { name: "Текущая цена", prop: "currentPrice"    },
               { name: "Размер лота",  prop: "lotSize"         },
               { name: "Курс доллара", prop: "dollarRate"      },
+              { name: "ADR",          prop: "adrDay"          },
+              { name: "ADR неделя",   prop: "adrWeek"         },
+              { name: "ADR месяц",    prop: "adrMonth"        },
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools }, () => this.update())}

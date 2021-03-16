@@ -214,7 +214,6 @@ export default class DashboardRow extends React.Component {
 
     return (
       <div className="dashboard-row">
-
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
@@ -254,8 +253,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
-            Цена / ГО
-            <SortButton prop="guarantee" />
+            <span className="dashboard-key-inner">
+              Цена / ГО
+              <SortButton prop="guarantee" />
+            </span>
           </span>
           <span className="dashboard-val dashboard-val--wrap">
             <span className="no-wrap">{formatNumber(this.getCurrentTool().currentPrice)}</span>
@@ -311,6 +312,7 @@ export default class DashboardRow extends React.Component {
                       key={Math.random()}
                       className="dashboard__input"
                       defaultValue={planIncome}
+                      unsigned="true"
                       format={value => {
                         value = Number(value);
                         return formatNumber(value.toFixed(fraction))
@@ -355,8 +357,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            К депо
-            <SortButton prop="incomePercentage" />
+            <span className="dashboard-key-inner">
+              К депо
+              <SortButton prop="incomePercentage" />
+            </span>
           </span>
           <span className="dashboard-val">
             { formatNumber(round(incomePercentage, 2)) }%
@@ -365,8 +369,10 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            К загрузке
-            <SortButton prop="loadingPercentage" />
+            <span className="dashboard-key-inner">
+              К загрузке
+              <SortButton prop="loadingPercentage" />
+            </span>
           </span>
           <span className="dashboard-val">
             { formatNumber(round(loadingPercentage, 2)) }%
@@ -393,7 +399,6 @@ export default class DashboardRow extends React.Component {
           className={["dashboard-row__delete"].concat(index == 0 ? "invisible" : "").join(" ").trim()}
           onClick={e => onDelete(index)}
         />
-
       </div>
     )
   }
