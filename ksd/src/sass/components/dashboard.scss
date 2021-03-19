@@ -7,6 +7,7 @@
     font-size: 1em;
 
     &-selection {
+      
       &--single {
         // height: 1.945em;
         font-size: 1em;
@@ -16,6 +17,15 @@
       &__rendered {
         // line-height: 1.945em;
         // padding-top: 0em;
+         &::before {
+          position: absolute;
+          top:  0.27rem;
+          right:  .2rem;
+
+          content: '%';
+          color: #8c8c8c;
+          display: inline-block;
+        } 
       }
     }
   }
