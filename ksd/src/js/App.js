@@ -58,21 +58,37 @@ const defaultToolData = {
   selectedToolName: "SBER"
 };
 
-const onScroll = () => {
+function onScroll() {
   if (innerWidth <= 768) {
     return;
   }
+
   const dashboardElement = document.querySelector(".dashboard");
   const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
-  const headerElements = dashboardElement.querySelectorAll(".dashboard-row:first-child .dashboard-key");
+
+  const firstRowElement = dashboardElement.querySelector(".dashboard-row:first-child");
+  if (!firstRowElement) {
+    return;
+  }
+  const headerElements = firstRowElement.querySelectorAll(".dashboard-key");
+
   if (pageYOffset > dashboardElementStart) {
     for (let i = 0; i < headerElements.length; i++) {
       headerElements[i].classList.add("scroll");
+      firstRowElement.classList.add("scroll");
     }
-  } else {
+    // if (this.state.tooltipPlacement == "top") {
+    //   this.setState({ tooltipPlacement: "bottom" })
+    // }
+  } 
+  else {
     for (let i = 0; i < headerElements.length; i++) {
       headerElements[i].classList.remove("scroll");
+      firstRowElement.classList.remove("scroll");
     }
+    // if (this.state.tooltipPlacement == "bottom") {
+    //   this.setState({ tooltipPlacement: "top" });
+    // }
   }
 }
 
@@ -119,6 +135,7 @@ class App extends React.Component {
         saves: [],
         
       },
+      tooltipPlacement: "top",
     };
 
     this.state.loading = true;
@@ -131,11 +148,11 @@ class App extends React.Component {
   componentDidMount() {
     this.fetchInitialData();
 
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener( "scroll", () => onScroll.call(this) );
   }
 
   componentDidUpdate() {
-    onScroll();
+    onScroll.call(this);
   }
 
   setStateAsync(state = {}) {
@@ -316,8 +333,8 @@ class App extends React.Component {
         return item;
       });
 
-      console.log("static", save.static);
-      console.log("staticParsed", staticParsed);
+      // console.log("static", save.static);
+      // console.log("staticParsed", staticParsed);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -482,9 +499,6 @@ class App extends React.Component {
   render() {
     const { mode, data, sortProp, sortDESC, isLong } = this.state;
 
-
-    console.log(this.state.tools)
-
     return (
       <Provider value={this}>
         <div className="page">
@@ -592,7 +606,8 @@ class App extends React.Component {
                         ? (
                           data.map((item, index) =>
                             <DashboardRow
-                              key={index + Math.random()}
+                              tooltipPlacement={this.state.tooltipPlacement}
+                              key={index}
                               item={item}
                               index={index}
                               sortProp={sortProp}
