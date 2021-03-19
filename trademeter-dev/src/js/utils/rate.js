@@ -2,11 +2,12 @@ export default // CHANGELOG
   // 3.2 - realdata, dayoffirstpayload, dayoffirstpayload   do   ZERO based !
   // 3.21 - change to ||
   // 3.22 - change to baseRate
+  // 3.4 - adding averageProf
 
-  function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13 }) {
+  function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13, getAverage: false }) {
 
   //////////////////////// 
-  //  Version 3.31 beta  //
+  //  Version 3.4 beta  //
   ////////////////////////
 
   // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
@@ -174,6 +175,8 @@ export default // CHANGELOG
   var rate = guess;
   var daysExtend = 0;
 
+  var averageRate = 0;
+
   var rateRecommended = 0;
 
   var current = 0;
@@ -185,8 +188,14 @@ export default // CHANGELOG
     if (realdata[x + RD_modifier] !== undefined) {
       drd++;
       lastRDDay = x;
+      averageRate += realdata[x + RD_modifier].scale;
     }
   }
+  averageRate = averageRate / drd;
+
+  var averageProf = 'not calculating';
+  if (options.getAverage) var averageProf = ff(averageRate, periods, present, payment, paymentper, payload, payloadper, dayoffirstpayment, dayoffirstpayload, realdata);
+
   if (drd >= periods) rdgtp = true;
 
   if (options.customRate !== undefined) {
@@ -211,7 +220,7 @@ export default // CHANGELOG
 
     if (!rdgtp && !extraDaysMode0) current.extraDays = 0;
 
-    return { rate: options.customRate, extraDays: current.extraDays, rateRecommended, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
+    return { rate: options.customRate, extraDays: current.extraDays, rateRecommended, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment, averageRate, averageProf };
   }
 
   var baseRate = options.customBaseRate || getRate();
@@ -223,7 +232,7 @@ export default // CHANGELOG
 
   if (!rdgtp && !extraDaysMode0) current.extraDays = 0;
 
-  return { rate: baseRate, rateRecommended, extraDays: current.extraDays, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment };
+  return { rate: baseRate, rateRecommended, extraDays: current.extraDays, daysDiff: current.daysDiff, future, sum: current.sum, periods: current.periods, ndflSum: current.ndflSum, purePayment: current.purePayment, averageRate, averageProf };
 }
 
 // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}

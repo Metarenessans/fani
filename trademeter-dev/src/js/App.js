@@ -16,7 +16,6 @@ const { Option } = Select;
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
-  QuestionCircleFilled,
   SettingFilled
 } from "@ant-design/icons"
 
@@ -74,7 +73,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = true;
+let shouldLoadFakeSave = false;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -120,6 +119,8 @@ class App extends Component {
        * @type {Number}
        */
       depoEnd,
+
+      depoEndFormat: "плановый",
       
       /**
        * Торговых дней
@@ -1264,6 +1265,7 @@ class App extends Component {
         customBaseRate: options?.customBaseRate,
         customFuture:   options?.customFuture,
         tax,
+        getAverage: true
       }
     ];
 
@@ -1321,7 +1323,7 @@ class App extends Component {
   /**
    * Депо через N дней
    */
-  getDepoEnd(mode) {
+  getDepoEnd(mode, corrected = true) {
     const { data, days, depoStart, depoEnd } = this.state;
     mode = mode || this.state.mode;
 
@@ -1333,7 +1335,7 @@ class App extends Component {
       if (data.length) {
         depo += data
           .slice(0, days[mode])
-          .map(d => d.incomePlan - (d.payment || 0) + (d.payload || 0))
+          .map(d => d.incomePlan + (corrected ? (d.payload || 0) - (d.payment || 0) : 0))
           .reduce((acc, curr) => acc + curr);
       }
       return depo;
@@ -1482,18 +1484,25 @@ class App extends Component {
       isLong,
       saved,
       dataLength,
+      depoEndFormat,
     } = this.state; 
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
+    let averageProf = 0;
     const realData = this._getRealData();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
-      rateRecommended = this.useRate({ 
+
+      const rateObj = this.useRate({ 
         customBaseRate: rate / 100,
         length: realData.length == dataLength 
           ? dataLength + extraDays 
           : undefined
-      }).rateRecommended;
+      });
+
+      rateRecommended = rateObj.rateRecommended;
+      daysDiff        = rateObj.daysDiff;
+      averageProf     = rateObj.averageProf;
     }
     else {
       const tempObj = this.useRate({ length: days[mode] });
@@ -1502,17 +1511,18 @@ class App extends Component {
         extraDays = this.useRate({ customFuture }).extraDays;
       }
 
-      const obj = this.useRate({
+      const rateObj = this.useRate({
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 
           : undefined
       });
-      rate            = obj.rate;
-      rateRecommended = obj.rateRecommended;
-      daysDiff        = obj.daysDiff;
+      rate            = rateObj.rate;
+      rateRecommended = rateObj.rateRecommended;
+      daysDiff        = rateObj.daysDiff;
+      averageProf     = rateObj.averageProf;
       if (realData.length != dataLength) {
-        extraDays = obj.extraDays;
+        extraDays = rateObj.extraDays;
       }
     }
 
@@ -2189,13 +2199,41 @@ class App extends Component {
                       <h2 className="visually-hidden">Статистика</h2>
 
                       <Col span={12} className="stats-col">
-                        <h2 className="main__h2 stats-title">
-                          <Tooltip title={"Депозит при условии соблюдения мин. доходности на протяжении всего периода"}>
-                          Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
-                        </Tooltip>
-                        </h2>
+                        <div className="stats-title-wrap">
+                          <button 
+                            className="stats-title-mode-select"
+                            onClick={e => {
+                              if (depoEndFormat == "плановый") {
+                                this.setState({ depoEndFormat: mode == 0 ? "средний" : "будущий" })
+                              }
+                              else if (depoEndFormat == "будущий") {
+                                this.setState({ depoEndFormat: "средний" });
+                              }
+                              else {
+                                this.setState({ depoEndFormat: "плановый" });
+                              }
+                            }}
+                          >
+                            {depoEndFormat}
+                          </button>
+
+                          <h2 className="main__h2 stats-title">
+                            <Tooltip title={"Депозит при условии соблюдения мин. доходности на протяжении всего периода"}>
+                              Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
+                            </Tooltip>
+                          </h2>
+                        </div>
                         <p className="stats-subtitle">
-                          <BigNumber val={Math.round(this.getDepoEnd())} format={formatNumber} />
+                          <BigNumber 
+                            val={Math.round(
+                              depoEndFormat == "плановый"
+                                ? this.getDepoEnd(mode, false)
+                                : depoEndFormat == "средний"
+                                  ? (isNaN(averageProf) ? this.getDepoEnd() : averageProf)
+                                  : this.getDepoEnd()
+                            )} 
+                            format={formatNumber}
+                          />
                         </p>
 
                         <footer className="stats-footer">
@@ -2206,27 +2244,32 @@ class App extends Component {
                               </Tooltip>
                             </h3>
                             <div className="stats-val">
-                              {
-                                (() => {
-                                  let depoStart = this.state.depoStart[mode];
+                              {(() => {
+                                let depoStart = this.state.depoStart[mode];
+                                let depoEnd   = this.getDepoEnd(mode, false);
+                                if (depoEndFormat == "будущий") {
+                                  depoEnd = this.getDepoEnd(mode, true);
+                                }
+                                else if (depoEndFormat == "средний") {
+                                  depoEnd = averageProf;
+                                }
 
-                                  let val = Math.round((this.getDepoEnd() - depoStart) / depoStart * 100);
+                                let val = Math.round((depoEnd - depoStart) / depoStart * 100);
 
-                                  if (isNaN(val) || val == Infinity) {
-                                    val = 0;
-                                  }
+                                if (isNaN(val) || val == Infinity) {
+                                  val = 0;
+                                }
 
-                                  return (
-                                    <Value>
-                                      <BigNumber 
-                                        val={val} 
-                                        format={formatNumber} 
-                                        threshold={1_000_000_000} 
-                                        suffix="%" />
-                                    </Value>
-                                  )
-                                })()
-                              }
+                                return (
+                                  <Value>
+                                    <BigNumber 
+                                      val={val} 
+                                      format={formatNumber} 
+                                      threshold={1_000_000_000} 
+                                      suffix="%" />
+                                  </Value>
+                                )
+                              })()}
                             </div>
                           </Col>
 
