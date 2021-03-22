@@ -6,6 +6,7 @@ import {
   Radio,
   Input,
   Pagination,
+  InputNumber
 } from 'antd/es'
 const { Option } = Select;
 
@@ -41,6 +42,7 @@ import Config                  from "../../../common/components/config"
 import NumericInput            from "../../../common/components/numeric-input"
 import SettingsGenerator       from "./components/settings-generator"
 import CustomSlider            from "../../../common/components/custom-slider"
+import NumericInputWithArrows from "./components/numeric-input-with-arrows"
 
 class App extends React.Component {
 
@@ -891,11 +893,19 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          Загрузка:
+                          {/* ~~ */}
+                          Загрузка:{" "}
+                          <NumericInputWithArrows
+                            key={percentage}
+                            defaultValue={percentage}
+                            onBlur={ percentage => this.setState({ percentage }) }
+                          />
                           <b style={{
+                            userSelect: "none",
                             color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
                           }}>
-                            {formatNumber(Math.abs(percentage))}%
+                            {" "}%
+                            {/* {formatNumber(Math.abs(percentage))}% */}
                           </b>
                         </span>
 
@@ -910,7 +920,7 @@ class App extends React.Component {
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
                           max={100}
-                          step={1}
+                          step={.5}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
