@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Button, Input, Select, Switch, Tooltip, Radio
+  Button, Input, Select, Switch, Tooltip, Radio, InputNumber
 } from 'antd/es'
 
 import {
