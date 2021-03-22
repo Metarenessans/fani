@@ -6,18 +6,28 @@ import fallbackBoolean from '../../../../../common/utils/fallback-boolean'
 
 import stepConverter from './step-converter'
 
-const createData = (type, options) => {
+const createData = (type, options, meta) => {
 
   let {
     currentPreset,
     currentTool,
     contractsTotal,
     contracts,
+    contractsSecondary,
     comission,
     on,
   } = options;
 
   const isBying = options.isBying || false;
+
+  const presetOptions = options.options || currentPreset.options[type];
+
+  if (contractsSecondary > 0) {
+    contracts -= contractsSecondary;
+  }
+  if (type == "Закрытие плечевого депозита") {
+    contracts = contractsSecondary;
+  }
   
   let contractsLeft = contracts;
   if (isBying) {
@@ -26,7 +36,7 @@ const createData = (type, options) => {
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const { mode } = currentPreset.options[type];
+  let { mode, stepInPercent, length } = presetOptions;
 
   const presetRules = {
     blockStartIndicies: [0, 4, 8],
@@ -48,16 +58,25 @@ const createData = (type, options) => {
     return data;
   }
 
-  let length = currentPreset.options[type].length || 1;
-  if (length == null) {
-    length = 1;
+  if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+    // Количество докупок в сумме должно давать 50%
+    length = Math.floor(50 / presetOptions.percent);
+  }
+
+  if (!length) {
+    if (stepInPercent) {
+      length = Math.floor(100 / stepInPercent);
+    }
+    else {
+      length = 1;
+    }
   }
 
   if (mode == 'fibonacci') {
     length = 24;
   }
   else if (mode == 'custom') {
-    length = currentPreset.options[type].customData.length || 1;
+    length = presetOptions.customData.length || 1;
   }
 
   let subIndex = -1;
@@ -69,7 +88,7 @@ const createData = (type, options) => {
 
     let currentOptions;
     if (mode == 'custom') {
-      currentOptions = { ...currentPreset.options[type].customData[index] };
+      currentOptions = { ...presetOptions.customData[index] };
       subLength = (currentOptions.length || 1);
     }
 
@@ -94,7 +113,7 @@ const createData = (type, options) => {
       }
 
       // % закрытия
-      let percent = currentPreset.options[type].percent;
+      let percent = presetOptions.percent;
       if (mode == 'fibonacci') {
         percent = presetRules.percents[blockNumber - 1] || 0;
       }
@@ -104,9 +123,22 @@ const createData = (type, options) => {
       // Округляем
       percent = round(percent, fraction);
 
-      let { preferredStep, inPercent } = currentPreset.options[type];
+      let { preferredStep, inPercent } = presetOptions;
       if (inPercent) {
-        preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+        if (preferredStep == "") {
+          preferredStep = currentTool.adrDay;
+        }
+        else {
+          preferredStep = stepConverter.fromPercentsToStep(
+            preferredStep,
+            currentTool.currentPrice
+          );
+        }
+      }
+      else {
+        if (preferredStep == "") {
+          preferredStep = currentTool.adrDay;
+        }
       }
 
       if (mode == 'custom') {
@@ -117,7 +149,7 @@ const createData = (type, options) => {
         }
       }
 
-      let { stepInPercent } = currentPreset.options[type];
+      let { stepInPercent } = presetOptions;
 
       // Ход
       let points =
@@ -211,11 +243,24 @@ const createData = (type, options) => {
         }
       }
 
+      if (currentPreset.type == "СМС + ТОР" && type == "Закрытие основного депозита") {
+        points = round(
+          round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
+          fraction
+        );
+      }
+
+      if (currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") {
+        points = round(preferredStep * (index + 1), fraction);
+      }
+
       if (type == "Обратные докупки (ТОР)") {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
+
       // Если ход больше желаемого хода - массив заканчивается
-      else if (
+      if (
+        !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
         (mode != 'fibonacci' && mode != 'custom') &&
         points > (preferredStep || currentTool.adrDay)
       ) {
