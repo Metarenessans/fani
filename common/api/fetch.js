@@ -1,10 +1,12 @@
 import { ajax } from "jquery"
 
+const urlPrefix = dev ? "https://fani144.ru/" : "";
+
 export default function fetch(url = "", method = "GET", data = {}) {
-  console.log(`Sending ${url} request...`);
+  // console.log(`Sending ${url} request...`);
   return new Promise((resolve, reject) => {
     ajax({
-      url: `https://fani144.ru/local/php_interface/s1/ajax/?method=${url}`,
+      url: `${urlPrefix}/local/php_interface/s1/ajax/?method=${url}`,
       method,
       data,
       success: response => {

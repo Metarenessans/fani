@@ -450,6 +450,8 @@ $m: .4475;
         text-transform: uppercase;
 
         &-wrap {
+          margin-bottom: .6em;
+          
           display: flex;
           align-items: center;
 
@@ -533,6 +535,10 @@ $m: .4475;
         width: 100%;
 
         margin-right: 1em;
+
+        &:only-of-type {
+          max-width: 10.4em;
+        }
 
         &:last-of-type {
           margin-right: 0;

@@ -251,7 +251,45 @@ body
     left: 100%
 
   &-title
+    display: inline-flex
     margin-bottom: .75em
+
+    &-wrap
+      position: relative
+      display: inline-flex
+
+      +xs
+        flex-direction: column
+        align-items: center
+
+    &-mode-select
+      position: absolute
+      right: 100%
+      top:   0em
+
+      margin-right: .8em
+      background: none
+      border: none
+      padding: 0
+
+      font-size: 1.7em
+      line-height: 1.5
+      color: var(--primary-color)
+      text-decoration: underline
+
+      cursor: pointer
+
+      &:hover,
+      &:focus
+        text-decoration: none
+
+      +xs
+        position: static
+
+        margin-right: 0
+        margin-bottom: .25em
+
+        line-height: inherit
 
   &-subtitle
     margin: 0

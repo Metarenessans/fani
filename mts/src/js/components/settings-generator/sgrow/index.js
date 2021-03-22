@@ -8,7 +8,8 @@ import formatNumber   from '../../../../../../common/utils/format-number'
 import fractionLength from '../../../../../../common/utils/fraction-length'
 import round          from '../../../../../../common/utils/round'
 
-import stepConverter from '../step-converter'
+import stepConverter   from '../step-converter'
+import optionsTemplate from "../options-template"
 
 // import "./style.scss"
 
@@ -19,8 +20,13 @@ const names = {
 };
 
 export default function SGRow({
+  test,
+  isBying = false,
+  disabled,
   modes = [],
+  inputs = ["preferredStep", "length", "percent", "stepInPercent"],
   options,
+  automaticLength = false,
   onModeChange,
   onPropertyChange,
   data,
@@ -28,6 +34,8 @@ export default function SGRow({
   currentTool,
 }) {
   const { mode: currentMode, preferredStep, inPercent, percent, stepInPercent, length } = options;
+
+  disabled = disabled || currentMode == "fibonacci";
 
   const fraction = fractionLength(currentTool.priceStep);
 
@@ -41,7 +49,7 @@ export default function SGRow({
     <div style={{ width: '100%' }}>
 
       {/* Режимы */}
-      {modes?.length && (
+      {false && modes?.length && (
         <div className="settings-generator-content__row-header-modes">
           <Radio.Group
             className="settings-generator-content__row-header-modes-select"
@@ -127,7 +135,7 @@ export default function SGRow({
                   </label>
 
                   <label className="input-group">
-                    <span className="input-group__label">% закрытия</span>
+                    <span className="input-group__label">% {isBying ? "докупки" : "закрытия"}</span>
                     <NumericInput
                       className="input-group__input"
                       defaultValue={customDataRow.percent}
@@ -146,26 +154,53 @@ export default function SGRow({
                     />
                   </label>
 
-                  <label className="input-group">
-                    <span className="input-group__label">Кол-во закрытий</span>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={customDataRow.length || 1}
-                      placeholder={"1"}
-                      format={formatNumber}
-                      unsigned="true"
-                      min={1}
-                      onBlur={length => {
-                        const customDataCopy = [...options.customData];
-                        customDataCopy[i] = {
-                          ...customDataCopy[i],
-                          length,
-                        };
+                  {!automaticLength
+                    ? (
+                      <label className="input-group">
+                        <span className="input-group__label">Кол-во закрытий</span>
+                        <NumericInput
+                          className="input-group__input"
+                          defaultValue={customDataRow.length || 1}
+                          placeholder={"1"}
+                          format={formatNumber}
+                          unsigned="true"
+                          min={1}
+                          onBlur={length => {
+                            const customDataCopy = [...options.customData];
+                            customDataCopy[i] = {
+                              ...customDataCopy[i],
+                              length,
+                            };
 
-                        onPropertyChange({ customData: customDataCopy })
-                      }}
-                    />
-                  </label>
+                            onPropertyChange({ customData: customDataCopy })
+                          }}
+                        />
+                      </label>
+                    )
+                    : (
+                      <label className="input-group">
+                        <span className="input-group__label">Шаг в %</span>
+                        <NumericInput
+                          className="input-group__input"
+                          defaultValue={customDataRow.stepInPercent || 1}
+                          placeholder={""}
+                          format={formatNumber}
+                          unsigned="true"
+                          min={1}
+                          onBlur={stepInPercent => {
+                            const customDataCopy = [...options.customData];
+                            customDataCopy[i] = {
+                              ...customDataCopy[i],
+                              stepInPercent,
+                            };
+
+                            onPropertyChange({ customData: customDataCopy })
+                          }}
+                        />
+                      </label>
+                    )
+                  }
+
 
                   <CrossButton
                     className={
@@ -182,7 +217,7 @@ export default function SGRow({
                   />
 
                   <div className="settings-generator-content__print-group">
-                    <span>Суммарный % закрытия</span>
+                    <span>Суммарный % {isBying ? "докупки" : "закрытия"}</span>
                     <b>{(() => {
                       const contractsSum = data
                         .filter(row => row.group == i)
@@ -199,126 +234,138 @@ export default function SGRow({
             <Button
               className="custom-btn settings-generator-content__opt-row-btn"
               onClick={e => {
-                updatePresetProperty(initialCurrentTab, {
+                onPropertyChange({
                   customData: [
                     ...options.customData,
-                    { ...optionBase, length: 1 }
+                    { ...optionsTemplate, length: 1 }
                   ]
                 });
               }}
             >
               + закрытие
-                    </Button>
+            </Button>
           </>
           :
           <div className="settings-generator-content__row settings-generator-content__opt-row">
 
-            <label className="input-group">
-              <span className="input-group__label">
-                Желаемый ход
-                {currentMode != 'fibonacci' &&
-                  <button
-                    className="settings-generator-content__step-mode-switcher"
-                    onClick={e => {
-                      let { inPercent, preferredStep } = options;
+            {/* Желаемый ход */}
+            {inputs.indexOf("preferredStep") != -1 &&
+              <label className="input-group">
+                <span className="input-group__label">
+                  Желаемый ход
+                  {currentMode != 'fibonacci' &&
+                    <button
+                      className="settings-generator-content__step-mode-switcher"
+                      onClick={e => {
+                        let { inPercent, preferredStep } = options;
 
-                      if (preferredStep) {
-                        // Были в процентах, теперь переводим в доллары
-                        if (inPercent) {
-                          preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+                        if (preferredStep) {
+                          // Были в процентах, теперь переводим в доллары
+                          if (inPercent) {
+                            preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+                          }
+                          // переводим в проценты
+                          else {
+                            preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
+                          }
                         }
-                        // переводим в проценты
-                        else {
-                          preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
-                        }
-                      }
 
-                      onPropertyChange({
-                        inPercent:     !inPercent,
-                        preferredStep: preferredStep,
-                      });
-                    }}
-                  >
-                    {!inPercent ? "$/₽" : "%"}
-                  </button>
-                }
-              </span>
-              <NumericInput
-                className="input-group__input"
-                disabled={currentMode == 'fibonacci'}
-                defaultValue={
-                  currentMode == 'fibonacci'
-                    ? currentTool.adrDay
-                    : preferredStep
-                }
-                placeholder={
-                  inPercent
-                    ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
-                    : currentTool.adrDay
-                }
-                format={formatNumber}
-                unsigned="true"
-                min={0}
-                onBlur={preferredStep => {
-                  onPropertyChange({
-                    preferredStep: round(preferredStep, fraction)
-                  })
-                }}
-                suffix={
-                  currentMode != 'fibonacci' &&
+                        onPropertyChange({
+                          inPercent:     !inPercent,
+                          preferredStep: preferredStep,
+                        });
+                      }}
+                    >
+                      {!inPercent ? "$/₽" : "%"}
+                    </button>
+                  }
+                </span>
+                <NumericInput
+                  className="input-group__input"
+                  disabled={disabled}
+                  defaultValue={
+                    currentMode == 'fibonacci'
+                      ? currentTool.adrDay
+                      : preferredStep
+                  }
+                  placeholder={
                     inPercent
-                    ? "%"
-                    : undefined
-                }
-              />
-            </label>
+                      ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
+                      : currentTool.adrDay
+                  }
+                  format={formatNumber}
+                  unsigned="true"
+                  min={0}
+                  onBlur={preferredStep => {
+                    onPropertyChange({
+                      preferredStep: round(preferredStep, fraction)
+                    })
+                  }}
+                  suffix={
+                    currentMode != 'fibonacci' &&
+                      inPercent
+                      ? "%"
+                      : undefined
+                  }
+                />
+              </label>
+            }
 
-            <label className="input-group">
-              <span className="input-group__label">Кол-во закрытий</span>
-              <NumericInput
-                className="input-group__input"
-                disabled={currentMode == 'fibonacci'}
-                defaultValue={
-                  currentMode == 'fibonacci'
-                    ? data.length
-                    : length
-                }
-                format={formatNumber}
-                unsigned="true"
-                placeholder="1"
-                min={1}
-                onBlur={length => onPropertyChange({ length })}
-              />
-            </label>
+            {/* Кол-во закрытий */}
+            {inputs.indexOf("length") != -1 &&
+              <label className="input-group">
+                <span className="input-group__label">Кол-во закрытий</span>
+                <NumericInput
+                  className="input-group__input"
+                  disabled={disabled}
+                  defaultValue={
+                    currentMode == 'fibonacci'
+                      ? data.length
+                      : length
+                  }
+                  format={formatNumber}
+                  unsigned="true"
+                  placeholder="1"
+                  min={1}
+                  onBlur={length => onPropertyChange({ length })}
+                />
+              </label>
+            }
 
-            <label className="input-group">
-              <span className="input-group__label">% закрытия</span>
-              <NumericInput
-                className="input-group__input"
-                disabled={currentMode == 'fibonacci'}
-                defaultValue={percent}
-                format={formatNumber}
-                unsigned="true"
-                min={0}
-                onBlur={percent => onPropertyChange({ percent })}
-              />
-            </label>
+            {/* % закрытия */}
+            {inputs.indexOf("percent") != -1 &&
+              <label className="input-group">
+                <span className="input-group__label">% {isBying ? "докупки" : "закрытия"}</span>
+                <NumericInput
+                  className="input-group__input"
+                  disabled={disabled}
+                  defaultValue={percent}
+                  format={formatNumber}
+                  unsigned="true"
+                  min={0}
+                  onBlur={percent => onPropertyChange({ percent })}
+                />
+              </label>
+            }
 
-            <label className="input-group">
-              <span className="input-group__label">Шаг в %</span>
-              <NumericInput
-                className="input-group__input"
-                disabled={currentMode == 'fibonacci'}
-                defaultValue={stepInPercent}
-                format={formatNumber}
-                unsigned="true"
-                min={0}
-                onBlur={stepInPercent => onPropertyChange({ stepInPercent })}
-              />
-            </label>
+            {/* Шаг в % */}
+            {inputs.indexOf("stepInPercent") != -1 &&
+              <label className="input-group">
+                <span className="input-group__label">Шаг в %</span>
+                <NumericInput
+                  className="input-group__input"
+                  disabled={disabled}
+                  defaultValue={stepInPercent}
+                  format={formatNumber}
+                  unsigned="true"
+                  min={0}
+                  onBlur={stepInPercent => onPropertyChange({ stepInPercent })}
+                />
+              </label>
+            }
 
             <div className="settings-generator-content__print-group">
-              <span>Суммарный % закрытия</span>
+              <span>Суммарный % {isBying ? "докупки" : "закрытия"}</span>
               <b>{round(sumPercent, 1)}%</b>
             </div>
 

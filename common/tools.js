@@ -296,7 +296,7 @@ class Tools {
     }
 
     if (unmatchedTools.length) {
-      console.warn("Не сметчились", unmatchedTools);
+      // console.warn("Не сметчились", unmatchedTools);
     }
 
     return parsedTools;
