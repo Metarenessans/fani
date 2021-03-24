@@ -61,8 +61,8 @@ export default class NumericInput extends React.Component {
 
     regexpCode = regexpCode + "[0-9]*";
 
-    regexpCode = regexpCode + `((\\.|\\,)[0-9]*)?`;
     if (!this.round) {
+      regexpCode = regexpCode + `((\\.|\\,)[0-9]*)?`
     }
 
     regexpCode = regexpCode + "$";

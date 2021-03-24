@@ -895,7 +895,10 @@ class App extends React.Component {
                         <span className="mts-slider2-middle">
                           {/* ~~ */}
                           Загрузка:{" "}
-                          <NumericInputWithArrows
+
+                          <NumericInput
+                            format={number => round(number, 2)}
+                            round={false}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }

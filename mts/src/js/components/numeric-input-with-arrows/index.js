@@ -15,7 +15,7 @@ export default class NumericInputWithArrows extends React.Component {
     return (
 
       <InputNumber
-        className="mts-slider2-input"
+        // className="mts-slider2-input"
         stringMode={true}
         step={.01}
         max={100}
