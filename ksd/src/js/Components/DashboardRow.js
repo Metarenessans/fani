@@ -315,7 +315,7 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col">
           <span className="dashboard-key">
             <Tooltip title={"Объём депозита в процентах на вход в сделку"} placement={this.state.tooltipPlacement}>
-              Загрузка
+              Загрузка %
             </Tooltip>  
           </span>
           <span className="dashboard-val">
