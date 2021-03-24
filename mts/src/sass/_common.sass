@@ -144,7 +144,7 @@ body
         display: block
         position: absolute
         right: 100%
-        top:   50%
+        top:    50%
         margin-right: -2.75em
         transform: translateY(-50%)
         width:   4.75em
@@ -169,20 +169,34 @@ body
 
     
     
-    .numeric-input
-      margin-left: 0.2em
-      margin-right: 0.2em
-
-      width: 4.3em
-      height: 1.9em
-      font-size: .9em
-
+    .numeric-input-wrap
+      font-size: .4em
+      
       +xs
-        width: 4.5em
-    
-    .iPhone
-      padding-right: 2em
-      width: 5.9em
+        button 
+          height: 1.6em
+          width:  1.6em
+          right:  .4rem
+          svg
+            height: 0.8em
+            width:  0.8em
+
+      & .iPhone
+          & .ant-input
+            width: 6.4em
+            padding-right: 2.5em
+          .ant-input-suffix
+            right: 1.9em
+
+      .ant-input
+        padding-right: 1.3em
+        margin-left:    .2em
+        margin-right:   .2em
+
+        width:    5em
+        height: 1.9em
+        &-suffix
+          top: 53%
 
     &.right
       .ant-slider-handle

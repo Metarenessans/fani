@@ -898,18 +898,12 @@ class App extends React.Component {
 
                           <NumericInput
                             format={number => round(number, 2)}
+                            suffix="%"
                             round={false}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }
                           />
-                          <b style={{
-                            userSelect: "none",
-                            color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
-                          }}>
-                            {" "}%
-                            {/* {formatNumber(Math.abs(percentage))}% */}
-                          </b>
                         </span>
 
                         <CustomSlider
