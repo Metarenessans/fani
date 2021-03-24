@@ -167,15 +167,23 @@ body
       opacity: 1
       pointer-events: initial
 
-    &-input
+    
+    
+    .numeric-input
+      margin-left: 0.2em
+      margin-right: 0.2em
+
+      width: 4.3em
+      height: 1.9em
+      font-size: .9em
+
+      +xs
+        width: 4.5em
+    
+    .iPhone
+      padding-right: 2em
       width: 5.9em
-      .ant-input-number-input 
-        height: 2.3em!important
-        box-shadow: none!important
-        &:focus
-          border-radius: .1em!important
-          box-shadow: none!important
-          
+
     &.right
       .ant-slider-handle
         &-1
@@ -234,12 +242,14 @@ body
         color: #777
 
     &-middle
+      display: flex
       bottom: -2.7em
       left:    50%
       transform: translateX(-50%)
 
       font-size: 1.9em
       font-weight: 400
+      align-items: center
 
       b
         color: var(--accent-color)
