@@ -262,7 +262,7 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
-              key={currentToolIndex}
+              // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={currentToolIndex}
               onChange={currentToolIndex => {
@@ -323,12 +323,13 @@ export default class DashboardRow extends React.Component {
               key={percentage}
               className="dashboard__select"
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
-              formatOption={val => val + "%"}
+              // format={val => val + "%"}
               allowFraction={2}
               min={0.01}
               max={100}
               value={percentage}
               onChange={val => onChange("percentage", val)}
+              suffix="%"
             />
           </span>
         </div>

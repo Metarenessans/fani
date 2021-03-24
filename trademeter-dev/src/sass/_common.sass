@@ -223,8 +223,12 @@ body
   display: flex
   justify-content: space-between
 
+  +sm
+    padding-top: 4em
+
   +xs
     margin: 0 -2em
+    padding: 2em 0 
     background: none
     flex-direction: column
     align-items: center
@@ -258,7 +262,7 @@ body
       position: relative
       display: inline-flex
 
-      +xs
+      +sm
         flex-direction: column
         align-items: center
 
@@ -283,12 +287,24 @@ body
       &:focus
         text-decoration: none
 
+      +sm
+        right: 0
+        left: 50%
+        transform: translateX(-50%)
+
+        margin-right: 0
+        margin-top:  -1.75em
+
+        font-size: 1.5em
+
       +xs
         position: static
+        transform: none
 
         margin-right: 0
         margin-bottom: .25em
 
+        font-size: 1.7em
         line-height: inherit
 
   &-subtitle

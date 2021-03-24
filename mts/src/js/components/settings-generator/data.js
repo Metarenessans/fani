@@ -291,7 +291,7 @@ const createData = (type, options, meta) => {
 
       let _comission = _contracts * comission;
       // Прибавляем комиссию из предыдущей строки
-      _comission += data[subIndex - 1]?.comission || 0;
+      // _comission += data[subIndex - 1]?.comission || 0;
 
       let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки

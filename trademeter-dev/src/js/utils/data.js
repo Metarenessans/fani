@@ -70,7 +70,9 @@ export default class Data extends Array {
         ? income 
         : Math.round(depoStart * (rate != null ? rate : $rate) / 100);
 
-      let incomeReal = Math.round(depoStartReal * (rate != null ? rate : 0) / 100);
+      let incomeReal = income != null
+        ? income
+        : Math.round(depoStartReal * (rate != null ? rate : 0) / 100);
       
       if (iterations.filter(it => !it.empty).length) {
         _income = iterations
@@ -136,6 +138,7 @@ export default class Data extends Array {
         goal,
         income,
         incomePlan,
+        incomeReal,
         payment,
         paymentPlan,
         payload,

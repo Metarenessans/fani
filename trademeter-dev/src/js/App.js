@@ -73,7 +73,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = false;
+let shouldLoadFakeSave = true;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -1485,7 +1485,7 @@ class App extends Component {
       saved,
       dataLength,
       depoEndFormat,
-    } = this.state; 
+    } = this.state;
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
     let averageProf = 0;
@@ -2218,7 +2218,12 @@ class App extends Component {
                           </button>
 
                           <h2 className="main__h2 stats-title">
-                            <Tooltip title={"Депозит при условии соблюдения мин. доходности на протяжении всего периода"}>
+                            <Tooltip title={depoEndFormat == "плановый"
+                              ? "Депозит при условии соблюдения мин. доходности на протяжении всего периода"
+                              : depoEndFormat == "будущий"
+                                ? "Депозит к концу периода с учетом результатов торговли, выводов и пополнений"
+                                : "Депозит к концу периода при сохранении текущей средней доходности, сформированной после ввода дневных торговых результатов"
+                            }>
                               Депозит через {`${days[mode]} ${num2str(days[mode], ["день", "дня", "дней"])}`}
                             </Tooltip>
                           </h2>
@@ -3127,7 +3132,6 @@ class App extends Component {
                                   .then(() => callback())
                                   .then(() => this.updateData())
                                   .then(() => chartVisible && updateChart.call(this))
-                                  // Worse fucking shit i've ever done please kill me
                                   .then(() => this.forceUpdate())
                               }}
                             />
