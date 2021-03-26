@@ -57,6 +57,13 @@
         font-size: var(--fz);
       }
 
+      &__currency {
+        display: inline-block;
+        margin-left: .15em;
+
+        font-size: var(--fz);
+      }
+
       &__clock {
         align-self: center;
         position: relative;
@@ -128,6 +135,8 @@
         }
 
         [class^=ant] {
+          padding-right: .2em;
+          padding-left:  .2em;
           font-size: 1em !important;
         }
 

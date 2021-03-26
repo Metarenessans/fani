@@ -648,7 +648,7 @@ class App extends Component {
     let staticParsed;
     let dynamicParsed;
 
-    let state = {};
+    let state = { depoEndFormat: "плановый" };
     let failed = false;
 
     let currentDay = 1;
@@ -1512,6 +1512,7 @@ class App extends Component {
       }
 
       const rateObj = this.useRate({
+        test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 
@@ -2200,22 +2201,24 @@ class App extends Component {
 
                       <Col span={12} className="stats-col">
                         <div className="stats-title-wrap">
-                          <button 
-                            className="stats-title-mode-select"
-                            onClick={e => {
-                              if (depoEndFormat == "плановый") {
-                                this.setState({ depoEndFormat: mode == 0 ? "средний" : "будущий" })
-                              }
-                              else if (depoEndFormat == "будущий") {
-                                this.setState({ depoEndFormat: "средний" });
-                              }
-                              else {
-                                this.setState({ depoEndFormat: "плановый" });
-                              }
-                            }}
-                          >
-                            {depoEndFormat}
-                          </button>
+                          {realData.length ? (
+                            <button 
+                              className="stats-title-mode-select"
+                              onClick={e => {
+                                if (depoEndFormat == "плановый") {
+                                  this.setState({ depoEndFormat: mode == 0 ? "средний" : "будущий" })
+                                }
+                                else if (depoEndFormat == "будущий") {
+                                  this.setState({ depoEndFormat: "средний" });
+                                }
+                                else {
+                                  this.setState({ depoEndFormat: "плановый" });
+                                }
+                              }}
+                            >
+                              {depoEndFormat}
+                            </button>
+                          ) : null}
 
                           <h2 className="main__h2 stats-title">
                             <Tooltip title={depoEndFormat == "плановый"
@@ -3117,7 +3120,7 @@ class App extends Component {
                       >
                         <div className="result-col result-col-iterations card">
                           <h3 className="result-col__title">
-                            <Tooltip title={"Результат торговых сделок (сумма прибыли или убытка"}>
+                            <Tooltip title={"Результат торговых сделок (сумма прибыли или убытка)"}>
                               Итерации
                             </Tooltip>
                           </h3>
