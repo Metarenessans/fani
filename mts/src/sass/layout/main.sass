@@ -208,8 +208,12 @@
       font-size: 1.4em
       font-weight: 400
 
+      +xs
+        font-size: 1.7em
+
       &__wrap
         margin: calc(-1 * var(--gap))
+
 
       &__row
         margin: var(--gap)
@@ -224,13 +228,15 @@
         font-weight: 700
 
       .ant-input
-        width: 6.5em
+        width: 6.1em
         
         font-size: 1em
-        text-align: right
+        
+        text-align: left
 
         &-suffix
           font-size: 1em
+          top: 52%
 
     &-options
       --gap: 1em

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useState } from 'react'
 
 import "./style.sass"
 
@@ -8,9 +7,12 @@ const BurgerButton = props => {
   const { onClick } = props;
   const [isActive, setIsActive] = useState(props.active || false);
 
+  const safeProps = {...props};
+  delete safeProps.active;
+
   return (
     <button
-      {...props}
+      {...safeProps}
       className={
         ["burger-btn"]
           .concat(isActive ? "burger-btn--active" : "")

@@ -43,7 +43,7 @@ export default class CustomSlider extends React.Component {
           { ...this.props }
           className="custom-slider__input"
           tooltipVisible={tooltipVisible}
-          defaultValue={value}
+          value={value}
           onChange={e => this.onChange(e)}
         />
         {showValue && (
