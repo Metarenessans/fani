@@ -220,6 +220,7 @@ body
   z-index: 0
   background-color: rgba(#3f6b33, .1)
   padding: 2em 0
+  padding-top: 4em
   display: flex
   justify-content: space-between
 
@@ -279,13 +280,16 @@ body
       font-size: 1.7em
       line-height: 1.5
       color: var(--primary-color)
-      text-decoration: underline
 
       cursor: pointer
 
-      &:hover,
-      &:focus
-        text-decoration: none
+      // 
+      right: 0
+      left: 50%
+      transform: translateX(-50%)
+
+      margin-right: 0
+      margin-top:  -1.75em
 
       +sm
         right: 0

@@ -128,9 +128,7 @@ export default class IterationsContainer extends React.Component {
                     key={index}
                     className="iterations-list-item"
                   >
-                    <span className="iterations-list-item__number">
-                      {index + 1}
-                    </span>
+                    <span className="iterations-list-item__number">{index + 1}</span>
 
                     <NumericInput
                       // Искусственно обновляем инпут, если его значение отбросилось к сейфовому 
@@ -140,20 +138,21 @@ export default class IterationsContainer extends React.Component {
                       placeholder={placeholder}
                       format={formatNumber}
                       round="true"
-                      onChange={(e, val, jsx) => {
+                      onChange={(e, value, jsx) => {
                         const {payment, payload } = data[currentDay - 1]
                         let errMsg = "";
-                        // массив из значений инпутов итераций
-                        let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
-                        // замяем значение под текущим индексом на актуальное 
-                        ArrayValue[index] = Number(val)
-                        // суммируем все значения итераций
-                        let iterationsSum = ArrayValue
-                          .filter((value) => !isNaN(value))
+                        // Массив из значений инпутов итераций
+                        let incomes = iterations.map(it => it.getIncome(depoStart));
+                        // Замянем значение под текущим индексом на актуальное 
+                        incomes[index] = Number(value);
+                        // Суммируем все значения итераций
+                        let iterationsSum = incomes
+                          .filter(value => !isNaN(value))
                           .reduce((acc, curr) => acc + curr, 0)
 
-                        if ( ((Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95) + iterationsSum <= 0 ) {
-                          errMsg = "максимальный убыток -95%";
+                        const minDepo = (Math.round(depoStart) - (payment || 0) + (payload || 0)) * 0.95;
+                        if ( minDepo + iterationsSum <= 0 ) {
+                          errMsg = "Максимальный убыток -95%";
                         }
 
                         jsx.setState({ errMsg });
@@ -172,14 +171,13 @@ export default class IterationsContainer extends React.Component {
                         
                         const { payment, payload } = data[currentDay - 1]
                         // массив из значений инпутов итераций
-                        // TODO: бессмысленное название
-                        let ArrayValue = iterations.map((value) => { return value.getIncome(depoStart) })
+                        let incomes = iterations.map(it => it.getIncome(depoStart))
                         // замяем значение под текущим индексом на 0
-                        ArrayValue[index] = 0;
+                        incomes[index] = 0;
                         // суммируем все значения итераций
-                        let iterationsSumWithoutCurrent = ArrayValue
-                        .filter((value) => !isNaN(value))
-                        .reduce((acc, curr) => acc + curr, 0);
+                        let iterationsSumWithoutCurrent = incomes
+                          .filter(value => !isNaN(value))
+                          .reduce((acc, curr) => acc + curr, 0);
                         
                         // Сумма итераций с текущим
                         const iterationsSumWithCurrent = iterationsSumWithoutCurrent + Number(val);
@@ -227,11 +225,10 @@ export default class IterationsContainer extends React.Component {
                         onChange(iterations, shouldFocusLastElement, scrolling);
                       }}
                     />
+                    <span className="iterations-list-item__currency">₽</span>
                     <span className="iterations-list-item__separator">~</span>
                     <span className="iterations-list-item__input iterations-list-item__input--unstyled">
-                      {
-                        formatNumber(round(rate, 3)) + "%"
-                      }
+                      { formatNumber(round(rate, 3)) + "%" }
                     </span>
 
                     <Popover
