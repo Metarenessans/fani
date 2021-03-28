@@ -893,12 +893,11 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          {/* ~~ */}
                           Загрузка:{" "}
 
                           <NumericInput
                             format={number => round(number, 2)}
-                            round={false}
+                            round={"false"}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }
@@ -908,7 +907,6 @@ class App extends React.Component {
                             color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
                           }}>
                             {" "}%
-                            {/* {formatNumber(Math.abs(percentage))}% */}
                           </b>
                         </span>
 
@@ -973,7 +971,6 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />
