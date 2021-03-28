@@ -86,7 +86,8 @@ body
       // margin-left: 10em
 
     .ant-slider
-      margin: 0 0.8em
+      margin: 0
+      margin-left: -.5em
 
       &-handle
         width:  1.7em
@@ -236,8 +237,8 @@ body
         font-weight: 700
 
     &__input
-      padding: 0
-      padding-top: 2.75em
+      padding: 0 !important
+      padding-top: 2.75em !important
 
       .ant-slider
         position: relative
@@ -351,9 +352,9 @@ body
         line-height: 1em
         text-align: center
 
-      tr
-        &:nth-child(2n + 1)
-          background-color: #f4f7fb
+      thead tr,
+      tbody tr:nth-child(2n)
+        background-color: #f4f7fb
 
       th
         width: (100% / 4)

@@ -530,7 +530,7 @@ class App extends React.Component {
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = priceRange.sort((l, r) => l - r);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
@@ -568,7 +568,7 @@ class App extends React.Component {
     const kod = round(ratio / days, 2);
 
     return (
-      <div className="page">
+      <div className="page" onContextMenu={e => this.setState({ priceRange: [288, priceRange[1]] })}>
 
         <main className="main">
 
@@ -784,16 +784,77 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Точка входа</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[0] : priceRange[1]) || 0, fraction))}
-                            </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
+                              onBlur={value => {
+                                const callback = () => {
+                                  updateChartMinMax(this.state.priceRange);
+                                };
+
+                                // ЛОНГ: то есть точка входа - снизу (число меньше)
+                                if (isLong) {
+                                  if (value > priceRange[1]) {
+                                    this.setState({ priceRange: [priceRange[1], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[1]] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка входа - сверху (число больше)
+                                else {
+                                  if (value < priceRange[1]) {
+                                    this.setState({ priceRange: [value, priceRange[0],] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                              }}
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Точка выхода</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[1] : priceRange[0]) || 0, fraction))}
-                            </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
+
+                              onBlur={value => {
+                                const callback = () => {
+                                  updateChartMinMax(this.state.priceRange);
+                                };
+
+                                // ЛОНГ: то есть точка выхода - сверху (число меньше)
+                                if (isLong) {
+                                  if (value < priceRange[0]) {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка выхода - снизу (число больше)
+                                else {
+                                  if (value > priceRange[0]) {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                }
+                                
+                              }}
+                            />
+                            
                           </div>
 
                           <div className="main-content-stats__row">
@@ -812,15 +873,14 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Вероятность</span>
-                            <span className="main-content-stats__val">
-                              <NumericInput 
-                                key={mode + chance * Math.random()} 
-                                disabled={mode == 0}
-                                defaultValue={mode == 0 ? 0.5 : chance} 
-                                onBlur={chance => this.setState({ chance })}
-                                suffix="%"
-                              />
-                            </span>
+                            <NumericInput 
+                              unsigned={true}
+                              key={mode + chance * Math.random()} 
+                              disabled={mode == 0}
+                              defaultValue={mode == 0 ? 0.5 : chance} 
+                              onBlur={chance => this.setState({ chance })}
+                              suffix="%"
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
@@ -893,21 +953,17 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
+                          {/* ~~ */}
                           Загрузка:{" "}
 
                           <NumericInput
                             format={number => round(number, 2)}
-                            round={"false"}
+                            suffix="%"
+                            round={false}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }
                           />
-                          <b style={{
-                            userSelect: "none",
-                            color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
-                          }}>
-                            {" "}%
-                          </b>
                         </span>
 
                         <CustomSlider

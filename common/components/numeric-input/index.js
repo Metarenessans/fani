@@ -210,6 +210,7 @@ export default class NumericInput extends React.Component {
 
           {!unsigned && isIPhone && (
             <button
+              // className={"iPhone-button"}
               onClick={(e) => {
                 const parsedValue = +(String(value).replace(/\s+/g, ""));
                 if (parsedValue !== 0) {
