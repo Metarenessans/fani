@@ -2,7 +2,9 @@ import React from 'react'
 import { message } from 'antd';
 
 import Stack from "../../../../../../common/components/stack"
-import stepConverter from "../step-converter"
+
+import round          from "../../../../../../common/utils/round"
+import fractionLength from "../../../../../../common/utils/fraction-length"
 
 import "./style.scss"
 
@@ -23,8 +25,7 @@ function selectElementContent(node) {
 }
 
 export default function CodePanel(props) {
-
-  const { data, tool } = props;
+  const { currentPreset, data, tool, contracts } = props;
 
   return (
     <Stack className="code-panel">
@@ -41,7 +42,52 @@ export default function CodePanel(props) {
         let parsedData = (arr || [])
           .map(v => {
             let { percent, points } = v;
-            let pointsInPercents = stepConverter.fromStepToPercents(points, tool.currentPrice);
+            let pointsInPercents = points;
+            if (currentPreset.type == "Лимитник") {
+              
+              // Акции
+              if (tool.dollarRate >= 1) {
+                pointsInPercents =
+                  (
+                    // ход в пунктах
+                    points *
+                    // загрузка в контрактах
+                    contracts *
+                    // стоимость шага
+                    tool.lotSize
+                  )
+                  /
+                  (
+                    // объем входа в деньгах
+                    contracts * tool.guarantee
+                  )
+                  *
+                  100;
+              }
+              // ФОРТС
+              else {
+                pointsInPercents =
+                  (
+                    // ход в пунктах
+                    points *
+                    // загрузка в контрактах
+                    contracts *
+                    // стоимость шага
+                    tool.stepPrice
+                  )
+                  /
+                  (
+                    // объем входа в деньгах
+                    (contracts * tool.guarantee)
+                    *
+                    tool.priceStep
+                  )
+                  *
+                  100;
+              }
+
+              pointsInPercents = round(pointsInPercents, 3);
+            }
             return `{${percent},${pointsInPercents}}`;
           })
           .join(",");

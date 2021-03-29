@@ -1512,7 +1512,6 @@ class App extends Component {
       }
 
       const rateObj = this.useRate({
-        test: true,
         customFuture, 
         length: realData.length == dataLength 
           ? dataLength + extraDays 

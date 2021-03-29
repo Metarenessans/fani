@@ -15,6 +15,7 @@ const createData = (type, options, meta) => {
     contracts,
     contractsSecondary,
     comission,
+    mainData,
     on,
   } = options;
 
@@ -32,6 +33,7 @@ const createData = (type, options, meta) => {
   let contractsLeft = contracts;
   if (isBying) {
     contractsLeft = contractsTotal - contracts;
+    contracts = contractsLeft;
   }
 
   const fraction = fractionLength(currentTool.priceStep);
@@ -59,13 +61,25 @@ const createData = (type, options, meta) => {
   }
 
   if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
-    // Количество докупок в сумме должно давать 50%
-    length = Math.floor(50 / presetOptions.percent);
+    if (presetOptions.percent == "") {
+      return data;
+    }
+
+    length = 
+      Math.floor(50 / presetOptions.percent) + 
+      Math.floor(200 / (presetOptions.percent * 4));
+
+    if (isNaN(length) || mainData?.length == 0) {
+      return data;
+    }
   }
 
   if (!length) {
     if (stepInPercent) {
       length = Math.floor(100 / stepInPercent);
+      if (isNaN(length)) {
+        return data;
+      }
     }
     else {
       length = 1;
@@ -120,6 +134,11 @@ const createData = (type, options, meta) => {
       else if (mode == 'custom') {
         percent = currentOptions.percent || 0;
       }
+
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+        percent = subIndex < 10 ? percent : percent * 4;;
+      }
+
       // Округляем
       percent = round(percent, fraction);
 
@@ -258,9 +277,16 @@ const createData = (type, options, meta) => {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+        points = subIndex < 10 
+          ? round((mainData[0].points / 2) * (index + 1), fraction)
+          : round(currentTool.adrDay * (index + 1), fraction);
+      }
+
       // Если ход больше желаемого хода - массив заканчивается
       if (
         !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
+        !(currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") &&
         (mode != 'fibonacci' && mode != 'custom') &&
         points > (preferredStep || currentTool.adrDay)
       ) {
