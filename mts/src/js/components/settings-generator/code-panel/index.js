@@ -86,16 +86,20 @@ export default function CodePanel(props) {
                   100;
               }
 
-              pointsInPercents = round(pointsInPercents, 3);
+              if (isNaN(pointsInPercents)) {
+                pointsInPercents = 0;
+              }
+
+              pointsInPercents = round(pointsInPercents, 4);
             }
             return `{${percent},${pointsInPercents}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
 
-        let param = "stop_arr";
+        let param = currentPreset.type == "Лимитник" ? "profit_arr" : "stop_arr";
         if (key == "Обратные докупки (ТОР)") {
-          param = "aaperc";
+          param = currentPreset.type == "Лимитник" ? "aapercent" : "aaperc";
         }
         else if (key == "Зеркальные докупки") {
           param = "flagmirroradd";
