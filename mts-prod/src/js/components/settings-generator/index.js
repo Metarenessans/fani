@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Button, Input, Select, Switch, Tooltip, Radio
+  Button, Input, Select, Switch, Tooltip, Radio, InputNumber
 } from 'antd/es'
 
 import {
@@ -8,6 +8,8 @@ import {
 } from "@ant-design/icons"
 
 import "wicg-inert"
+
+import optionsTemplate from "./options-template"
 
 import "./style.scss"
 
@@ -20,7 +22,6 @@ import SGRow        from "./sgrow"
 
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
-import TemplateRow      from "./template-row"
 import ReversedByingRow from "./reversed-bying-row"
 import Table            from "./table"
 import { Tools }        from '../../../../../common/tools'
@@ -29,12 +30,12 @@ import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
-import stepConverter from './step-converter'
 import createData    from './data'
 
 import round          from '../../../../../common/utils/round'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
+import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
 
 const SettingsGenerator = props => {
@@ -53,29 +54,16 @@ const SettingsGenerator = props => {
   const initialCurrentTab = "Закрытие основного депозита";
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
 
-  const optionBase = {
-    inPercent:  false,
-    preferredStep: "",                  // Желаемый ход
-    length:        dev ? 10 : "",       // Кол-во закрытий 
-    percent:       dev ? 5  : "",       // % закрытия
-    stepInPercent: dev ? 2  : "",       // Шаг
-  };
   const [presets, setPresets] = useState([
     {
       name: "СМС + ТОР",
       type: "СМС + ТОР",
       options: {
         [initialCurrentTab]: {
-          mode: "evenly",
-          ...optionBase,
-          customData: [{ ...optionBase, length: 1 }]
+          ...optionsTemplate,
+          length: undefined
         },
-        "Закрытие плечевого депозита": {
-          mode: "evenly",
-          ...optionBase,
-          customData: [{ ...optionBase, length: 1 }]
-        },
-        "Обратные докупки (ТОР)": { ...optionBase },
+        "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
       }
     },
     { 
@@ -83,16 +71,16 @@ const SettingsGenerator = props => {
       type: "Лимитник",
       options: {
         [initialCurrentTab]: {
-          mode: "evenly",
-          ...optionBase,
-          customData: [{ ...optionBase, length: 1 }]
+          mode: "custom",
+          ...optionsTemplate,
+          customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { ...optionBase },
+        "Обратные докупки (ТОР)": { ...optionsTemplate },
       }
     }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState("Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -193,14 +181,17 @@ const SettingsGenerator = props => {
     contractsTotal = Math.floor(investorDepo / currentTool.guarantee);
   }
 
-  let contracts = 0;
-  if (currentTool) {
-    contracts = Math.floor(depoAvailable / currentTool.guarantee);
-  }
-
   let contractsSecondary = 0;
   if (currentTool) {
     contractsSecondary = Math.floor((depoAvailable - depo) / currentTool.guarantee);
+    if (contractsSecondary < 0) {
+      contractsSecondary = 0;
+    }
+  }
+
+  let contracts = 0;
+  if (currentTool) {
+    contracts = Math.floor((depoAvailable) / currentTool.guarantee);
   }
 
   const options = {
@@ -208,6 +199,7 @@ const SettingsGenerator = props => {
     currentTool,
     contractsTotal,
     contracts,
+    contractsSecondary,
     comission
   };
 
@@ -216,8 +208,13 @@ const SettingsGenerator = props => {
   if (currentPreset.type != "Лимитник") {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
+      options: {
+        preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
+        percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+        length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
+        stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
+      },
       on: hasExtraDepo,
-      contracts: contractsSecondary,
     });
   }
   data['Зеркальные докупки'] = createData(initialCurrentTab, {
@@ -578,7 +575,7 @@ const SettingsGenerator = props => {
                               <>
                                 {window.innerWidth < 768 ? <br /> : " "}
                                 (
-                                  {formatNumber(Math.floor(depo / currentTool.guarantee))}
+                                  {formatNumber(contracts - contractsSecondary)}
                                   /
                                   {formatNumber(contractsSecondary)}
                                 )
@@ -717,6 +714,12 @@ const SettingsGenerator = props => {
 
               <SGRow
                 modes={["evenly", "custom"]}
+                inputs={
+                  currentPreset.type == "СМС + ТОР"
+                    ? ["preferredStep", "percent", "stepInPercent"]
+                    : undefined
+                }
+                automaticLength={currentPreset.type == "СМС + ТОР"}
                 options={currentPreset.options[initialCurrentTab]}
                 onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
                 onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
@@ -728,10 +731,24 @@ const SettingsGenerator = props => {
             </div>
 
             {/* Закрытие плечевого депозита */}
-            <div style={{ width: '100%' }} hidden={!hasExtraDepo}>
-              <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
-              <TemplateRow />
-            </div>
+            {hasExtraDepo && 
+              <div style={{ width: '100%', marginTop: "0.7em" }}>
+                <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
+                <SGRow
+                  disabled={true}
+                  options={{
+                    preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
+                    percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+                    length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
+                    stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
+                  }}
+                  onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
+                  data={data["Закрытие плечевого депозита"]}
+                  contracts={contracts}
+                  currentTool={currentTool}
+                />
+              </div>
+            }
 
             {/* Обратные докупки (ТОР) */}
             <>
@@ -744,10 +761,13 @@ const SettingsGenerator = props => {
               </label>
 
               <div style={{ width: '100%' }} hidden={!isReversedBying}>
-                <ReversedByingRow
+                <SGRow
+                  isBying={true}
+                  inputs={currentPreset.type == "СМС + ТОР" ? ["percent"] : ["percent", "stepInPercent", "length"]}
                   data={data["Обратные докупки (ТОР)"]}
-                  contracts={contractsTotal - contracts}
                   options={currentPreset.options["Обратные докупки (ТОР)"]}
+                  contracts={contractsTotal - contracts}
+                  currentTool={currentTool}
                   onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
                 />
               </div>
@@ -773,17 +793,15 @@ const SettingsGenerator = props => {
                     Закрытие основного депо
                   </Button>
 
-                  {currentPreset.type != "Лимитник" &&
-                    <Button className="custom-btn"
-                            tabIndex="-1"
-                            role="tab"
-                            aria-selected="false"
-                            aria-controls="settings-generator-tab2"
-                            id="settings-generator-tab2-control"
-                            hidden={!hasExtraDepo}>
-                      Закрытие плечевого депо
-                    </Button>
-                  }
+                  <Button className="custom-btn"
+                          tabIndex="-1"
+                          role="tab"
+                          aria-selected="false"
+                          aria-controls="settings-generator-tab2"
+                          id="settings-generator-tab2-control"
+                          hidden={!hasExtraDepo}>
+                    Закрытие плечевого депо
+                  </Button>
 
                   <Button className="custom-btn"
                           tabIndex="-1"
@@ -856,17 +874,17 @@ const SettingsGenerator = props => {
               </div>
               {/* tabpanel */}
 
-              {currentPreset.type != "Лимитник" &&
-                <div tabIndex="0"
-                    role="tabpanel"
-                    id="settings-generator-tab2"
-                    aria-labelledby="settings-generator-tab2-control"
-                    hidden>
+              <div tabIndex="0"
+                   role="tabpanel"
+                   id="settings-generator-tab2"
+                   aria-labelledby="settings-generator-tab2-control"
+                   hidden>
 
-                  <Table data={data['плечевой']} />
+                {currentPreset.type != "Лимитник" &&
+                  <Table data={data['Закрытие плечевого депозита']} />
+                }
 
-                </div>
-              }
+              </div>
               {/* tabpanel */}
 
               <div tabIndex="0"
