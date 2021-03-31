@@ -273,7 +273,7 @@ const createData = (type, options, meta) => {
         points = round(preferredStep * (index + 1), fraction);
       }
 
-      if (type == "Обратные докупки (ТОР)") {
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
