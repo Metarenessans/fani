@@ -33,7 +33,8 @@ export default function CodePanel(props) {
       {Object.keys(data).map((key, index) => {
         const arr = data[key];
 
-        if (!arr.on) {
+        // "Зеркальные докупки" всегда должны быть видны в коде
+        if (key != "Зеркальные докупки" && !arr.on) {
           return null;
         }
 
@@ -96,6 +97,11 @@ export default function CodePanel(props) {
           })
           .join(",");
         parsedData = `{${parsedData}}`;
+
+        // В Лимитнике в массиве закрытия добавляем еще пару фигурных скобок
+        if (currentPreset.type == "Лимитник" && !arr.isBying) {
+          parsedData = `{${parsedData}}`;
+        }
 
         let param = currentPreset.type == "Лимитник" ? "profit_arr" : "stop_arr";
         if (key == "Обратные докупки (ТОР)") {
