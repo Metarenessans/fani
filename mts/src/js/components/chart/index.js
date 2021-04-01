@@ -13,7 +13,6 @@ let dataTable;
 let lineMin;
 let lineMax;
 let lineStop;
-let lineStop;
 let yScale;
 
 const padZero = (number, len) => {

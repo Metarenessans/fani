@@ -566,6 +566,18 @@ class App extends React.Component {
 
     const kod = round(ratio / days, 2);
 
+    let possibleRisk = 0;
+    if (risk != 0) {
+      possibleRisk =
+        (depo * risk / 100)
+        /
+        currentTool.stepPrice
+        /
+        (contracts || 1)
+        *
+        currentTool.stepPrice
+    }
+
     return (
       <div className="page" onContextMenu={e => this.setState({ priceRange: [288, priceRange[1]] })}>
 
@@ -859,20 +871,7 @@ class App extends React.Component {
                           <div className="main-content-stats__row">
                             <span>Stop Loss</span>
                             <span className="main-content-stats__val">
-                              {(() => {
-                                let possibleRisk = 0;
-                                if (risk != 0) {
-                                  possibleRisk =
-                                    (depo * risk / 100)
-                                    /
-                                    currentTool.stepPrice
-                                    /
-                                    (contracts || 1)
-                                    *
-                                    currentTool.stepPrice
-                                }
-                                return `${formatNumber(round(possibleRisk, 2))}`
-                              })()}
+                              {formatNumber(round(possibleRisk, 2))}
                             </span>
                           </div>
 
@@ -1002,7 +1001,7 @@ class App extends React.Component {
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
-                            updateChartMinMax(priceRange, percentage >= 0);
+                            updateChartMinMax(priceRange, percentage >= 0, possibleRisk);
 
                             this.setState({
                               investorInfo,
