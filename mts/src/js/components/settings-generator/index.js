@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
-  Button, Input, Select, Switch, Tooltip, Radio, InputNumber
+  Button, Input, Select, Switch, Tooltip
 } from 'antd/es'
 
 import {
@@ -53,6 +53,7 @@ const SettingsGenerator = props => {
 
   const initialCurrentTab = "Закрытие основного депозита";
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
+  const prevCurrentTab = useRef();
 
   const [presets, setPresets] = useState([
     {
@@ -72,10 +73,12 @@ const SettingsGenerator = props => {
       options: {
         [initialCurrentTab]: {
           mode: "custom",
-          ...optionsTemplate,
           customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { ...optionsTemplate },
+        "Обратные докупки (ТОР)": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
       }
     }
   ]);
@@ -259,8 +262,33 @@ const SettingsGenerator = props => {
 
   // componentDidMount
   useEffect(() => {
+
+    const handleCodeControlClick = e => {
+      const currentTab = prevCurrentTab.current;
+
+      if (e.target.ariaSelected == "true") {
+        const tab = Array.prototype.find.call(
+          document.querySelectorAll(`[role="tab"]`),
+          it => it.textContent == currentTab
+        );
+
+        setTimeout(() => tab?.click(), 0);
+      }
+    };
+
+    const codeControlButton = document.querySelector("#settings-generator-code-control");
+    codeControlButton.addEventListener("click", handleCodeControlClick);
+
     createTabs();
+
+    return () => {
+      codeControlButton.removeEventListener("click", handleCodeControlClick);
+    }
   }, []);
+
+  useEffect(() => {
+    prevCurrentTab.current = currentTab;
+  }, [currentTab]);
 
   useEffect(() => {
     if (currentPreset.type == "Лимитник") {
@@ -271,7 +299,7 @@ const SettingsGenerator = props => {
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
 
-    setReversedBying(currentPreset.type == "СМС + ТОР");
+    // setReversedBying(currentPreset.type == "СМС + ТОР" ? true );
 
   }, [currentPreset, investorDepo]);
 
@@ -769,7 +797,9 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%' }} hidden={!isReversedBying}>
                 <SGRow
                   isBying={true}
-                  inputs={currentPreset.type == "СМС + ТОР" ? ["percent"] : ["percent", "stepInPercent", "length"]}
+                  inputs={currentPreset.type == "СМС + ТОР" 
+                    ? ["percent"] 
+                    : ["percent", "stepInPercent", "length"]}
                   data={data["Обратные докупки (ТОР)"]}
                   options={currentPreset.options["Обратные докупки (ТОР)"]}
                   contracts={contractsTotal - contracts}
@@ -796,7 +826,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab1"
                           id="settings-generator-tab1-control"
                           onClick={e => setCurrentTab(initialCurrentTab)}>
-                    Закрытие основного депо
+                    Закрытие основного депо<span className="visually-hidden">зита</span>
                   </Button>
 
                   <Button className="custom-btn"
@@ -805,8 +835,9 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab2"
                           id="settings-generator-tab2-control"
-                          hidden={!hasExtraDepo}>
-                    Закрытие плечевого депо
+                          hidden={!hasExtraDepo}
+                          onClick={e => setCurrentTab("Закрытие плечевого депозита")}>
+                    Закрытие плечевого депо<span className="visually-hidden">зита</span>
                   </Button>
 
                   <Button className="custom-btn"

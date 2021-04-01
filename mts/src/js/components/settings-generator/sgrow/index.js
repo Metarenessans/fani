@@ -157,7 +157,7 @@ export default function SGRow({
                   {!automaticLength
                     ? (
                       <label className="input-group">
-                        <span className="input-group__label">Кол-во закрытий</span>
+                        <span className="input-group__label">Кол-во {isBying ? "докупки" : "закрытия"}</span>
                         <NumericInput
                           className="input-group__input"
                           defaultValue={customDataRow.length || 1}
@@ -314,7 +314,7 @@ export default function SGRow({
             {/* Кол-во закрытий */}
             {inputs.indexOf("length") != -1 &&
               <label className="input-group">
-                <span className="input-group__label">Кол-во закрытий</span>
+                <span className="input-group__label">Кол-во {isBying ? "докупки" : "закрытия"}</span>
                 <NumericInput
                   className="input-group__input"
                   disabled={disabled}
