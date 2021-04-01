@@ -78,7 +78,7 @@ export default function SGRow({
 
                   <label className="input-group">
                     <span className="input-group__label">
-                      Желаемый ход
+                      {!isBying ? "Желаемый" : "Обратный" } ход
                       <button
                         className="settings-generator-content__step-mode-switcher"
                         onClick={e => {
@@ -157,7 +157,7 @@ export default function SGRow({
                   {!automaticLength
                     ? (
                       <label className="input-group">
-                        <span className="input-group__label">Кол-во {isBying ? "докупки" : "закрытия"}</span>
+                        <span className="input-group__label">Кол-во {isBying ? "докупок" : "закрытий"}</span>
                         <NumericInput
                           className="input-group__input"
                           defaultValue={customDataRow.length || 1}
@@ -242,7 +242,7 @@ export default function SGRow({
                 });
               }}
             >
-              + закрытие
+              + {isBying ? "Докупка" : "Закрытие"}
             </Button>
           </>
           :
@@ -252,7 +252,7 @@ export default function SGRow({
             {inputs.indexOf("preferredStep") != -1 &&
               <label className="input-group">
                 <span className="input-group__label">
-                  Желаемый ход
+                  {!isBying ? "Желаемый" : "Обратный" } ход
                   {currentMode != 'fibonacci' &&
                     <button
                       className="settings-generator-content__step-mode-switcher"
@@ -314,7 +314,7 @@ export default function SGRow({
             {/* Кол-во закрытий */}
             {inputs.indexOf("length") != -1 &&
               <label className="input-group">
-                <span className="input-group__label">Кол-во {isBying ? "докупки" : "закрытия"}</span>
+                <span className="input-group__label">Кол-во {isBying ? "докупок" : "закрытий"}</span>
                 <NumericInput
                   className="input-group__input"
                   disabled={disabled}

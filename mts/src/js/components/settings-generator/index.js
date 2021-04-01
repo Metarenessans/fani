@@ -215,7 +215,7 @@ const SettingsGenerator = props => {
       ...options,
       options: {
         preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-        percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+        percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
         length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
         stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
       },
@@ -742,7 +742,7 @@ const SettingsGenerator = props => {
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
                   />
-                  <span className="switch-group__label">Зеркальные докупки</span>
+                  <span className="switch-group__label">Зеркальные докупки (СМС)</span>
                 </label>
               </div>
 

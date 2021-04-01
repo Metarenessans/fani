@@ -12,8 +12,9 @@ let dataParsed;
 let dataTable;
 let lineMin;
 let lineMax;
+let lineStop;
+let lineStop;
 let yScale;
-// let lineStop;
 
 const padZero = (number, len) => {
   if (len - String(number).length < 0) {
@@ -23,7 +24,6 @@ const padZero = (number, len) => {
 };
 
 const updateChartMinMax = (priceRange, isLong = true) => {
-  // ~~
   if (lineMin) {
     lineMin.valueAnchor(priceRange[0]);
     lineMin.normal().stroke(!isLong ? "#660000" : "#006600", 1);
@@ -34,10 +34,9 @@ const updateChartMinMax = (priceRange, isLong = true) => {
     lineMax.normal().stroke(!isLong ? "#006600" : "#660000", 1);
   }
 
-  // if (lineStop) {
-  //   lineMax.valueAnchor(priceRange[1]);
-  //   lineMax.normal().stroke("#000000", 1);
-  // }
+  if (lineStop) {
+    lineStop.valueAnchor(Infinity ** 2);
+  }
 }
 
 const updateChartScaleMinMax = (min, max) => {
@@ -111,8 +110,11 @@ class Chart extends Component {
     lineMax = controller.horizontalLine({
         valueAnchor: priceRange[1]
     });
-    lineMax.normal().stroke("#006600", 1);
     lineMax.allowEdit(false);
+
+    lineStop = controller.horizontalLine({ valueAnchor: priceRange[0] });
+    lineStop.stroke({ color: "#660000", thickness: 2, dash: '10 5', lineCap: 'round' });
+    lineStop.allowEdit(false);
 
     updateChartZoom(this.props.days);
 

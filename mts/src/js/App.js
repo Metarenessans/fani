@@ -893,7 +893,7 @@ class App extends React.Component {
                           <div className="main-content-stats__row">
                             <span>Вероятность</span>
                             <NumericInput 
-                              unsigned={true}
+                              unsigned="true"
                               key={mode + chance * Math.random()} 
                               disabled={mode == 0}
                               defaultValue={mode == 0 ? 0.5 : chance} 
@@ -974,7 +974,7 @@ class App extends React.Component {
                           <NumericInput
                             format={number => round(number, 2)}
                             suffix="%"
-                            round={false}
+                            round={"false"}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }
