@@ -13,6 +13,7 @@ let dataTable;
 let lineMin;
 let lineMax;
 let yScale;
+// let lineStop;
 
 const padZero = (number, len) => {
   if (len - String(number).length < 0) {
@@ -22,6 +23,7 @@ const padZero = (number, len) => {
 };
 
 const updateChartMinMax = (priceRange, isLong = true) => {
+  // ~~
   if (lineMin) {
     lineMin.valueAnchor(priceRange[0]);
     lineMin.normal().stroke(!isLong ? "#660000" : "#006600", 1);
@@ -31,10 +33,15 @@ const updateChartMinMax = (priceRange, isLong = true) => {
     lineMax.valueAnchor(priceRange[1]);
     lineMax.normal().stroke(!isLong ? "#006600" : "#660000", 1);
   }
+
+  // if (lineStop) {
+  //   lineMax.valueAnchor(priceRange[1]);
+  //   lineMax.normal().stroke("#000000", 1);
+  // }
 }
 
 const updateChartScaleMinMax = (min, max) => {
-  if (yScale) {
+  if (yScale) { 
     yScale.minimum(min);
     yScale.maximum(max);
   }

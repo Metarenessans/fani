@@ -655,6 +655,7 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
+                      // ~~
                       (investorDepo * risk / 100)
                       /
                       currentTool.stepPrice
@@ -664,6 +665,7 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
+                      console.log(investorDepo, "ДЕПО", risk, "РИСК", currentTool.stepPrice, "ШАГ ЦЕНЫ", contracts, "КОНТРАКТЫ", "ГЕНА");
                       setRisk(
                         riskInSteps
                         *

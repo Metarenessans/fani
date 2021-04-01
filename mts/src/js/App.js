@@ -42,7 +42,6 @@ import Config                  from "../../../common/components/config"
 import NumericInput            from "../../../common/components/numeric-input"
 import SettingsGenerator       from "./components/settings-generator"
 import CustomSlider            from "../../../common/components/custom-slider"
-import NumericInputWithArrows from "./components/numeric-input-with-arrows"
 
 class App extends React.Component {
 
@@ -73,6 +72,7 @@ class App extends React.Component {
 
       id:                 null,
       saved:              false,
+      risk:               0,
     };
 
     this.state = {
@@ -349,7 +349,6 @@ class App extends React.Component {
     let state = {};
 
     try {
-
       staticParsed = JSON.parse(save.data.static);
       console.log("staticParsed", staticParsed);
 
@@ -526,7 +525,7 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days } = this.state;
+    let { mode, depo, data, chance, page, percentage, priceRange, days, risk } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
@@ -703,7 +702,7 @@ class App extends React.Component {
                 {(() => {
                   const STEP_IN_EACH_DIRECTION = 20;
                   const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
-
+                  
                   return (
                     <Stack className="main-content__left">
 
@@ -858,6 +857,26 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
+                            <span>Stop Loss</span>
+                            <span className="main-content-stats__val">
+                              {(() => {
+                                let possibleRisk = 0;
+                                if (risk != 0) {
+                                  possibleRisk =
+                                    (depo * risk / 100)
+                                    /
+                                    currentTool.stepPrice
+                                    /
+                                    (contracts || 1)
+                                    *
+                                    currentTool.stepPrice
+                                }
+                                return `${formatNumber(round(possibleRisk, 2))}`
+                              })()}
+                            </span>
+                          </div>
+
+                          <div className="main-content-stats__row">
                             <span>Величина хода</span>
                             <span className="main-content-stats__val">
                               {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
@@ -885,27 +904,24 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Риск движения против</span>
-                            <span className="main-content-stats__val">
-                              {(() => {
-                                let risk = .5;
-                                if (mode != 0) {
-                                  risk = 
-                                      contracts 
-                                    * planIncome
-                                    / currentTool.priceStep 
-                                    * currentTool.stepPrice 
-                                    / depo
-                                    * 100;
-                                  risk *= chance / 100;
-                                }
-                                return `${formatNumber(round(risk, 1))}%`
-                              })()}
-                            </span>
+                            {/* ~~ */}
+                            <NumericInput
+                              min={0}
+                              max={100}
+                              unsigned="true"
+                              suffix="%"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              // defaultValue={formatNumber(round(mode, 1))}
+                              defaultValue={ risk }
+
+                              onBlur={ risk => {
+                                this.setState({risk})
+                              }}
+                            />
                           </div>
                           
                           {(() => {
-                            
-
                             return (
                               <>
                                 <div className="main-content-stats__row">
@@ -1026,7 +1042,7 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
+                          // disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />

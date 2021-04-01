@@ -33,6 +33,13 @@ export default class NumericInput extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { defaultValue } = this.props;
+     
+    if (isNaN(defaultValue)) {
+      console.warn("defaultValue equals NaN!");
+      this.setState({ value: 0 })
+      return;
+    }
+
     if (defaultValue != prevProps.defaultValue) {
       this.setState({ value: this.format(defaultValue) })
     }
