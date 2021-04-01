@@ -215,7 +215,7 @@ const SettingsGenerator = props => {
       ...options,
       options: {
         preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-        percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+        percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
         length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
         stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
       },
@@ -661,7 +661,7 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
 
-                <label className="input-group">
+                <div className="input-group">
                   <span className="input-group__label">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
@@ -676,7 +676,7 @@ const SettingsGenerator = props => {
                     }}
                     suffix="%"
                   />
-                </label>
+                </div>
 
                 <label className="input-group">
                   <span className="input-group__label">Риск (стоп)</span>
@@ -742,7 +742,7 @@ const SettingsGenerator = props => {
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
                   />
-                  <span className="switch-group__label">Зеркальные докупки</span>
+                  <span className="switch-group__label">Зеркальные докупки (СМС)</span>
                 </label>
               </div>
 
@@ -772,7 +772,7 @@ const SettingsGenerator = props => {
                   disabled={true}
                   options={{
                     preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-                    percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+                    percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
                     length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
                     stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
                   }}

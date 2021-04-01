@@ -144,7 +144,17 @@ export default class Item extends React.Component {
 
     const freeMoney = depo - drawdown - rubbles;
     const pointsAgainst = drawdown / (contracts * currentTool.stepPrice);
-    const incomeExpected = ((depo * (additionalLoading / 100)) / currentTool.guarantee) * (stepExpected / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+    
+    const incomeExpected = 
+      // (Депозит * процент догрузки) / ГО
+      ((depo * (additionalLoading / 100)) / currentTool.guarantee) * 
+      // Ожидаемый ход / шаг цены * цена шага
+      (stepExpected / currentTool.priceStep * currentTool.stepPrice) + 
+      // Кол-во контрактов
+      contracts * 
+      //  Ожидаемый ход / шаг цены * цена шага
+      (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+
     const incomeExpected2 = ((depo * (additionalLoading2 / 100)) / currentTool.guarantee) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice);
 
     function AddButton(props) {
@@ -396,9 +406,7 @@ export default class Item extends React.Component {
                 var iterations = 
                   +(drawdown / incomeExpected).toFixed(1) *
                    (directUnloading ? 1 : 2);
-                var incomeForIteration =
-                  (incomeExpected / (directUnloading ? 1 : 2))
-                    .toFixed(1);
+                var incomeForIteration = (incomeExpected / (directUnloading ? 1 : 2)).toFixed(1);
                   
                 return (
                   <div className="tool-main-card-body">
