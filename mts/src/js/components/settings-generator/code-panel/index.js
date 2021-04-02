@@ -25,7 +25,7 @@ function selectElementContent(node) {
 }
 
 export default function CodePanel(props) {
-  const { currentPreset, data, tool, contracts } = props;
+  const { currentPreset, data, tool, contracts, risk, isRiskStatic } = props;
 
   return (
     <Stack className="code-panel">
@@ -146,6 +146,39 @@ export default function CodePanel(props) {
           </div>
         )
       })}
+
+      {(() => {
+        const codeElement = React.createRef();
+        const textContent = `GParam.depo_stop = {${!isRiskStatic ? risk : 0}, ${isRiskStatic ? risk : 0}}`;
+
+        return (
+          <div className="code-panel-group">
+
+            <div className="code-panel-group-header">
+              <h3>Риск</h3>
+              <button
+                className="code-panel-group__copy-btn"
+                onClick={e => {
+                  selectElementContent(codeElement.current);
+
+                  navigator.clipboard.writeText(textContent)
+                    .then(() => message.success("Скопировано!"))
+                    .catch(error => console.log('Something went wrong', error));
+                }}
+              >
+                копировать
+              </button>
+            </div>
+            <div className="code-panel-group-content">
+              <pre onClick={e => selectElementContent(e.target)}
+                ref={codeElement}>
+                {textContent}
+              </pre>
+            </div>
+
+          </div>
+        )
+      })()}
 
     </Stack>
   );

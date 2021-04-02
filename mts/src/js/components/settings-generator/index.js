@@ -43,6 +43,7 @@ const SettingsGenerator = props => {
   const { onClose } = props;
 
   const [risk, setRisk] = useState(0.5);
+  const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
@@ -662,7 +663,13 @@ const SettingsGenerator = props => {
               <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
 
                 <div className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                  <div className="risk-label-wrap">
+                    <span className="input-group__label">Риск (стоп)</span>
+                    <button className="risk-label__switch"
+                            onClick={() => setIsRiskStatic(!isRiskStatic)}>
+                      {isRiskStatic ? "статический" : "динамический"}
+                    </button>
+                  </div>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={risk}
@@ -679,7 +686,7 @@ const SettingsGenerator = props => {
                 </div>
 
                 <label className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
@@ -711,7 +718,7 @@ const SettingsGenerator = props => {
                 </label>
 
                 <label className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={investorDepo * risk / 100}
@@ -977,7 +984,9 @@ const SettingsGenerator = props => {
                 <CodePanel currentPreset={currentPreset}
                            data={data} 
                            tool={currentTool}
-                           contracts={contracts}/>
+                           contracts={contracts}
+                           risk={risk}
+                           isRiskStatic={isRiskStatic}/>
                 
               </div>
               {/* tabpanel */}
