@@ -567,15 +567,19 @@ class App extends React.Component {
     const kod = round(ratio / days, 2);
 
     let possibleRisk = 0;
-    if (risk != 0) {
+    let enterPoint = isLong ? priceRange[0] : priceRange[1];
+    let stopSteps =
+      (depo * risk / 100)
+      /
+      currentTool.stepPrice
+      /
+      (contracts || 1)
+      *
+      currentTool.stepPrice;
+
+    if (risk != 0 && percentage != 0) {
       possibleRisk =
-        (depo * risk / 100)
-        /
-        currentTool.stepPrice
-        /
-        (contracts || 1)
-        *
-        currentTool.stepPrice
+        enterPoint + (isLong ? -stopSteps : stopSteps)
     }
 
     return (
@@ -785,7 +789,7 @@ class App extends React.Component {
                           tipFormatter={val => formatNumber((val).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
-                            updateChartMinMax(priceRange);
+                            updateChartMinMax(priceRange, possibleRisk);
                           }}
                         />
                       </div>
@@ -804,7 +808,7 @@ class App extends React.Component {
                               defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                               onBlur={value => {
                                 const callback = () => {
-                                  updateChartMinMax(this.state.priceRange);
+                                  updateChartMinMax(this.state.priceRange, possibleRisk);
                                 };
 
                                 // ЛОНГ: то есть точка входа - снизу (число меньше)
@@ -841,7 +845,7 @@ class App extends React.Component {
 
                               onBlur={value => {
                                 const callback = () => {
-                                  updateChartMinMax(this.state.priceRange);
+                                  updateChartMinMax(this.state.priceRange, possibleRisk);
                                 };
 
                                 // ЛОНГ: то есть точка выхода - сверху (число меньше)
@@ -903,7 +907,6 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Риск движения против</span>
-                            {/* ~~ */}
                             <NumericInput
                               min={0}
                               max={100}
@@ -915,7 +918,8 @@ class App extends React.Component {
                               defaultValue={ risk }
 
                               onBlur={ risk => {
-                                this.setState({risk})
+                                this.setState({risk});
+                                updateChartMinMax(possibleRisk);
                               }}
                             />
                           </div>
