@@ -583,7 +583,7 @@ class App extends React.Component {
     }
 
     return (
-      <div className="page" onContextMenu={e => this.setState({ priceRange: [288, priceRange[1]] })}>
+      <div className="page">
 
         <main className="main">
 
