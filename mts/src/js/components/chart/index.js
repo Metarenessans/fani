@@ -112,7 +112,7 @@ class Chart extends Component {
     lineMax.allowEdit(false);
 
     lineStop = controller.horizontalLine({ valueAnchor: possibleRisk });
-    lineStop.stroke({ color: "#e8323c", thickness: 2, dash: '10 5', lineCap: 'round' });
+    lineStop.stroke({ color: "#e8323c", thickness: 1, dash: '10 5', lineCap: 'round' });
     lineStop.allowEdit(false);
 
     updateChartZoom(this.props.days);
