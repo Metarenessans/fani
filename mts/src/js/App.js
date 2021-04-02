@@ -565,7 +565,7 @@ class App extends React.Component {
     }
 
     const kod = round(ratio / days, 2);
-
+    // !!
     let possibleRisk = 0;
     let enterPoint = isLong ? priceRange[0] : priceRange[1];
     let stopSteps =
