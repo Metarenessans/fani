@@ -27,7 +27,7 @@ const updateChartMinMax = (priceRange, isLong = true, possibleRisk) => {
     lineMin.valueAnchor(priceRange[0]);
     lineMin.normal().stroke(!isLong ? "#660000" : "#006600", 1);
   }
-  
+
   if (lineMax) {
     lineMax.valueAnchor(priceRange[1]);
     lineMax.normal().stroke(!isLong ? "#006600" : "#660000", 1);
@@ -54,7 +54,7 @@ const updateChartZoom = days => {
 
 class Chart extends Component {
   update() {
-    const { min, max, priceRange } = this.props;
+    const { min, max, priceRange, possibleRisk } = this.props;
 
     dataParsed = this.props.data && this.props.data.map(item => {
       const HOUR_IN_MS = 3_600_000;
@@ -111,9 +111,8 @@ class Chart extends Component {
     });
     lineMax.allowEdit(false);
 
-    lineStop = controller.horizontalLine({ valueAnchor: priceRange[0] });
+    lineStop = controller.horizontalLine({ valueAnchor: possibleRisk });
     lineStop.stroke({ color: "#e8323c", thickness: 2, dash: '10 5', lineCap: 'round' });
-    // lineStop.stroke({ color: "#660000", thickness: 2, dash: '10 5', lineCap: 'round' });
     lineStop.allowEdit(false);
 
     updateChartZoom(this.props.days);

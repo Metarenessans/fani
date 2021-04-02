@@ -565,21 +565,52 @@ class App extends React.Component {
     }
 
     const kod = round(ratio / days, 2);
-    // !!
+
+    const GetPossibleRisk = () => {
+      let { depo, percentage, priceRange, risk } = this.state;
+      let possibleRisk = 0;
+
+      let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+      let stopSteps =
+        (depo * risk / 100)
+        /
+        currentTool.stepPrice
+        /
+        // Number((contracts || 1))
+        (contracts || 1)
+        *
+        currentTool.stepPrice;
+
+      if (risk != 0 && percentage != 0) {
+        possibleRisk =
+          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+      }
+
+      return possibleRisk
+    }
+
+
     let possibleRisk = 0;
+
     let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
     let stopSteps =
       (depo * risk / 100)
       /
       currentTool.stepPrice
       /
+      // Number((contracts || 1))
       (contracts || 1)
       *
       currentTool.stepPrice;
 
     if (risk != 0 && percentage != 0) {
+
       possibleRisk =
-        enterPoint + (isLong ? -stopSteps : stopSteps)
+        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
     }
 
     return (
@@ -789,7 +820,7 @@ class App extends React.Component {
                           tipFormatter={val => formatNumber((val).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
-                            updateChartMinMax(priceRange, possibleRisk);
+                            updateChartMinMax(priceRange, isLong, possibleRisk);
                           }}
                         />
                       </div>
@@ -808,7 +839,8 @@ class App extends React.Component {
                               defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                               onBlur={value => {
                                 const callback = () => {
-                                  updateChartMinMax(this.state.priceRange, possibleRisk);
+                                  let possibleRisk = GetPossibleRisk()
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                 };
 
                                 // ЛОНГ: то есть точка входа - снизу (число меньше)
@@ -822,7 +854,7 @@ class App extends React.Component {
                                 }
                                 // ШОРТ: то есть точка входа - сверху (число больше)
                                 else {
-                                  if (value < priceRange[1]) {
+                                  if (value < priceRange[0]) {
                                     this.setState({ priceRange: [value, priceRange[0],] }, callback);
                                   }
                                   else {
@@ -845,7 +877,7 @@ class App extends React.Component {
 
                               onBlur={value => {
                                 const callback = () => {
-                                  updateChartMinMax(this.state.priceRange, possibleRisk);
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                 };
 
                                 // ЛОНГ: то есть точка выхода - сверху (число меньше)
@@ -870,13 +902,6 @@ class App extends React.Component {
                               }}
                             />
                             
-                          </div>
-
-                          <div className="main-content-stats__row">
-                            <span>Stop Loss</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round(possibleRisk, 2))}
-                            </span>
                           </div>
 
                           <div className="main-content-stats__row">
@@ -919,11 +944,19 @@ class App extends React.Component {
 
                               onBlur={ risk => {
                                 this.setState({risk});
-                                updateChartMinMax(possibleRisk);
+                                let possibleRisk = GetPossibleRisk();
+                                updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                               }}
                             />
                           </div>
-                          
+
+                          <div className="main-content-stats__row">
+                            <span>Stop Loss</span>
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(possibleRisk, 2))}
+                            </span>
+                          </div>
+
                           {(() => {
                             return (
                               <>
@@ -954,7 +987,7 @@ class App extends React.Component {
                 <Stack className="main-content__right">
                   <Chart 
                     className="mts__chart"
-                    key={currentTool.toString() + this.state.loadingChartData} 
+                    key={currentTool.toString() + this.state.loadingChartData}
                     min={min}
                     max={max}
                     priceRange={priceRange}
@@ -994,8 +1027,8 @@ class App extends React.Component {
                           range
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
-                          max={100}
-                          step={.5}
+                          max= {100}
+                          step= {.5}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
@@ -1005,8 +1038,7 @@ class App extends React.Component {
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
-                            updateChartMinMax(priceRange, percentage >= 0, possibleRisk);
-
+                            updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
                             this.setState({
                               investorInfo,
                               percentage, 
