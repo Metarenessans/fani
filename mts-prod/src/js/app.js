@@ -6,15 +6,12 @@ import {
   Radio,
   Input,
   Pagination,
-  InputNumber
 } from 'antd/es'
-const { Option } = Select;
 
 import {
-  LoadingOutlined,
   SettingFilled,
-  WarningOutlined
-} from "@ant-design/icons"
+  WarningOutlined,
+} from '@ant-design/icons'
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
@@ -23,8 +20,14 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import promiseWhile   from "../../../common/utils/promise-while"
-import { Tools, template } from "../../../common/tools"
 
+import { Tools, template }     from "../../../common/tools"
+import Stack                   from "../../../common/components/stack"
+import CustomSlider            from "./components/custom-slider"
+import CrossButton             from "../../../common/components/cross-button"
+import NumericInput            from "../../../common/components/numeric-input"
+import { Dialog, dialogAPI }   from "../../../common/components/dialog"
+import Config                  from "../../../common/components/config"
 import {
   Chart,
   updateChartMinMax,
@@ -32,17 +35,9 @@ import {
   updateChartZoom
 } from "./components/chart"
 
-import Stack                   from "../../../common/components/stack"
-import CrossButton             from "../../../common/components/cross-button"
-import { Dialog, dialogAPI }   from "../../../common/components/dialog"
+const { Option } = Select;
 
-import "../sass/style.sass";
-
-import Config                  from "../../../common/components/config"
-import NumericInput            from "../../../common/components/numeric-input"
-import SettingsGenerator       from "./components/settings-generator"
-import CustomSlider            from "../../../common/components/custom-slider"
-import NumericInputWithArrows from "./components/numeric-input-with-arrows"
+import "../sass/style.sass"
 
 class App extends React.Component {
 
@@ -260,7 +255,7 @@ class App extends React.Component {
   }
 
   fetchTools() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       for (let request of [
         "getFutures",
         "getTrademeterInfo"
@@ -285,12 +280,7 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(error => {
-        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
-        if (dev) {
-          this.setState({ depo: 12_000_000 });
-        }
-      });
+      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
 
   updatePriceRange(tool) {
@@ -488,25 +478,6 @@ class App extends React.Component {
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools)
-  }
-
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-
-    return index;
-  }
-
-  getCurrentToolIndex() {
-    let { currentToolCode } = this.state;
-    return this.getToolIndexByCode(currentToolCode);
   }
 
   getToolByCode(code) {
@@ -710,10 +681,8 @@ class App extends React.Component {
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
                         <Select
-                          value={this.getCurrentToolIndex()}
-                          onChange={currentToolIndex => {
-                            const tools = this.getTools();
-                            const currentToolCode = tools[currentToolIndex].code; 
+                          value={this.state.currentToolCode}
+                          onChange={currentToolCode => {
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
                               .then(() => this.fetchCompanyQuotes());
@@ -727,20 +696,14 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            let tools = this.getTools();
-                            if (tools.length) {
-                              return tools
-                                .map(tool => String(tool))
-                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
-                            }
-                            else {
-                              return (
-                                <Option key={0} value={0}>
-                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
-                                  Загрузка...
-                                </Option>
+                            const tools = this.getTools();
+                            return tools.length > 0
+                              ? (
+                                tools.map((tool, index) => (
+                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
+                                ))
                               )
-                            }
+                              : <Option key={0} value={0}>Загрузка...</Option>
                           })()}
                         </Select>
                       </label>
@@ -754,12 +717,12 @@ class App extends React.Component {
                         <span className="mts-slider1-top">
                           <b>{formatNumber(round(max, fraction))}</b>
                           &nbsp;
-                          (+{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (+{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <span className="mts-slider1-bottom">
                           <b>{formatNumber(round(min, fraction))}</b>
                           &nbsp;
-                          (-{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (-{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
@@ -785,14 +748,14 @@ class App extends React.Component {
                           <div className="main-content-stats__row">
                             <span>Точка входа</span>
                             <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[0] : priceRange[1]) || 0, fraction))}
+                              {formatNumber(round(isLong ? priceRange[0] : priceRange[1], fraction))}
                             </span>
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Точка выхода</span>
                             <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[1] : priceRange[0]) || 0, fraction))}
+                              {formatNumber(round(isLong ? priceRange[1] : priceRange[0], fraction))}
                             </span>
                           </div>
 
@@ -893,22 +856,11 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          {/* ~~ */}
-                          Загрузка:{" "}
-
-                          <NumericInput
-                            format={number => round(number, 2)}
-                            round={false}
-                            key={percentage}
-                            defaultValue={percentage}
-                            onBlur={ percentage => this.setState({ percentage }) }
-                          />
+                          Загрузка:
                           <b style={{
-                            userSelect: "none",
                             color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
                           }}>
-                            {" "}%
-                            {/* {formatNumber(Math.abs(percentage))}% */}
+                            {formatNumber(Math.abs(percentage))}%
                           </b>
                         </span>
 
@@ -923,7 +875,7 @@ class App extends React.Component {
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
                           max={100}
-                          step={.5}
+                          step={1}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
@@ -969,16 +921,6 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
-
-                        <button
-                          className="settings-button js-open-modal main-content-options__settings"
-                          onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
-                        >
-                          <span className="visually-hidden">Открыть конфиг</span>
-                          <SettingFilled className="settings-button__icon" />
-                        </button>
-
                       </div>
 
                       <div className="main-content-options__row">
@@ -1024,24 +966,20 @@ class App extends React.Component {
                       <div className="mts-table">
                         <h3>Статистика КОД</h3>
                         <table>
-                          <thead>
+                          <tr>
+                            <th>День</th>
+                            <th>План %</th>
+                            <th>Факт %</th>
+                            <th>Доходность</th>
+                          </tr>
+                          {new Array(period).fill(0).map((value, index) =>
                             <tr>
-                              <th>День</th>
-                              <th>План %</th>
-                              <th>Факт %</th>
-                              <th>Доходность</th>
+                              <td>{((page - 1) * period) + (index + 1)}</td>
+                              <td>{kod}</td>
+                              <td><Input defaultValue="1"/></td>
+                              <td><Input defaultValue="1"/></td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {new Array(period).fill(0).map((value, index) =>
-                              <tr key={index}>
-                                <td>{((page - 1) * period) + (index + 1)}</td>
-                                <td>{kod}</td>
-                                <td><Input defaultValue="1"/></td>
-                                <td><Input defaultValue="1"/></td>
-                              </tr>
-                            )}
-                          </tbody>
+                          )}
                         </table>
                         <Pagination
                           key={days}
@@ -1327,21 +1265,6 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
-
-        <Dialog
-          id="settings-generator"
-          pure={true}
-        >
-          <SettingsGenerator
-            depo={this.state.depo}
-            tools={this.getTools()}
-            load={percentage}
-            onClose={() => {
-              dialogAPI.close("settings-generator");
-            }}
-          />
-        </Dialog>
-        {/* ГЕНА */}
 
       </div>
     );

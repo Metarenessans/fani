@@ -44,7 +44,7 @@ const SettingsGenerator = props => {
 
   const [risk, setRisk] = useState(0.5);
   const [comission, setComission] = useState(0);
-  const [load, setLoad] = useState(dev ? 10 : props.load || 0);
+  const [load, setLoad] = useState(props.load || 0);
 
   const tools = props.tools?.length ? props.tools : Tools.createArray();
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
@@ -205,6 +205,8 @@ const SettingsGenerator = props => {
 
   let data = [];
   data[initialCurrentTab] = createData(initialCurrentTab, options);
+  const mainData = data[initialCurrentTab];
+  
   if (currentPreset.type != "Лимитник") {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
@@ -224,11 +226,10 @@ const SettingsGenerator = props => {
   });
   data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
     ...options,
+    mainData,
     isBying: true,
     on: isReversedBying
   });
-
-  const mainData = data[initialCurrentTab];
 
   const totalIncome = mainData.length
     ? mainData[mainData.length - 1]?.incomeWithComission
@@ -269,6 +270,9 @@ const SettingsGenerator = props => {
       setDepo(Math.floor(investorDepo * .25));
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
+
+    setReversedBying(currentPreset.type == "СМС + ТОР");
+
   }, [currentPreset, investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
@@ -937,8 +941,10 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-code-control"
                    hidden>
                 
-                <CodePanel data={data} 
-                           tool={currentTool}/>
+                <CodePanel currentPreset={currentPreset}
+                           data={data} 
+                           tool={currentTool}
+                           contracts={contracts}/>
                 
               </div>
               {/* tabpanel */}
