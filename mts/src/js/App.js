@@ -72,7 +72,7 @@ class App extends React.Component {
 
       id:                 null,
       saved:              false,
-      risk:               0,
+      risk:               0.5,
     };
 
     this.state = {
@@ -601,13 +601,11 @@ class App extends React.Component {
       /
       currentTool.stepPrice
       /
-      // Number((contracts || 1))
       (contracts || 1)
       *
       currentTool.stepPrice;
 
     if (risk != 0 && percentage != 0) {
-
       possibleRisk =
         round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
         updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
@@ -992,7 +990,7 @@ class App extends React.Component {
                     max={max}
                     priceRange={priceRange}
                     loading={this.state.loadingChartData}
-                    tool={currentTool} 
+                    tool={currentTool}
                     data={data}
                     days={days}
                   />
