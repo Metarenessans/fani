@@ -38,6 +38,10 @@ const createData = (type, options, meta) => {
 
   const fraction = fractionLength(currentTool.priceStep);
 
+  const isSMS_TOR = 
+    currentPreset.type == "СМС + ТОР" &&
+    ["Обратные докупки (ТОР)", "Прямые профитные докупки", "Обратные профитные докупки"].indexOf(type) > -1;
+
   let { mode, stepInPercent, length } = presetOptions;
 
   const presetRules = {
@@ -60,7 +64,7 @@ const createData = (type, options, meta) => {
     return data;
   }
 
-  if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+  if (isSMS_TOR) {
     if (presetOptions.percent == "") {
       return data;
     }
@@ -135,7 +139,7 @@ const createData = (type, options, meta) => {
         percent = currentOptions.percent || 0;
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      if (isSMS_TOR) {
         percent = subIndex < 10 ? percent : percent * 4;;
       }
 
@@ -273,11 +277,11 @@ const createData = (type, options, meta) => {
         points = round(preferredStep * (index + 1), fraction);
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      if (isSMS_TOR) {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      if (isSMS_TOR) {
         points = subIndex < 10 
           ? round((mainData[0].points / 2) * (index + 1), fraction)
           : round(currentTool.adrDay * (index + 1), fraction);
@@ -286,11 +290,15 @@ const createData = (type, options, meta) => {
       // Если ход больше желаемого хода - массив заканчивается
       if (
         !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
-        !(currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") &&
+        !(isSMS_TOR) &&
         (mode != 'fibonacci' && mode != 'custom') &&
         points > (preferredStep || currentTool.adrDay)
       ) {
         shouldBreak = true;
+        // if (data[subIndex - 1]) {
+        //   data[subIndex - 1].contracts = data[subIndex - 1].contractsLoaded;
+        //   data[subIndex - 1].contractsLoaded = 0;
+        // }
         break;
       }
 
@@ -316,7 +324,7 @@ const createData = (type, options, meta) => {
       }
 
       let _comission = _contracts * comission;
-      // Прибавляем комиссию из предыдущей строки
+      // NOTE: больше не прибавляем комиссию из предыдущей строки
       // _comission += data[subIndex - 1]?.comission || 0;
 
       let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;

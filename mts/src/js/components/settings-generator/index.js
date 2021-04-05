@@ -66,6 +66,8 @@ const SettingsGenerator = props => {
           length: undefined
         },
         "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
+        "Прямые профитные докупки": { percent: optionsTemplate.percent },
+        "Обратные профитные докупки": { percent: optionsTemplate.percent },
       }
     },
     { 
@@ -234,6 +236,20 @@ const SettingsGenerator = props => {
     isBying: true,
     on: isReversedBying
   });
+  if (currentPreset.type == "СМС + ТОР") {
+    data['Прямые профитные докупки'] = createData('Прямые профитные докупки', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isProfitableBying
+    });
+    data['Обратные профитные докупки'] = createData('Обратные профитные докупки', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isReversedProfitableBying
+    });
+  }
 
   const totalIncome = mainData.length
     ? mainData[mainData.length - 1]?.incomeWithComission
@@ -791,6 +807,60 @@ const SettingsGenerator = props => {
               </div>
             }
 
+            {/* Прямые профитные докупки */}
+            {currentPreset.type == "СМС + ТОР" &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isProfitableBying}
+                    onChange={checked => setProfitableBying(checked)}
+                  />
+                  <span className="switch-group__label">Прямые профитные докупки</span>
+                </label>
+
+                <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+                  <SGRow
+                    isBying={true}
+                    inputs={currentPreset.type == "СМС + ТОР"
+                      ? ["percent"]
+                      : ["percent", "stepInPercent", "length"]}
+                    data={data["Прямые профитные докупки"]}
+                    options={currentPreset.options["Прямые профитные докупки"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
+                  />
+                </div>
+              </>
+            }
+
+            {/* Обратные профитные докупки */}
+            {currentPreset.type == "СМС + ТОР" &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isReversedProfitableBying}
+                    onChange={checked => setReversedProfitableBying(checked)}
+                  />
+                  <span className="switch-group__label">Обратные профитные докупки</span>
+                </label>
+
+                <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+                  <SGRow
+                    isBying={true}
+                    inputs={currentPreset.type == "СМС + ТОР"
+                      ? ["percent"]
+                      : ["percent", "stepInPercent", "length"]}
+                    data={data["Обратные профитные докупки"]}
+                    options={currentPreset.options["Обратные профитные докупки"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
+                  />
+                </div>
+              </>
+            }
+
             {/* Обратные докупки (ТОР) */}
             <>
               <label className="switch-group">
@@ -854,7 +924,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab3"
                           id="settings-generator-tab3-control"
                           hidden={!isProfitableBying}
-                          onClick={e => setCurrentTab("прямые профит докупки")}>
+                          onClick={e => setCurrentTab("Прямые профитные докупки")}>
                     Прямые докупки
                   </Button>
 
@@ -865,7 +935,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab4"
                           id="settings-generator-tab4-control"
                           hidden={!isReversedProfitableBying}
-                          onClick={e => setCurrentTab("обратные профит докупки")}>
+                          onClick={e => setCurrentTab("Обратные профитные докупки")}>
                     Обратные докупки
                   </Button>
 
@@ -937,7 +1007,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab3-control"
                    hidden>
                 
-                <Table data={data['прямые профит докупки']} isBying={true} />
+                <Table data={data['Прямые профитные докупки']} isBying={true} />
 
               </div>
               {/* tabpanel */}
@@ -948,7 +1018,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab4-control"
                    hidden>
                 
-                <Table data={data['обратные профит докупки']} isBying={true} />
+                <Table data={data['Обратные профитные докупки']} isBying={true} />
                 
               </div>
               {/* tabpanel */}
