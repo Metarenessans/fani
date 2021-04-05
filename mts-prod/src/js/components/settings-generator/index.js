@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
-  Button, Input, Select, Switch, Tooltip, Radio, InputNumber
+  Button, Input, Select, Switch, Tooltip
 } from 'antd/es'
 
 import {
@@ -43,6 +43,7 @@ const SettingsGenerator = props => {
   const { onClose } = props;
 
   const [risk, setRisk] = useState(0.5);
+  const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(props.load || 0);
 
@@ -53,6 +54,7 @@ const SettingsGenerator = props => {
 
   const initialCurrentTab = "Закрытие основного депозита";
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
+  const prevCurrentTab = useRef();
 
   const [presets, setPresets] = useState([
     {
@@ -72,10 +74,12 @@ const SettingsGenerator = props => {
       options: {
         [initialCurrentTab]: {
           mode: "custom",
-          ...optionsTemplate,
           customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { ...optionsTemplate },
+        "Обратные докупки (ТОР)": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
       }
     }
   ]);
@@ -212,7 +216,7 @@ const SettingsGenerator = props => {
       ...options,
       options: {
         preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-        percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+        percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
         length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
         stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
       },
@@ -259,8 +263,33 @@ const SettingsGenerator = props => {
 
   // componentDidMount
   useEffect(() => {
+
+    const handleCodeControlClick = e => {
+      const currentTab = prevCurrentTab.current;
+
+      if (e.target.ariaSelected == "true") {
+        const tab = Array.prototype.find.call(
+          document.querySelectorAll(`[role="tab"]`),
+          it => it.textContent == currentTab
+        );
+
+        setTimeout(() => tab?.click(), 0);
+      }
+    };
+
+    const codeControlButton = document.querySelector("#settings-generator-code-control");
+    codeControlButton.addEventListener("click", handleCodeControlClick);
+
     createTabs();
+
+    return () => {
+      codeControlButton.removeEventListener("click", handleCodeControlClick);
+    }
   }, []);
+
+  useEffect(() => {
+    prevCurrentTab.current = currentTab;
+  }, [currentTab]);
 
   useEffect(() => {
     if (currentPreset.type == "Лимитник") {
@@ -271,7 +300,7 @@ const SettingsGenerator = props => {
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
 
-    setReversedBying(currentPreset.type == "СМС + ТОР");
+    // setReversedBying(currentPreset.type == "СМС + ТОР" ? true );
 
   }, [currentPreset, investorDepo]);
 
@@ -633,8 +662,14 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
 
-                <label className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                <div className="input-group">
+                  <div className="risk-label-wrap">
+                    <span className="input-group__label">Риск (стоп)</span>
+                    <button className="risk-label__switch"
+                            onClick={() => setIsRiskStatic(!isRiskStatic)}>
+                      {isRiskStatic ? "статический" : "динамический"}
+                    </button>
+                  </div>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={risk}
@@ -648,13 +683,14 @@ const SettingsGenerator = props => {
                     }}
                     suffix="%"
                   />
-                </label>
+                </div>
 
                 <label className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
+                      // ~~
                       (investorDepo * risk / 100)
                       /
                       currentTool.stepPrice
@@ -664,6 +700,7 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
+                      console.log(investorDepo, "ДЕПО", risk, "РИСК", currentTool.stepPrice, "ШАГ ЦЕНЫ", contracts, "КОНТРАКТЫ", "ГЕНА");
                       setRisk(
                         riskInSteps
                         *
@@ -681,7 +718,7 @@ const SettingsGenerator = props => {
                 </label>
 
                 <label className="input-group">
-                  <span className="input-group__label">Риск (стоп)</span>
+                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={investorDepo * risk / 100}
@@ -712,7 +749,7 @@ const SettingsGenerator = props => {
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
                   />
-                  <span className="switch-group__label">Зеркальные докупки</span>
+                  <span className="switch-group__label">Зеркальные докупки (СМС)</span>
                 </label>
               </div>
 
@@ -742,7 +779,7 @@ const SettingsGenerator = props => {
                   disabled={true}
                   options={{
                     preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-                    percent:       roundUp(currentPreset.options[initialCurrentTab].percent / 62 * 100),
+                    percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
                     length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
                     stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
                   }}
@@ -767,7 +804,9 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%' }} hidden={!isReversedBying}>
                 <SGRow
                   isBying={true}
-                  inputs={currentPreset.type == "СМС + ТОР" ? ["percent"] : ["percent", "stepInPercent", "length"]}
+                  inputs={currentPreset.type == "СМС + ТОР" 
+                    ? ["percent"] 
+                    : ["percent", "stepInPercent", "length"]}
                   data={data["Обратные докупки (ТОР)"]}
                   options={currentPreset.options["Обратные докупки (ТОР)"]}
                   contracts={contractsTotal - contracts}
@@ -794,7 +833,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab1"
                           id="settings-generator-tab1-control"
                           onClick={e => setCurrentTab(initialCurrentTab)}>
-                    Закрытие основного депо
+                    Закрытие основного депо<span className="visually-hidden">зита</span>
                   </Button>
 
                   <Button className="custom-btn"
@@ -803,8 +842,9 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab2"
                           id="settings-generator-tab2-control"
-                          hidden={!hasExtraDepo}>
-                    Закрытие плечевого депо
+                          hidden={!hasExtraDepo}
+                          onClick={e => setCurrentTab("Закрытие плечевого депозита")}>
+                    Закрытие плечевого депо<span className="visually-hidden">зита</span>
                   </Button>
 
                   <Button className="custom-btn"
@@ -944,7 +984,9 @@ const SettingsGenerator = props => {
                 <CodePanel currentPreset={currentPreset}
                            data={data} 
                            tool={currentTool}
-                           contracts={contracts}/>
+                           contracts={contracts}
+                           risk={risk}
+                           isRiskStatic={isRiskStatic}/>
                 
               </div>
               {/* tabpanel */}

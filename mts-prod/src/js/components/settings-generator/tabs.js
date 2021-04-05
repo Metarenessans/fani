@@ -1,4 +1,4 @@
-const createTabs = function () {
+export default function createTabs() {
   var tablist = document.querySelectorAll('[role="tablist"]')[0];
   var tabs;
   var panels;
@@ -262,5 +262,3 @@ const createTabs = function () {
     };
   };
 };
-
-export default createTabs;
