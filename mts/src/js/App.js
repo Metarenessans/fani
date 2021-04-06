@@ -29,7 +29,9 @@ import {
   Chart,
   updateChartMinMax,
   updateChartScaleMinMax,
-  updateChartZoom
+  updateChartZoom,
+  minChartValue,
+  maxChartValue
 } from "./components/chart"
 
 import Stack                   from "../../../common/components/stack"
@@ -73,6 +75,7 @@ class App extends React.Component {
       id:                 null,
       saved:              false,
       risk:               0.5,
+      isResetDisabled:    true,
     };
 
     this.state = {
@@ -524,7 +527,7 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days, risk } = this.state;
+    let { mode, depo, data, chance, page, percentage, priceRange, days, risk, isResetDisabled } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
@@ -819,6 +822,42 @@ class App extends React.Component {
                             updateChartMinMax(priceRange, isLong, possibleRisk);
                           }}
                         />
+
+                        <div class={"scale-box"}>
+                          <Button
+                            className={"scale-button"}
+                            onClick={(e) => {
+                              console.log(min, max);
+                              updateChartScaleMinMax(min, max);
+                              this.setState({ isResetDisabled: true });
+                            }}
+                            disabled={isResetDisabled}
+                          >
+                            отмена
+                          </Button>
+
+                          <Button
+                            className={"scale-button"}
+
+                            onClick={(e) => {
+                              let possibleRisk = GetPossibleRisk();
+
+                              if (isLong && possibleRisk <= min && percentage != 0) {
+                                updateChartScaleMinMax(possibleRisk - 1, max);
+                              }
+                              else {
+                                if (possibleRisk >= max && percentage != 0) {
+                                  updateChartScaleMinMax(min, possibleRisk + 1);
+                                }
+                              }
+                              if (percentage != 0) {
+                                this.setState({ isResetDisabled: false });
+                              }
+                            }}
+                          >
+                            +
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="card main-content-stats">
