@@ -95,6 +95,7 @@ const createData = (type, options, meta) => {
   }
   else if (mode == 'custom') {
     length = presetOptions.customData.length || 1;
+    data.realLength = presetOptions.customData.map(row => row.length).reduce((prev, curr) => prev + curr);
   }
 
   let subIndex = -1;
@@ -154,7 +155,7 @@ const createData = (type, options, meta) => {
         else {
           preferredStep = stepConverter.fromPercentsToStep(
             preferredStep,
-            currentTool.currentPrice
+            currentTool
           );
         }
       }
@@ -168,7 +169,7 @@ const createData = (type, options, meta) => {
         preferredStep = currentOptions.preferredStep;
         inPercent = currentOptions.inPercent;
         if (inPercent) {
-          preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+          preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool);
         }
       }
 
@@ -238,7 +239,7 @@ const createData = (type, options, meta) => {
           else {
             preferredStepInMoney = stepConverter.fromPercentsToStep(
               preferredStepInMoney,
-              currentTool.currentPrice
+              currentTool
             );
           }
         }
@@ -267,15 +268,17 @@ const createData = (type, options, meta) => {
       }
 
       if (currentPreset.type == "СМС + ТОР" && type == "Закрытие основного депозита") {
-        points = round(
-          round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
-          fraction
-        );
+        // debugger;
+        // console.log(length, subLength);
+        // points = round(
+        //   round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
+        //   fraction
+        // );
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") {
-        points = round(preferredStep * (index + 1), fraction);
-      }
+      // if (currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") {
+      //   points = round(preferredStep * (index + 1), fraction);
+      // }
 
       if (isSMS_TOR) {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
@@ -295,10 +298,6 @@ const createData = (type, options, meta) => {
         points > (preferredStep || currentTool.adrDay)
       ) {
         shouldBreak = true;
-        // if (data[subIndex - 1]) {
-        //   data[subIndex - 1].contracts = data[subIndex - 1].contractsLoaded;
-        //   data[subIndex - 1].contractsLoaded = 0;
-        // }
         break;
       }
 

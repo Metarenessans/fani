@@ -94,8 +94,7 @@ class App extends React.Component {
     return new Promise(resolve => this.setState(state, resolve))
   }
 
-  fetchCompanyQuotes(options) {
-    const initial = options?.initial;
+  fetchCompanyQuotes() {
     this.setState({ loadingChartData: true });
 
     let from = new Date();
@@ -108,7 +107,7 @@ class App extends React.Component {
     const tool = this.getCurrentTool();
     let method = "getCompanyQuotes";
 
-    if (tool.dollarRate == 0 && !initial) {
+    if (tool.dollarRate == 0) {
       method = "getPeriodFutures";
       from = tool.firstTradeDate;
       to   = tool.lastTradeDate;
@@ -145,7 +144,6 @@ class App extends React.Component {
   // Fetching everithing we need to start working
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchCompanyQuotes({ initial: true });
     this.fetchTools()
       .then(() => this.fetchCompanyQuotes());
   }

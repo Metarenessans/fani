@@ -208,9 +208,13 @@ export default function CodePanel(props) {
 
         const codeElement = React.createRef();
 
+        let hideTitle = false;
+
         return (
           <>
             {(key == "Прямые профитные докупки" || key == "Обратные профитные докупки") && (() => {
+              hideTitle = true;
+
               const codeElement = React.createRef();
               let title = "";
               let param = "";
@@ -258,21 +262,23 @@ export default function CodePanel(props) {
             <div className="code-panel-group"
                  key={index}>
 
-              <div className="code-panel-group-header">
-                <h3>{title}</h3>
-                <button
-                  className="code-panel-group__copy-btn"
-                  onClick={e => {
-                    selectElementContent(codeElement.current);
+              {!hideTitle &&
+                <div className="code-panel-group-header">
+                  <h3>{title}</h3>
+                  <button
+                    className="code-panel-group__copy-btn"
+                    onClick={e => {
+                      selectElementContent(codeElement.current);
 
-                    navigator.clipboard.writeText(textContent)
-                      .then(() => message.success("Скопировано!"))
-                      .catch(error => console.log('Something went wrong', error));
-                  }}
-                >
-                  копировать
-                </button>
-              </div>
+                      navigator.clipboard.writeText(textContent)
+                        .then(() => message.success("Скопировано!"))
+                        .catch(error => console.log('Something went wrong', error));
+                    }}
+                  >
+                    копировать
+                  </button>
+                </div>
+              }
               <div className="code-panel-group-content">
                 <pre onClick={e => selectElementContent(e.target)}
                   ref={codeElement}>

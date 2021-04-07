@@ -37,6 +37,7 @@ import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
 import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
+import stepConverter from './step-converter'
 
 const SettingsGenerator = props => {
 
@@ -62,8 +63,12 @@ const SettingsGenerator = props => {
       type: "СМС + ТОР",
       options: {
         [initialCurrentTab]: {
-          ...optionsTemplate,
-          length: undefined
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Закрытие плечевого депозита": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
         "Прямые профитные докупки": { percent: optionsTemplate.percent },
@@ -212,16 +217,10 @@ const SettingsGenerator = props => {
   let data = [];
   data[initialCurrentTab] = createData(initialCurrentTab, options);
   const mainData = data[initialCurrentTab];
-  
+
   if (currentPreset.type != "Лимитник") {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
-      options: {
-        preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-        percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
-        length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
-        stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
-      },
       on: hasExtraDepo,
     });
   }
@@ -770,19 +769,14 @@ const SettingsGenerator = props => {
               </div>
 
               <SGRow
-                modes={["evenly", "custom"]}
-                inputs={
-                  currentPreset.type == "СМС + ТОР"
-                    ? ["preferredStep", "percent", "stepInPercent"]
-                    : undefined
-                }
-                automaticLength={currentPreset.type == "СМС + ТОР"}
                 options={currentPreset.options[initialCurrentTab]}
                 onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
                 onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
                 data={data[initialCurrentTab]}
                 contracts={contracts}
                 currentTool={currentTool}
+                stepsToPercentConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromStepsToPercent : undefined}
+                percentToStepsConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromPercentToSteps : undefined}
               />
 
             </div>
@@ -792,13 +786,8 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%', marginTop: "0.7em" }}>
                 <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
                 <SGRow
-                  disabled={true}
-                  options={{
-                    preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-                    percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
-                    length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
-                    stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
-                  }}
+                  options={currentPreset.options[initialCurrentTab]}
+                  onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
                   onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
                   data={data["Закрытие плечевого депозита"]}
                   contracts={contracts}

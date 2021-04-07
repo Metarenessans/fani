@@ -32,12 +32,17 @@ export default function SGRow({
   data,
   contracts,
   currentTool,
+  percentToStepsConverter = stepConverter.fromPercentsToStep,
+  stepsToPercentConverter = stepConverter.fromStepToPercents,
 }) {
+
   const { mode: currentMode, preferredStep, inPercent, percent, stepInPercent, length } = options;
 
   disabled = disabled || currentMode == "fibonacci";
 
   const fraction = fractionLength(currentTool.priceStep);
+
+  const inputFormatter = number => formatNumber(round(number, fraction));
 
   const contractsSum = data
     .map(row => row.contracts)
@@ -87,11 +92,11 @@ export default function SGRow({
                           if (preferredStep) {
                             // Были в процентах, теперь переводим в доллары
                             if (inPercent) {
-                              preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+                              preferredStep = percentToStepsConverter(preferredStep, currentTool, contracts);
                             }
                             // переводим в проценты
                             else {
-                              preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
+                              preferredStep = stepsToPercentConverter(preferredStep, currentTool, contracts);
                             }
                           }
 
@@ -115,10 +120,10 @@ export default function SGRow({
                       defaultValue={customDataRow.preferredStep}
                       placeholder={
                         customDataRow.inPercent
-                          ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
+                          ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool)
                           : currentTool.adrDay
                       }
-                      format={formatNumber}
+                      format={inputFormatter}
                       unsigned="true"
                       min={0}
                       onBlur={preferredStep => {
@@ -139,7 +144,7 @@ export default function SGRow({
                     <NumericInput
                       className="input-group__input"
                       defaultValue={customDataRow.percent}
-                      format={formatNumber}
+                      format={inputFormatter}
                       unsigned="true"
                       min={0}
                       onBlur={percent => {
@@ -162,7 +167,7 @@ export default function SGRow({
                           className="input-group__input"
                           defaultValue={customDataRow.length || 1}
                           placeholder={"1"}
-                          format={formatNumber}
+                          format={inputFormatter}
                           unsigned="true"
                           min={1}
                           onBlur={length => {
@@ -184,7 +189,7 @@ export default function SGRow({
                           className="input-group__input"
                           defaultValue={customDataRow.stepInPercent || 1}
                           placeholder={""}
-                          format={formatNumber}
+                          format={inputFormatter}
                           unsigned="true"
                           min={1}
                           onBlur={stepInPercent => {
@@ -262,11 +267,11 @@ export default function SGRow({
                         if (preferredStep) {
                           // Были в процентах, теперь переводим в доллары
                           if (inPercent) {
-                            preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool.currentPrice);
+                            preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool);
                           }
                           // переводим в проценты
                           else {
-                            preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool.currentPrice)
+                            preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool)
                           }
                         }
 
@@ -290,10 +295,10 @@ export default function SGRow({
                   }
                   placeholder={
                     inPercent
-                      ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool.currentPrice)
+                      ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool)
                       : currentTool.adrDay
                   }
-                  format={formatNumber}
+                  format={inputFormatter}
                   unsigned="true"
                   min={0}
                   onBlur={preferredStep => {
@@ -323,7 +328,7 @@ export default function SGRow({
                       ? data.length
                       : length
                   }
-                  format={formatNumber}
+                  format={inputFormatter}
                   unsigned="true"
                   placeholder="1"
                   min={1}
@@ -340,7 +345,7 @@ export default function SGRow({
                   className="input-group__input"
                   disabled={disabled}
                   defaultValue={percent}
-                  format={formatNumber}
+                  format={inputFormatter}
                   unsigned="true"
                   min={0}
                   onBlur={percent => onPropertyChange({ percent })}
@@ -356,7 +361,7 @@ export default function SGRow({
                   className="input-group__input"
                   disabled={disabled}
                   defaultValue={stepInPercent}
-                  format={formatNumber}
+                  format={inputFormatter}
                   unsigned="true"
                   min={0}
                   onBlur={stepInPercent => onPropertyChange({ stepInPercent })}
