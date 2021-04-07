@@ -15,6 +15,9 @@ let lineMax;
 let lineStop;
 let yScale;
 
+let minChartValue;
+let maxChartValue;
+
 const padZero = (number, len) => {
   if (len - String(number).length < 0) {
     return number;
@@ -41,7 +44,9 @@ const updateChartMinMax = (priceRange, isLong = true, possibleRisk) => {
 const updateChartScaleMinMax = (min, max) => {
   if (yScale) { 
     yScale.minimum(min);
+    minChartValue = min;
     yScale.maximum(max);
+    maxChartValue = max;
   }
 }
 
@@ -92,9 +97,10 @@ class Chart extends Component {
     // get a plot scale
     yScale = chart.plot(0).yScale();
 
-    // set minimum/maximum and inversion
     yScale.minimum(min);
+    minChartValue = min;
     yScale.maximum(max);
+    maxChartValue = max;
 
 
     // access the annotations() object of the plot to work with annotations
@@ -163,4 +169,4 @@ class Chart extends Component {
   }
 }
 
-export { Chart, updateChartMinMax, updateChartScaleMinMax, updateChartZoom }
+export { Chart, updateChartMinMax, updateChartScaleMinMax, updateChartZoom, minChartValue, maxChartValue }

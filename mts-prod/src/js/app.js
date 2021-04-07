@@ -42,7 +42,6 @@ import Config                  from "../../../common/components/config"
 import NumericInput            from "../../../common/components/numeric-input"
 import SettingsGenerator       from "./components/settings-generator"
 import CustomSlider            from "../../../common/components/custom-slider"
-import NumericInputWithArrows from "./components/numeric-input-with-arrows"
 
 class App extends React.Component {
 
@@ -73,6 +72,7 @@ class App extends React.Component {
 
       id:                 null,
       saved:              false,
+      risk:               0.5,
     };
 
     this.state = {
@@ -349,7 +349,6 @@ class App extends React.Component {
     let state = {};
 
     try {
-
       staticParsed = JSON.parse(save.data.static);
       console.log("staticParsed", staticParsed);
 
@@ -526,11 +525,11 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days } = this.state;
+    let { mode, depo, data, chance, page, percentage, priceRange, days, risk } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = priceRange.sort((l, r) => l - r);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
@@ -566,6 +565,51 @@ class App extends React.Component {
     }
 
     const kod = round(ratio / days, 2);
+
+    const GetPossibleRisk = () => {
+      let { depo, percentage, priceRange, risk } = this.state;
+      let possibleRisk = 0;
+
+      let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+      let stopSteps =
+        (depo * risk / 100)
+        /
+        currentTool.stepPrice
+        /
+        // Number((contracts || 1))
+        (contracts || 1)
+        *
+        currentTool.stepPrice;
+
+      if (risk != 0 && percentage != 0) {
+        possibleRisk =
+          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+      }
+
+      return possibleRisk
+    }
+
+
+    let possibleRisk = 0;
+
+    let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+    let stopSteps =
+      (depo * risk / 100)
+      /
+      currentTool.stepPrice
+      /
+      (contracts || 1)
+      *
+      currentTool.stepPrice;
+
+    if (risk != 0 && percentage != 0) {
+      possibleRisk =
+        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+    }
 
     return (
       <div className="page">
@@ -703,7 +747,7 @@ class App extends React.Component {
                 {(() => {
                   const STEP_IN_EACH_DIRECTION = 20;
                   const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
-
+                  
                   return (
                     <Stack className="main-content__left">
 
@@ -774,7 +818,7 @@ class App extends React.Component {
                           tipFormatter={val => formatNumber((val).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
-                            updateChartMinMax(priceRange);
+                            updateChartMinMax(priceRange, isLong, possibleRisk);
                           }}
                         />
                       </div>
@@ -784,16 +828,78 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Точка входа</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[0] : priceRange[1]) || 0, fraction))}
-                            </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
+                              onBlur={value => {
+                                const callback = () => {
+                                  let possibleRisk = GetPossibleRisk()
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                };
+
+                                // ЛОНГ: то есть точка входа - снизу (число меньше)
+                                if (isLong) {
+                                  if (value > priceRange[1]) {
+                                    this.setState({ priceRange: [priceRange[1], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[1]] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка входа - сверху (число больше)
+                                else {
+                                  if (value < priceRange[0]) {
+                                    this.setState({ priceRange: [value, priceRange[0],] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                              }}
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Точка выхода</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round((isLong ? priceRange[1] : priceRange[0]) || 0, fraction))}
-                            </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
+
+                              onBlur={value => {
+                                const callback = () => {
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                };
+
+                                // ЛОНГ: то есть точка выхода - сверху (число меньше)
+                                if (isLong) {
+                                  if (value < priceRange[0]) {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка выхода - снизу (число больше)
+                                else {
+                                  if (value > priceRange[0]) {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                }
+                                
+                              }}
+                            />
+                            
                           </div>
 
                           <div className="main-content-stats__row">
@@ -812,40 +918,44 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Вероятность</span>
-                            <span className="main-content-stats__val">
-                              <NumericInput 
-                                key={mode + chance * Math.random()} 
-                                disabled={mode == 0}
-                                defaultValue={mode == 0 ? 0.5 : chance} 
-                                onBlur={chance => this.setState({ chance })}
-                                suffix="%"
-                              />
-                            </span>
+                            <NumericInput 
+                              unsigned="true"
+                              key={mode + chance * Math.random()} 
+                              disabled={mode == 0}
+                              defaultValue={mode == 0 ? 0.5 : chance} 
+                              onBlur={chance => this.setState({ chance })}
+                              suffix="%"
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Риск движения против</span>
+                            <NumericInput
+                              min={0}
+                              max={100}
+                              unsigned="true"
+                              suffix="%"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={false}
+                              // defaultValue={formatNumber(round(mode, 1))}
+                              defaultValue={ risk }
+
+                              onBlur={ risk => {
+                                this.setState({risk});
+                                let possibleRisk = GetPossibleRisk();
+                                updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                              }}
+                            />
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>Stop Loss</span>
                             <span className="main-content-stats__val">
-                              {(() => {
-                                let risk = .5;
-                                if (mode != 0) {
-                                  risk = 
-                                      contracts 
-                                    * planIncome
-                                    / currentTool.priceStep 
-                                    * currentTool.stepPrice 
-                                    / depo
-                                    * 100;
-                                  risk *= chance / 100;
-                                }
-                                return `${formatNumber(round(risk, 1))}%`
-                              })()}
+                              {formatNumber(round(possibleRisk, 2))}
                             </span>
                           </div>
-                          
-                          {(() => {
-                            
 
+                          {(() => {
                             return (
                               <>
                                 <div className="main-content-stats__row">
@@ -875,12 +985,12 @@ class App extends React.Component {
                 <Stack className="main-content__right">
                   <Chart 
                     className="mts__chart"
-                    key={currentTool.toString() + this.state.loadingChartData} 
+                    key={currentTool.toString() + this.state.loadingChartData}
                     min={min}
                     max={max}
                     priceRange={priceRange}
                     loading={this.state.loadingChartData}
-                    tool={currentTool} 
+                    tool={currentTool}
                     data={data}
                     days={days}
                   />
@@ -893,23 +1003,16 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          {/* ~~ */}
                           Загрузка:{" "}
 
                           <NumericInput
                             format={number => round(number, 2)}
-                            round={false}
+                            suffix="%"
+                            round={"false"}
                             key={percentage}
                             defaultValue={percentage}
                             onBlur={ percentage => this.setState({ percentage }) }
                           />
-                          <b style={{
-                            userSelect: "none",
-                            color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
-                          }}>
-                            {" "}%
-                            {/* {formatNumber(Math.abs(percentage))}% */}
-                          </b>
                         </span>
 
                         <CustomSlider
@@ -922,8 +1025,8 @@ class App extends React.Component {
                           range
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
-                          max={100}
-                          step={.5}
+                          max= {100}
+                          step= {.5}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
@@ -933,8 +1036,7 @@ class App extends React.Component {
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
-                            updateChartMinMax(priceRange, percentage >= 0);
-
+                            updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
                             this.setState({
                               investorInfo,
                               percentage, 
@@ -973,7 +1075,6 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />
