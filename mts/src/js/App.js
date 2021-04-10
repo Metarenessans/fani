@@ -72,17 +72,22 @@ class App extends React.Component {
       customTools: [],
       currentToolCode: "SBER",
 
-      id:                 null,
+      id:                  null,
       saved:              false,
-      risk:               0.5,
-      isResetDisabled:    true,
+      risk:                  .5,
+      isResetDisabled:     true,
+      scaleOffset:            0,
+      changedMinRange:        0,
+      changedMaxRange:        0,
+      movePercantage:         0,
+      lastRadioButton:        0,
     };
 
     this.state = {
       ...this.initial,
       ...{
         saves:              [],
-        currentSaveIndex:   0,
+        currentSaveIndex:    0,
         tools:              [],
       } 
     };
@@ -446,7 +451,11 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days, risk, isResetDisabled } = this.state;
+    let {
+      mode, depo, data, chance, page, percentage, priceRange,
+      days, risk, scaleOffset, changedMinRange, changedMaxRange,
+      movePercantage, lastRadioButton
+    } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
@@ -505,7 +514,7 @@ class App extends React.Component {
       if (risk != 0 && percentage != 0) {
         possibleRisk =
           round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
       }
 
       return possibleRisk
@@ -530,7 +539,6 @@ class App extends React.Component {
         round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
         updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
     }
-
     return (
       <div className="page">
 
@@ -716,14 +724,14 @@ class App extends React.Component {
                           ({formatNumber(price)})
                         </span>
                         <span className="mts-slider1-top">
-                          <b>{formatNumber(round(max, fraction))}</b>
+                          <b>{formatNumber(round(changedMaxRange || max, fraction))}</b>
                           &nbsp;
-                          (+{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (+{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
                         <span className="mts-slider1-bottom">
-                          <b>{formatNumber(round(min, fraction))}</b>
+                          <b>{formatNumber(round(changedMinRange || min, fraction))}</b>
                           &nbsp;
-                          (-{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (-{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
@@ -742,41 +750,62 @@ class App extends React.Component {
                           }}
                         />
 
-                        <div class={"scale-box"}>
-                          <Button
-                            className={"scale-button"}
-                            onClick={(e) => {
-                              console.log(min, max);
-                              updateChartScaleMinMax(min, max);
-                              this.setState({ isResetDisabled: true });
-                            }}
-                            disabled={isResetDisabled}
-                          >
-                            отмена
-                          </Button>
+                        <Button
+                          className="scale-button scale-button--default"
+                          onClick={(e) => {
+                            console.log(min, max);
+                            updateChartScaleMinMax(min, max);
+                            this.setState({
+                              scaleOffset: 0, changedMinRange: min,
+                              changedMaxRange: max,  movePercantage: 0,
+                              days: lastRadioButton
+                            });
+                          }}
+                          disabled={scaleOffset == 0}
+                        >
+                          отмена
+                        </Button>
+                        
+                        <Button
+                          className="scale-button scale-button--minus"
+                          onClick={ () => {
+                            let { scaleOffset } = this.state;
+                            const sliderStepPercent = .5;
+                            const scaleStep = round(price * .005 , 2);
 
-                          <Button
-                            className={"scale-button"}
+                            const updatedScaleOffset = scaleOffset - scaleStep;
+                            this.setState({ 
+                              scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                              changedMaxRange: max - updatedScaleOffset,
+                              movePercantage: movePercantage + sliderStepPercent, days: 0
+                            });
+                            updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                          }}
+                          aria-label="Увеличить масштаб графика"
+                        >
+                          -
+                        </Button>
 
-                            onClick={(e) => {
-                              let possibleRisk = GetPossibleRisk();
+                        <Button
+                          className="scale-button scale-button--plus"
+                          onClick={ () => {
+                            let { scaleOffset } = this.state;
+                            const sliderStepPercent = .5;
+                            let scaleStep = round(price * .005, 2);
 
-                              if (isLong && possibleRisk <= min && percentage != 0) {
-                                updateChartScaleMinMax(possibleRisk - 1, max);
-                              }
-                              else {
-                                if (possibleRisk >= max && percentage != 0) {
-                                  updateChartScaleMinMax(min, possibleRisk + 1);
-                                }
-                              }
-                              if (percentage != 0) {
-                                this.setState({ isResetDisabled: false });
-                              }
-                            }}
-                          >
-                            +
-                          </Button>
-                        </div>
+                            const updatedScaleOffset = scaleOffset + scaleStep;
+                            this.setState({
+                              scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                              changedMaxRange: max - updatedScaleOffset,
+                              movePercantage: movePercantage + sliderStepPercent,
+                              days: 0
+                            });
+                            updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                          }}
+                          aria-label="Уменьшить масштаб графика"
+                        >
+                          +
+                        </Button>
                       </div>
 
                       <div className="card main-content-stats">
@@ -1031,12 +1060,11 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
+                          // disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />
                         </button>
-
                       </div>
 
                       <div className="main-content-options__row">
@@ -1061,7 +1089,7 @@ class App extends React.Component {
                             const max = round(price + percent, fraction);
                             const min = round(price - percent, fraction);
 
-                            this.setState({ days });
+                            this.setState({ days, lastRadioButton: days});
                             updateChartScaleMinMax(min, max);
                             updateChartZoom(days);
                           }}
