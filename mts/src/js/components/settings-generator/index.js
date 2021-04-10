@@ -72,7 +72,10 @@ const SettingsGenerator = props => {
         },
         "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
         "Прямые профитные докупки": { percent: optionsTemplate.percent },
-        "Обратные профитные докупки": { percent: optionsTemplate.percent },
+        "Обратные профитные докупки": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
       }
     },
     { 
@@ -95,7 +98,7 @@ const SettingsGenerator = props => {
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
-  const investorDepo = props?.depo || 1_000_000;
+  const [investorDepo, setInvestorDepo] = useState(props?.depo || 1_000_000);
 
   const [depo, setDepo] = useState(
     investorDepo != null
@@ -107,7 +110,9 @@ const SettingsGenerator = props => {
 
   const [secondaryDepo, setSecondaryDepo] = useState(
     investorDepo != null
-      ? Math.floor(investorDepo * .75)
+      ? currentPreset.type == "Лимитник"
+        ? 0
+        : Math.floor(investorDepo * .75)
       : 0
   );
 
@@ -123,7 +128,7 @@ const SettingsGenerator = props => {
 
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const depoAvailable = investorDepo * (load / 100);
+  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
 
@@ -189,7 +194,7 @@ const SettingsGenerator = props => {
 
   let contractsTotal = 0;
   if (currentTool) {
-    contractsTotal = Math.floor(investorDepo / currentTool.guarantee);
+    contractsTotal = Math.floor(depo / currentTool.guarantee);
   }
 
   let contractsSecondary = 0;
@@ -202,7 +207,7 @@ const SettingsGenerator = props => {
 
   let contracts = 0;
   if (currentTool) {
-    contracts = Math.floor((depoAvailable) / currentTool.guarantee);
+    contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
   const options = {
@@ -309,6 +314,7 @@ const SettingsGenerator = props => {
   useEffect(() => {
     if (currentPreset.type == "Лимитник") {
       setDepo(investorDepo);
+      setSecondaryDepo(0);
     }
     else {
       setDepo(Math.floor(investorDepo * .25));
@@ -562,8 +568,8 @@ const SettingsGenerator = props => {
                     defaultValue={depo}
                     format={formatNumber}
                     unsigned="true"
-                    onBlur={value => {
-                      setDepo(value);
+                    onBlur={depo => {
+                      setDepo(depo);
                     }}
                   />
                 </label>
@@ -580,8 +586,8 @@ const SettingsGenerator = props => {
                         unsigned="true"
                         min={10000}
                         max={Infinity}
-                        onBlur={val => {
-                          
+                        onBlur={secondaryDepo => {
+                          setSecondaryDepo(secondaryDepo);
                         }}
                       />
                     </label>
@@ -619,7 +625,7 @@ const SettingsGenerator = props => {
                         value={
                           <span>
                             {formatNumber(contracts)}
-                            {depo < depoAvailable &&
+                            {hasExtraDepo &&
                               <>
                                 {window.innerWidth < 768 ? <br /> : " "}
                                 (
@@ -786,7 +792,7 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%', marginTop: "0.7em" }}>
                 <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
                 <SGRow
-                  options={currentPreset.options[initialCurrentTab]}
+                  options={currentPreset.options["Закрытие плечевого депозита"]}
                   onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
                   onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
                   data={data["Закрытие плечевого депозита"]}
@@ -837,9 +843,6 @@ const SettingsGenerator = props => {
                 <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
                   <SGRow
                     isBying={true}
-                    inputs={currentPreset.type == "СМС + ТОР"
-                      ? ["percent"]
-                      : ["percent", "stepInPercent", "length"]}
                     data={data["Обратные профитные докупки"]}
                     options={currentPreset.options["Обратные профитные докупки"]}
                     contracts={contractsTotal - contracts}

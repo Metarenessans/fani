@@ -42,7 +42,7 @@ export default function SGRow({
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const inputFormatter = number => formatNumber(round(number, fraction));
+  const inputFormatter = number => formatNumber(number != "" ? round(number, fraction) : number);
 
   const contractsSum = data
     .map(row => row.contracts)

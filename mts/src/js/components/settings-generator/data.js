@@ -40,7 +40,7 @@ const createData = (type, options, meta) => {
 
   const isSMS_TOR = 
     currentPreset.type == "СМС + ТОР" &&
-    ["Обратные докупки (ТОР)", "Прямые профитные докупки", "Обратные профитные докупки"].indexOf(type) > -1;
+    ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
 
   let { mode, stepInPercent, length } = presetOptions;
 
