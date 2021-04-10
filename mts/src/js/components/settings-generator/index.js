@@ -37,6 +37,7 @@ import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
 import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
+import stepConverter from './step-converter'
 
 const SettingsGenerator = props => {
 
@@ -62,10 +63,19 @@ const SettingsGenerator = props => {
       type: "СМС + ТОР",
       options: {
         [initialCurrentTab]: {
-          ...optionsTemplate,
-          length: undefined
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Закрытие плечевого депозита": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
+        "Прямые профитные докупки": { percent: optionsTemplate.percent },
+        "Обратные профитные докупки": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
       }
     },
     { 
@@ -88,7 +98,7 @@ const SettingsGenerator = props => {
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
-  const investorDepo = props?.depo || 1_000_000;
+  const [investorDepo, setInvestorDepo] = useState(props?.depo || 1_000_000);
 
   const [depo, setDepo] = useState(
     investorDepo != null
@@ -100,7 +110,9 @@ const SettingsGenerator = props => {
 
   const [secondaryDepo, setSecondaryDepo] = useState(
     investorDepo != null
-      ? Math.floor(investorDepo * .75)
+      ? currentPreset.type == "Лимитник"
+        ? 0
+        : Math.floor(investorDepo * .75)
       : 0
   );
 
@@ -116,7 +128,7 @@ const SettingsGenerator = props => {
 
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const depoAvailable = investorDepo * (load / 100);
+  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
 
@@ -182,7 +194,7 @@ const SettingsGenerator = props => {
 
   let contractsTotal = 0;
   if (currentTool) {
-    contractsTotal = Math.floor(investorDepo / currentTool.guarantee);
+    contractsTotal = Math.floor(depo / currentTool.guarantee);
   }
 
   let contractsSecondary = 0;
@@ -195,7 +207,7 @@ const SettingsGenerator = props => {
 
   let contracts = 0;
   if (currentTool) {
-    contracts = Math.floor((depoAvailable) / currentTool.guarantee);
+    contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
   const options = {
@@ -210,16 +222,10 @@ const SettingsGenerator = props => {
   let data = [];
   data[initialCurrentTab] = createData(initialCurrentTab, options);
   const mainData = data[initialCurrentTab];
-  
+
   if (currentPreset.type != "Лимитник") {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
-      options: {
-        preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-        percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
-        length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
-        stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
-      },
       on: hasExtraDepo,
     });
   }
@@ -234,6 +240,20 @@ const SettingsGenerator = props => {
     isBying: true,
     on: isReversedBying
   });
+  if (currentPreset.type == "СМС + ТОР") {
+    data['Прямые профитные докупки'] = createData('Прямые профитные докупки', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isProfitableBying
+    });
+    data['Обратные профитные докупки'] = createData('Обратные профитные докупки', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isReversedProfitableBying
+    });
+  }
 
   const totalIncome = mainData.length
     ? mainData[mainData.length - 1]?.incomeWithComission
@@ -294,6 +314,7 @@ const SettingsGenerator = props => {
   useEffect(() => {
     if (currentPreset.type == "Лимитник") {
       setDepo(investorDepo);
+      setSecondaryDepo(0);
     }
     else {
       setDepo(Math.floor(investorDepo * .25));
@@ -547,8 +568,8 @@ const SettingsGenerator = props => {
                     defaultValue={depo}
                     format={formatNumber}
                     unsigned="true"
-                    onBlur={value => {
-                      setDepo(value);
+                    onBlur={depo => {
+                      setDepo(depo);
                     }}
                   />
                 </label>
@@ -565,8 +586,8 @@ const SettingsGenerator = props => {
                         unsigned="true"
                         min={10000}
                         max={Infinity}
-                        onBlur={val => {
-                          
+                        onBlur={secondaryDepo => {
+                          setSecondaryDepo(secondaryDepo);
                         }}
                       />
                     </label>
@@ -604,7 +625,7 @@ const SettingsGenerator = props => {
                         value={
                           <span>
                             {formatNumber(contracts)}
-                            {depo < depoAvailable &&
+                            {hasExtraDepo &&
                               <>
                                 {window.innerWidth < 768 ? <br /> : " "}
                                 (
@@ -754,19 +775,14 @@ const SettingsGenerator = props => {
               </div>
 
               <SGRow
-                modes={["evenly", "custom"]}
-                inputs={
-                  currentPreset.type == "СМС + ТОР"
-                    ? ["preferredStep", "percent", "stepInPercent"]
-                    : undefined
-                }
-                automaticLength={currentPreset.type == "СМС + ТОР"}
                 options={currentPreset.options[initialCurrentTab]}
                 onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
                 onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
                 data={data[initialCurrentTab]}
                 contracts={contracts}
                 currentTool={currentTool}
+                stepsToPercentConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromStepsToPercent : undefined}
+                percentToStepsConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromPercentToSteps : undefined}
               />
 
             </div>
@@ -776,19 +792,65 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%', marginTop: "0.7em" }}>
                 <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
                 <SGRow
-                  disabled={true}
-                  options={{
-                    preferredStep: currentPreset.options[initialCurrentTab].preferredStep,
-                    percent:       round(currentPreset.options[initialCurrentTab].percent / 62 * 100, fraction),
-                    length:        Math.floor(data[initialCurrentTab].length * 62 / 100),
-                    stepInPercent: currentPreset.options[initialCurrentTab].stepInPercent,
-                  }}
+                  options={currentPreset.options["Закрытие плечевого депозита"]}
+                  onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
                   onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
                   data={data["Закрытие плечевого депозита"]}
                   contracts={contracts}
                   currentTool={currentTool}
                 />
               </div>
+            }
+
+            {/* Прямые профитные докупки */}
+            {currentPreset.type == "СМС + ТОР" &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isProfitableBying}
+                    onChange={checked => setProfitableBying(checked)}
+                  />
+                  <span className="switch-group__label">Прямые профитные докупки</span>
+                </label>
+
+                <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+                  <SGRow
+                    isBying={true}
+                    inputs={currentPreset.type == "СМС + ТОР"
+                      ? ["percent"]
+                      : ["percent", "stepInPercent", "length"]}
+                    data={data["Прямые профитные докупки"]}
+                    options={currentPreset.options["Прямые профитные докупки"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
+                  />
+                </div>
+              </>
+            }
+
+            {/* Обратные профитные докупки */}
+            {currentPreset.type == "СМС + ТОР" &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isReversedProfitableBying}
+                    onChange={checked => setReversedProfitableBying(checked)}
+                  />
+                  <span className="switch-group__label">Обратные профитные докупки</span>
+                </label>
+
+                <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+                  <SGRow
+                    isBying={true}
+                    data={data["Обратные профитные докупки"]}
+                    options={currentPreset.options["Обратные профитные докупки"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
+                  />
+                </div>
+              </>
             }
 
             {/* Обратные докупки (ТОР) */}
@@ -854,7 +916,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab3"
                           id="settings-generator-tab3-control"
                           hidden={!isProfitableBying}
-                          onClick={e => setCurrentTab("прямые профит докупки")}>
+                          onClick={e => setCurrentTab("Прямые профитные докупки")}>
                     Прямые докупки
                   </Button>
 
@@ -865,7 +927,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab4"
                           id="settings-generator-tab4-control"
                           hidden={!isReversedProfitableBying}
-                          onClick={e => setCurrentTab("обратные профит докупки")}>
+                          onClick={e => setCurrentTab("Обратные профитные докупки")}>
                     Обратные докупки
                   </Button>
 
@@ -937,7 +999,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab3-control"
                    hidden>
                 
-                <Table data={data['прямые профит докупки']} isBying={true} />
+                <Table data={data['Прямые профитные докупки']} isBying={true} />
 
               </div>
               {/* tabpanel */}
@@ -948,7 +1010,7 @@ const SettingsGenerator = props => {
                    aria-labelledby="settings-generator-tab4-control"
                    hidden>
                 
-                <Table data={data['обратные профит докупки']} isBying={true} />
+                <Table data={data['Обратные профитные докупки']} isBying={true} />
                 
               </div>
               {/* tabpanel */}

@@ -95,47 +95,7 @@ class App extends React.Component {
 
   componentDidMount() {
     this.bindEvents();
-
-    if (dev) {
-      this.fetchInitialData();
-      return;
-    }
-
-    const checkIfAuthorized = () => {
-      return new Promise((resolve, reject) => {
-        fetch("getAuthInfo")
-          .then(res => {
-            if (res.authorized) {
-              resolve();
-            }
-            else {
-              reject();
-            }
-          })
-          .catch(() => reject())
-      })
-    }
-
-    let counter = 0;
-    promiseWhile(false, i => !i, () => {
-      return new Promise(resolve => {
-        counter++;
-        checkIfAuthorized()
-          .then(() => {
-            this.fetchInitialData();
-            resolve(true);
-          })
-          .catch(() => {
-            if (counter >= 10) {
-              this.showAlert("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
-              resolve(true);
-            }
-            else {
-              setTimeout(() => resolve(false), 1000);
-            }
-          });
-      });
-    });
+    this.fetchInitialData();
   }
 
   setStateAsync(state = {}) {
@@ -162,7 +122,7 @@ class App extends React.Component {
     }
 
     let body = {
-      code:   tool.code,
+      code: tool.code,
       from,
       to,
     };
@@ -176,6 +136,7 @@ class App extends React.Component {
 
     fetch(method, "GET", body)
       .then(response => {
+        console.log(response);
         if (this.state.currentToolCode == tool.code) {
           const data = response.data;
           this.setState({ data, loadingChartData: false });
@@ -193,48 +154,6 @@ class App extends React.Component {
     this.fetchInvestorInfo();
     this.fetchTools()
       .then(() => this.fetchCompanyQuotes());
-
-    return;
-    this.fetchSaves()
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            let found = false;
-            console.log(saves);
-
-            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-              p = p.then(_ => new Promise(resolve => {
-                const save = saves[index];
-                const id = save.id;
-                this.fetchSaveById(id)
-                  .then(save => {
-                    const corrupt = !this.validateSave();
-                    if (!corrupt && !found) {
-                      found = true;
-                      // Try to load it
-                      this.extractSave(Object.assign(save, { id }));
-                      this.setState({ currentSaveIndex: index + 1 });
-                    }
-
-                    saves[index].corrupt = corrupt;
-                    this.setState({ saves });
-                    resolve();
-                  });
-              }));
-            }
-          }
-        }
-        else {
-          console.log("No saves found!");
-        }
-
-        this.setState({ saves });
-      })
-      .catch(error => {
-        // this.showAlert(`Не удалось получить сохранения! ${error}`);
-        console.log(error);
-      });
   }
 
   fetchSaves() {

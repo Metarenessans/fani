@@ -33,8 +33,14 @@ export default function CodePanel(props) {
       {Object.keys(data).map((key, index) => {
         const arr = data[key];
 
+        // Не выводим закрытие плечевого депозита
+        if (key == "Закрытие плечевого депозита") {
+          return null
+        }
+
         // "Зеркальные докупки" всегда должны быть видны в коде
-        if (key != "Зеркальные докупки" && !arr.on) {
+        const alwaysVisible = ["Зеркальные докупки", "Прямые профитные докупки", "Обратные профитные докупки"];
+        if ((alwaysVisible.indexOf(key) == -1) && !arr.on) {
           return null;
         }
 
@@ -98,6 +104,69 @@ export default function CodePanel(props) {
           .join(",");
         parsedData = `{${parsedData}}`;
 
+        if (key == "Закрытие основного депозита") {
+          let suffix = (data["Закрытие плечевого депозита"] || [])
+            .map(v => {
+              let { percent, points } = v;
+              let pointsInPercents = points;
+              if (currentPreset.type == "Лимитник") {
+
+                // Акции
+                if (tool.dollarRate >= 1) {
+                  pointsInPercents =
+                    (
+                      // ход в пунктах
+                      points *
+                      // загрузка в контрактах
+                      contracts *
+                      // стоимость шага
+                      tool.lotSize
+                    )
+                    /
+                    (
+                      // объем входа в деньгах
+                      contracts * tool.guarantee
+                    )
+                    *
+                    100;
+                }
+                // ФОРТС
+                else {
+                  pointsInPercents =
+                    (
+                      // ход в пунктах
+                      points *
+                      // загрузка в контрактах
+                      contracts *
+                      // стоимость шага
+                      tool.stepPrice
+                    )
+                    /
+                    (
+                      // объем входа в деньгах
+                      (contracts * tool.guarantee)
+                      *
+                      tool.priceStep
+                    )
+                    *
+                    100;
+                }
+
+                if (isNaN(pointsInPercents)) {
+                  pointsInPercents = 0;
+                }
+
+                pointsInPercents = round(pointsInPercents, 4);
+              }
+              return `{${percent},${pointsInPercents}}`;
+            })
+            .join(",");
+
+          if (suffix) {
+            parsedData = `{${parsedData},{${suffix}}}`;
+          }
+        }
+
         // В Лимитнике в массиве закрытия добавляем еще пару фигурных скобок
         if (currentPreset.type == "Лимитник" && !arr.isBying) {
           parsedData = `{${parsedData}}`;
@@ -108,42 +177,117 @@ export default function CodePanel(props) {
           param = currentPreset.type == "Лимитник" ? "aapercent" : "aaperc";
         }
         else if (key == "Зеркальные докупки") {
+          title = "Массив зеркальных докупок";
           param = "flagmirroradd";
           parsedData = String(arr.on);
-          title = "Массив зеркальных докупок";
+        }
+        else if (key == "Прямые профитные докупки") {
+          title = "Массив прямых докупок";
+          param = "aaperc";
+          parsedData = (arr || [])
+            .map(v => {
+              let { percent, points } = v;
+              return `{${percent},${points},true}`;
+            })
+            .join(",");
+          parsedData = `{${parsedData}}`;
+        }
+        else if (key == "Обратные профитные докупки") {
+          title = "Массив обратных профитных докупок";
+          param = "aapercsh";
+          parsedData = (arr || [])
+            .map(v => {
+              let { percent, points } = v;
+              return `{${percent},${points}}`;
+            })
+            .join(",");
+          parsedData = `{${parsedData}}`;
         }
 
         const textContent = `GParam.${param} = ${parsedData}`;
 
         const codeElement = React.createRef();
 
+        let hideTitle = false;
+
         return (
-          <div className="code-panel-group"
-               key={index}>
+          <>
+            {(key == "Прямые профитные докупки" || key == "Обратные профитные докупки") && (() => {
+              hideTitle = true;
 
-            <div className="code-panel-group-header">
-              <h3>{title}</h3>
-              <button
-                className="code-panel-group__copy-btn"
-                onClick={e => {
-                  selectElementContent(codeElement.current);
+              const codeElement = React.createRef();
+              let title = "";
+              let param = "";
+              let parsedData = "";
 
-                  navigator.clipboard.writeText(textContent)
-                    .then(() => message.success("Скопировано!"))
-                    .catch(error => console.log('Something went wrong', error));
-                }}
-              >
-                копировать
-              </button>
+              if (key == "Прямые профитные докупки") {
+                title = "Массив прямых докупок";
+                param = "flagautoadd";
+              }
+              else if (key == "Обратные профитные докупки") {
+                title = "Массив обратных профитных докупок";
+                param = "flautoaddsh";
+              }
+              parsedData = String(arr.on);
+              const textContent = `GParam.${param} = ${parsedData}`;
+              return (
+                <div className="code-panel-group"
+                    key={index + .5}>
+
+                  <div className="code-panel-group-header">
+                    <h3>{title}</h3>
+                    <button
+                      className="code-panel-group__copy-btn"
+                      onClick={e => {
+                        selectElementContent(codeElement.current);
+
+                        navigator.clipboard.writeText(textContent)
+                          .then(() => message.success("Скопировано!"))
+                          .catch(error => console.log('Something went wrong', error));
+                      }}
+                    >
+                      копировать
+                  </button>
+                  </div>
+                  <div className="code-panel-group-content">
+                    <pre onClick={e => selectElementContent(e.target)}
+                      ref={codeElement}>
+                      {textContent}
+                    </pre>
+                  </div>
+
+                </div>
+              )
+            })()}
+            <div className="code-panel-group"
+                 key={index}>
+
+              {!hideTitle &&
+                <div className="code-panel-group-header">
+                  <h3>{title}</h3>
+                  <button
+                    className="code-panel-group__copy-btn"
+                    onClick={e => {
+                      selectElementContent(codeElement.current);
+
+                      navigator.clipboard.writeText(textContent)
+                        .then(() => message.success("Скопировано!"))
+                        .catch(error => console.log('Something went wrong', error));
+                    }}
+                  >
+                    копировать
+                  </button>
+                </div>
+              }
+              <div className="code-panel-group-content">
+                <pre onClick={e => selectElementContent(e.target)}
+                  ref={codeElement}>
+                  {textContent}
+                </pre>
+              </div>
+
             </div>
-            <div className="code-panel-group-content">
-              <pre onClick={e => selectElementContent(e.target)}
-                ref={codeElement}>
-                {textContent}
-              </pre>
-            </div>
-
-          </div>
+          </>
         )
       })}
 
