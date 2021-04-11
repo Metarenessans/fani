@@ -103,11 +103,9 @@ export default class Item extends React.Component {
 
     return 0;
   }
-
   componentDidMount() {
 
   }
-
   render() {
     const { 
       index,
@@ -203,9 +201,8 @@ export default class Item extends React.Component {
                 value={currentToolIndex}
                 disabled={this.props.tools.length == 0}
                 onChange={index => {
-                  console.log(index, this.props.tools[index]);
                   let name = this.props.tools[index].getSortProperty();
-                  onChange("selectedToolName", name);
+                  onChange("selectedToolName", name, this);
                 }}
                 showSearch
                 optionFilterProp="children"
@@ -457,6 +454,7 @@ export default class Item extends React.Component {
                           </span>
                           <NumericInput
                             className="input-group__input"
+                            min={currentTool.priceStep}
                             key={stepExpected}
                             defaultValue={stepExpected}
                             onBlur={val => {
@@ -474,7 +472,7 @@ export default class Item extends React.Component {
                         <p className="tool-main-card-body-left__info">
                           {(() => {
                             const steps = round(stepExpected / currentTool.priceStep, 2);
-                            return `${stepExpected} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                            return `${formatNumber(stepExpected)} ₽/$ = ${formatNumber(steps)} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
                           })()}
                         </p>
                       </div>
@@ -582,13 +580,13 @@ export default class Item extends React.Component {
                           </span>
                           <NumericInput
                             className="input-group__input"
+                            min={currentTool.priceStep}
                             key={stepExpected2 != null ? stepExpected2 : stepExpected}
                             defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
                             onBlur={val => {
                               if (val == 0) {
                                 val = 0.1;
                               }
-
                               onChange("stepExpected2", val);
                               // this.setState({ stepExpected2: val }, this.recalc)
                             }}
@@ -599,7 +597,7 @@ export default class Item extends React.Component {
                         <p className="tool-main-card-body-left__info">
                           {(() => {
                             const steps = round((stepExpected2 != null ? stepExpected2 : stepExpected) / currentTool.priceStep, 2);
-                            return `${(stepExpected2 != null ? stepExpected2 : stepExpected)} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                            return `${formatNumber(stepExpected2 != null ? stepExpected2 : stepExpected)} ₽/$ = ${formatNumber(steps)} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
                           })()}
                         </p>
                       </div>
