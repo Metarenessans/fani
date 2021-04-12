@@ -21,6 +21,7 @@ const names = {
 
 export default function SGRow({
   test,
+  preferredStepLabel,
   isBying = false,
   disabled,
   modes = [],
@@ -83,7 +84,10 @@ export default function SGRow({
 
                   <label className="input-group">
                     <span className="input-group__label">
-                      {!isBying ? "Желаемый" : "Обратный" } ход
+                      {preferredStepLabel 
+                        ? preferredStepLabel
+                        : (!isBying ? "Желаемый" : "Обратный") + " ход"
+                      }
                       <button
                         className="settings-generator-content__step-mode-switcher"
                         onClick={e => {
@@ -257,7 +261,10 @@ export default function SGRow({
             {inputs.indexOf("preferredStep") != -1 &&
               <label className="input-group">
                 <span className="input-group__label">
-                  {!isBying ? "Желаемый" : "Обратный" } ход
+                  {preferredStepLabel 
+                    ? preferredStepLabel
+                    : (!isBying ? "Желаемый" : "Обратный") + " ход"
+                  }
                   {currentMode != 'fibonacci' &&
                     <button
                       className="settings-generator-content__step-mode-switcher"

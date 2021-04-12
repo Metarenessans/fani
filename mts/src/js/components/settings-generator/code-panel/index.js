@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { message } from 'antd';
 
-import Stack from "../../../../../../common/components/stack"
+import Stack        from "../../../../../../common/components/stack"
+import NumericInput from "../../../../../../common/components/numeric-input"
 
 import round          from "../../../../../../common/utils/round"
-import fractionLength from "../../../../../../common/utils/fraction-length"
+import formatNumber   from "../../../../../../common/utils/format-number"
 
 import "./style.scss"
 
@@ -26,6 +27,12 @@ function selectElementContent(node) {
 
 export default function CodePanel(props) {
   const { currentPreset, data, tool, contracts, risk, isRiskStatic } = props;
+
+  const [rollback, setRollback] = useState(tool.priceStep);
+
+  useEffect(() => {
+    setRollback(tool.priceStep);
+  }, [tool.code]);
 
   return (
     <Stack className="code-panel">
@@ -99,7 +106,7 @@ export default function CodePanel(props) {
 
               pointsInPercents = round(pointsInPercents, 4);
             }
-            return `{${percent},${pointsInPercents}}`;
+            return `{${percent},${pointsInPercents},${key == "Закрытие основного депозита" ? rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
@@ -158,7 +165,7 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
-              return `{${percent},${pointsInPercents}}`;
+              return `{${percent},${pointsInPercents},${rollback}}`;
             })
             .join(",");
 
@@ -277,6 +284,17 @@ export default function CodePanel(props) {
                   >
                     копировать
                   </button>
+                  {key == "Закрытие основного депозита" &&
+                    <label className="input-group input-group--fluid">
+                      <span className="input-group__label">обратный откат</span>
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={tool.priceStep}
+                        format={formatNumber}
+                        onBlur={value => setRollback(value)}
+                      />
+                    </label>
+                  }
                 </div>
               }
               <div className="code-panel-group-content">

@@ -71,7 +71,10 @@ const SettingsGenerator = props => {
           customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
-        "Прямые профитные докупки": { percent: optionsTemplate.percent },
+        "Прямые профитные докупки": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
         "Обратные профитные докупки": {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
@@ -816,9 +819,7 @@ const SettingsGenerator = props => {
                 <div style={{ width: '100%' }} hidden={!isProfitableBying}>
                   <SGRow
                     isBying={true}
-                    inputs={currentPreset.type == "СМС + ТОР"
-                      ? ["percent"]
-                      : ["percent", "stepInPercent", "length"]}
+                    preferredStepLabel="Прямой ход"
                     data={data["Прямые профитные докупки"]}
                     options={currentPreset.options["Прямые профитные докупки"]}
                     contracts={contractsTotal - contracts}

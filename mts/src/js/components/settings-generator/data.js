@@ -32,7 +32,7 @@ const createData = (type, options, meta) => {
   
   let contractsLeft = contracts;
   if (isBying) {
-    contractsLeft = contractsTotal - contracts;
+    contractsLeft = contracts + contractsSecondary;
     contracts = contractsLeft;
   }
 
@@ -60,11 +60,12 @@ const createData = (type, options, meta) => {
   let data = [];
   data.isBying = isBying;
   data.on      = on;
-  if (!on) {
+  if (!on || contracts == 0) {
     return data;
   }
 
   if (isSMS_TOR) {
+    // Инпут "% докупки" пустой
     if (presetOptions.percent == "") {
       return data;
     }
@@ -301,10 +302,10 @@ const createData = (type, options, meta) => {
         break;
       }
 
-      // кол-во закрытых контрактов
+      // Кол-во закрытых/докупленных контрактов
       let _contracts = roundUp(contracts * percent / 100);
-      if (mode == 'fibonacci') {
-        _contracts = roundUp(contracts * percent / 100);
+      if (isSMS_TOR) {
+        _contracts = roundUp(contractsLeft * percent / 100);
       }
 
       if (contractsLeft - _contracts >= 0) {
