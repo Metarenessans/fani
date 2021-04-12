@@ -136,7 +136,6 @@ class App extends React.Component {
 
     fetch(method, "GET", body)
       .then(response => {
-        console.log(response);
         if (this.state.currentToolCode == tool.code) {
           const data = response.data;
           this.setState({ data, loadingChartData: false });
@@ -753,7 +752,6 @@ class App extends React.Component {
                         <Button
                           className="scale-button scale-button--default"
                           onClick={(e) => {
-                            console.log(min, max);
                             updateChartScaleMinMax(min, max);
                             this.setState({
                               scaleOffset: 0, changedMinRange: min,
@@ -765,7 +763,7 @@ class App extends React.Component {
                         >
                           отмена
                         </Button>
-                        
+
                         <Button
                           className="scale-button scale-button--minus"
                           onClick={ () => {
@@ -774,12 +772,14 @@ class App extends React.Component {
                             const scaleStep = round(price * .005 , 2);
 
                             const updatedScaleOffset = scaleOffset - scaleStep;
-                            this.setState({ 
-                              scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
-                              changedMaxRange: max - updatedScaleOffset,
-                              movePercantage: movePercantage + sliderStepPercent, days: 0
-                            });
-                            updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            if (min + updatedScaleOffset != 0) {
+                              this.setState({
+                                scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                                changedMaxRange: max - updatedScaleOffset,
+                                movePercantage: movePercantage + sliderStepPercent, days: 0
+                              });
+                              updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            }
                           }}
                           aria-label="Увеличить масштаб графика"
                         >
@@ -794,13 +794,15 @@ class App extends React.Component {
                             let scaleStep = round(price * .005, 2);
 
                             const updatedScaleOffset = scaleOffset + scaleStep;
-                            this.setState({
-                              scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
-                              changedMaxRange: max - updatedScaleOffset,
-                              movePercantage: movePercantage + sliderStepPercent,
-                              days: 0
-                            });
-                            updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            if (min + updatedScaleOffset < max - updatedScaleOffset) {
+                              this.setState({
+                                scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                                changedMaxRange: max - updatedScaleOffset,
+                                movePercantage: movePercantage + sliderStepPercent,
+                                days: 0
+                              });
+                              updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            }
                           }}
                           aria-label="Уменьшить масштаб графика"
                         >
@@ -953,7 +955,7 @@ class App extends React.Component {
                                 <div className="main-content-stats__row">
                                   <span>КОД</span>
                                   <span className="main-content-stats__val">
-                                    {`${formatNumber(kod)}%`}
+                                    {`${isNaN(kod) ? "-" : formatNumber(kod) + "%" } `}
                                   </span>
                                 </div>
                               </>
