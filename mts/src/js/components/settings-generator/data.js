@@ -142,7 +142,7 @@ const createData = (type, options, meta) => {
       }
 
       if (isSMS_TOR) {
-        percent = subIndex < 10 ? percent : percent * 4;;
+        percent = subIndex < Math.floor(50 / presetOptions.percent) ? percent : percent * 4;;
       }
 
       // Округляем
@@ -285,8 +285,8 @@ const createData = (type, options, meta) => {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
-      if (isSMS_TOR) {
-        points = subIndex < 10 
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+        points = subIndex < Math.floor(50 / presetOptions.percent)
           ? round((mainData[0].points / 2) * (index + 1), fraction)
           : round(currentTool.adrDay * (index + 1), fraction);
       }

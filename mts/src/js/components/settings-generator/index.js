@@ -46,7 +46,7 @@ const SettingsGenerator = props => {
   const [risk, setRisk] = useState(0.5);
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
-  const [load, setLoad] = useState(props.load || 0);
+  const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
   const tools = props.tools?.length ? props.tools : Tools.createArray();
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
@@ -197,7 +197,7 @@ const SettingsGenerator = props => {
 
   let contractsTotal = 0;
   if (currentTool) {
-    contractsTotal = Math.floor(depo / currentTool.guarantee);
+    contractsTotal = Math.floor((depo + secondaryDepo) / currentTool.guarantee);
   }
 
   let contractsSecondary = 0;
