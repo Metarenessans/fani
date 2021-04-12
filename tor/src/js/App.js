@@ -448,28 +448,24 @@ constructor(props) {
                 {
                   this.state.items.map((obj, index) =>
                     <Tool
-                      key={Math.random()}
                       index={index}
                       investorInfo={this.state.investorInfo}
                       tools={this.getTools()}
                       data={obj}
-
                       depo={this.state.depo}
-                      // drawdown={this.state.drawdown}
-                      // additionalLoading={this.state.additionalLoading}
-                      // stepExpected={this.state.stepExpected}
-
-                      onChange={(prop, val) => {
+                      onChange={(prop, val, jsx) => {
                         if (index == 0) {
                           const { tools, investorInfo } = this.state;
                           this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
                         }
 
                         const { items } = this.state;
+                        if (prop == "selectedToolName") {
+                          items[index].stepExpected = jsx.getCurrentTool().priceStep * 20;
+                        }
                         items[index][prop] = val;
                         this.setState({ items, changed: true });
                       }}
-
                       onDrawdownChange={(val, cb) => {
                         this.setState({ drawdown: val }, cb);
                       }}
@@ -493,11 +489,6 @@ constructor(props) {
                           this.setState({ items });
                         }
 
-                      }}
-                      onRef={() => {
-                        // let { items } = this.state;
-                        // items[0] = ref;
-                        // this.setState({ items });
                       }}
                     />
                   )
