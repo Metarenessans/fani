@@ -461,7 +461,7 @@ constructor(props) {
 
                         const { items } = this.state;
                         if (prop == "selectedToolName") {
-                          items[index].stepExpected = jsx.getCurrentTool().priceStep * 20;
+                          items[index].stepExpected = jsx.getToolByName(val).priceStep * 20;
                         }
                         items[index][prop] = val;
                         this.setState({ items, changed: true });

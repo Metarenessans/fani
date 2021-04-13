@@ -86,6 +86,23 @@ export default class Item extends React.Component {
     return { ...tools[selectedToolIndex] } || { ...template };
   }
 
+  getToolByName(name) {
+    const { tools, data } = this.props;
+
+    let selectedToolIndex = 0;
+    if (name != null) {
+      for (let i = 0; i < tools.length; i++) {
+        let tool = tools[i];
+        if (tool.getSortProperty() === name) {
+          selectedToolIndex = i;
+          break;
+        }
+      }
+    }
+
+    return { ...tools[selectedToolIndex] } || { ...template };
+  }
+
   getCurrentToolIndex() {
     const { tools, data } = this.props;
 
@@ -103,9 +120,7 @@ export default class Item extends React.Component {
 
     return 0;
   }
-  componentDidMount() {
 
-  }
   render() {
     const { 
       index,
@@ -386,11 +401,9 @@ export default class Item extends React.Component {
                 <label className="switch tool-main-card-header__switch">
                   <Switch
                     className="switch__input"
-                    key={directUnloading}
-                    defaultChecked={directUnloading}
+                    checked={directUnloading}
                     onChange={val => {
                       onChange("directUnloading", val);
-                      // this.setState({ directUnloading: val });
                     }} 
                   />
                   <Info tooltip="Прямая разгрузка позиции">
@@ -401,9 +414,9 @@ export default class Item extends React.Component {
               
               {(() => {
                 var iterations = 
-                  +(drawdown / incomeExpected).toFixed(1) *
-                   (directUnloading ? 1 : 2);
-                var incomeForIteration = (incomeExpected / (directUnloading ? 1 : 2)).toFixed(1);
+                  +(drawdown / incomeExpected).toFixed(1) /
+                   (directUnloading ? 1 : .6);
+                var incomeForIteration = (incomeExpected * (directUnloading ? 1 : .6)).toFixed(1);
                   
                 return (
                   <div className="tool-main-card-body">
@@ -455,7 +468,6 @@ export default class Item extends React.Component {
                           <NumericInput
                             className="input-group__input"
                             min={currentTool.priceStep}
-                            key={stepExpected}
                             defaultValue={stepExpected}
                             onBlur={val => {
                               if (val == 0) {
@@ -584,6 +596,7 @@ export default class Item extends React.Component {
                             key={stepExpected2 != null ? stepExpected2 : stepExpected}
                             defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
                             onBlur={val => {
+                              console.log(currentTool.priceStep);
                               if (val == 0) {
                                 val = 0.1;
                               }

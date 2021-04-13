@@ -193,6 +193,7 @@ export default class Item extends React.Component {
                 value={currentToolIndex}
                 disabled={this.props.tools.length == 0}
                 onChange={index => {
+                  console.log(index, this.props.tools[index]);
                   let name = this.props.tools[index].getSortProperty();
                   onChange("selectedToolName", name);
                 }}
@@ -556,7 +557,7 @@ export default class Item extends React.Component {
 
 
                       <div className="tool-main-card-body-pair">
-                        <h3 className="tool-main-card-body-pair-key">Депози:т</h3>
+                        <h3 className="tool-main-card-body-pair-key">Депозит:</h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(deposit, 2)) }
                         </span>

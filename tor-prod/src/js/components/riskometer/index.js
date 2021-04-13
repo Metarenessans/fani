@@ -1,49 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-
 import * as antv from '@antv/g2';
 
 import round from "../../utils/round"
 
 import "./style.sass"
-
-let chart;
-const color = ['#F5222D', '#FFBF00', '#87d068'];
-
-function draw(data) {
-  const val = data[0].value;
-
-  // chart.annotation().clear(true);
-
-  chart.annotation().arc({
-    top: false,
-    start: [0, 1],
-    end: [100, 1],
-    style: {
-      stroke: '#CBCBCB',
-      lineWidth: 10,
-      lineDash: null,
-    },
-  });
-
-  const stroke = val < (100 / 3)
-    ? color[0]
-    : val < (100 / 3 * 2)
-      ? color[1]
-      : color[2];
-
-  chart.annotation().arc({
-    start: [0, 1],
-    end: [val, 1],
-    style: {
-      stroke,
-      lineWidth: 10,
-      lineDash: null,
-    },
-  });
-
-  chart.changeData(data);
-}
 
 export default class Speedometer extends React.Component {
   
@@ -57,15 +18,14 @@ export default class Speedometer extends React.Component {
     };
   }
 
-  creatData() {
+  createShape() {
     let { value } = this.state;
 
-    const data = [];
-    data.push({ value: round(value, 2) });
-    return data;
-  }
-
-  createShape() {
+    function creatData() {
+      const data = [];
+      data.push({ value: round(value, 2) });
+      return data;
+    }
 
     antv.registerShape('point', 'pointer', {
       draw(cfg, container) {
@@ -75,13 +35,14 @@ export default class Speedometer extends React.Component {
       },
     });
 
-    chart = new antv.Chart({
+    const color = ['#F5222D', '#FFBF00', '#87d068'];
+    const chart = new antv.Chart({
       container: 'container',
       autoFit: true,
       padding: [0, 0, 30, 0],
     });
-    chart.data(this.creatData());
-    // chart.animate(true);
+    chart.data(creatData());
+    chart.animate(true);
 
     chart.coordinate('polar', {
       startAngle: (-9 / 8) * Math.PI,
@@ -128,15 +89,51 @@ export default class Speedometer extends React.Component {
         }
       });
 
-    this.updateShape();
-  }
+    draw(creatData());
 
-  updateShape() {
-    draw(this.creatData());
+    function draw(data) {
+      const val = data[0].value;
+      chart.annotation().clear(true);
+      chart.annotation().arc({
+        top: false,
+        start: [0, 1],
+        end: [100, 1],
+        style: {
+          stroke: '#CBCBCB',
+          lineWidth: 10,
+          lineDash: null,
+        },
+      });
+
+      chart.annotation().arc({
+        start: [0, 1],
+        end: [val, 1],
+        style: {
+          stroke: val < (100 / 3)
+            ? color[0]
+            : val < (100 / 3 * 2)
+              ? color[1]
+              : color[2],
+          lineWidth: 10,
+          lineDash: null,
+        },
+      });
+
+      chart.changeData(data);
+    }
+
   }
 
   componentDidMount() {
+    const { id } = this.state;
     let { chances } = this.props;
+
+    let p_quotes  = chances[0];
+    let p_chances = chances[1];
+    let p_level   = this.props.value;
+    let p_out     = computator(p_quotes, p_chances, p_level);
+
+    this.setState({ value: p_out[4] * 100 }, this.createShape);
 
     function computator(n_iters, n_chances, level) {
       /*    На вход:
@@ -278,20 +275,9 @@ export default class Speedometer extends React.Component {
           pb       оценённая вероятность под выбранный level
           y        выборка, по которой производились оценки
           ymax     максимальное значение        
-      */
+  */
       return [xx, zz, pts_x, pts_z, pb, y, ymax];
     }
-
-    let p_quotes  = chances[0];
-    let p_chances = chances[1];
-    let p_level   = this.props.value;
-    let p_out     = computator(p_quotes, p_chances, p_level);
-
-    this.setState({ value: p_out[4] * 100 }, this.createShape);
-
-    // window.addEventListener("resize", e => {
-    //   this.updateShape();
-    // });
   }
 
   render() {

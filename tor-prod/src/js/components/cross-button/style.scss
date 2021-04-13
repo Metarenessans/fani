@@ -34,11 +34,12 @@
     box-shadow: 0 0 0 var(--focus-outline-width) white;
   }
   
-  [role="img"] {
-    font-size: .75em;
+  span {
     position: absolute;
     left: 50%;
     top:  50%;
+    line-height:   1ch;
+    margin-top: 0.15ch;
     transform: translate(-50%, -50%);
   }
 }
