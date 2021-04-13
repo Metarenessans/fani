@@ -9,6 +9,14 @@ import formatNumber   from "../../../../../../common/utils/format-number"
 
 import "./style.scss"
 
+const roundToClosest = (number, base) => {
+  let result = Math.round(number / base) * base;
+  if (result < base) {
+    return base;
+  }
+  return result;
+};
+
 function selectElementContent(node) {
   if (document.body.createTextRange) {
     const range = document.body.createTextRange();
@@ -106,7 +114,7 @@ export default function CodePanel(props) {
 
               pointsInPercents = round(pointsInPercents, 4);
             }
-            return `{${percent},${pointsInPercents},${key == "Закрытие основного депозита" ? rollback : ""}}`;
+            return `{${percent},${pointsInPercents}${key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
@@ -165,7 +173,7 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
-              return `{${percent},${pointsInPercents},${rollback}}`;
+              return `{${percent},${pointsInPercents}${","+rollback}}`;
             })
             .join(",");
 
@@ -239,7 +247,8 @@ export default function CodePanel(props) {
               const textContent = `GParam.${param} = ${parsedData}`;
               return (
                 <div className="code-panel-group"
-                    key={index + .5}>
+                     key={Math.random()}
+                     style={{ marginBottom: "-2em" }}>
 
                   <div className="code-panel-group-header">
                     <h3>{title}</h3>
@@ -267,7 +276,7 @@ export default function CodePanel(props) {
               )
             })()}
             <div className="code-panel-group"
-                 key={index}>
+                 key={Math.random()}>
 
               {!hideTitle &&
                 <div className="code-panel-group-header">
@@ -289,17 +298,23 @@ export default function CodePanel(props) {
                       <span className="input-group__label">обратный откат</span>
                       <NumericInput
                         className="input-group__input"
-                        defaultValue={tool.priceStep}
+                        key={Math.random()}
+                        defaultValue={rollback}
+                        unsigned="true"
+                        min={0}
                         format={formatNumber}
-                        onBlur={value => setRollback(value)}
+                        onBlur={(value, textValue, jsx) => {
+                          const newRollback = roundToClosest(Number(value), tool.priceStep);
+                          setRollback(newRollback)
+                          jsx.setState({ value: newRollback });
+                        }}
                       />
                     </label>
                   }
                 </div>
               }
               <div className="code-panel-group-content">
-                <pre onClick={e => selectElementContent(e.target)}
-                  ref={codeElement}>
+                <pre onClick={e => selectElementContent(e.target)} ref={codeElement}>
                   {textContent}
                 </pre>
               </div>
@@ -311,10 +326,10 @@ export default function CodePanel(props) {
 
       {(() => {
         const codeElement = React.createRef();
-        const textContent = `GParam.depo_stop = {${!isRiskStatic ? risk : 0}, ${isRiskStatic ? risk : 0}}`;
+        const textContent = `GParam.depo_stop = {${!isRiskStatic ? risk : 0},${isRiskStatic ? risk : 0}}`;
 
         return (
-          <div className="code-panel-group">
+          <div className="code-panel-group" key={Math.random()}>
 
             <div className="code-panel-group-header">
               <h3>Риск</h3>

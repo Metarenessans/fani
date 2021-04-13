@@ -927,7 +927,8 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab4"
                           id="settings-generator-tab4-control"
-                          hidden={!isReversedProfitableBying}
+                          hidden={true}
+                          // hidden={!isReversedProfitableBying}
                           onClick={e => setCurrentTab("Обратные профитные докупки")}>
                     Обратные докупки
                   </Button>

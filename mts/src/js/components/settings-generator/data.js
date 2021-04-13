@@ -288,7 +288,7 @@ const createData = (type, options, meta) => {
       if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
         points = subIndex < Math.floor(50 / presetOptions.percent)
           ? round((mainData[0].points / 2) * (index + 1), fraction)
-          : round(currentTool.adrDay * (index + 1), fraction);
+          : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
       }
 
       // Если ход больше желаемого хода - массив заканчивается
