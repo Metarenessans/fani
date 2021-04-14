@@ -186,7 +186,6 @@ class App extends React.Component {
     this.fetchTools()
       .then(() => this.fetchCompanyQuotes());
 
-
     return;
     this.fetchSaves()
       .then(saves => {
@@ -577,10 +576,9 @@ class App extends React.Component {
         /
         currentTool.stepPrice
         /
-        // Number((contracts || 1))
         (contracts || 1)
         *
-        currentTool.stepPrice;
+        currentTool.priceStep;
 
       if (risk != 0 && percentage != 0) {
         possibleRisk =
@@ -603,7 +601,7 @@ class App extends React.Component {
       /
       (contracts || 1)
       *
-      currentTool.stepPrice;
+      currentTool.priceStep;
 
     if (risk != 0 && percentage != 0) {
       possibleRisk =
@@ -1075,6 +1073,7 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
+                          disabled={true}
                         >
                           <span className="visually-hidden">Открыть конфиг</span>
                           <SettingFilled className="settings-button__icon" />

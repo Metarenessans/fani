@@ -742,6 +742,9 @@ $m: .4475;
     }
 
     &__label {
+      display: inline-flex;
+      align-items: center;
+
       font-family: "Circe", sans-serif;
       font-size: 1.4em * $m;
       font-weight: bold;
@@ -750,8 +753,10 @@ $m: .4475;
 
     &__value {
       margin-left: 1em;
+      max-width: 10em;
+      width: 100%;
 
-      font-size: 1.75em;
+      font-size: .6em;
       color: #131313;
     }
 

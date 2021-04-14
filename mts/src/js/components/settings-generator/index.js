@@ -22,7 +22,6 @@ import SGRow        from "./sgrow"
 
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
-import ReversedByingRow from "./reversed-bying-row"
 import Table            from "./table"
 import { Tools }        from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
@@ -70,7 +69,10 @@ const SettingsGenerator = props => {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
+        "Обратные докупки (ТОР)": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
         "Прямые профитные докупки": {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
@@ -324,9 +326,10 @@ const SettingsGenerator = props => {
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
 
-    // setReversedBying(currentPreset.type == "СМС + ТОР" ? true );
+    // Дефолтный стоп в смс+тор = 100%
+    setRisk(currentPreset.type == "СМС + ТОР" ? 1 : 0.5);
 
-  }, [currentPreset, investorDepo]);
+  }, [currentPreset.type, investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -670,12 +673,20 @@ const SettingsGenerator = props => {
                   <div className="settings-generator-slider__label">
                     Загрузка
                     <span className="settings-generator-slider__value">
-                      {load}%
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={load}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => setLoad(value)}
+                        suffix="%"
+                      />
                     </span>
                   </div>
                   <CustomSlider 
                     className="settings-generator-slider"
                     value={load}
+                    step={0.01}
                     onChange={value => setLoad(value)}
                   />
 
@@ -714,7 +725,6 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
-                      // ~~
                       (investorDepo * risk / 100)
                       /
                       currentTool.stepPrice
@@ -724,7 +734,6 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
-                      console.log(investorDepo, "ДЕПО", risk, "РИСК", currentTool.stepPrice, "ШАГ ЦЕНЫ", contracts, "КОНТРАКТЫ", "ГЕНА");
                       setRisk(
                         riskInSteps
                         *
@@ -867,9 +876,6 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%' }} hidden={!isReversedBying}>
                 <SGRow
                   isBying={true}
-                  inputs={currentPreset.type == "СМС + ТОР" 
-                    ? ["percent"] 
-                    : ["percent", "stepInPercent", "length"]}
                   data={data["Обратные докупки (ТОР)"]}
                   options={currentPreset.options["Обратные докупки (ТОР)"]}
                   contracts={contractsTotal - contracts}

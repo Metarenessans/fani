@@ -38,9 +38,9 @@ const createData = (type, options, meta) => {
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const isSMS_TOR = 
-    currentPreset.type == "СМС + ТОР" &&
-    ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
+  const isSMS_TOR = false;
+    // currentPreset.type == "СМС + ТОР" &&
+    // ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
 
   let { mode, stepInPercent, length } = presetOptions;
 
@@ -269,8 +269,6 @@ const createData = (type, options, meta) => {
       }
 
       if (currentPreset.type == "СМС + ТОР" && type == "Закрытие основного депозита") {
-        // debugger;
-        // console.log(length, subLength);
         // points = round(
         //   round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
         //   fraction
@@ -285,11 +283,11 @@ const createData = (type, options, meta) => {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
-        points = subIndex < Math.floor(50 / presetOptions.percent)
-          ? round((mainData[0].points / 2) * (index + 1), fraction)
-          : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
-      }
+      // if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      //   points = subIndex < Math.floor(50 / presetOptions.percent)
+      //     ? round((mainData[0].points / 2) * (index + 1), fraction)
+      //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
+      // }
 
       // Если ход больше желаемого хода - массив заканчивается
       if (
@@ -304,7 +302,7 @@ const createData = (type, options, meta) => {
 
       // Кол-во закрытых/докупленных контрактов
       let _contracts = roundUp(contracts * percent / 100);
-      if (isSMS_TOR) {
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
         _contracts = roundUp(contractsLeft * percent / 100);
       }
 

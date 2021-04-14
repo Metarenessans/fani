@@ -326,7 +326,7 @@ export default function CodePanel(props) {
 
       {(() => {
         const codeElement = React.createRef();
-        const textContent = `GParam.depo_stop = {${!isRiskStatic ? risk : 0},${isRiskStatic ? risk : 0}}`;
+        const textContent = `GParam.depo_stop = {${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`;
 
         return (
           <div className="code-panel-group" key={Math.random()}>
