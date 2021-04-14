@@ -86,6 +86,23 @@ export default class Item extends React.Component {
     return { ...tools[selectedToolIndex] } || { ...template };
   }
 
+  getToolByName(name) {
+    const { tools, data } = this.props;
+
+    let selectedToolIndex = 0;
+    if (name != null) {
+      for (let i = 0; i < tools.length; i++) {
+        let tool = tools[i];
+        if (tool.getSortProperty() === name) {
+          selectedToolIndex = i;
+          break;
+        }
+      }
+    }
+
+    return { ...tools[selectedToolIndex] } || { ...template };
+  }
+
   getCurrentToolIndex() {
     const { tools, data } = this.props;
 
@@ -102,10 +119,6 @@ export default class Item extends React.Component {
     }
 
     return 0;
-  }
-
-  componentDidMount() {
-
   }
 
   render() {
@@ -144,7 +157,17 @@ export default class Item extends React.Component {
 
     const freeMoney = depo - drawdown - rubbles;
     const pointsAgainst = drawdown / (contracts * currentTool.stepPrice);
-    const incomeExpected = ((depo * (additionalLoading / 100)) / currentTool.guarantee) * (stepExpected / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+    
+    const incomeExpected = 
+      // (Депозит * процент догрузки) / ГО
+      ((depo * (additionalLoading / 100)) / currentTool.guarantee) * 
+      // Ожидаемый ход / шаг цены * цена шага
+      (stepExpected / currentTool.priceStep * currentTool.stepPrice) + 
+      // Кол-во контрактов
+      contracts * 
+      //  Ожидаемый ход / шаг цены * цена шага
+      (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+
     const incomeExpected2 = ((depo * (additionalLoading2 / 100)) / currentTool.guarantee) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice);
 
     function AddButton(props) {
@@ -193,9 +216,8 @@ export default class Item extends React.Component {
                 value={currentToolIndex}
                 disabled={this.props.tools.length == 0}
                 onChange={index => {
-                  console.log(index, this.props.tools[index]);
                   let name = this.props.tools[index].getSortProperty();
-                  onChange("selectedToolName", name);
+                  onChange("selectedToolName", name, this);
                 }}
                 showSearch
                 optionFilterProp="children"
@@ -379,11 +401,9 @@ export default class Item extends React.Component {
                 <label className="switch tool-main-card-header__switch">
                   <Switch
                     className="switch__input"
-                    key={directUnloading}
-                    defaultChecked={directUnloading}
+                    checked={directUnloading}
                     onChange={val => {
                       onChange("directUnloading", val);
-                      // this.setState({ directUnloading: val });
                     }} 
                   />
                   <Info tooltip="Прямая разгрузка позиции">
@@ -394,11 +414,9 @@ export default class Item extends React.Component {
               
               {(() => {
                 var iterations = 
-                  +(drawdown / incomeExpected).toFixed(1) *
-                   (directUnloading ? 1 : 2);
-                var incomeForIteration =
-                  (incomeExpected / (directUnloading ? 1 : 2))
-                    .toFixed(1);
+                  +(drawdown / incomeExpected).toFixed(1) /
+                   (directUnloading ? 1 : .6);
+                var incomeForIteration = (incomeExpected * (directUnloading ? 1 : .6)).toFixed(1);
                   
                 return (
                   <div className="tool-main-card-body">
@@ -449,7 +467,7 @@ export default class Item extends React.Component {
                           </span>
                           <NumericInput
                             className="input-group__input"
-                            key={stepExpected}
+                            min={currentTool.priceStep}
                             defaultValue={stepExpected}
                             onBlur={val => {
                               if (val == 0) {
@@ -466,7 +484,7 @@ export default class Item extends React.Component {
                         <p className="tool-main-card-body-left__info">
                           {(() => {
                             const steps = round(stepExpected / currentTool.priceStep, 2);
-                            return `${stepExpected} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                            return `${formatNumber(stepExpected)} ₽/$ = ${formatNumber(steps)} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
                           })()}
                         </p>
                       </div>
@@ -574,13 +592,14 @@ export default class Item extends React.Component {
                           </span>
                           <NumericInput
                             className="input-group__input"
+                            min={currentTool.priceStep}
                             key={stepExpected2 != null ? stepExpected2 : stepExpected}
                             defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
                             onBlur={val => {
+                              console.log(currentTool.priceStep);
                               if (val == 0) {
                                 val = 0.1;
                               }
-
                               onChange("stepExpected2", val);
                               // this.setState({ stepExpected2: val }, this.recalc)
                             }}
@@ -591,7 +610,7 @@ export default class Item extends React.Component {
                         <p className="tool-main-card-body-left__info">
                           {(() => {
                             const steps = round((stepExpected2 != null ? stepExpected2 : stepExpected) / currentTool.priceStep, 2);
-                            return `${(stepExpected2 != null ? stepExpected2 : stepExpected)} ₽/$ = ${steps} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
+                            return `${formatNumber(stepExpected2 != null ? stepExpected2 : stepExpected)} ₽/$ = ${formatNumber(steps)} ${num2str(Math.floor(steps), ["шаг", "шага", "шагов"])} цены`;
                           })()}
                         </p>
                       </div>

@@ -4,14 +4,18 @@
   height: 58em;
 
   &-wrapper {
-    padding-bottom: 1.5em;
     display: flex;
     flex-direction: column;
 
+    padding-bottom: 1.5em;
+    width: 102em;
+    @include sm() {
+      width: 64em;
+    }
     @include xs() {
-      width: 24rem;
+      width: 40em;
       margin-left: -3.5em;
-    } 
+    }
   }
 
   &-mode {
