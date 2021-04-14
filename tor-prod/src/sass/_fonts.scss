@@ -1,9 +1,5 @@
-/* Fonts */
 
-// $font will come from webpack
-
-/* Roboto Regular */
-
+// Roboto Regular
 @font-face {
   font-family: 'Roboto';
   src:
@@ -16,8 +12,9 @@
   font-display: swap;
 }
 
-/* Circe Regular */
-
+// =============
+// Circe Regular
+// =============
 @font-face {
   font-family: 'Circe';
   src: 
@@ -30,8 +27,9 @@
   font-display: swap;
 }
 
-/* Circe Light */
-
+// =============
+// Circe Light
+// =============
 @font-face {
   font-family: 'Circe';
   src: 
@@ -44,8 +42,9 @@
   font-display: swap;
 }
 
-/* Circe Bold */
-
+// ==========
+// Circe Bold
+// ==========
 @font-face {
   font-family: 'Circe';
   src: 
@@ -58,8 +57,9 @@
   font-display: swap;
 }
 
-/* Circe ExtraBold */
-
+// ===============
+// Circe ExtraBold
+// ===============
 @font-face {
   font-family: 'Circe';
   src: 

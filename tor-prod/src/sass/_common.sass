@@ -24,18 +24,32 @@ html
   text-size-adjust: 100%
 
 body
-  // +font("SF UI Text")
   +font("Circe")
 
   min-width: 320px
   overflow-x: hidden
-  background-color: var( --bg-color )
+  background-color: $bgColor
 
   &.scroll-disabled
     overflow: hidden
 
     main
       filter: blur(.4em)
+
+  // &::-webkit-scrollbar
+  //   background-color: $bgColor
+  //   width: 16px
+
+  // &::-webkit-scrollbar-track
+  //   background-color: $bgColor
+
+  // &::-webkit-scrollbar-thumb
+  //   background-color: #babac0
+  //   border-radius: 16px
+  //   border: 4px solid $bgColor
+
+  // &::-webkit-scrollbar-button
+  //   display: none
 
 .page
   font-size: 0.80357em
@@ -49,6 +63,7 @@ body
   +xs
     font-size: 2.25vw
 
+
 /* Components */
 
 @import "components/index"
@@ -61,1118 +76,11 @@ body
 
 @import "layout/index"
 
-// Fix
-.footer__links a
-  white-space: nowrap !important
-
-.input-group input
-  font-size: 1.6em
-
-.ant-select-selection--single,
-  font-size: .8em
-
-.trademeter
+.tor
   &-config
     &__depo
-      span
-        font-size: 1.4em
-
       .ant-input
-        font-size: 1em !important 
-
-        &-suffix
-          font-size: 1em !important 
-
-
-/* Extract these sections into separate files */
-
-.section
-  &1,
-  &2,
-  &3,
-  &4,
-    display: flex
-    justify-content: space-between
-
-.controls
-  padding: 3em 0 2em
-  display: flex
-
-  color: #1b1b1b
-
-  +sm
-    flex-direction: column
-
-  +xs
-    margin: 0 -2.75em
-    padding-top: 0
-  
-  &__passive-income
-    .ant-input
-      &-disabled
-        background-color: transparent
-        color: rgba(0,0,0,0.65)
-
-  &-col1
-    width: 58.33333333%
-
-  &-col2
-    margin-left: 1.5em
-    width: 41.66666667%
-
-    +sm
-      margin-left: 0
-      margin-top:  1.5em
-
-    +xs
-      margin-top: 0
-
-  &-col1,
-  &-col2
-    // flex-shrink: 0
-
-    +sm
-      width: 100%
-
-  &-card1,
-  &-card2,
-    display: flex
-    justify-content: space-between
-    align-items: center
-
-    +xs
-      flex-direction: column
-      align-items: flex-start
-
-    .input-group + .input-group
-      margin-left: 1em
-
-      +sm
-        margin-left: 2.5em
-
-      +xs
-        margin-left: 0
-        margin-top: 2em
-
-  &-card4,
-  &-card5
-    width: 100%
-    display: flex
-    justify-content: space-between
-    align-items: center
-
-    +xs
-      flex-direction: column
-      align-items: flex-start
-
-    .input-group + .input-group
-      margin-left: 1em
-
-      +sm
-        margin-left: 2.5em
-
-      +xs
-        margin-left: 0
-        margin-top: 2em
-
-  &-card2
-    align-items: flex-start
-
-    &-select
-
-      &__rate
-        display: inline-block
-        margin-top: .5em
-        font-size: 1.6em
-  
-  &__card2
-    margin-top: 1.5em
-
-  &-card3
-    height: 100%
-
-  &__tool-select
-    width: 41.25em
-
-    +sm
-      flex-shrink: 0
-
-    +xs
-      width: 100%
-    
-    &-header
-      position: relative
-      margin-bottom: .8em
-
-      .input-group__label
-        margin: 0
-    
-    &-icon
-      position: absolute
-      right: 0
-      top:   50%
-      transform: translateY(-50%)
-
-      font-size: .75em
-
-      &:focus,
-      &:hover
-        transform:  translateY(-50%) rotate(-45deg) scale(1.3)
-
-.stats
-  position: relative
-  z-index: 0
-  background-color: rgba(#3f6b33, .1)
-  padding: 2em 0
-  display: flex
-  justify-content: space-between
-
-  +xs
-    margin: 0 -2em
-    padding: 0
-    background: none
-    flex-direction: column
-    align-items: center
-
-    font-size: 1.2em
-
-  &::before,
-  &::after
-    content: ''
-    display: block
-    position: absolute
-    z-index: -1
-    top: 0
-    width: 50vw
-    height: 100%
-    background: inherit
-
-    +no-select
-  
-  &::before
-    right: 100%
-
-  &::after
-    left: 100%
-
-  &-title
-
-  &-subtitle
-    margin: 0
-    margin-bottom: .5em
-
-    font-size: 3.6em
-    font-weight: bold
-    text-transform: uppercase
-
-    span
-      position: relative
-
-      &::before,
-      &::after
-        content: ''
-        display: block
-        width:   10em
-        height: 0.2em
-        background-color: var( --primary-color )
-        position: absolute
-        top: 50%
-        transform: translate(0, -50%)
-
-        font-size: .27em
-
-        +sm
-          display: none
-
-      &::before
-        left:  -14em
-
-      &::after
-        right: -14em
-
-  &-col
-    text-align: center
-
-    +xs
-      width: 100%
-      margin-top: 3em
-
-      &:first-of-type
-        margin-top: 0
-        padding-bottom: 2em
-        position: relative
-
-        &::before
-          content: ''
-          display: block
-          position: absolute
-          left: 50%
-          top:  100%
-          transform: translateX(-50%)
-          width:   26em
-          height: 0.2em
-          border-radius: 0.1em
-          background-color: #dcdcdc
-  
-  &-footer
-    display: flex
-    justify-content: center
-
-    +sm
-      flex-direction: column
-      align-items: center
-
-    &-row
-      margin-top: 1em
-
-      +sm
-        &:first-of-type
-          margin-top: 0
-  
-  &-key
-    margin-bottom: .5em
-
-    +sm
-      margin-bottom: 0
-
-  &-val
-    font-size: 2.4em
-
-  &__row
-    margin-bottom: .5em
-    display: flex
-    align-items: center
-    font-size: 2em
-
-    .big
-      font-size: 1.2em
-
-    .medium
-      font-size: 1.1em
-
-    &:last-child
-      margin-bottom: 0
-
-  &__key
-    flex-shrink: 0
-    width: 13.5em
-
-  &__val
-    white-space: nowrap
-
-    &--big
-      font-size: 1.6em
-      font-weight: bold
-
-.section3
-
-  +sm
-    flex-direction: column
-    align-items: flex-start
-
-  +xs
-    margin: 0 -2.55em
-
-  &-icon
-    position: absolute
-    z-index: 0
-    transform: translateY(-50%)
-    right: 0
-    top:   50%
-    line-height: 1
-
-    &:focus,
-    &:hover
-      transform: translateY(-50%) rotate(-45deg) scale(1.3)
-
-  &__tool-block
-    margin-top: 1.25em
-
-    +sm
-      order: -1
-      margin-top: 0
-      margin-bottom: 1.25em
-    
-    +xs
-      margin-bottom: 0
-
-  &__tool-title
-    text-align: center !important
-
-  &__tool-select
-    width: 100%
-
-    &-header
-      position: relative
-      z-index: 0
-      margin-bottom: 1em
-
-      .input-group__label
-        margin: 0
-  
-  &-col1,
-  &-col2
-    width: 50%
-    // flex-shrink: 0
-
-    +sm
-      display: flex
-      flex-direction: column
-      width: 100%
-
-    +xs
-      box-shadow: none !important
-
-  &-col1
-    margin-right: 1.25em
-
-    +sm
-      margin-right: 0
-
-.section4
-  position: relative
-
-  color: #141414
-
-  +sm
-    padding-bottom: 2em
-    flex-direction: column
-    align-items: flex-start
-  
-  +xs
-    margin: 0 -2em
-
-  &-col
-    flex-grow: 1
-    width: 0
-
-    +sm
-      width: 100%
-  
-  &-col2
-    width: 66.6666%
-    display: flex
-
-    +sm
-      width: 100%
-
-    +xs
-      flex-direction: column
-      align-items: flex-start
-
-    .section4-col
-      margin-left: 1.5em
-
-      +sm
-        width: 50%
-        flex-shrink: initial
-
-        &:first-of-type
-          margin-left: 0
-      
-      +xs
-        width: 100%
-        margin-left: 0
-        margin-top: 2em
-
-        &:first-of-type
-          margin-top: 0
-
-  &__title
-    position: absolute
-    left:  0
-    top:   0.04em
-    z-index: 1
-    
-    font-size: 3.6em
-    line-height: 1
-    font-weight: 300
-
-    +underline
-
-    +sm
-      top: 0.35em
-
-    +xs
-      top: 0.2em
-  
-  &-header
-    position: relative
-    display: flex
-    align-items: center
-    justify-content: center
-
-    min-height: 2em
-    margin-bottom: 1em
-
-    text-align: center
-    color: #777
-    font-size: 2.4em
-
-    +sm
-      min-height: auto
-      padding: .65em 0
-      margin-bottom: 0
-
-      font-size: 2em
-
-    +xs
-      display: flex
-      width: 100%
-
-      padding-left: .35em
-      text-align: left
-
-    &--first
-      justify-content: flex-end
-      text-align: right
-
-      +xs
-        padding-left: 0
-        padding-top: .7em
-        text-align: right
-
-  &__content1
-    +sm
-      box-shadow: none
-
-  &-content
-    min-height: 18em
-    display: flex
-    flex-direction: column
-    align-items: flex-start
-
-    &--centered
-      flex-direction: row
-      align-items: center
-      // TODO: delete
-      justify-content: center
-
-      > * + *
-        margin-left: 4.5em
-
-        +lg
-          margin-left: 2.5em
-  
-  &-row
-    width: 100%
-    margin-bottom: 1.5em
-    display: flex
-    justify-content: space-between
-    align-items: center
-
-    &:last-of-type
-      margin-bottom: 0
-  
-  &-l,
-  &-r
-    font-size: 1.9em
-
-  &-r
-    text-align: right
-    font-weight: bold
-
-  &__day-select
-    position: relative
-    top: -.12em
-    width: 3.5em !important
-    margin-right: .15em
-
-    font-size: 1em
-
-    +sm
-      width: 4em !important
-    
-    +xs
-      margin-left: auto
-
-    .ant-select
-
-      &-arrow
-        right: 0.2em
-        top:   1.8em
-
-        font-size: .6em
-
-        +sm
-          top:   1.4em
-
-      &-search__field
-        margin-top: -0.15em
-        text-align: right
-
-      &-selection
-        border: none
-        padding: 0
-
         font-size: 1em
-
-        outline: none
-
-        &:focus
-          box-shadow: none
-
-        &__rendered
-          margin-right: .85em
-          margin-left:  0
-          height: 100%
-
-          +sm
-            margin-right: .9em
-
-        &-selected-value
-          padding-top: .12em
-          float: right
-
-          +font("Circe", bold)
-          color: var( --primary-color )
-  
-  &__switch-long-short
-    background: var(--danger-color)
-    margin-top: .1em
-    margin-left: 2em
-    width: 5em
-
-    font-size: .5em
-
-    +sm
-      margin-left: .75em
-      width: 3.5em
-    
-    +xs
-      margin-left: auto
-
-    &.ant-switch-checked
-      background: var(--accent-color)
-
-      .ant-switch-inner
-        margin-left: .5em
-
-    .ant-switch
-      &-inner
-        margin-left: 1.8em
-        padding-top: .2em
-
-        font-size:  .8em
-        line-height: 1em
-
-  &__switch
-    .switch__input
-      margin-top: 0
-      margin-left: .5em
-
-      font-size: .5em
-  
-  &-progress
-
-    &-wrap
-      display: flex
-      flex-direction: column
-      align-items: center
-
-    .ant-progress
-
-      &-inner
-        width:  5.75em !important
-        height: 5.75em !important
-
-        +lg
-          font-size: 1.25em !important
-
-        +md
-          font-size: 1em !important
-        
-        +sm
-          font-size: 1.25em !important
-
-    &__label
-      // display: none
-      margin-top: .5em
-
-      font-size: 1.9em
-
-  &__stats
-    --space: 0.85em !important
-
-    .ant-statistic
-      &-title
-        font-weight: normal
-
-.section5
-  display: flex
-  flex-direction: column
-  align-items: center
-
-  margin: 1.5em 0
-  padding: 4em 1em
-  position: relative
-  z-index: 0
-
-  text-align: center
-
-  +sm
-    padding-top: 6em
-    background: none
-  
-  +xs
-    padding-left:  0
-    padding-right: 0
-    // padding-top:   12em
-    margin: 0 -2em
-
-  &::before,
-  &::after
-    content: ''
-    display: block
-    position: absolute
-    z-index: -1
-    top: 0
-    width: 50vw
-    height: 100%
-    background: inherit
-  
-  &::before
-    right: 100%
-
-  &::after
-    left: 100%
-
-  .ant-progress-line
-    .ant-progress
-      &-inner
-        background: #e4e4e4
-      
-      &-text
-        margin-left: 1em
-        
-        &[title]
-          // visibility: hidden
-          // pointer-events: none
-      
-      &-outer
-        margin-right: -3em
-        padding-right: 3em
-        padding-left:  3em
-
-        +sm
-          padding-right: 2.5em
-          padding-left:  2.5em
-
-  .ant-progress-circle
-    $root: &
-
-    &-trail
-      stroke: white !important
-
-      +sm
-        stroke: #eee !important
-
-    &.ant-progress-status-exception
-
-      .ant-progress-circle-trail
-        background: pink
-        stroke: var( --danger-color ) !important
-
-
-    .ant-progress-inner
-      background: none
-      font-size: 1.5em !important
-      width:  6em !important
-      height: 6em !important
-
-      +lg
-        font-size: 1.4em !important
-
-      +md
-        font-size: 1em !important
-
-      +sm
-        font-size: 1.8em !important
-
-    +sm
-      // margin-left: 3.5em
-
-    +xs
-      margin-left:  0
-
-  &__save
-    font-size: 1.6em
-
-    &--hidden
-      visibility: hidden
-      pointer-events: none
-
-  &-col
-    margin: 0 1em
-    padding: 1.5em 1.25em
-    width: 33.333333%
-
-    &:nth-child(2)
-      width: 40%
-
-    +sm
-      width: 48% !important
-      margin: 0
-      margin-bottom: 3em
-
-      &:last-child
-        margin-bottom: 0
-    
-    +xs
-      width: 100% !important
-      // margin-left:  -1em
-      // margin-right: -1em
-
-    &--no-padding
-      padding: 0 !important
-
-  button[data-type="link"]
-    display: flex
-    align-items: center
-    background: none
-    border: none
-    padding: 0
-
-    font-size: .8em
-    +font("Roboto")
-    color: var(--primary-color)
-    font-weight: 700
-    text-transform: uppercase
-
-    cursor: pointer
-
-    &:hover
-      color: var(--primary-color-lighter)
-
-    &:disabled
-      color: #bbb
-
-      cursor: not-allowed
-
-    svg
-      margin: .3em
-      width: 1.15em
-
-  &-controls
-    display: flex
-    justify-content: space-between
-    align-items: center
-    
-    width: 100%
-    max-width: 30em
-    
-    color: #777
-    font-size: 1.7em
-    font-weight: 700
-
-    +sm
-      max-width: initial
-
-  &-save-wrap
-    width: 90em
-    display: flex
-    justify-content: space-between
-    align-items: baseline
-
-    +sm
-      width: 100%
-    
-    +xs
-      align-items: center
-      position: relative
-      padding-top: 6.5em
-
-    button[aria-expanded]
-      +xs
-        position: absolute
-        bottom: 2.5em
-        left:   50%
-        transform: translateX(-50%)
-
-    button[data-type="link"]
-      font-size: 1.3em
-
-      +xs
-        font-size: 1.4em
-    
-  &-quick-select
-    --margin: .5em
-
-    margin: calc( -1 * var(--margin) )
-    padding: 2em 0
-
-    > *
-      margin: var(--margin)
-
-    button
-      width:    5em
-      height: 0.8em
-      border-radius: 0.4em
-      background: #999
-      border: var(--outline-width) solid transparent
-      padding: 0
-
-      cursor: pointer
-
-      &:hover
-        background: #aaa
-      
-      &[data-selected="true"]
-        border-color: var(--primary-color)
-        box-shadow: 0 0 0 var(--focus-outline-width) var(--primary-color-lighter)
-
-      &[data-changed="true"]
-        background: var(--primary-color)
-
-        &[data-success="true"]
-          background: var(--success-color)
-          
-        &[data-failed="true"]
-          background: var(--danger-color)
-
-  &__title
-    margin-left: .5em
-
-    font-size: 2.4em
-    font-weight: 400
-    text-transform: uppercase
-    letter-spacing: .5em
-    text-align: center
-
-    +sm
-      position: absolute
-      left:  0
-      top:   0
-      z-index: 1
-      
-      font-size: 3.6em
-      line-height: 1
-      font-weight: 300
-      text-transform: initial
-      letter-spacing: initial
-
-      +underline
-  
-  &-collapse
-    width: 100%
-    margin-top: 2.5em
-
-    +sm
-      display: flex
-      flex-direction: column
-      align-items: flex-start
-
-    &--collapsed
-      display: none
-  
-  &-footer
-    margin-top: 1.75em
-    padding: 0 24em
-
-    +sm
-      display: flex
-      flex-direction: column
-      align-items: center
-      width: 100%
-      padding: .5em 1em
-      background-color: rgba(63,107,51,0.1)
-
-    +xs
-      width: 100%
-
-    &-title
-      margin: 0
-      margin-bottom: .2em
-      margin-left: .5em
-      
-      font-size: 2.4em
-      font-weight: 400
-      text-transform: uppercase
-      letter-spacing: .5em
-
-      text-align: center
-
-      +sm
-        order: -2
-        font-size: 2em      
-
-    &-subtitle
-      font-size: 2.6em
-      color: #777
-      font-weight: 700
-      text-transform: uppercase
-
-      +sm
-        font-size: 2.4em
-
-    &__label
-      font-size: 1.9em
-      color: #777
-      font-weight: 700
-
-      +sm
-        font-size: 2.5em
-
-      b
-        color: #3f6b33
-      
-      &-title
-        display: inline-block
-        margin: 0
-
-        +sm
-          display: block
-  
-  &-content
-    display: flex
-    padding: 1em 0
-    margin: 0 -1em
-
-    text-align: left
-
-    +sm
-      width: 100%
-      margin: 0
-      flex-wrap: wrap
-      justify-content: space-between
-    
-    +xs
-      flex-direction: column
-      align-items: flex-start
-
-    &--centered
-      align-items: center
-
-    &-title
-      display: inline-flex
-      flex-wrap: wrap
-      justify-content: center
-      margin-bottom: .5em
-
-      color: #777
-      font-size: 3.6em
-      font-weight: 700
-      text-transform: uppercase
-      text-align: center
-      
-      position: relative
-
-      +sm
-        
-
-      +xs
-        width: 100%
-        text-align: center
-
-      &::before,
-      &::after
-        content: ''
-        display: block
-        width:   10em
-        height: 0.2em
-        background-color: var( --primary-color )
-        position: absolute
-        top: 50%
-        transform: translate(0, -50%)
-
-        font-size: .27em
-
-        +sm
-          display: none
-
-      &::before
-        left:  -14em
-
-      &::after
-        right: -14em
-
-  &-row
-    width: 100%
-    min-height: 3em
-    margin-bottom: 1em
-    display: flex
-    justify-content: space-between
-    align-items: flex-start
-    align-items: baseline
-
-    &:last-of-type
-      margin-bottom: 0
-
-      +xs
-        // margin-bottom: 2.5em
-
-    +sm
-      // min-height: 6.2em
-      align-items: flex-start
-  
-    +xs
-      margin-bottom: 1.5em
-      // min-height: auto
-    
-  &-l,
-  &-r
-    width: 100%
-
-    font-size: 1.6em
-    line-height: 1.5
-
-    +sm
-      font-size: 1.4em
-      line-height: 2
-
-    +xs
-      font-size: 2em
-
-  &-l
-    width: 9em
-
-  &-r
-    width: 10em
-    display: inline-flex
-    justify-content: flex-end
-    align-items: baseline
-    margin-left: .75em
-
-    text-align: right
-    color: #777
-    font-weight: bold
-    
-    +xs
-      flex-wrap: wrap
-    
-    > 
-      *:first-child
-        flex-grow: 1
-        flex-basis: 4em
-      
-      .ant-input
-        // flex-basis: initial
-
-        +sm
-          flex-basis: 4em
-
-    .ant-input
-      height: 1.9em
-      line-height: 1.65em
-
-      font-size: 1em
-      text-align: center
-
-    &-suffix
-      white-space: nowrap
-      flex-basis: 5em
-      flex-shrink: 0
-
-      text-align: left
-
-      +md
-        flex-grow: 1
-
-      &__separator
-        margin: 0 .3em
-
-  &__input-long
-    width: 4rem
 
 .save-modal
   .dialog-content
@@ -1195,7 +103,7 @@ body
 
   &__input
     height: 2.2em
-    font-size: 1em
+    font-size: 1em !important
     
     &-wrap
       font-size: 1.2em
@@ -1205,40 +113,148 @@ body
       font-size: .8em
       color: #999
 
-.pi-dialog
-  &-th
-    &:last-of-type
-      width: 2em
+.delete-btn
+  display: inline-flex
+  background: none
+  border: none
+  padding: 0
+  border-radius: 50%
+  width:  1em
+  height: 1em
+  opacity: .4
 
-/* ant */
+  cursor: pointer
+
+  transform: scale(.85)
+  transition: transform .15s ease-in-out
+  will-change: transform
+
+  user-select: none
+
+  &:hover
+    transform: scale(1)
+    background-color: rgba(black, .2)
+    opacity: 1
+
+    color: lighten($dangerColor, 5)
+  
+  span
+    position: absolute
+    line-height: 0
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    margin-top: .1em
+
+.x-button
+  display: inline-flex
+  background: none
+  border: none
+  padding: 0
+  border-radius: 50%
+  width:  1em
+  height: 1em
+  opacity: .4
+
+  cursor: pointer
+
+  transform: scale(.85)
+  transition: transform .15s ease-in-out
+  will-change: transform
+
+  user-select: none
+
+  &:hover
+    transform: scale(1)
+    background-color: rgba(black, .2)
+    opacity: 1
+
+    color: lighten($dangerColor, 5)
+  
+  span
+    position: absolute
+    line-height: 0
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    margin-top: .1em
 
 .ant
-  &-input
-    &.error
-      border-color: var( --danger-color ) !important
-
-      &:focus
-        box-shadow: 0 0 0 .3em var( --danger-color-transparent )
-
-      &:hover
-        border-color: var( --danger-color )
-
-  &-tooltip-inner
-    text-align: center
-  
   &-select-search__field
     box-shadow: none !important
-
-/* anychart */
-.empty-tooltip-row + br
-  display: none
   
+  &-typography
+    font-size: 1.8em
+
+  &-radio,
+  &-radio-wrapper
+    // font-size: 1.3em
+
+  &-slider
+
+    &-rail
+      background-color: #ccc
+
+    &-rail,
+    &-step,
+    &-track
+      height: .3em
+    
+    &:hover &-track,
+    &-track
+      // background-color: #ac1337
+    
+    &-handle
+      // width:  2rem
+      // height: 2rem
+      // box-shadow: 0 0.2rem 0.6rem 0.1rem rgba(0, 0, 0, 0.3)
+      // border: 0.2rem solid #780d26 !important
+      // background-color: #fff
+
+      margin-top:  -0.35em
+      margin-left: 0
+
+.item
+  position: relative
+
+  &-add,
+  &-delete
+    position: absolute
+    right: -1.5em
+    top:   -1.9em
+    width:  1.25em
+    height: 1.25em
+    background: rgba(tomato, .5)
+    border: none
+    border-radius: 50%
+    padding: 0
+
+    font-size: 2.6em
+    font-weight: bold
+    line-height: 1.5
+
+    transition: background .2s ease-in
+
+    cursor: pointer
+
+    &:hover
+      background: tomato
+  
+  &-add
+    left:    50%
+    top: initial
+    bottom: -2.25em
+    transform: rotate(45deg) translateX(-50%)
+
+    background: rgba(lightgreen, .5)
+
+    &:hover
+      background: lightgreen
+
+.hide-xs
+  +xs
+    display: none
+
 .hide-sm
   +sm
     display: none
-
-.xs-only
-  display: none
-
-  +xs
-    display: block

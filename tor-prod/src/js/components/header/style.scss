@@ -51,6 +51,12 @@
       align-items: center;
       margin-left:  auto;
       margin-right: auto;
+
+      @include sm() {
+        margin-left:  0;
+        margin-right: 0;
+      }
+
     }
   }
 }

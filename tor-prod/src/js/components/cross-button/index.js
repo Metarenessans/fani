@@ -1,6 +1,6 @@
 import React from 'react';
+import ReactDOM from 'react-dom'
 import { Tooltip } from 'antd/es'
-import { PlusOutlined } from "@ant-design/icons"
 
 import './style.scss'
 
@@ -14,7 +14,7 @@ export default function CrossButton(props) {
         className={['cross-button'].concat(props.className).join(' ')}
         aria-label={label}
         onClick={e => onClick(e)}>
-        <PlusOutlined />
+        <span>&times;</span>
       </button>
     </Tooltip>
   )
