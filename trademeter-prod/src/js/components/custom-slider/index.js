@@ -1,9 +1,10 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 
 import { Slider, Tooltip } from 'antd/es'
 
 import croppNumber from "../../utils/cropp-number"
+import isEqual from "../../utils/is-equal"
+
 
 import "./style.scss"
 
@@ -19,6 +20,12 @@ export default class CustomSlider extends React.Component {
 
     this.filter = filter || (value => value);
   }
+  shouldComponentUpdate(nextProps, nextState) {
+    if (isEqual(this.props, nextProps) == false) {
+      return true
+    }
+    return false
+  }
 
   onChange(value) {
     this.setState({ value }, () => {
@@ -31,7 +38,6 @@ export default class CustomSlider extends React.Component {
   render() {
     var { value, precision } = this.props;
     precision = precision || 0;
-
     return (
       <div className="custom-slider">
         <Slider

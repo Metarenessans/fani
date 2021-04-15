@@ -47,15 +47,11 @@ body
     font-size: 1.45vw
 
   +xs
-    font-size: 2.25vw
+    font-size: 2.6vw
 
 /* Components */
 
 @import "components/index"
-
-/* Sections */
-
-@import "sections/index"
 
 /* Layout */
 
@@ -74,14 +70,13 @@ body
 .trademeter
   &-config
     &__depo
-      span
+      align-self: flex-start
+
+      .input-group__label
         font-size: 1.4em
 
-      .ant-input
-        font-size: 1em !important 
-
-        &-suffix
-          font-size: 1em !important 
+      .numeric-input-wrap
+        font-size: 0.65em !important
 
 
 /* Extract these sections into separate files */
@@ -104,8 +99,8 @@ body
     flex-direction: column
 
   +xs
+    padding: 0
     margin: 0 -2.75em
-    padding-top: 0
   
   &__passive-income
     .ant-input
@@ -196,6 +191,7 @@ body
 
     +sm
       flex-shrink: 0
+      width: 39.75em
 
     +xs
       width: 100%
@@ -224,12 +220,16 @@ body
   z-index: 0
   background-color: rgba(#3f6b33, .1)
   padding: 2em 0
+  padding-top: 4em
   display: flex
   justify-content: space-between
 
+  +sm
+    padding-top: 4em
+
   +xs
     margin: 0 -2em
-    padding: 0
+    padding: 2em 0 
     background: none
     flex-direction: column
     align-items: center
@@ -256,6 +256,60 @@ body
     left: 100%
 
   &-title
+    display: inline-flex
+    margin-bottom: .75em
+
+    &-wrap
+      position: relative
+      display: inline-flex
+
+      +sm
+        flex-direction: column
+        align-items: center
+
+    &-mode-select
+      position: absolute
+      right: 100%
+      top:   0em
+
+      margin-right: .8em
+      background: none
+      border: none
+      padding: 0
+
+      font-size: 1.7em
+      line-height: 1.5
+      color: var(--primary-color)
+
+      cursor: pointer
+
+      // 
+      right: 0
+      left: 50%
+      transform: translateX(-50%)
+
+      margin-right: 0
+      margin-top:  -1.75em
+
+      +sm
+        right: 0
+        left: 50%
+        transform: translateX(-50%)
+
+        margin-right: 0
+        margin-top:  -1.75em
+
+        font-size: 1.5em
+
+      +xs
+        position: static
+        transform: none
+
+        margin-right: 0
+        margin-bottom: .25em
+
+        font-size: 1.7em
+        line-height: inherit
 
   &-subtitle
     margin: 0
@@ -481,7 +535,7 @@ body
   &__title
     position: absolute
     left:  0
-    top:   0.04em
+    top:   0.07em
     z-index: 1
     
     font-size: 3.6em
@@ -494,7 +548,8 @@ body
       top: 0.35em
 
     +xs
-      top: 0.2em
+      top: 0.55em
+      margin-left: 0.3em
   
   &-header
     position: relative
@@ -518,10 +573,14 @@ body
 
     +xs
       display: flex
+      padding-left: .35em
       width: 100%
 
-      padding-left: .35em
+      font-size: 2.4em
       text-align: left
+
+      [role="switch"]
+        font-size: .55em !important
 
     &--first
       justify-content: flex-end
@@ -545,14 +604,22 @@ body
     &--centered
       flex-direction: row
       align-items: center
-      // TODO: delete
       justify-content: center
+
+      +xs
+        justify-content: space-between
+
+        > :first-child
+          margin: 0 auto
 
       > * + *
         margin-left: 4.5em
 
         +lg
           margin-left: 2.5em
+
+        +xs
+          width: 48%
   
   &-row
     width: 100%
@@ -594,11 +661,9 @@ body
 
         font-size: .6em
 
-        +sm
-          top:   1.4em
-
       &-search__field
-        margin-top: -0.15em
+        margin-top: 0.1em
+
         text-align: right
 
       &-selection
@@ -634,10 +699,6 @@ body
     width: 5em
 
     font-size: .5em
-
-    +sm
-      margin-left: .75em
-      width: 3.5em
     
     +xs
       margin-left: auto
@@ -646,11 +707,11 @@ body
       background: var(--accent-color)
 
       .ant-switch-inner
-        margin-left: .5em
+        margin-left: .8em !important
 
     .ant-switch
       &-inner
-        margin-left: 1.8em
+        margin-left: 1.8em !important
         padding-top: .2em
 
         font-size:  .8em
@@ -717,8 +778,7 @@ body
   +xs
     padding-left:  0
     padding-right: 0
-    // padding-top:   12em
-    margin: 0 -2em
+    margin: 0 -2.7em
 
   &::before,
   &::after
@@ -736,64 +796,6 @@ body
 
   &::after
     left: 100%
-
-  .ant-progress-line
-    .ant-progress
-      &-inner
-        background: #e4e4e4
-      
-      &-text
-        margin-left: 1em
-        
-        &[title]
-          // visibility: hidden
-          // pointer-events: none
-      
-      &-outer
-        margin-right: -3em
-        padding-right: 3em
-        padding-left:  3em
-
-        +sm
-          padding-right: 2.5em
-          padding-left:  2.5em
-
-  .ant-progress-circle
-    $root: &
-
-    &-trail
-      stroke: white !important
-
-      +sm
-        stroke: #eee !important
-
-    &.ant-progress-status-exception
-
-      .ant-progress-circle-trail
-        background: pink
-        stroke: var( --danger-color ) !important
-
-
-    .ant-progress-inner
-      background: none
-      font-size: 1.5em !important
-      width:  6em !important
-      height: 6em !important
-
-      +lg
-        font-size: 1.4em !important
-
-      +md
-        font-size: 1em !important
-
-      +sm
-        font-size: 1.8em !important
-
-    +sm
-      // margin-left: 3.5em
-
-    +xs
-      margin-left:  0
 
   &__save
     font-size: 1.6em
@@ -867,8 +869,12 @@ body
 
     +sm
       max-width: initial
+    
+    +xs
+      font-size: 1.45em
 
   &-save-wrap
+    margin-bottom: 2em
     width: 90em
     display: flex
     justify-content: space-between
@@ -893,7 +899,7 @@ body
       font-size: 1.3em
 
       +xs
-        font-size: 1.4em
+        font-size: 1.2em
     
   &-quick-select
     --margin: .5em
@@ -1057,11 +1063,10 @@ body
       
       position: relative
 
-      +sm
-        
-
       +xs
         width: 100%
+
+        font-size: 3.2em
         text-align: center
 
       &::before,
@@ -1144,6 +1149,7 @@ body
       *:first-child
         flex-grow: 1
         flex-basis: 4em
+        text-align: center
       
       .ant-input
         // flex-basis: initial
@@ -1214,11 +1220,12 @@ body
 
 .ant
   &-input
+    &-affix-wrapper.error .ant-input,
     &.error
       border-color: var( --danger-color ) !important
 
       &:focus
-        box-shadow: 0 0 0 .3em var( --danger-color-transparent )
+        box-shadow: 0 0 0 var(--focus-outline-width) var( --danger-color-transparent )
 
       &:hover
         border-color: var( --danger-color )
@@ -1237,8 +1244,16 @@ body
   +sm
     display: none
 
+.hide-xs
+  +xs
+    display: none
+
 .xs-only
   display: none
 
   +xs
     display: block
+
+/* Sections */
+
+@import "sections/index"

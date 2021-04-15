@@ -493,19 +493,35 @@ body
 
   margin-top:        0!important
   padding:           0!important
-  border-radius:    1.4em
-  width:              4em
-  height:           1.6em
+  border-radius:    50%
+  height: 1.9em
+  width:    2em
+  
+  &:hover
+    transition: none
+    & svg
+      fill: var(--primary-color)
+  &:focus
+    & svg
+      fill: var(--primary-color)
+  svg
+    margin-top:   .2em
+    width:       1.2em
+    height:      1.2em
+    padding-top: 0.2em!important
+    fill: #A9A9A9
   +sm
     right: -0.5em
   +xs
-    right: 3em
-  
+    right:    3em
   &--plus
-    top:        -0.8em
-    padding-top: 0.1em!important
+    top:   -0.8em
   &--default
     top: 46.9%
-    padding-bottom: 0.1em!important
+
+    width:              4em
+    height:           1.6em
+    border-radius:    1.4em
+    padding-bottom:   0.1em!important
   &--minus
     bottom: -0.8em

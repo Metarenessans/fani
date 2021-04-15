@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from 'react'
+import React, { memo, useState, useEffect } from 'react'
 import { Consumer } from "../../app"
 import { Radio } from "antd/es"
 import roundUp      from "../../../../../common/utils/round-up"
@@ -14,6 +14,7 @@ let
   chartData,
   chartData2,
   chartData3,
+  planEndData,
   scale,
   scaleStart = 0,
   scaleEnd   = 1,
@@ -34,10 +35,7 @@ const getLen = data => {
 
   let len = data.length;
   for (let entry of data) {
-    let iterationsNum = 
-    entry.iterationsList && 
-    entry.iterationsList.filter(v => v.percent != null || v.income != null).length;
-    
+    let iterationsNum = entry.iterations && entry.iterations.filter(v => v.percent != null).length;
     if (iterationsNum > 1) {
       len += iterationsNum - 1;
     }
@@ -87,12 +85,8 @@ function updateChartScaleY(start, end) {
     ...recommendDataCopy.slice(startIndex, endIndex),
   ].map(entry => entry.value);
 
-  // console.log(`start: ${startIndex}, end: ${endIndex}`);
-  // console.log(dataCombined);
-
-  let minY = Math.round( Math.min(...dataCombined) );
-  let maxY = Math.round( Math.max(...dataCombined) );
-  // maxY = stickToClosest(maxY, 250_000);
+  let minY = Math.round( Math.min(...dataCombined) - 50_000 );
+  let maxY = Math.round( Math.max(...dataCombined) + 50_000 );
 
   chart.yScale().minimum( minY );
   chart.yScale().maximum( maxY );
@@ -119,11 +113,11 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
   if (true) {
     let emptyCount = 1;
     const values = planData
-      .slice(planData.length * ss, planData.length * se)
+      .slice((planData.length) * ss, (planData.length) * se)
       .map((entry, index) => {
         if (
-          (index < planData.length - 1 && entry.customName.trim() == "") ||
-          index == planData.length - 1
+          (index < (planData.length) - 1 && entry.customName.trim() == "") ||
+          index == (planData.length) - 1
         ) {
           entry.customName = " ".repeat(emptyCount++);
         }
@@ -155,7 +149,6 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
 
 function createChart() {
   anychart && anychart.onDocumentReady(() => {
-    
     chart = anychart.line();
 
     updateChart.call(this, true);
@@ -168,7 +161,7 @@ function createChart() {
       }
     });
     chart.tooltip().titleFormat(e => {
-      const { days, mode } = this.state;
+      const { data } = this.state;
       
       let index;
       for (let point of e.points) {
@@ -185,10 +178,10 @@ function createChart() {
       }
       
       return index == 1 
-      ? `Начало 1 дня` 
-      : index - 1 == days[mode]
-      ? `Конец ${index - 1} дня`
-      : `Конец ${index - 1} дня, начало ${index} дня`
+        ? `Начало 1 дня` 
+        : index - 1 == data.length
+          ? `Конец ${index - 1} дня`
+          : `Конец ${index - 1} дня, начало ${index} дня`
     });
     
     // set data
@@ -217,9 +210,6 @@ function createChart() {
     series3.tooltip().displayMode("separated");
     series3.tooltip().useHtml(true);
     series3.tooltip().format(e => {
-      // console.log(e.index);
-      // const lastFilledDay = this.getLastFilledDayNumber() - 1;
-      
       if (e.index > 0) {
         let svg = `
         <svg viewBox="0 0 10 10" width="1em" height="1em" 
@@ -237,12 +227,55 @@ function createChart() {
       dash: '3 5',
       thickness: "5%"
     });
+
+    let series4 = chart.line(planEndData);
+    series4.xMode('scatter');
+    series4.name("Планируемый рост депо");
+    series4.tooltip().displayMode("separated");
+    series4.tooltip().useHtml(true);
+    series4.tooltip().format(e => {
+      const {
+        mode,
+        passiveIncomeTools,
+        currentPassiveIncomeToolIndex,
+      } = this.state;
+      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+
+      if (e.index > 0) {
+        let svg = `
+          <svg viewBox="0 0 10 10" width="1em" height="1em" fill="#40a9ff" style="position: relative; top: 0.1em">
+            <rect x="0" y="0" width="10" height="10" />
+          </svg>
+        `;
+        
+        return `
+          ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
+          ${tool
+            ? "<br/>Пассивный доход: " + formatNumber(Math.round(e.value * (tool.rate / 100) / 12)) + " /месяц"
+            : ""
+          }
+        `.trim().replace(/\s+/, " ");
+      }
+      else return `<span class="empty-tooltip-row"></span>`;
+    });
+    series4.normal().stroke({
+      color: "#40a9ff",
+      dash: '3 5',
+      thickness: "5%"
+    });
     
     let series2 = chart.line(chartData2);
     series2.name("Планируемый рост депо");
     series2.tooltip().displayMode("separated");
     series2.tooltip().useHtml(true);
     series2.tooltip().format(e => {
+      const {
+        mode,
+        passiveIncomeTools,
+        currentPassiveIncomeToolIndex,
+      } = this.state;
+      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+
       let svg = `
       <svg viewBox="0 0 10 10" width="1em" height="1em" 
       fill="#40a9ff" style="position: relative; top: 0.1em">
@@ -250,14 +283,19 @@ function createChart() {
       </svg>
       `;
       
-      return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
+      return `
+        ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
+        ${tool 
+          ? `<br/>Пассивный доход: ${formatNumber(Math.round(e.value * (tool.rate / 100) / 12))} /месяц` 
+          : ""
+        }
+      `.trim().replace(/\s+/, " ")
     });
     series2.normal().stroke({
       color: "#40a9ff",
       thickness: "5%"
     });
     
-    // TODO: return after release
     if (true) {
       // turn on X Scroller
       chart.xScroller(true);
@@ -268,12 +306,15 @@ function createChart() {
       chart.xScroller().listen("scrollerchange", e => {
         const step = 1 / (planData.length - 1);
         scaleStart = roundToClosest(e.startRatio, step);
-        scaleEnd   = scaleStart + (step * steps);
+        // scaleEnd   = scaleStart + (step * steps);
+        scaleEnd = roundToClosest(e.endRatio, step);
+
         const ceiling = 1 - step;
         if (scaleEnd >= ceiling) {
           scaleEnd = 1;
         }
 
+        console.log(scaleStart, scaleEnd);
         chart.xZoom().setTo(scaleStart, scaleEnd);
         updateChartScaleY(scaleStart, scaleEnd);
         updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
@@ -291,82 +332,90 @@ function createChart() {
   });
 }
 
-function updateChart(isInit = false) {
-  const { days, daysInOrder, mode, currentDay } = this.state;
-  const data = [...this.state.data];
-  if (data.length !== days[mode]) {
-    return;
+function updatePlanEndLine(start, length, value) {
+  let planEnd = [];
+  if (length > 0) {
+    planEnd = new Array(length + 1)
+      .fill(value)
+      .map((value, index) => {
+        const x = String(start + index + 1);
+        return { x, value }
+      });
   }
-  
+
+  if (!planEndData) {
+    planEndData = anychart.data.set(planEnd);
+  }
+  else {
+    console.log(planEnd);
+    planEndData.data(planEnd);
+  } 
+
+}
+
+function updateChart(isInit = false) {
+  const { data, days, mode, currentDay } = this.state;
+
   // ----
   // Факт
   // ----
   let arr;
   
-  const factDays = this.getFilledDays();
+  const factDays = data.filter(di => di.changed);
   let factArray = [];
   factData = [];
-  let emptyIndex = 1;
   
-  if (daysInOrder) {
+  if (data.hasNoGaps) {
     if (factDays.length) {
       for (let i = 0; i < factDays.length; i++) {
-        if (i == 0) {
-          factArray[i] = data[i].depoStartTest + this.getRealIncome(i + 1);
-        }
-        else {
-          let value = factArray[i - 1];
-          if (typeof value == "object") {
-            value = value.slice(-1)[0];
-          }
-          factArray[i] = value + this.getRealIncome(i + 1, data, factArray[i - 1]);
-        }
+        factArray[i] = data[i].depoEndReal;
         
-        const iterationsList = data[i].iterationsList.filter(entry => entry.percent != null || entry.income != null);
-        if (iterationsList.length > 1) {
+        const iterations = [...data[i].iterations].filter(it => it.rate != null);
+        if (iterations && iterations.length > 1) {
           let endValue = factArray[i];
           factArray[i] = [];
-          let start = data[i].depoStartTest;
+          let start = data[i].depoStartReal;
           
-          for (let j = 0; j < iterationsList.slice(0, -1).length; j++) {
-            start += iterationsList[j].income;
+          for (let j = 0; j < iterations.slice(0, -1).length; j++) {
+            start += iterations[j].getIncome( data[currentDay - 1].depoStartReal );
             factArray[i].push(start);
           }
           factArray[i].push(endValue);
         }
       }
       
-      if (true) {
-        arr = factArray.map((value, index) => {
-          if (typeof value == "object") {
-            return value.map((v, i) => {
-              const isLast = i == value.length - 1;
-              let suffix = `.${i + 1}`;
-              let x = isLast ? `${index + 1}` : `${index}${suffix}`;
-              
-              return {
-                x,
-                value: v,
-                weight: 1 / value.length
-              }
-            });
-          }
-          
-          return {
-            x:          String(index + 1),
-            value:      value,
-          }
-        });
+      arr = factArray.map((value, index) => {
+        if (typeof value == "object") {
+          return value.map((v, i) => {
+            const isLast = i == value.length - 1;
+            let suffix = `.${i + 1}`;
+            let x = isLast ? `${index + 1}` : `${index}${suffix}`;
+            
+            return {
+              x,
+              value: v,
+              weight: 1 / value.length
+            }
+          });
+        }
         
-        factData = flatten( arr );
-      }
+        return {
+          x:          String(index + 1),
+          value:      value,
+        }
+      });
+      
+      factData = flatten( arr );
     }
   }
   else {
-    factData = new Array(days[mode]).fill().map((v, i) => ({
-      x:     String(i + 1),
-      value: data[i].depoStartTest + this.getRealIncome(i + 1)
-    }));
+    factData = [];
+    for (let i = 0; i < days[mode]; i++) {
+      factData[i] = {
+        x:     String(i + 1),
+        value: data[i].depoEnd
+      };
+    }
   }
   
   factData.map(item => {
@@ -377,9 +426,17 @@ function updateChart(isInit = false) {
     }
     return item;
   });
-  // TODO: return after release
   factData.map(item => {
-    item.x = String(Number(item.x) + 1);
+
+    // Прибавляет 1 только если к числу до точки
+    if (item.x.indexOf('.') > -1) {
+      const halfs = item.x.split('.');
+      item.x = (+(halfs[0]) + 1) + "." + halfs[1];
+    }
+    else {
+      item.x = String(+(item.x) + 1);
+    }
+
     if (item.customName.trim() != "" && !isNaN( +item.customName )) {
       item.customName = String(Number(item.customName) + 1);
     }
@@ -396,11 +453,11 @@ function updateChart(isInit = false) {
     // Убираем лейбл у последнего дня, чтобы не было 261 дня
     // (по факту 261 день - это просто конец 260)
     if (factData.length == data.length) {
-      factData[factData.length - 1].customName = "";
+      // factData[factData.length - 1].customName = "";
     }
   }
   
-  // console.table("fact",factData);
+  // console.table("fact", factData);
   if (isInit) {
     chartData = anychart.data.set(factData);
   }
@@ -411,11 +468,22 @@ function updateChart(isInit = false) {
   // ----
   // План
   // ----
-  
+
   planData = new Array(days[mode]).fill().map((v, i) => ({
     x:     String(i + 1),
     value: data[i].depoEndPlan
   }));
+
+  if (data.length > days[mode]) {
+    const lastPlanItem = planData[planData.length - 1];
+    planData = planData.concat(
+      new Array( data.length - days[mode] ).fill().map((v, i) => ({
+        x:     String(Number(lastPlanItem.x) + i + 1),
+        value: lastPlanItem.value
+      }))
+    );
+  }
+
   // TODO: return after release
   planData.map(item => {
     item.x = String(Number(item.x) + 1);
@@ -426,7 +494,9 @@ function updateChart(isInit = false) {
     x:          "1",
     value:      data[0].depoStartTest,
   });
-  
+
+  // console.log(planData);
+
   // Сопоставляет план 1 к 1 с фактом, если не достает значения
   // то подставляется интерполированное между двумя ближайшими
   for (let i = 0; i < planData.length;) {
@@ -460,65 +530,65 @@ function updateChart(isInit = false) {
   // Убираем лейбл у последнего дня, чтобы не было 261 дня
   // (по факту 261 день - это просто конец 260)
   if (planData.length == data.length) {
-    planData[planData.length - 1].customName = "";
+    // planData[planData.length - 1].customName = "";
   }
   
-  // console.table('plan',planData);
+  // console.table('plan', planData);
   if (isInit) {
     chartData2 = anychart.data.set(planData);
   }
   else {
     chartData2.data(planData);
   }
+
+  // updatePlanEndLine(days[mode], data.length - days[mode], planData[planData.length - 1].value);
   
   // --------
   // Рекоменд
   // --------
-  if (true) {
+  if (data.hasNoGaps) {
     recommendData = [];
     if (factDays.length) {
       const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
       
-      const rateRecommended = this.getRateRecommended();
+      const rateRecommended = this.rateRecommended;
       
-      const factLastDay = this.getLastFilledDayNumber() - 1;
-      recommendData = new Array(days[mode] - factLastDay).fill(0);
+      const lastFilledDayNumber = (data.lastFilledDay?.day || 0) - 1;
+      recommendData = new Array(data.length - lastFilledDayNumber).fill(0);
       recommendData[0] = factData[factData.length - 1].value;
       
       for (let i = 1; i < recommendData.length; i++) {
         recommendData[i] = recommendData[i - 1] + (recommendData[i - 1] * rateRecommended / 100);
         
-        if ((factLastDay + i + 1) % withdrawalInterval[mode] == 0) {
+        if ((lastFilledDayNumber + i + 1) % withdrawalInterval[mode] == 0) {
           recommendData[i] -= withdrawal[mode];
         }
         
-        if ((factLastDay + i + 1) % payloadInterval[mode] == 0) {
+        if ((lastFilledDayNumber + i + 1) % payloadInterval[mode] == 0) {
           recommendData[i] += payload[mode];
         }
       }
       
       recommendData = recommendData.map((value, index) => {
         return {
-          x:          String(factLastDay + index + 1),
-          value:      value
+          x:     String(lastFilledDayNumber + index + 1),
+          value: value
         }
       });
       
-      // TODO: return after release
       recommendData.map(item => {
         item.x = String(Number(item.x) + 1);
         return item;
       });
       
-      // recommendData[recommendData.length - 1].customName = "";
     }
     
-    // console.table("recommend",recommendData);
+    // console.table('recommend', recommendData);
     if (isInit) {
       chartData3 = anychart.data.set(recommendData);
     }
     else {
-      if (!daysInOrder) {
+      if (!data.hasNoGaps) {
         recommendData = null;
       }
       chartData3.data(recommendData);
@@ -530,7 +600,7 @@ function updateChart(isInit = false) {
     scale.mode('continuous');
   }
 
-  if (data) {
+  if (data.length > 0) {
     let actualScale = steps;
     const len = getLen(data) - 1;
     if (steps == data.length) {
@@ -560,10 +630,10 @@ function updateChart(isInit = false) {
   }
 }
 
-const Chart = (props) => {
+let Chart = memo(props => {
   const { data, currentDay } = props;
   const [scaleMode, setScaleMode] = useState(props.defaultScaleMode);
-  
+
   useEffect(() => {
     steps = scaleMode;
     if (chart) {
@@ -616,6 +686,6 @@ const Chart = (props) => {
     )}
     </div>
   )
-}
+}, (prevProps, nextProps) => true);
 
-export { Chart, createChart, updateChart, updateChartTicks, updateChartZoom }
+export { Chart, createChart, updateChart, updateChartTicks, updateChartZoom, recommendData }
