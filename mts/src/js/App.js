@@ -451,7 +451,6 @@ class App extends React.Component {
   }
 
   render() {
-    // ~~
     let {
       mode, depo, data, chance, page, percentage, priceRange,
       days, risk, scaleOffset, changedMinRange, changedMaxRange,
@@ -460,9 +459,10 @@ class App extends React.Component {
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
-    const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r).map(sorted => round(sorted ,2));
+    
+    const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
@@ -485,18 +485,17 @@ class App extends React.Component {
 
     const max = round(price + percent, fraction);
     const min = round(price - percent, fraction);
-
-    let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
-    // ~~
+    
+    let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
     income *= profitRatio / 100
-
+    
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
     if (suffix > 0) {
       suffix = "+" + suffix;
     }
 
-    const kod = round(ratio / days, 2);
+    const kod = round(ratio / (days || 1), 2);
 
     const GetPossibleRisk = () => {
       let { depo, percentage, priceRange, risk } = this.state;
@@ -541,7 +540,6 @@ class App extends React.Component {
         round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
         updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
     }
-    // ~~
     return (
       <div className="page">
 
@@ -802,7 +800,7 @@ class App extends React.Component {
                             let { scaleOffset } = this.state;
                             const sliderStepPercent = .5;
                             let scaleStep = round(price * .005, 2);
-                            // ~~
+                            
                             const updatedScaleOffset = scaleOffset + scaleStep;
                             Math.abs((min + updatedScaleOffset + scaleStep) - (max - updatedScaleOffset + scaleStep))
                             if (min + updatedScaleOffset < max - updatedScaleOffset) {
@@ -915,7 +913,6 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            {/* ~~ */}
                             <span>Коэффициент прибыли</span>
                             <NumericInput 
                               unsigned="true"
@@ -975,10 +972,16 @@ class App extends React.Component {
                                 </div>
 
                                 <div className="main-content-stats__row">
-                                  {/* ~~ */}
                                   <span>КОД</span>
                                   <span className="main-content-stats__val">
-                                    {`${isNaN(kod) ? "-" : formatNumber(kod) + "%" } `}
+                                    {(() => {
+                                      if (scaleOffset != 0) {
+                                        return "-"
+                                      }
+                                      else {
+                                        return formatNumber(kod) + "%"
+                                      }
+                                    })()}
                                   </span>
                                 </div>
                               </>
@@ -1071,7 +1074,6 @@ class App extends React.Component {
                           value={mode}
                           onChange={e => this.setState({ mode: e.target.value })} 
                         >
-                          {/* ~~ */}
                           <Radio 
                             value={0} 
                             disabled={disabledModes[0]}
