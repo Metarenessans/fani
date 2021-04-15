@@ -145,8 +145,8 @@ const createData = (type, options, meta) => {
         percent = subIndex < Math.floor(50 / presetOptions.percent) ? percent : percent * 4;;
       }
 
-      // Округляем
-      percent = round(percent, fraction);
+      // Округляем до 2 знаков
+      percent = round(percent, 2);
 
       let { preferredStep, inPercent } = presetOptions;
       if (inPercent) {

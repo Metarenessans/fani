@@ -1424,6 +1424,7 @@ class App extends React.Component {
             depo={this.state.depo}
             tools={this.getTools()}
             load={percentage}
+            investorInfo={this.state.investorInfo}
             onClose={() => {
               dialogAPI.close("settings-generator");
             }}

@@ -34,7 +34,6 @@ import createData    from './data'
 import round          from '../../../../../common/utils/round'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
-import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
 import stepConverter from './step-converter'
 
@@ -42,12 +41,15 @@ const SettingsGenerator = props => {
 
   const { onClose } = props;
 
-  const [risk, setRisk] = useState(0.5);
+  const investorInfo = props.investorInfo || {};
+
+  const [isLong, setIsLong] = useState(true);
+  const [risk, setRisk] = useState(100);
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
-  const tools = props.tools?.length ? props.tools : Tools.createArray();
+  const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
   const fraction = fractionLength(currentTool.priceStep);
@@ -327,7 +329,7 @@ const SettingsGenerator = props => {
     }
 
     // Дефолтный стоп в смс+тор = 100%
-    setRisk(currentPreset.type == "СМС + ТОР" ? 1 : 0.5);
+    setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
   }, [currentPreset.type, investorDepo]);
 
@@ -369,6 +371,10 @@ const SettingsGenerator = props => {
     setPresets(presetsCopy);
 
   }, [currentTool.code]);
+
+  useEffect(() => {
+    setTools(props.tools?.length ? props.tools : Tools.createArray());
+  }, [props.tools]);
 
   return (
     <>
@@ -651,7 +657,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX
                         name="Убыток (риск)"
-                        value={round(investorDepo * risk / 100, fraction)}
+                        value={round((depo + secondaryDepo) * risk / 100, fraction)}
                       />
                     </>
                   )
@@ -668,9 +674,9 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
-                <div className="settings-generator-slider__wrap">
+                <div className="settings-generator-content__row-col-custom">
 
-                  <div className="settings-generator-slider__label">
+                  <label className="settings-generator-slider__label">
                     Загрузка
                     <span className="settings-generator-slider__value">
                       <NumericInput
@@ -682,7 +688,25 @@ const SettingsGenerator = props => {
                         suffix="%"
                       />
                     </span>
-                  </div>
+                  </label>
+
+                </div>
+
+                <div className="settings-generator-content__row-col-custom">
+                  <Switch
+                    className="settings-generator-slider__switch-long-short"
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    checked={isLong}
+                    onChange={isLong => {
+                      setIsLong(isLong);
+                      setTools(tools.map(tool => tool.update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })));
+                    }}
+                  />
+                </div>
+
+                <div className="settings-generator-slider__wrap">
+
                   <CustomSlider 
                     className="settings-generator-slider"
                     value={load}
