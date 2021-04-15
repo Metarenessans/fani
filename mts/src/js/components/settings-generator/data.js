@@ -32,15 +32,15 @@ const createData = (type, options, meta) => {
   
   let contractsLeft = contracts;
   if (isBying) {
-    contractsLeft = contractsTotal - contracts;
+    contractsLeft = contracts + contractsSecondary;
     contracts = contractsLeft;
   }
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const isSMS_TOR = 
-    currentPreset.type == "СМС + ТОР" &&
-    ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
+  const isSMS_TOR = false;
+    // currentPreset.type == "СМС + ТОР" &&
+    // ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
 
   let { mode, stepInPercent, length } = presetOptions;
 
@@ -60,11 +60,12 @@ const createData = (type, options, meta) => {
   let data = [];
   data.isBying = isBying;
   data.on      = on;
-  if (!on) {
+  if (!on || contracts == 0) {
     return data;
   }
 
   if (isSMS_TOR) {
+    // Инпут "% докупки" пустой
     if (presetOptions.percent == "") {
       return data;
     }
@@ -141,11 +142,11 @@ const createData = (type, options, meta) => {
       }
 
       if (isSMS_TOR) {
-        percent = subIndex < 10 ? percent : percent * 4;;
+        percent = subIndex < Math.floor(50 / presetOptions.percent) ? percent : percent * 4;;
       }
 
-      // Округляем
-      percent = round(percent, fraction);
+      // Округляем до 2 знаков
+      percent = round(percent, 2);
 
       let { preferredStep, inPercent } = presetOptions;
       if (inPercent) {
@@ -268,8 +269,6 @@ const createData = (type, options, meta) => {
       }
 
       if (currentPreset.type == "СМС + ТОР" && type == "Закрытие основного депозита") {
-        // debugger;
-        // console.log(length, subLength);
         // points = round(
         //   round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
         //   fraction
@@ -284,11 +283,11 @@ const createData = (type, options, meta) => {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
 
-      if (isSMS_TOR) {
-        points = subIndex < 10 
-          ? round((mainData[0].points / 2) * (index + 1), fraction)
-          : round(currentTool.adrDay * (index + 1), fraction);
-      }
+      // if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      //   points = subIndex < Math.floor(50 / presetOptions.percent)
+      //     ? round((mainData[0].points / 2) * (index + 1), fraction)
+      //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
+      // }
 
       // Если ход больше желаемого хода - массив заканчивается
       if (
@@ -301,10 +300,10 @@ const createData = (type, options, meta) => {
         break;
       }
 
-      // кол-во закрытых контрактов
+      // Кол-во закрытых/докупленных контрактов
       let _contracts = roundUp(contracts * percent / 100);
-      if (mode == 'fibonacci') {
-        _contracts = roundUp(contracts * percent / 100);
+      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+        _contracts = roundUp(contractsLeft * percent / 100);
       }
 
       if (contractsLeft - _contracts >= 0) {

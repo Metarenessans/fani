@@ -22,7 +22,6 @@ import SGRow        from "./sgrow"
 
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
-import ReversedByingRow from "./reversed-bying-row"
 import Table            from "./table"
 import { Tools }        from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
@@ -35,7 +34,6 @@ import createData    from './data'
 import round          from '../../../../../common/utils/round'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
-import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
 import stepConverter from './step-converter'
 
@@ -43,12 +41,15 @@ const SettingsGenerator = props => {
 
   const { onClose } = props;
 
-  const [risk, setRisk] = useState(0.5);
+  const investorInfo = props.investorInfo || {};
+
+  const [isLong, setIsLong] = useState(true);
+  const [risk, setRisk] = useState(100);
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
-  const [load, setLoad] = useState(props.load || 0);
+  const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
-  const tools = props.tools?.length ? props.tools : Tools.createArray();
+  const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
   const fraction = fractionLength(currentTool.priceStep);
@@ -70,8 +71,14 @@ const SettingsGenerator = props => {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
-        "Прямые профитные докупки": { percent: optionsTemplate.percent },
+        "Обратные докупки (ТОР)": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Прямые профитные докупки": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
         "Обратные профитные докупки": {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
@@ -194,7 +201,7 @@ const SettingsGenerator = props => {
 
   let contractsTotal = 0;
   if (currentTool) {
-    contractsTotal = Math.floor(depo / currentTool.guarantee);
+    contractsTotal = Math.floor((depo + secondaryDepo) / currentTool.guarantee);
   }
 
   let contractsSecondary = 0;
@@ -321,9 +328,10 @@ const SettingsGenerator = props => {
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
 
-    // setReversedBying(currentPreset.type == "СМС + ТОР" ? true );
+    // Дефолтный стоп в смс+тор = 100%
+    setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
-  }, [currentPreset, investorDepo]);
+  }, [currentPreset.type, investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -363,6 +371,10 @@ const SettingsGenerator = props => {
     setPresets(presetsCopy);
 
   }, [currentTool.code]);
+
+  useEffect(() => {
+    setTools(props.tools?.length ? props.tools : Tools.createArray());
+  }, [props.tools]);
 
   return (
     <>
@@ -645,7 +657,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX
                         name="Убыток (риск)"
-                        value={round(investorDepo * risk / 100, fraction)}
+                        value={round((depo + secondaryDepo) * risk / 100, fraction)}
                       />
                     </>
                   )
@@ -662,17 +674,43 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
-                <div className="settings-generator-slider__wrap">
+                <div className="settings-generator-content__row-col-custom">
 
-                  <div className="settings-generator-slider__label">
+                  <label className="settings-generator-slider__label">
                     Загрузка
                     <span className="settings-generator-slider__value">
-                      {load}%
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={load}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => setLoad(value)}
+                        suffix="%"
+                      />
                     </span>
-                  </div>
+                  </label>
+
+                </div>
+
+                <div className="settings-generator-content__row-col-custom">
+                  <Switch
+                    className="settings-generator-slider__switch-long-short"
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    checked={isLong}
+                    onChange={isLong => {
+                      setIsLong(isLong);
+                      setTools(tools.map(tool => tool.update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })));
+                    }}
+                  />
+                </div>
+
+                <div className="settings-generator-slider__wrap">
+
                   <CustomSlider 
                     className="settings-generator-slider"
                     value={load}
+                    step={0.01}
                     onChange={value => setLoad(value)}
                   />
 
@@ -711,7 +749,6 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
-                      // ~~
                       (investorDepo * risk / 100)
                       /
                       currentTool.stepPrice
@@ -721,7 +758,6 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
-                      console.log(investorDepo, "ДЕПО", risk, "РИСК", currentTool.stepPrice, "ШАГ ЦЕНЫ", contracts, "КОНТРАКТЫ", "ГЕНА");
                       setRisk(
                         riskInSteps
                         *
@@ -816,9 +852,7 @@ const SettingsGenerator = props => {
                 <div style={{ width: '100%' }} hidden={!isProfitableBying}>
                   <SGRow
                     isBying={true}
-                    inputs={currentPreset.type == "СМС + ТОР"
-                      ? ["percent"]
-                      : ["percent", "stepInPercent", "length"]}
+                    preferredStepLabel="Прямой ход"
                     data={data["Прямые профитные докупки"]}
                     options={currentPreset.options["Прямые профитные докупки"]}
                     contracts={contractsTotal - contracts}
@@ -866,9 +900,6 @@ const SettingsGenerator = props => {
               <div style={{ width: '100%' }} hidden={!isReversedBying}>
                 <SGRow
                   isBying={true}
-                  inputs={currentPreset.type == "СМС + ТОР" 
-                    ? ["percent"] 
-                    : ["percent", "stepInPercent", "length"]}
                   data={data["Обратные докупки (ТОР)"]}
                   options={currentPreset.options["Обратные докупки (ТОР)"]}
                   contracts={contractsTotal - contracts}
@@ -926,7 +957,8 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab4"
                           id="settings-generator-tab4-control"
-                          hidden={!isReversedProfitableBying}
+                          hidden={true}
+                          // hidden={!isReversedProfitableBying}
                           onClick={e => setCurrentTab("Обратные профитные докупки")}>
                     Обратные докупки
                   </Button>

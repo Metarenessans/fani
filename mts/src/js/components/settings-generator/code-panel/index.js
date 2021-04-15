@@ -1,12 +1,21 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { message } from 'antd';
 
-import Stack from "../../../../../../common/components/stack"
+import Stack        from "../../../../../../common/components/stack"
+import NumericInput from "../../../../../../common/components/numeric-input"
 
 import round          from "../../../../../../common/utils/round"
-import fractionLength from "../../../../../../common/utils/fraction-length"
+import formatNumber   from "../../../../../../common/utils/format-number"
 
 import "./style.scss"
+
+const roundToClosest = (number, base) => {
+  let result = Math.round(number / base) * base;
+  if (result < base) {
+    return base;
+  }
+  return result;
+};
 
 function selectElementContent(node) {
   if (document.body.createTextRange) {
@@ -26,6 +35,12 @@ function selectElementContent(node) {
 
 export default function CodePanel(props) {
   const { currentPreset, data, tool, contracts, risk, isRiskStatic } = props;
+
+  const [rollback, setRollback] = useState(tool.priceStep);
+
+  useEffect(() => {
+    setRollback(tool.priceStep);
+  }, [tool.code]);
 
   return (
     <Stack className="code-panel">
@@ -99,7 +114,7 @@ export default function CodePanel(props) {
 
               pointsInPercents = round(pointsInPercents, 4);
             }
-            return `{${percent},${pointsInPercents}}`;
+            return `{${percent},${pointsInPercents}${key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
@@ -158,7 +173,7 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
-              return `{${percent},${pointsInPercents}}`;
+              return `{${percent},${pointsInPercents}${","+rollback}}`;
             })
             .join(",");
 
@@ -232,7 +247,8 @@ export default function CodePanel(props) {
               const textContent = `GParam.${param} = ${parsedData}`;
               return (
                 <div className="code-panel-group"
-                    key={index + .5}>
+                     key={Math.random()}
+                     style={{ marginBottom: "-2em" }}>
 
                   <div className="code-panel-group-header">
                     <h3>{title}</h3>
@@ -260,7 +276,7 @@ export default function CodePanel(props) {
               )
             })()}
             <div className="code-panel-group"
-                 key={index}>
+                 key={Math.random()}>
 
               {!hideTitle &&
                 <div className="code-panel-group-header">
@@ -277,11 +293,28 @@ export default function CodePanel(props) {
                   >
                     копировать
                   </button>
+                  {key == "Закрытие основного депозита" &&
+                    <label className="input-group input-group--fluid">
+                      <span className="input-group__label">обратный откат</span>
+                      <NumericInput
+                        className="input-group__input"
+                        key={Math.random()}
+                        defaultValue={rollback}
+                        unsigned="true"
+                        min={0}
+                        format={formatNumber}
+                        onBlur={(value, textValue, jsx) => {
+                          const newRollback = roundToClosest(Number(value), tool.priceStep);
+                          setRollback(newRollback)
+                          jsx.setState({ value: newRollback });
+                        }}
+                      />
+                    </label>
+                  }
                 </div>
               }
               <div className="code-panel-group-content">
-                <pre onClick={e => selectElementContent(e.target)}
-                  ref={codeElement}>
+                <pre onClick={e => selectElementContent(e.target)} ref={codeElement}>
                   {textContent}
                 </pre>
               </div>
@@ -293,10 +326,10 @@ export default function CodePanel(props) {
 
       {(() => {
         const codeElement = React.createRef();
-        const textContent = `GParam.depo_stop = {${!isRiskStatic ? risk : 0}, ${isRiskStatic ? risk : 0}}`;
+        const textContent = `GParam.depo_stop = {${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`;
 
         return (
-          <div className="code-panel-group">
+          <div className="code-panel-group" key={Math.random()}>
 
             <div className="code-panel-group-header">
               <h3>Риск</h3>
