@@ -135,6 +135,7 @@ const SettingsGenerator = props => {
 
   const [menuVisible, setMenuVisible] = useState(false);
 
+  const depoSum = depo + secondaryDepo;
   const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
@@ -328,7 +329,6 @@ const SettingsGenerator = props => {
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
 
-    // Дефолтный стоп в смс+тор = 100%
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
   }, [currentPreset.type, investorDepo]);
@@ -749,7 +749,7 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
-                      (investorDepo * risk / 100)
+                      (depoSum * risk / 100)
                       /
                       currentTool.stepPrice
                       /
@@ -765,7 +765,7 @@ const SettingsGenerator = props => {
                         *
                         (contracts || 1)
                         /
-                        investorDepo
+                        depoSum
                         *
                         100
                       );
@@ -778,11 +778,11 @@ const SettingsGenerator = props => {
                   <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
-                    defaultValue={investorDepo * risk / 100}
+                    defaultValue={depoSum * risk / 100}
                     format={value => formatNumber(round(value, fraction))}
                     unsigned="true"
                     onBlur={riskInMoney => {
-                      setRisk(riskInMoney / investorDepo * 100);
+                      setRisk(riskInMoney / depoSum * 100);
                     }}
                     suffix="₽"
                   />
