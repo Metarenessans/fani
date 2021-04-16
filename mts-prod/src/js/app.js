@@ -6,15 +6,12 @@ import {
   Radio,
   Input,
   Pagination,
-  InputNumber
 } from 'antd/es'
-const { Option } = Select;
 
 import {
-  LoadingOutlined,
   SettingFilled,
-  WarningOutlined
-} from "@ant-design/icons"
+  WarningOutlined,
+} from '@ant-design/icons'
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
@@ -23,8 +20,14 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import promiseWhile   from "../../../common/utils/promise-while"
-import { Tools, template } from "../../../common/tools"
 
+import { Tools, template }     from "../../../common/tools"
+import Stack                   from "../../../common/components/stack"
+import CustomSlider            from "./components/custom-slider"
+import CrossButton             from "../../../common/components/cross-button"
+import NumericInput            from "../../../common/components/numeric-input"
+import { Dialog, dialogAPI }   from "../../../common/components/dialog"
+import Config                  from "../../../common/components/config"
 import {
   Chart,
   updateChartMinMax,
@@ -32,16 +35,9 @@ import {
   updateChartZoom
 } from "./components/chart"
 
-import Stack                   from "../../../common/components/stack"
-import CrossButton             from "../../../common/components/cross-button"
-import { Dialog, dialogAPI }   from "../../../common/components/dialog"
+const { Option } = Select;
 
-import "../sass/style.sass";
-
-import Config                  from "../../../common/components/config"
-import NumericInput            from "../../../common/components/numeric-input"
-import SettingsGenerator       from "./components/settings-generator"
-import CustomSlider            from "../../../common/components/custom-slider"
+import "../sass/style.sass"
 
 class App extends React.Component {
 
@@ -72,7 +68,6 @@ class App extends React.Component {
 
       id:                 null,
       saved:              false,
-      risk:               0.5,
     };
 
     this.state = {
@@ -186,6 +181,7 @@ class App extends React.Component {
     this.fetchTools()
       .then(() => this.fetchCompanyQuotes());
 
+
     return;
     this.fetchSaves()
       .then(saves => {
@@ -259,7 +255,7 @@ class App extends React.Component {
   }
 
   fetchTools() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       for (let request of [
         "getFutures",
         "getTrademeterInfo"
@@ -284,12 +280,7 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(error => {
-        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
-        if (dev) {
-          this.setState({ depo: 12_000_000 });
-        }
-      });
+      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
 
   updatePriceRange(tool) {
@@ -348,6 +339,7 @@ class App extends React.Component {
     let state = {};
 
     try {
+
       staticParsed = JSON.parse(save.data.static);
       console.log("staticParsed", staticParsed);
 
@@ -488,25 +480,6 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools)
   }
 
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-
-    return index;
-  }
-
-  getCurrentToolIndex() {
-    let { currentToolCode } = this.state;
-    return this.getToolIndexByCode(currentToolCode);
-  }
-
   getToolByCode(code) {
     const { tools } = this.state;
     return tools.find(tool => tool.code == code) || Tools.create();
@@ -524,11 +497,11 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days, risk } = this.state;
+    let { mode, depo, data, chance, page, percentage, priceRange, days } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
+    const priceRangeSorted = priceRange.sort((l, r) => l - r);
     const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
@@ -564,50 +537,6 @@ class App extends React.Component {
     }
 
     const kod = round(ratio / days, 2);
-
-    const GetPossibleRisk = () => {
-      let { depo, percentage, priceRange, risk } = this.state;
-      let possibleRisk = 0;
-
-      let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-      let stopSteps =
-        (depo * risk / 100)
-        /
-        currentTool.stepPrice
-        /
-        (contracts || 1)
-        *
-        currentTool.priceStep;
-
-      if (risk != 0 && percentage != 0) {
-        possibleRisk =
-          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-      }
-
-      return possibleRisk
-    }
-
-
-    let possibleRisk = 0;
-
-    let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-    let stopSteps =
-      (depo * risk / 100)
-      /
-      currentTool.stepPrice
-      /
-      (contracts || 1)
-      *
-      currentTool.priceStep;
-
-    if (risk != 0 && percentage != 0) {
-      possibleRisk =
-        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-    }
 
     return (
       <div className="page">
@@ -745,17 +674,15 @@ class App extends React.Component {
                 {(() => {
                   const STEP_IN_EACH_DIRECTION = 20;
                   const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
-                  
+
                   return (
                     <Stack className="main-content__left">
 
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
                         <Select
-                          value={this.getCurrentToolIndex()}
-                          onChange={currentToolIndex => {
-                            const tools = this.getTools();
-                            const currentToolCode = tools[currentToolIndex].code; 
+                          value={this.state.currentToolCode}
+                          onChange={currentToolCode => {
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
                               .then(() => this.fetchCompanyQuotes());
@@ -769,20 +696,14 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            let tools = this.getTools();
-                            if (tools.length) {
-                              return tools
-                                .map(tool => String(tool))
-                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
-                            }
-                            else {
-                              return (
-                                <Option key={0} value={0}>
-                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
-                                  Загрузка...
-                                </Option>
+                            const tools = this.getTools();
+                            return tools.length > 0
+                              ? (
+                                tools.map((tool, index) => (
+                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
+                                ))
                               )
-                            }
+                              : <Option key={0} value={0}>Загрузка...</Option>
                           })()}
                         </Select>
                       </label>
@@ -796,12 +717,12 @@ class App extends React.Component {
                         <span className="mts-slider1-top">
                           <b>{formatNumber(round(max, fraction))}</b>
                           &nbsp;
-                          (+{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (+{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <span className="mts-slider1-bottom">
                           <b>{formatNumber(round(min, fraction))}</b>
                           &nbsp;
-                          (-{round(percent / currentTool.currentPrice * 100, 2)}%)
+                          (-{round(percent / currentTool.currentPrice * 100, fraction)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
@@ -816,7 +737,7 @@ class App extends React.Component {
                           tipFormatter={val => formatNumber((val).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
-                            updateChartMinMax(priceRange, isLong, possibleRisk);
+                            updateChartMinMax(priceRange);
                           }}
                         />
                       </div>
@@ -826,78 +747,16 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Точка входа</span>
-                            <NumericInput
-                              min={min}
-                              max={max}
-                              unsigned="true"
-                              format={number => formatNumber(round(number, fraction))}
-                              round={false}
-                              defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
-                              onBlur={value => {
-                                const callback = () => {
-                                  let possibleRisk = GetPossibleRisk()
-                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                                };
-
-                                // ЛОНГ: то есть точка входа - снизу (число меньше)
-                                if (isLong) {
-                                  if (value > priceRange[1]) {
-                                    this.setState({ priceRange: [priceRange[1], value] }, callback);
-                                  }
-                                  else {
-                                    this.setState({ priceRange: [value, priceRange[1]] }, callback);
-                                  }
-                                }
-                                // ШОРТ: то есть точка входа - сверху (число больше)
-                                else {
-                                  if (value < priceRange[0]) {
-                                    this.setState({ priceRange: [value, priceRange[0],] }, callback);
-                                  }
-                                  else {
-                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
-                                  }
-                                }
-                              }}
-                            />
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(isLong ? priceRange[0] : priceRange[1], fraction))}
+                            </span>
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Точка выхода</span>
-                            <NumericInput
-                              min={min}
-                              max={max}
-                              unsigned="true"
-                              format={number => formatNumber(round(number, fraction))}
-                              round={false}
-                              defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
-
-                              onBlur={value => {
-                                const callback = () => {
-                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                                };
-
-                                // ЛОНГ: то есть точка выхода - сверху (число меньше)
-                                if (isLong) {
-                                  if (value < priceRange[0]) {
-                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
-                                  }
-                                  else {
-                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
-                                  }
-                                }
-                                // ШОРТ: то есть точка выхода - снизу (число больше)
-                                else {
-                                  if (value > priceRange[0]) {
-                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
-                                  }
-                                  else {
-                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
-                                  }
-                                }
-                                
-                              }}
-                            />
-                            
+                            <span className="main-content-stats__val">
+                              {formatNumber(round(isLong ? priceRange[1] : priceRange[0], fraction))}
+                            </span>
                           </div>
 
                           <div className="main-content-stats__row">
@@ -916,44 +775,40 @@ class App extends React.Component {
 
                           <div className="main-content-stats__row">
                             <span>Вероятность</span>
-                            <NumericInput 
-                              unsigned="true"
-                              key={mode + chance * Math.random()} 
-                              disabled={mode == 0}
-                              defaultValue={mode == 0 ? 0.5 : chance} 
-                              onBlur={chance => this.setState({ chance })}
-                              suffix="%"
-                            />
+                            <span className="main-content-stats__val">
+                              <NumericInput 
+                                key={mode + chance * Math.random()} 
+                                disabled={mode == 0}
+                                defaultValue={mode == 0 ? 0.5 : chance} 
+                                onBlur={chance => this.setState({ chance })}
+                                suffix="%"
+                              />
+                            </span>
                           </div>
 
                           <div className="main-content-stats__row">
                             <span>Риск движения против</span>
-                            <NumericInput
-                              min={0}
-                              max={100}
-                              unsigned="true"
-                              suffix="%"
-                              format={number => formatNumber(round(number, fraction))}
-                              round={false}
-                              // defaultValue={formatNumber(round(mode, 1))}
-                              defaultValue={ risk }
-
-                              onBlur={ risk => {
-                                this.setState({risk});
-                                let possibleRisk = GetPossibleRisk();
-                                updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                              }}
-                            />
-                          </div>
-
-                          <div className="main-content-stats__row">
-                            <span>Stop Loss</span>
                             <span className="main-content-stats__val">
-                              {formatNumber(round(possibleRisk, 2))}
+                              {(() => {
+                                let risk = .5;
+                                if (mode != 0) {
+                                  risk = 
+                                      contracts 
+                                    * planIncome
+                                    / currentTool.priceStep 
+                                    * currentTool.stepPrice 
+                                    / depo
+                                    * 100;
+                                  risk *= chance / 100;
+                                }
+                                return `${formatNumber(round(risk, 1))}%`
+                              })()}
                             </span>
                           </div>
-
+                          
                           {(() => {
+                            
+
                             return (
                               <>
                                 <div className="main-content-stats__row">
@@ -983,12 +838,12 @@ class App extends React.Component {
                 <Stack className="main-content__right">
                   <Chart 
                     className="mts__chart"
-                    key={currentTool.toString() + this.state.loadingChartData}
+                    key={currentTool.toString() + this.state.loadingChartData} 
                     min={min}
                     max={max}
                     priceRange={priceRange}
                     loading={this.state.loadingChartData}
-                    tool={currentTool}
+                    tool={currentTool} 
                     data={data}
                     days={days}
                   />
@@ -1001,16 +856,12 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          Загрузка:{" "}
-
-                          <NumericInput
-                            format={number => round(number, 2)}
-                            suffix="%"
-                            round={"false"}
-                            key={percentage}
-                            defaultValue={percentage}
-                            onBlur={ percentage => this.setState({ percentage }) }
-                          />
+                          Загрузка:
+                          <b style={{
+                            color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
+                          }}>
+                            {formatNumber(Math.abs(percentage))}%
+                          </b>
                         </span>
 
                         <CustomSlider
@@ -1023,8 +874,8 @@ class App extends React.Component {
                           range
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
-                          max= {100}
-                          step= {.5}
+                          max={100}
+                          step={1}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
@@ -1034,7 +885,8 @@ class App extends React.Component {
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
-                            updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
+                            updateChartMinMax(priceRange, percentage >= 0);
+
                             this.setState({
                               investorInfo,
                               percentage, 
@@ -1069,16 +921,6 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
-
-                        <button
-                          className="settings-button js-open-modal main-content-options__settings"
-                          onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
-                        >
-                          <span className="visually-hidden">Открыть конфиг</span>
-                          <SettingFilled className="settings-button__icon" />
-                        </button>
-
                       </div>
 
                       <div className="main-content-options__row">
@@ -1124,24 +966,20 @@ class App extends React.Component {
                       <div className="mts-table">
                         <h3>Статистика КОД</h3>
                         <table>
-                          <thead>
+                          <tr>
+                            <th>День</th>
+                            <th>План %</th>
+                            <th>Факт %</th>
+                            <th>Доходность</th>
+                          </tr>
+                          {new Array(period).fill(0).map((value, index) =>
                             <tr>
-                              <th>День</th>
-                              <th>План %</th>
-                              <th>Факт %</th>
-                              <th>Доходность</th>
+                              <td>{((page - 1) * period) + (index + 1)}</td>
+                              <td>{kod}</td>
+                              <td><Input defaultValue="1"/></td>
+                              <td><Input defaultValue="1"/></td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {new Array(period).fill(0).map((value, index) =>
-                              <tr key={index}>
-                                <td>{((page - 1) * period) + (index + 1)}</td>
-                                <td>{kod}</td>
-                                <td><Input defaultValue="1"/></td>
-                                <td><Input defaultValue="1"/></td>
-                              </tr>
-                            )}
-                          </tbody>
+                          )}
                         </table>
                         <Pagination
                           key={days}
@@ -1427,21 +1265,6 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
-
-        <Dialog
-          id="settings-generator"
-          pure={true}
-        >
-          <SettingsGenerator
-            depo={this.state.depo}
-            tools={this.getTools()}
-            load={percentage}
-            onClose={() => {
-              dialogAPI.close("settings-generator");
-            }}
-          />
-        </Dialog>
-        {/* ГЕНА */}
 
       </div>
     );

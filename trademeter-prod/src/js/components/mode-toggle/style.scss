@@ -44,11 +44,11 @@
     transform: translate(-50%, -50%);
 
     @include sm() {
-      top: 4.5em;
+      top: 3.25em;
     }
     
     @include xs() {
-      top: 3.25em
+      top: 2.7em;
     }
   }
 
@@ -61,17 +61,20 @@
   }
 
   &__label {
+    justify-content: center;
     min-width: 13em;
     margin: 0;
 
     color: rgba(white, .4);
     font-size: 1.85em;
+    text-align: center;
     letter-spacing: .03em;
 
     transition: color .2s ease;
 
     @include sm() {
-      margin-bottom: 2em;
+      margin-right: 0 !important;
+      margin-bottom: .8em;
   
       &:last-of-type {
         margin-bottom: 0;

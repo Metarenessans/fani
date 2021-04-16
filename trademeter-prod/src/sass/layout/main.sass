@@ -27,6 +27,9 @@
     color: white
     text-align: center
 
+    .stack
+      --space: 1.15em
+
     &-wrap
       position: relative
       padding: 0 6em
@@ -38,9 +41,12 @@
         padding: 0
     
     &__footer
-      margin: 2.5em auto 0
+      margin: 1.9em auto 0
 
       font-size: 1.6em
+
+      +sm
+        font-size: 1.3em
 
       > *
         min-width: 16em
@@ -58,12 +64,15 @@
     &__new
       background: white
       color: var( --primary-color )
+      border-color: var( --primary-color )
 
       &:hover,
       &:focus
         border-color: white
 
     &__save
+      border-color: white
+
       &:hover,
       &:focus
         background: white
@@ -88,7 +97,7 @@
         position: static
         order: -1
         width: 100%
-        margin-bottom: 1.75em
+        margin-bottom: 2em
 
   &-save
     font-size: 1.5em

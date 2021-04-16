@@ -81,6 +81,7 @@ class App extends React.Component {
       changedMaxRange:        0,
       movePercantage:         0,
       lastRadioButton:        0,
+      profitRatio:           60,
     };
 
     this.state = {
@@ -453,14 +454,15 @@ class App extends React.Component {
     let {
       mode, depo, data, chance, page, percentage, priceRange,
       days, risk, scaleOffset, changedMinRange, changedMaxRange,
-      movePercantage, lastRadioButton
+      movePercantage, lastRadioButton, profitRatio 
     } = this.state;
 
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
-    const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r).map(sorted => round(sorted ,2));
+    
+    const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
@@ -483,17 +485,17 @@ class App extends React.Component {
 
     const max = round(price + percent, fraction);
     const min = round(price - percent, fraction);
-
-    let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
-    income *= mode == 0 ? 0.6 : 0.9;
-
+    
+    let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
+    income *= profitRatio / 100
+    
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
     if (suffix > 0) {
       suffix = "+" + suffix;
     }
 
-    const kod = round(ratio / days, 2);
+    const kod = round(ratio / (days || 1), 2);
 
     const GetPossibleRisk = () => {
       let { depo, percentage, priceRange, risk } = this.state;
@@ -645,7 +647,6 @@ class App extends React.Component {
                       )
                       : null
                     }
-
                   </div>
 
                   <Tooltip title="Настройки">
@@ -723,12 +724,12 @@ class App extends React.Component {
                           ({formatNumber(price)})
                         </span>
                         <span className="mts-slider1-top">
-                          <b>{formatNumber(round(changedMaxRange || max, fraction))}</b>
+                          <b>{formatNumber(round(max - scaleOffset, fraction))}</b>
                           &nbsp;
                           (+{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
                         <span className="mts-slider1-bottom">
-                          <b>{formatNumber(round(changedMinRange || min, fraction))}</b>
+                          <b>{formatNumber(round(min + scaleOffset, fraction))}</b>
                           &nbsp;
                           (-{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
@@ -737,8 +738,8 @@ class App extends React.Component {
                           range
                           vertical
                           value={priceRange}
-                          min={min}
-                          max={max}
+                          max={round(max - scaleOffset, 1)}
+                          min={round(min + scaleOffset, 1)}
                           step={step}
                           precision={1}
                           tooltipPlacement="left"
@@ -751,7 +752,7 @@ class App extends React.Component {
 
                         <Button
                           className="scale-button scale-button--default"
-                          onClick={(e) => {
+                          onClick={ e => {
                             updateChartScaleMinMax(min, max);
                             this.setState({
                               scaleOffset: 0, changedMinRange: min,
@@ -772,6 +773,7 @@ class App extends React.Component {
                             const scaleStep = round(price * .005 , 2);
 
                             const updatedScaleOffset = scaleOffset - scaleStep;
+                            
                             if (min + updatedScaleOffset != 0) {
                               this.setState({
                                 scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
@@ -783,17 +785,24 @@ class App extends React.Component {
                           }}
                           aria-label="Увеличить масштаб графика"
                         >
-                          -
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 227.406 227.406"><g ><path d="M217.575 214.708l-65.188-67.793c16.139-15.55 26.209-37.356 26.209-61.485C178.596 38.323 140.272 0 93.167 0 46.06 0 7.737 38.323 7.737 85.43c0 47.106 38.323 85.43 85.43 85.43 17.574 0 33.922-5.339 47.518-14.473l66.078 68.718a7.482 7.482 0 005.407 2.302 7.5 7.5 0 005.405-12.699zM22.737 85.43c0-38.835 31.595-70.43 70.43-70.43 38.835 0 70.429 31.595 70.429 70.43s-31.594 70.43-70.429 70.43c-38.835-.001-70.43-31.595-70.43-70.43z" /><path d="M131.414 77.93H54.919c-4.143 0-7.5 3.357-7.5 7.5s3.357 7.5 7.5 7.5h76.495c4.143 0 7.5-3.357 7.5-7.5s-3.357-7.5-7.5-7.5z" /></g></svg>
                         </Button>
 
                         <Button
                           className="scale-button scale-button--plus"
+                          disabled={(() => {
+                            let { scaleOffset } = this.state;
+                            let scaleStep = round(price * .005, 2);
+                            const updatedScaleOffset = scaleOffset + scaleStep;
+                            return Math.abs((min + updatedScaleOffset) - (max - updatedScaleOffset)) < step;
+                          })()}
                           onClick={ () => {
                             let { scaleOffset } = this.state;
                             const sliderStepPercent = .5;
                             let scaleStep = round(price * .005, 2);
-
+                            
                             const updatedScaleOffset = scaleOffset + scaleStep;
+                            Math.abs((min + updatedScaleOffset + scaleStep) - (max - updatedScaleOffset + scaleStep))
                             if (min + updatedScaleOffset < max - updatedScaleOffset) {
                               this.setState({
                                 scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
@@ -806,7 +815,7 @@ class App extends React.Component {
                           }}
                           aria-label="Уменьшить масштаб графика"
                         >
-                          +
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480.606 480.606"><path d="M202.039 125.423h-30v46.616h-46.617v30h46.617v46.616h30v-46.616h46.615v-30h-46.615z" /><path d="M480.606 459.394L329.409 308.195c27.838-32.663 44.668-74.978 44.668-121.157C374.077 83.905 290.172 0 187.039 0S0 83.905 0 187.039s83.905 187.039 187.039 187.039c46.179 0 88.495-16.831 121.157-44.669l151.198 151.198 21.212-21.213zM187.039 344.077C100.447 344.077 30 273.63 30 187.039S100.447 30 187.039 30s157.039 70.447 157.039 157.039-70.448 157.038-157.039 157.038z" /></svg>
                         </Button>
                       </div>
 
@@ -904,13 +913,15 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Вероятность</span>
+                            <span>Коэффициент прибыли</span>
                             <NumericInput 
                               unsigned="true"
                               key={mode + chance * Math.random()} 
                               disabled={mode == 0}
-                              defaultValue={mode == 0 ? 0.5 : chance} 
-                              onBlur={chance => this.setState({ chance })}
+                              defaultValue={profitRatio}
+                              min={0}
+                              max={100}
+                              onBlur={profitRatio => this.setState({ profitRatio })}
                               suffix="%"
                             />
                           </div>
@@ -953,9 +964,24 @@ class App extends React.Component {
                                 </div>
 
                                 <div className="main-content-stats__row">
+                                  <span>Убыток</span>
+                                  <span className="main-content-stats__val">
+                                    {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
+                                    {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
+                                  </span>
+                                </div>
+
+                                <div className="main-content-stats__row">
                                   <span>КОД</span>
                                   <span className="main-content-stats__val">
-                                    {`${isNaN(kod) ? "-" : formatNumber(kod) + "%" } `}
+                                    {(() => {
+                                      if (scaleOffset != 0) {
+                                        return "-"
+                                      }
+                                      else {
+                                        return formatNumber(kod) + "%"
+                                      }
+                                    })()}
                                   </span>
                                 </div>
                               </>
@@ -1048,13 +1074,25 @@ class App extends React.Component {
                           value={mode}
                           onChange={e => this.setState({ mode: e.target.value })} 
                         >
-                          <Radio value={0} disabled={disabledModes[0]}>
+                          <Radio 
+                            value={0} 
+                            disabled={disabledModes[0]}
+                            onClick={ e => this.setState({ profitRatio: 60 }) }
+                          >
                             стандарт
                           </Radio>
-                          <Radio value={1} disabled={disabledModes[1]}>
+                          <Radio 
+                            value={1}
+                            disabled={disabledModes[1]}
+                            onClick={ e => this.setState({ profitRatio: 60 })}
+                          >
                             смс<span style={{ fontFamily: "serif", fontWeight: 300 }}>+</span>тор
                           </Radio>
-                          <Radio value={2} disabled={disabledModes[2]}>
+                          <Radio 
+                            value={2} 
+                            disabled={disabledModes[2]}
+                            onClick={ e => this.setState({ profitRatio: 90 })}
+                            >
                             лимитник
                           </Radio>
                         </Radio.Group>
