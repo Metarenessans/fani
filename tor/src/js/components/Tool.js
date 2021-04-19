@@ -3,7 +3,7 @@ import {
   Select,
   Button,
   Tooltip,
-  Switch
+  Switch,
 } from "antd/es"
 
 import {
@@ -120,7 +120,6 @@ export default class Item extends React.Component {
 
     return 0;
   }
-
   render() {
     const { 
       index,
@@ -469,11 +468,19 @@ export default class Item extends React.Component {
                             className="input-group__input"
                             min={currentTool.priceStep}
                             defaultValue={stepExpected}
+                            key={Math.random()}
+                            onChange={(e, val, jsx) => {
+                              let errMsg = "";
+                              if (val > currentTool.currentPrice) {
+                                errMsg = "Длина хода больше текущей цены!";
+                              }
+                              jsx.setState({ errMsg });
+                            }}
+
                             onBlur={val => {
                               if (val == 0) {
                                 val = 0.1;
                               }
-
                               onChange("stepExpected", val);
                               // this.setState({ stepExpected: val }, this.recalc)
                             }}
@@ -593,10 +600,18 @@ export default class Item extends React.Component {
                           <NumericInput
                             className="input-group__input"
                             min={currentTool.priceStep}
-                            key={stepExpected2 != null ? stepExpected2 : stepExpected}
                             defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
+                            // key={stepExpected2 != null ? stepExpected2 : stepExpected}
+                            key={Math.random()}
+                            onChange={(e, val, jsx) => {
+                              let errMsg = "";
+                              if (val > currentTool.currentPrice) {
+                                errMsg = "Длина хода больше текущей цены!";
+                              }
+                              jsx.setState({ errMsg });
+                            }}
+
                             onBlur={val => {
-                              console.log(currentTool.priceStep);
                               if (val == 0) {
                                 val = 0.1;
                               }
