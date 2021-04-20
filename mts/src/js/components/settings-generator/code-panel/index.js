@@ -114,7 +114,7 @@ export default function CodePanel(props) {
 
               pointsInPercents = round(pointsInPercents, 4);
             }
-            return `{${percent},${pointsInPercents}${key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
+            return `{${percent},${pointsInPercents}${currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
@@ -173,7 +173,7 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
-              return `{${percent},${pointsInPercents}${","+rollback}}`;
+              return `{${percent},${pointsInPercents}${currentPreset.type == "СМС + ТОР" ? "," + rollback : ""}}`;
             })
             .join(",");
 
@@ -293,7 +293,7 @@ export default function CodePanel(props) {
                   >
                     копировать
                   </button>
-                  {key == "Закрытие основного депозита" &&
+                  {currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" &&
                     <label className="input-group input-group--fluid">
                       <span className="input-group__label">обратный откат</span>
                       <NumericInput

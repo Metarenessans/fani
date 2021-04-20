@@ -1,0 +1,77 @@
+.dialog {
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(black, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+
+  &.pure > &__inner {
+    padding: 0;
+  }
+  & > &__inner {
+    position: relative;
+    background: white;
+    max-width: 100vw;
+    max-height: 100vh;
+    overflow-y: auto;
+    display: inline-flex;
+    font-size: 1.4em;
+    cursor: initial;
+
+    > .stack {
+      --space: 0.8rem;
+
+      width: 100%;
+      align-items: stretch;
+    }
+  }
+  &__content {
+    overflow: hidden;
+    margin-bottom: auto;
+    flex-grow: 1;
+
+    .config {
+      padding: 0.1em !important;
+    }
+  }
+  &__close {
+    position: absolute;
+    right: 0.2em;
+    top: 0.15em;
+    font-size: 3em;
+    color: black !important;
+  }
+  &__title {
+    padding-right: 1.5em;
+    margin-bottom: 0.25em;
+    font-size: 2.2em;
+    font-weight: 300;
+    line-height: 0.8;
+
+    & + sm {
+      font-size: 2em;
+    }
+  }
+  &-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    $gap: 0.7em;
+    margin: -($gap / 2);
+
+    > * {
+      margin: $gap / 2;
+    }
+    &-wrap {
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+}
