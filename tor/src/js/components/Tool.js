@@ -252,9 +252,11 @@ export default class Item extends React.Component {
             </label>
 
             <label className="input-group">
-              <Tooltip title="Фактический убыток позиции">
-                <span className="input-group__title">Просадка</span>
-              </Tooltip>
+              <span className="input-group__title">
+                <Tooltip title="Текущий убыток по инструменту">
+                  Просадка
+                </Tooltip>
+              </span>
               <NumericInput
                 className="input-group__input tool__drawdown"
                 key={drawdown}
@@ -273,7 +275,11 @@ export default class Item extends React.Component {
             </label>
 
             <label className="input-group">
-              <span className="input-group__title">Контрактов</span>
+              <span className="input-group__title">
+                <Tooltip title="Объём убыточной позиции в контрактах (лотах)">
+                  Контрактов
+                </Tooltip>
+              </span>
               <NumericInput
                 className="input-group__input"
                 key={contracts}
@@ -293,16 +299,18 @@ export default class Item extends React.Component {
                 <AddButton />
 
                 <label className="switch tool-header__long-short">
-                  <Switch
-                    className="switch__input"
-                    key={isLong + Math.random()}
-                    checkedChildren="LONG"
-                    unCheckedChildren="SHORT"
-                    defaultChecked={isLong}
-                    onChange={val => {
-                      onChange("isLong", val);
-                    }}
-                  />
+                  <Tooltip title="Направление позиции">
+                    <Switch
+                      className="switch__input"
+                      key={isLong + Math.random()}
+                      checkedChildren="LONG"
+                      unCheckedChildren="SHORT"
+                      defaultChecked={isLong}
+                      onChange={val => {
+                        onChange("isLong", val);
+                      }}
+                    />
+                  </Tooltip>
                   {/* <span className="switch__label">SHORT</span> */}
                 </label>
 
@@ -332,7 +340,11 @@ export default class Item extends React.Component {
             <div className="tool-header-bottom__wrap">
 
               <div className="tool-pair">
-                <h3 className="tool-pair-key">Загрузка:</h3>
+                <h3 className="tool-pair-key">
+                  <Tooltip title="Объём задействованного депозита в процентах">
+                      Загрузка:
+                  </Tooltip>
+                </h3>
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + `%`}>
                     {(() => {
@@ -344,7 +356,11 @@ export default class Item extends React.Component {
               </div>
 
               <div className="tool-pair">
-                <h3 className="tool-pair-key">Просадка:</h3>
+                <h3 className="tool-pair-key">
+                  <Tooltip title="Текущий убыток по инструменту">
+                      Просадка:
+                  </Tooltip>
+                </h3>
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + "%"}>
                     {(() => {
@@ -358,7 +374,11 @@ export default class Item extends React.Component {
               </div>
 
               <div className="tool-pair">
-                <h3 className="tool-pair-key">Депозит:</h3>
+                <h3 className="tool-pair-key">
+                  <Tooltip title="Остаток на счёте с учетом просадки и загрузки">
+                      Депозит:
+                  </Tooltip>
+                </h3>
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + " руб."}>
                     {(() => {
@@ -370,7 +390,11 @@ export default class Item extends React.Component {
               </div>
               
               <div className="tool-pair">
-                <h3 className="tool-pair-key">Средняя цена:</h3>
+                <h3 className="tool-pair-key">
+                  <Tooltip title="Цена приобретения позиции">
+                      Средняя цена:
+                  </Tooltip>
+                </h3>
                 <span className="tool-pair-val">
                   {(() => {
                     const search = /\.\d+$/g.exec(String(currentTool.currentPrice));
@@ -384,7 +408,11 @@ export default class Item extends React.Component {
               </div>
 
               <div className="tool-pair">
-                <h3 className="tool-pair-key">Пунктов:</h3>
+                <h3 className="tool-pair-key">
+                  <Tooltip title="Движение цены в пунктах  против направления позиции">
+                      Пунктов:
+                  </Tooltip>
+                </h3>
                 <span className="tool-pair-val">
                   <Value format={formatNumber} isDefault="true">
                     {Math.round(-pointsAgainst)}
@@ -402,8 +430,11 @@ export default class Item extends React.Component {
 
             <div className="tool-main-card card">
               <header className="tool-main-card-header">
-                <h2 className="tool-main-card__title">Позитивный сценарий</h2>
-
+                <h2 className="tool-main-card__title">
+                  <Tooltip title=" Условие движения цены в сторону направления позиции ">
+                      Позитивный сценарий
+                  </Tooltip>
+                </h2>
                 <label className="switch tool-main-card-header__switch">
                   <Switch
                     className="switch__input"
@@ -412,9 +443,11 @@ export default class Item extends React.Component {
                       onChange("directUnloading", val);
                     }} 
                   />
-                  <Info tooltip="Прямая разгрузка позиции">
-                    <span className="switch__label">Прямая</span>
-                  </Info>
+                  <span className="switch__label">
+                    <Tooltip title="Прямая разгрузка позиции">
+                        Прямая
+                    </Tooltip>
+                  </span>
                 </label>
               </header>
               
@@ -432,7 +465,9 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-left">
                         <label className="input-group">
                           <span className="input-group__title input-group__title--left">
-                            Догрузка
+                            <Tooltip title="Объём для усреднения позиции">
+                              Догрузка
+                            </Tooltip>
                           </span>
                           <CustomSelect
                             key={additionalLoading}
@@ -456,7 +491,11 @@ export default class Item extends React.Component {
                       </div>
                       
                       <div className="tool-main-card-body-pair">
-                        <h3 className="tool-main-card-body-pair-key">Итераций:</h3>
+                        <h3 className="tool-main-card-body-pair-key">
+                          <Tooltip title="Количество повторений усреднения и разгрузки для ликвидации просадки">
+                            Итераций:
+                          </Tooltip>
+                        </h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(iterations, 2)) }
                         </span>
@@ -469,7 +508,9 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-left">
                         <label className="input-group">
                           <span className="input-group__title input-group__title--left">
-                            Ожидаемый ход (руб/$)
+                            <Tooltip title="Планируемое движение цены в сторону позиции после усреднения">
+                              Ожидаемый ход (руб/$)
+                            </Tooltip>
                           </span>
                           <NumericInput
                             className="input-group__input"
@@ -505,8 +546,10 @@ export default class Item extends React.Component {
 
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
-                          Прибыль <br className="hide-xs" />
-                          за итерацию:
+                          <Tooltip title="Сумма дохода в рублях за каждую итерацию">
+                            Прибыль <br className="hide-xs" />
+                            за итерацию:
+                          </Tooltip>
                         </h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={val => formatNumber(round(val, 3))}>
@@ -519,7 +562,11 @@ export default class Item extends React.Component {
 
                     <div className="tool-main-card-body__row--mobile">
                       <div className="tool-main-card-body-pair tool-main-card-body-pair--mobile">
-                        <h3 className="tool-main-card-body-pair-key">Итераций</h3>
+                        <h3 className="tool-main-card-body-pair-key">
+                          <Tooltip title="Количество повторений усреднения и разгрузки для ликвидации просадки">
+                            Итераций
+                          </Tooltip>
+                        </h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(iterations, 2)) }
                         </span>
@@ -529,7 +576,9 @@ export default class Item extends React.Component {
                     <div className="tool-main-card-body__row--mobile">
                       <div className="tool-main-card-body-pair tool-main-card-body-pair--mobile">
                         <h3 className="tool-main-card-body-pair-key">
-                          Прибыль за итерацию
+                          <Tooltip title="Сумма дохода в рублях за каждую итерацию">
+                            Прибыль за итерацию
+                          </Tooltip>
                         </h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={formatNumber}>{incomeForIteration}</Value>
@@ -544,7 +593,11 @@ export default class Item extends React.Component {
             
             <div className="tool-main-card card">
               <header className="tool-main-card-header">
-                <h2 className="tool-main-card__title">Негативный сценарий</h2>
+                <h2 className="tool-main-card__title">
+                  <Tooltip title="Условие движения цены против направления позиции">
+                      Негативный сценарий
+                  </Tooltip>
+                </h2>
               </header>
 
               {(() => {
@@ -564,7 +617,9 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-left">
                         <label className="input-group">
                           <span className="input-group__title input-group__title--left">
-                            Догрузка
+                            <Tooltip title="Объём для усреднения позиции">
+                              Догрузка
+                            </Tooltip>
                           </span>
                           <CustomSelect
                             key={additionalLoading2}
@@ -589,7 +644,11 @@ export default class Item extends React.Component {
 
 
                       <div className="tool-main-card-body-pair">
-                        <h3 className="tool-main-card-body-pair-key">Депозит:</h3>
+                        <h3 className="tool-main-card-body-pair-key">
+                          <Tooltip title="Остаток на счёте с учетом просадки и загрузки">
+                            Депозит:
+                          </Tooltip>
+                        </h3>
                         <span className="tool-main-card-body-pair-val">
                           { formatNumber(round(deposit, 2)) }
                         </span>
@@ -602,7 +661,9 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-left">
                         <label className="input-group">
                           <span className="input-group__title input-group__title--left">
-                            Ожидаемый ход (руб/$)
+                            <Tooltip title="Планируемое движение цены в сторону позиции после усреднения">
+                              Ожидаемый ход (руб/$)
+                            </Tooltip>
                           </span>
                           <NumericInput
                             className="input-group__input"
