@@ -42,7 +42,6 @@ export default class Item extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     const { drawdown } = this.props.data;
     if (drawdown != prevProps.data.drawdown) {
-      console.log(this.props);
       this.setState({ drawdown });
     }
   }
