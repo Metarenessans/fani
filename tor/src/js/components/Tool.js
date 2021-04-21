@@ -39,6 +39,14 @@ export default class Item extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    const { drawdown } = this.props.data;
+    if (drawdown != prevProps.data.drawdown) {
+      console.log(this.props);
+      this.setState({ drawdown });
+    }
+  }
+
   parseTool(str) {
     var arr = str
       .replace(/\,/g, ".")
@@ -254,9 +262,9 @@ export default class Item extends React.Component {
                 defaultValue={drawdown}
                 round
                 min={1}
-                onBlur={val => {
-                  onChange("drawdown", val);
-
+                onBlur={drawdown => {
+                  onChange("drawdown", drawdown);
+                  this.setState({ drawdown });
                   // if (this.props.onDrawdownChange) {
                   //   this.props.onDrawdownChange(val, this.recalc.bind(this));
                   // }
