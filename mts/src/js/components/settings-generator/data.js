@@ -20,8 +20,8 @@ const createData = (type, options, meta) => {
   } = options;
 
   const isBying = options.isBying || false;
-
   const presetOptions = options.options || currentPreset.options[type];
+  const closeAll = presetOptions.closeAll
 
   if (contractsSecondary > 0) {
     contracts -= contractsSecondary;
@@ -32,7 +32,8 @@ const createData = (type, options, meta) => {
   
   let contractsLeft = contracts;
   if (isBying) {
-    contractsLeft = contracts + contractsSecondary;
+    // contractsLeft = contracts + contractsSecondary;
+    contractsLeft = contractsTotal - (contracts + contractsSecondary);
     contracts = contractsLeft;
   }
 
@@ -41,6 +42,13 @@ const createData = (type, options, meta) => {
   const isSMS_TOR = false;
     // currentPreset.type == "СМС + ТОР" &&
     // ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
+
+  const stepsToPercentConverter = currentPreset.type == "Лимитник" && type == "Закрытие основного депозита"
+    ? stepConverter.complexFromStepsToPercent
+    : stepConverter.fromStepToPercents;
+  const percentToStepsConverter = currentPreset.type == "Лимитник" && type == "Закрытие основного депозита"
+    ? stepConverter.complexFromPercentToSteps
+    : stepConverter.fromPercentsToStep;
 
   let { mode, stepInPercent, length } = presetOptions;
 
@@ -101,6 +109,7 @@ const createData = (type, options, meta) => {
 
   let subIndex = -1;
   let lastRowInGroupIndex = -1;
+  let readyToClosedAll = false;
 
   for (let index = 0; index < length; index++) {
 
@@ -238,10 +247,12 @@ const createData = (type, options, meta) => {
             preferredStepInMoney = currentTool.adrDay;
           }
           else {
-            preferredStepInMoney = stepConverter.fromPercentsToStep(
-              preferredStepInMoney,
-              currentTool
-            );
+            preferredStepInMoney = percentToStepsConverter(preferredStepInMoney, currentTool, contracts + contractsSecondary);
+
+            // preferredStepInMoney = stepConverter.fromPercentsToStep(
+            //   preferredStepInMoney,
+            //   currentTool
+            // );
           }
         }
         else {
@@ -296,6 +307,13 @@ const createData = (type, options, meta) => {
         (mode != 'fibonacci' && mode != 'custom') &&
         points > (preferredStep || currentTool.adrDay)
       ) {
+        if (closeAll && !readyToClosedAll) {
+          console.log('1 step back');
+          readyToClosedAll = true;
+          index--;
+          continue;
+        }
+        
         shouldBreak = true;
         break;
       }
@@ -304,6 +322,21 @@ const createData = (type, options, meta) => {
       let _contracts = roundUp(contracts * percent / 100);
       if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
         _contracts = roundUp(contractsLeft * percent / 100);
+      }
+
+      if (readyToClosedAll) {
+        _contracts = contractsLeft;
+        shouldBreak = true;
+      }
+
+      if (index == length - 1 && j == subLength - 1) {
+        // console.log(j, 'last closing');
+        if (closeAll) {
+          // console.log('closing all the contracts');
+          _contracts = contractsLeft;
+          // percent = Math.floor(_contracts / contracts * 100);
+          shouldBreak = true;
+        }
       }
 
       if (contractsLeft - _contracts >= 0) {

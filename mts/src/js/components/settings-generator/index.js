@@ -64,6 +64,7 @@ const SettingsGenerator = props => {
       type: "СМС + ТОР",
       options: {
         [initialCurrentTab]: {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
@@ -90,6 +91,7 @@ const SettingsGenerator = props => {
       type: "Лимитник",
       options: {
         [initialCurrentTab]: {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
@@ -101,7 +103,7 @@ const SettingsGenerator = props => {
     }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState("Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -137,8 +139,6 @@ const SettingsGenerator = props => {
 
   const depoSum = depo + secondaryDepo;
   const depoAvailable = (depo + secondaryDepo) * (load / 100);
-
-  const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -218,13 +218,15 @@ const SettingsGenerator = props => {
     contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
+  const hasExtraDepo = currentPreset.type != "Лимитник" && contractsSecondary > 0;
+
   const options = {
     currentPreset,
     currentTool,
     contractsTotal,
     contracts,
     contractsSecondary,
-    comission
+    comission,
   };
 
   let data = [];
@@ -674,10 +676,10 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
-                <div className="settings-generator-content__row-col-custom">
+                <div className="settings-generator-content__row-col-custom settings-generator-slider__label-wrap">
 
-                  <label className="settings-generator-slider__label">
-                    Загрузка
+                  <label className="settings-generator-slider__label input-group">
+                    <span className="input-group__label">Загрузка</span>
                     <span className="settings-generator-slider__value">
                       <NumericInput
                         className="input-group__input"
@@ -690,9 +692,6 @@ const SettingsGenerator = props => {
                     </span>
                   </label>
 
-                </div>
-
-                <div className="settings-generator-content__row-col-custom">
                   <Switch
                     className="settings-generator-slider__switch-long-short"
                     checkedChildren="LONG"
@@ -700,9 +699,12 @@ const SettingsGenerator = props => {
                     checked={isLong}
                     onChange={isLong => {
                       setIsLong(isLong);
-                      setTools(tools.map(tool => tool.update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })));
+                      const updatedTools = [...tools];
+                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                      setTools(updatedTools);
                     }}
                   />
+
                 </div>
 
                 <div className="settings-generator-slider__wrap">
@@ -801,7 +803,21 @@ const SettingsGenerator = props => {
                   Закрытие основного депозита
                 </h3>
 
-                <label className="switch-group">
+                <Tooltip title={
+                  currentPreset.options[initialCurrentTab].closeAll
+                    ? "Закрывать все открытые контракты"
+                    : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
+                }>
+                  <Switch
+                    className="settings-generator-content__row-header-close-all"
+                    checked={currentPreset.options[initialCurrentTab].closeAll}
+                    checkedChildren="100%"
+                    unCheckedChildren="100%"
+                    onChange={closeAll => updatePresetProperty(initialCurrentTab, { closeAll })}
+                  />
+                </Tooltip>
+
+                <label className="switch-group settings-generator-content__row-header-mirror-switch">
                   <Switch
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}

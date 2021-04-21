@@ -43,7 +43,7 @@ export default function SGRow({
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const inputFormatter = number => formatNumber(number != "" ? round(number, fraction) : number);
+  const inputFormatter = (number, digits) => formatNumber(number != "" ? round(number, digits != null ? digits : fraction) : number);
 
   const contractsSum = data
     .map(row => row.contracts)
@@ -124,10 +124,10 @@ export default function SGRow({
                       defaultValue={customDataRow.preferredStep}
                       placeholder={
                         customDataRow.inPercent
-                          ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool)
+                          ? round(stepsToPercentConverter(currentTool.adrDay, currentTool, contracts), 4)
                           : currentTool.adrDay
                       }
-                      format={inputFormatter}
+                      format={number => inputFormatter(number, customDataRow.inPercent ? 4 : undefined)}
                       unsigned="true"
                       min={0}
                       onBlur={preferredStep => {

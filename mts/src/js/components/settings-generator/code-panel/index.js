@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { message } from 'antd';
 
+import stepConverter from "../step-converter"
+
 import Stack        from "../../../../../../common/components/stack"
 import NumericInput from "../../../../../../common/components/numeric-input"
 
@@ -64,57 +66,21 @@ export default function CodePanel(props) {
         let parsedData = (arr || [])
           .map(v => {
             let { percent, points } = v;
-            let pointsInPercents = points;
+            let formattedPoints = points;
+            // Переводим ход в проценты только в лимитнике
             if (currentPreset.type == "Лимитник") {
-              
-              // Акции
-              if (tool.dollarRate >= 1) {
-                pointsInPercents =
-                  (
-                    // ход в пунктах
-                    points *
-                    // загрузка в контрактах
-                    contracts *
-                    // стоимость шага
-                    tool.lotSize
-                  )
-                  /
-                  (
-                    // объем входа в деньгах
-                    contracts * tool.guarantee
-                  )
-                  *
-                  100;
+
+              // Используем сложную формулу перевода в закрытии основного депозита
+              if (key == "Закрытие основного депозита") {
+                formattedPoints = stepConverter.complexFromStepsToPercent(points, tool, contracts);
               }
-              // ФОРТС
               else {
-                pointsInPercents =
-                  (
-                    // ход в пунктах
-                    points *
-                    // загрузка в контрактах
-                    contracts *
-                    // стоимость шага
-                    tool.stepPrice
-                  )
-                  /
-                  (
-                    // объем входа в деньгах
-                    (contracts * tool.guarantee)
-                    *
-                    tool.priceStep
-                  )
-                  *
-                  100;
+                formattedPoints = stepConverter.fromStepToPercents(points, tool, contracts);
               }
 
-              if (isNaN(pointsInPercents)) {
-                pointsInPercents = 0;
-              }
-
-              pointsInPercents = round(pointsInPercents, 4);
+              formattedPoints = round(formattedPoints, 4);
             }
-            return `{${percent},${pointsInPercents}${currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
+            return `{${percent},${formattedPoints}${currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
