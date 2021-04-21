@@ -275,9 +275,9 @@ export default class DashboardRow extends React.Component {
                   tools[currentToolIndex].getSortProperty()
                 );
               }}
+              showSearch
               onSearch={(value) => this.setState({ searchVal: value })}
               disabled={tools.length == 0}
-              showSearch
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children
