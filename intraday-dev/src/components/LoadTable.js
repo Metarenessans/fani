@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { FutureRow } from "./FutureRow";
+import { ToolRow } from "./ToolRow";
 import { StepRow } from "./StepRow";
 import { GlobalContext } from "../context/GlobalState";
 import { numWithSpaces } from "../utils/format";
@@ -201,7 +201,7 @@ export const LoadTable = ({ tableIdx }) => {
                 </div>
                 <div className="tbody">
                   {matchedTools.map((tool, rowIdx) => (
-                    <FutureRow
+                    <ToolRow
                       key={rowIdx}
                       tableIdx={tableIdx}
                       rowIdx={rowIdx}

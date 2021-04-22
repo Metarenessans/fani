@@ -37,7 +37,7 @@ const columns = [
 ];
 
 function callback(key) {
-  console.log(key);
+  // console.log(key);
 }
 
 export const RiskProfitSector = () => {

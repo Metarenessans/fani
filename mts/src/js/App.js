@@ -18,11 +18,13 @@ import {
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
-import round          from "../../../common/utils/round";
+import round          from "../../../common/utils/round"
 import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
+import sortInputFirst from "../../../common/utils/sort-input-first"
 import promiseWhile   from "../../../common/utils/promise-while"
+
 import { Tools, template } from "../../../common/tools"
 
 import {
@@ -82,6 +84,7 @@ class App extends React.Component {
       movePercantage:         0,
       lastRadioButton:        0,
       profitRatio:           60,
+      searchVal: ""
     };
 
     this.state = {
@@ -692,6 +695,7 @@ class App extends React.Component {
                           }}
                           disabled={this.getTools().length == 0}
                           showSearch
+                          onSearch={(value) => this.setState({ searchVal: value })}
                           optionFilterProp="children"
                           filterOption={(input, option) =>
                             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -701,9 +705,13 @@ class App extends React.Component {
                           {(() => {
                             let tools = this.getTools();
                             if (tools.length) {
-                              return tools
-                                .map(tool => String(tool))
-                                .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                              let options = tools.map((tool) => String(tool));
+                              options = sortInputFirst(this.state.searchVal, options);
+                              return options.map((value, index) => (
+                                <Option key={index} value={index}>
+                                  {value}
+                                </Option>
+                              ));
                             }
                             else {
                               return (
