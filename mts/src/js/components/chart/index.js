@@ -132,6 +132,7 @@ class Chart extends Component {
 
     // initiate drawing the chart
     chart.draw();
+    this.props?.onRendered();
   }
   
   componentDidMount() {

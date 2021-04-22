@@ -31,7 +31,7 @@ import {
   updateChartScaleMinMax,
   updateChartZoom,
   minChartValue,
-  maxChartValue
+  maxChartValue,
 } from "./components/chart"
 
 import Stack                   from "../../../common/components/stack"
@@ -498,9 +498,11 @@ class App extends React.Component {
     const kod = round(ratio / (days || 1), 2);
 
     const GetPossibleRisk = () => {
+      const currentTool = this.getCurrentTool();
       let { depo, percentage, priceRange, risk } = this.state;
+      const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
       let possibleRisk = 0;
-
+      const isLong = percentage >= 0;
       let enterPoint = isLong ? priceRange[0] : priceRange[1];
 
       let stopSteps =
@@ -1006,6 +1008,36 @@ class App extends React.Component {
                     tool={currentTool}
                     data={data}
                     days={days}
+                    onRendered={() => {
+                      const { percentage, } = this.state
+                      const isLong = percentage >= 0;
+                      const GetPossibleRisk = () => {
+                        const currentTool = this.getCurrentTool();
+                        let { depo, percentage, priceRange, risk } = this.state;
+                        const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+
+                        let possibleRisk = 0;
+                        const isLong = percentage >= 0;
+                        let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+                        let stopSteps =
+                          (depo * risk / 100)
+                          /
+                          currentTool.stepPrice
+                          /
+                          (contracts || 1)
+                          *
+                          currentTool.priceStep;
+
+                        if (risk != 0 && percentage != 0) {
+                          possibleRisk =
+                            round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+                          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+                        }
+                        return possibleRisk
+                      }
+                      updateChartMinMax(this.state.priceRange, isLong, GetPossibleRisk())
+                    }}
                   />
 
                   {(() => {
