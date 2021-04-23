@@ -248,10 +248,24 @@ body {
 }
 
 /*======================SECTION .donut======================*/
-.donut .container {
-  display: flex;
-  justify-content: center;
+.donut {
+  padding: 3em 0 2em;
+  .container {
+    display: flex;
+    justify-content: center;
+  }
+  .apexcharts-series path[selected="true"] {
+    pointer-events: none;
+    fill: darkblue;
+  }
 }
-.donut .apexcharts-series path[selected="true"] {
-  pointer-events: none;
+
+.main-content {
+  padding-bottom: 3em;
+}
+
+@media (max-width: 767px) {
+  .donut {
+    padding: 2em 0 1em;
+  }
 }

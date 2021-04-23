@@ -234,12 +234,7 @@ function createChart() {
     series4.tooltip().displayMode("separated");
     series4.tooltip().useHtml(true);
     series4.tooltip().format(e => {
-      const {
-        mode,
-        passiveIncomeTools,
-        currentPassiveIncomeToolIndex,
-      } = this.state;
-      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+      let tool = this.getCurrentPassiveIncomeTool();
 
       if (e.index > 0) {
         let svg = `
@@ -269,12 +264,7 @@ function createChart() {
     series2.tooltip().displayMode("separated");
     series2.tooltip().useHtml(true);
     series2.tooltip().format(e => {
-      const {
-        mode,
-        passiveIncomeTools,
-        currentPassiveIncomeToolIndex,
-      } = this.state;
-      let tool = passiveIncomeTools[currentPassiveIncomeToolIndex[mode]];
+      let tool = this.getCurrentPassiveIncomeTool();
 
       let svg = `
       <svg viewBox="0 0 10 10" width="1em" height="1em" 

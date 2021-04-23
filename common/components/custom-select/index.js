@@ -159,6 +159,7 @@ export default memo(class CustomSelect extends React.Component {
           
           var value = +(element.props.children + "").match(/\d+/)[0];
           value = this.parseValue(value);
+          this.inputValue = value;
           this.onSelect(value, this.props.onChange);
         }}
         onInputKeyDown={e => {

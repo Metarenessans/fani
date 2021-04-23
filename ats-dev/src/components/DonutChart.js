@@ -6,6 +6,7 @@ import Chart from "react-apexcharts";
 export const DonutChart = () => {
   const { activeView, setActiveView } = useContext(GlobalContext);
 
+  // eslint-disable-next-line
   const [chartData, setChartData] = useState({
     series: [1, 1, 1, 1, 1, 1],
     chartOptions: {
@@ -14,16 +15,16 @@ export const DonutChart = () => {
           enabled: true,
           color: "#255aee",
           shadeTo: "light",
-          shadeIntensity: 0.9,
+          shadeIntensity: 0.8,
         },
       },
       labels: [
-        "% свободных средств",
+        ["% свободных", "средств"],
         ["Дневной норматив", "Риск/Прибыль"],
-        "% скореллир. позиций",
+        ["% скореллир.", "позиций"],
         "% РНС",
-        "% загрузки по фьючерсам",
-        "% загрузки по акциям",
+        ["% загрузки", "по фьючерсам"],
+        ["% загрузки", "по акциям"],
       ],
       chart: {
         animations: {
@@ -43,7 +44,38 @@ export const DonutChart = () => {
           breakpoint: 768,
           options: {
             chart: {
-              width: "100%",
+              width: "400px",
+              height: "400px",
+            },
+          },
+        },
+        {
+          breakpoint: 450,
+          options: {
+            chart: {
+              width: "375px",
+              height: "375px",
+            },
+            dataLabels: {
+              style: {
+                fontSize: "11px",
+                fontWeight: "normal",
+              },
+            },
+          },
+        },
+        {
+          breakpoint: 375,
+          options: {
+            chart: {
+              width: "320px",
+              height: "320px",
+            },
+            dataLabels: {
+              style: {
+                fontSize: "10px",
+                fontWeight: "normal",
+              },
             },
           },
         },
@@ -85,6 +117,9 @@ export const DonutChart = () => {
       legend: {
         show: false,
       },
+      stroke: {
+        show: false,
+      },
     },
   });
 
@@ -95,7 +130,8 @@ export const DonutChart = () => {
           options={chartData.chartOptions}
           series={chartData.series}
           type="donut"
-          width="750"
+          width="450px"
+          height="450px"
         />
       </div>
     </section>

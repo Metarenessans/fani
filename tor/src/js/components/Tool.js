@@ -22,6 +22,8 @@ import formatNumber from "../../../../common/utils/format-number"
 import round        from "../../../../common/utils/round"
 import num2str      from "../../../../common/utils/num2str"
 
+import sortInputFirst from "../../../../common/utils/sort-input-first";
+
 const { Option } = Select;
 
 export default class Item extends React.Component {
@@ -32,6 +34,7 @@ export default class Item extends React.Component {
     
     this.state = {
       drawdown: (data.drawdown != null) ? data.drawdown : this.props.depo * 0.1,
+      searchVal: ""
     };
 
     if (this.props.onRef) {
@@ -226,6 +229,7 @@ export default class Item extends React.Component {
                   onChange("selectedToolName", name, this);
                 }}
                 showSearch
+                onSearch={(value) => this.setState({ searchVal: value })}
                 optionFilterProp="children"
                 filterOption={(input, option) =>
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -235,9 +239,13 @@ export default class Item extends React.Component {
                 {(() => {
                   let tools = this.props.tools;
                   if (tools.length) {
-                    return tools
-                      .map(tool => String(tool))
-                      .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                    let options = tools.map((tool) => String(tool));
+                    options = sortInputFirst(this.state.searchVal, options);
+                    return options.map((value, index) => (
+                      <Option key={index} value={index}>
+                        {value}
+                      </Option>
+                    ));
                   }
                   else {
                     return (

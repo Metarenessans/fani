@@ -97,7 +97,7 @@ const stepConverter = {
         tool.priceStep;
     }
 
-    points /= 100;
+    // points /= 100;
 
     if (isNaN(points)) {
       points = 0;

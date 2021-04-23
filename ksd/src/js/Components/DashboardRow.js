@@ -14,6 +14,7 @@ import round          from "../../../../common/utils/round"
 import formatNumber   from "../../../../common/utils/format-number"
 import fractionLength from "../../../../common/utils/fraction-length"
 import isEqual        from "../../../../common/utils/is-equal"
+import sortInputFirst from "../../../../common/utils/sort-input-first"
 
 const { Option } = Select;
 
@@ -57,7 +58,9 @@ export default class DashboardRow extends React.Component {
       tooltipText: "",
       tooltipVisible: false,
 
-      tooltipPlacement: "top"
+      tooltipPlacement: "top",
+
+      searchVal: ""
     };
 
     this.onScrollCb = this.onScrollCb.bind(this);
@@ -270,6 +273,7 @@ export default class DashboardRow extends React.Component {
               }}
               disabled={tools.length == 0}
               showSearch
+              onSearch={(value) => this.setState({ searchVal: value })}
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -278,9 +282,13 @@ export default class DashboardRow extends React.Component {
             >
               {(() => {
                 if (tools.length) {
-                  return tools
-                    .map(tool => String(tool))
-                    .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                  let options = tools.map((tool) => String(tool));
+                  options = sortInputFirst(this.state.searchVal, options);
+                  return options.map((value, index) => (
+                    <Option key={index} value={index}>
+                      {value}
+                    </Option>
+                  ));
                 }
                 else {
                   return (
