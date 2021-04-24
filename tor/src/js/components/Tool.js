@@ -669,7 +669,7 @@ export default class Item extends React.Component {
                       <div className="tool-main-card-body-left">
                         <label className="input-group">
                           <span className="input-group__title input-group__title--left">
-                            <Tooltip title="Планируемое движение цены в сторону позиции после усреднения">
+                            <Tooltip title="Планируемое движение цены против направления позиции после усреднения">
                               Ожидаемый ход (руб/$)
                             </Tooltip>
                           </span>
