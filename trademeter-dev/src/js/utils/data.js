@@ -6,15 +6,14 @@ export default class Data extends Array {
   build({
     $mode            = 0,
     $startFrom       = 0,
-    // Процент депозита на вход в сделку
     $percent         = 100,
     $start           = 1_000_000,
     $length          = 0,
     $rate            = 0.424,
     $rateRequired    = null,
-    $payment         = 0,         // Вывод
+    $payment         = 0,
     $paymentInterval = 20,
-    $payload         = 0,         // Пополнение
+    $payload         = 0,
     $payloadInterval = 20,
     $tool            = { guarantee: 1, stepPrice: 1 }
   }) {

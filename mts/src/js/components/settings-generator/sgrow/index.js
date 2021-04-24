@@ -24,7 +24,6 @@ export default function SGRow({
   preferredStepLabel,
   isBying = false,
   disabled,
-  modes = [],
   inputs = ["preferredStep", "length", "percent", "stepInPercent"],
   options,
   automaticLength = false,
@@ -37,7 +36,7 @@ export default function SGRow({
   stepsToPercentConverter = stepConverter.fromStepToPercents,
 }) {
 
-  const { mode: currentMode, preferredStep, inPercent, percent, stepInPercent, length } = options;
+  const { mode: currentMode, modes, preferredStep, inPercent, percent, stepInPercent, length } = options;
 
   disabled = disabled || currentMode == "fibonacci";
 
@@ -55,19 +54,24 @@ export default function SGRow({
     <div style={{ width: '100%' }}>
 
       {/* Режимы */}
-      {false && modes?.length && (
-        <div className="settings-generator-content__row-header-modes">
-          <Radio.Group
-            className="settings-generator-content__row-header-modes-select"
-            value={currentMode}
-            onChange={e => onModeChange(e.target.value)}
-          >
-            {modes.map((mode, index) =>
-              <Radio key={index} value={mode}>{names[mode]}</Radio>
-            )}
-          </Radio.Group>
-        </div>
-      )}
+      {modes
+        ?
+          modes.length == 1
+            ? null
+            :
+              <div className="settings-generator-content__row-header-modes">
+                <Radio.Group
+                  className="settings-generator-content__row-header-modes-select"
+                  value={currentMode}
+                  onChange={e => onModeChange(e.target.value)}
+                >
+                  {modes.map((mode, index) =>
+                    <Radio key={index} value={mode}>{names[mode]}</Radio>
+                  )}
+                </Radio.Group>
+              </div>
+        : null
+      }
 
       {
         currentMode == "custom"
@@ -274,11 +278,11 @@ export default function SGRow({
                         if (preferredStep) {
                           // Были в процентах, теперь переводим в доллары
                           if (inPercent) {
-                            preferredStep = stepConverter.fromPercentsToStep(preferredStep, currentTool);
+                            preferredStep = percentToStepsConverter(preferredStep, currentTool, contracts);
                           }
                           // переводим в проценты
                           else {
-                            preferredStep = stepConverter.fromStepToPercents(preferredStep, currentTool)
+                            preferredStep = stepsToPercentConverter(preferredStep, currentTool, contracts)
                           }
                         }
 
@@ -302,7 +306,7 @@ export default function SGRow({
                   }
                   placeholder={
                     inPercent
-                      ? stepConverter.fromStepToPercents(currentTool.adrDay, currentTool)
+                      ? stepsToPercentConverter(currentTool.adrDay, currentTool, contracts)
                       : currentTool.adrDay
                   }
                   format={inputFormatter}

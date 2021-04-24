@@ -69,6 +69,7 @@ const SettingsGenerator = props => {
           customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Закрытие плечевого депозита": {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
@@ -97,6 +98,20 @@ const SettingsGenerator = props => {
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
+          closeAll: false,
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+      }
+    },
+    { 
+      name: "Стандарт",
+      type: "Стандарт",
+      options: {
+        [initialCurrentTab]: {
+          closeAll: false,
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom", "fibonacci"],
           customData: [{ ...optionsTemplate, length: 1 }]
         },
       }
@@ -218,7 +233,8 @@ const SettingsGenerator = props => {
     contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
-  const hasExtraDepo = currentPreset.type != "Лимитник" && contractsSecondary > 0;
+  // Плечевой депо есть только в режиме СМС + ТОР
+  const hasExtraDepo = (["СМС + ТОР"].indexOf(currentPreset.type) > -1) && contractsSecondary > 0;
 
   const options = {
     currentPreset,
@@ -233,30 +249,40 @@ const SettingsGenerator = props => {
   data[initialCurrentTab] = createData(initialCurrentTab, options);
   const mainData = data[initialCurrentTab];
 
-  if (currentPreset.type != "Лимитник") {
+  if (currentPreset.options["Закрытие плечевого депозита"]) {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
       on: hasExtraDepo,
     });
   }
-  data['Зеркальные докупки'] = createData(initialCurrentTab, {
-    ...options,
-    isBying: true,
-    on: isMirrorBying
-  });
-  data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
-    ...options,
-    mainData,
-    isBying: true,
-    on: isReversedBying
-  });
-  if (currentPreset.type == "СМС + ТОР") {
+  
+  if (currentPreset.options["Зеркальные докупки"]) {
+    data['Зеркальные докупки'] = createData(initialCurrentTab, {
+      ...options,
+      isBying: true,
+      on: isMirrorBying
+    });
+  }
+
+  if (currentPreset.options["Обратные докупки (ТОР)"]) {
+    data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isReversedBying
+    });
+  }
+
+  if (currentPreset.options["Прямые профитные докупки"]) {
     data['Прямые профитные докупки'] = createData('Прямые профитные докупки', {
       ...options,
       mainData,
       isBying: true,
       on: isProfitableBying
     });
+  }
+
+  if (currentPreset.options["Обратные профитные докупки"]) {
     data['Обратные профитные докупки'] = createData('Обратные профитные докупки', {
       ...options,
       mainData,
@@ -322,13 +348,14 @@ const SettingsGenerator = props => {
   }, [currentTab]);
 
   useEffect(() => {
-    if (currentPreset.type == "Лимитник") {
-      setDepo(investorDepo);
-      setSecondaryDepo(0);
-    }
-    else {
+    // Плечевой депо есть только в режиме СМС + ТОР
+    if (currentPreset.type == "СМС + ТОР") {
       setDepo(Math.floor(investorDepo * .25));
       setSecondaryDepo(Math.floor(investorDepo * .75));
+    }
+    else {
+      setDepo(investorDepo);
+      setSecondaryDepo(0);
     }
 
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
@@ -590,7 +617,7 @@ const SettingsGenerator = props => {
 
                 {
                   // В лимитнике нет плечевого депо
-                  currentPreset.type != "Лимитник" &&
+                  hasExtraDepo &&
                     <label className="input-group">
                       <span className="input-group__label">Плечевой депо</span>
                       <NumericInput
@@ -842,7 +869,24 @@ const SettingsGenerator = props => {
             {/* Закрытие плечевого депозита */}
             {hasExtraDepo && 
               <div style={{ width: '100%', marginTop: "0.7em" }}>
-                <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
+                <div className="settings-generator-content__row-header-wrap">
+                  <h3 className="settings-generator-content__row-header">Закрытие основного депозита</h3>
+
+                  <Tooltip title={
+                    currentPreset.options["Закрытие плечевого депозита"].closeAll
+                      ? "Закрывать все открытые контракты"
+                      : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
+                  }>
+                    <Switch
+                      className="settings-generator-content__row-header-close-all"
+                      checked={currentPreset.options["Закрытие плечевого депозита"].closeAll}
+                      checkedChildren="100%"
+                      unCheckedChildren="100%"
+                      onChange={closeAll => updatePresetProperty("Закрытие плечевого депозита", { closeAll })}
+                    />
+                  </Tooltip>
+                </div>
+
                 <SGRow
                   options={currentPreset.options["Закрытие плечевого депозита"]}
                   onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
@@ -855,7 +899,7 @@ const SettingsGenerator = props => {
             }
 
             {/* Прямые профитные докупки */}
-            {currentPreset.type == "СМС + ТОР" &&
+            {currentPreset.options["Прямые профитные докупки"] &&
               <>
                 <label className="switch-group">
                   <Switch
@@ -880,7 +924,7 @@ const SettingsGenerator = props => {
             }
 
             {/* Обратные профитные докупки */}
-            {currentPreset.type == "СМС + ТОР" &&
+            {currentPreset.options["Обратные профитные докупки"] &&
               <>
                 <label className="switch-group">
                   <Switch
@@ -904,26 +948,28 @@ const SettingsGenerator = props => {
             }
 
             {/* Обратные докупки (ТОР) */}
-            <>
-              <label className="switch-group">
-                <Switch
-                  checked={isReversedBying}
-                  onChange={checked => setReversedBying(checked)}
-                />
-                <span className="switch-group__label">Обратные докупки (ТОР)</span>
-              </label>
+            {currentPreset.options["Обратные докупки (ТОР)"] &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isReversedBying}
+                    onChange={checked => setReversedBying(checked)}
+                  />
+                  <span className="switch-group__label">Обратные докупки (ТОР)</span>
+                </label>
 
-              <div style={{ width: '100%' }} hidden={!isReversedBying}>
-                <SGRow
-                  isBying={true}
-                  data={data["Обратные докупки (ТОР)"]}
-                  options={currentPreset.options["Обратные докупки (ТОР)"]}
-                  contracts={contractsTotal - contracts}
-                  currentTool={currentTool}
-                  onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
-                />
-              </div>
-            </>
+                <div style={{ width: '100%' }} hidden={!isReversedBying}>
+                  <SGRow
+                    isBying={true}
+                    data={data["Обратные докупки (ТОР)"]}
+                    options={currentPreset.options["Обратные докупки (ТОР)"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
+                  />
+                </div>
+              </>
+            }
 
             {/* Начало таблицы */}
             <div className="settings-generator-table-wrap">

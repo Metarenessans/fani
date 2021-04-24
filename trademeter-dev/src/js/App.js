@@ -418,9 +418,16 @@ class App extends Component {
     }, 1500);
   }
 
+  syncToolsWithInvestorInfo(investorInfo = {}) {
+    const { tools } = this.state;
+    investorInfo = investorInfo || this.state.investorInfo;
+    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
+  }
+
   fetchInvestorInfo() {
     fetchInvestorInfo()
       .then(this.applyInvestorInfo)
+      .then(() => this.syncToolsWithInvestorInfo())   
       .then(response => {
         let { deposit } = response.data;
         let { depoStart, depoEnd } = this.state;
@@ -447,6 +454,7 @@ class App extends Component {
     ]) {
       fetch(request)
         .then(this.applyTools)
+        .then(() => this.syncToolsWithInvestorInfo())
         .then(() => this.updateDepoPersentageStart())
         .catch(error => console.error(error));
     }
@@ -2672,26 +2680,22 @@ class App extends Component {
                               <span>Прямая разгрузка</span>
                               <Switch
                                 className="switch__input"
-                                defaultChecked={this.state.directUnloading}
-                                onChange={directUnloading => this.setState({ directUnloading }, () => {
-                                  this.recalc(false);
-                                })}
+                                checked={directUnloading}
+                                onChange={directUnloading => this.setState({ directUnloading }, () => this.recalc(false))}
                               />
                             </label>
                             <Tooltip title={"Направление позиции"}>
                               <Switch
                                 className="section4__switch-long-short"
-                                key={isLong + ""}
+                                checked={isLong}
                                 checkedChildren="LONG"
                                 unCheckedChildren="SHORT"
-                                defaultChecked={isLong}
                                 onChange={isLong => {
-                                  const { tools } = this.state;
-                                  const investorInfo = this.state.investorInfo;
+                                  const investorInfo = { ...this.state.investorInfo };
                                   investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                                  this.setStateAsync({ investorInfo })
-                                    .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
+                                  this.setStateAsync({ isLong, investorInfo })
+                                    .then(() => this.syncToolsWithInvestorInfo())
                                     .then(() => this.updateDepoPersentageStart())
                                     .then(() => this.recalc(false))
                                 }}
