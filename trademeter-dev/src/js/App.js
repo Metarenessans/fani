@@ -1544,6 +1544,10 @@ class App extends Component {
 
     const placeholder = "—";
 
+    const tools = this.getTools();
+
+    console.log(this.getCurrentTool(), this.getCurrentTool().guarantee);
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -2366,7 +2370,6 @@ class App extends Component {
 
                         {(() => {
                           const { mode, depoStart, depoPersentageStart } = this.state;
-                          const tools = this.getTools();
                           let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
                           if (step > 100) {
                             console.warn('step > 100');
@@ -2453,12 +2456,11 @@ class App extends Component {
                         </header>
                         
                         <ToolSelect
-                          tools={this.getTools()}
+                          tools={tools}
                           value={this.getCurrentToolIndex()}
-                          disabled={this.getTools().length == 0}
+                          disabled={tools.length == 0}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
-                            let tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
 
                             // Искомое значение на ползунке, к котором мы хотим прижаться
@@ -2493,6 +2495,8 @@ class App extends Component {
                             depoPersentageStart = round(depoPersentageStart, 2);
                             depoPersentageStart = Math.max(depoPersentageStart, step);
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
+
+                            console.log("to search", currentTool.getSortProperty());
 
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
