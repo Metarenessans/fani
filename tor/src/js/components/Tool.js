@@ -22,7 +22,7 @@ import formatNumber from "../../../../common/utils/format-number"
 import round        from "../../../../common/utils/round"
 import num2str      from "../../../../common/utils/num2str"
 
-import sortInputFirst from "../../../../common/utils/sort-input-first";
+import sortInputFirst from "../../../../common/utils/sort-input-first"
 
 const { Option } = Select;
 
@@ -223,7 +223,7 @@ export default class Item extends React.Component {
                   onChange("selectedToolName", name, this);
                 }}
                 showSearch
-                onSearch={(value) => this.setState({ searchVal: value })}
+                // onSearch={(value) => this.setState({ searchVal: value })}
                 optionFilterProp="children"
                 filterOption={(input, option) =>
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -234,7 +234,7 @@ export default class Item extends React.Component {
                   let tools = this.props.tools;
                   if (tools.length) {
                     let options = tools.map((tool) => String(tool));
-                    options = sortInputFirst(this.state.searchVal, options);
+                    // options = sortInputFirst(this.state.searchVal, options);
                     return options.map((value, index) => (
                       <Option key={index} value={index}>
                         {value}

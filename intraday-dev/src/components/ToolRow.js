@@ -34,9 +34,7 @@ export const ToolRow = ({ tableIdx, rowIdx, tool, options }) => {
     <div className="tool-row">
       <div className="col tool">
         <Select
-          onSearch={(value) => setSearchVal(value)}
           ref={selectRef}
-          showSearch
           optionFilterProp="children"
           value={tool.idx}
           style={{ width: "100%" }}
@@ -49,8 +47,11 @@ export const ToolRow = ({ tableIdx, rowIdx, tool, options }) => {
               tools[optionIdx].ref.toolType
             );
           }}
+          showSearch
+          onSearch={(value) => setSearchVal(value)}
         >
-          {sortInputFirst(searchVal, options).map((option) => (
+          {/* {sortInputFirst(searchVal, options).map((option) => ( */}
+          {options.map((option) => (
             <Option key={option.idx} value={option.idx}>
               {option.label}
             </Option>
