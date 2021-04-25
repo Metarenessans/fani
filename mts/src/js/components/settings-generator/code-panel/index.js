@@ -63,6 +63,8 @@ export default function CodePanel(props) {
 
         let title = `Массив ${!arr.isBying ? "закрытия" : "докупок"}:`;
 
+        const showRollback = ["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1;
+
         let parsedData = (arr || [])
           .map(v => {
             let { percent, points } = v;
@@ -80,7 +82,7 @@ export default function CodePanel(props) {
 
               formattedPoints = round(formattedPoints, 4);
             }
-            return `{${percent},${formattedPoints}${currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
+            return `{${percent},${formattedPoints}${showRollback && key == "Закрытие основного депозита" ? "," + rollback : ""}}`;
           })
           .join(",");
         parsedData = `{${parsedData}}`;
@@ -139,7 +141,7 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
-              return `{${percent},${pointsInPercents}${currentPreset.type == "СМС + ТОР" ? "," + rollback : ""}}`;
+              return `{${percent},${pointsInPercents}${showRollback ? "," + rollback : ""}}`;
             })
             .join(",");
 
@@ -259,7 +261,7 @@ export default function CodePanel(props) {
                   >
                     копировать
                   </button>
-                  {currentPreset.type == "СМС + ТОР" && key == "Закрытие основного депозита" &&
+                  {showRollback && key == "Закрытие основного депозита" &&
                     <label className="input-group input-group--fluid">
                       <span className="input-group__label">обратный откат</span>
                       <NumericInput

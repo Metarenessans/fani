@@ -463,9 +463,11 @@ $m: .4475;
           h3 {
             margin-right: 2.25em;
             margin-bottom: 0;
+            min-width: 22em;
 
             @include xs {
               margin-right: 0;
+              min-width: none;
             }
           }
         }
@@ -480,7 +482,7 @@ $m: .4475;
         }
 
         &-modes {
-          padding: .5em 0;
+          padding-bottom: .5em;
           font-size: 0.8em;
 
           @include xs {

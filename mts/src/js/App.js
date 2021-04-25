@@ -690,14 +690,15 @@ class App extends React.Component {
                           value={this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
-                            const currentToolCode = tools[currentToolIndex].code; 
+                            const currentToolCode = tools[currentToolIndex].code;
+                            console.log(tools[currentToolIndex]);
                             this.setStateAsync({ currentToolCode })
-                              .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
+                              .then(() => this.updatePriceRange(tools[currentToolIndex]))
                               .then(() => this.fetchCompanyQuotes());
                           }}
                           disabled={this.getTools().length == 0}
                           showSearch
-                          onSearch={(value) => this.setState({ searchVal: value })}
+                          // onSearch={(value) => this.setState({ searchVal: value })}
                           optionFilterProp="children"
                           filterOption={(input, option) =>
                             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -708,7 +709,7 @@ class App extends React.Component {
                             let tools = this.getTools();
                             if (tools.length) {
                               let options = tools.map((tool) => String(tool));
-                              options = sortInputFirst(this.state.searchVal, options);
+                              // options = sortInputFirst(this.state.searchVal, options);
                               return options.map((value, index) => (
                                 <Option key={index} value={index}>
                                   {value}
@@ -1178,7 +1179,7 @@ class App extends React.Component {
                             value={2} 
                             disabled={disabledModes[2]}
                             onClick={ e => this.setState({ profitRatio: 90 })}
-                            >
+                          >
                             лимитник
                           </Radio>
                         </Radio.Group>
@@ -1186,7 +1187,7 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          // disabled={true}
+                          disabled={true}
                         >
                             <span className="visually-hidden">Открыть конфиг</span>
                           <Tooltip title=" Генератор настроек МАНИ 144">

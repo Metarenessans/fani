@@ -19,7 +19,7 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
       disabled={disabled}
       onChange={index => onChange && onChange(index)}
       showSearch
-      onSearch={(value) => setSearchVal(value)}
+      onSearch={value => setSearchVal(value)}
       optionFilterProp="children"
       filterOption={(input, option) =>
         option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -29,7 +29,7 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
       {(() => {
         if (tools.length) {
           let options = tools.map((tool) => String(tool));
-          options = sortInputFirst(searchVal, options);
+          // options = sortInputFirst(searchVal, options);
           return options.map((value, index) => (
             <Select.Option key={index} value={index}>
               {value}
