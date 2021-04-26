@@ -60,7 +60,8 @@ export default class DashboardRow extends React.Component {
 
       tooltipPlacement: "top",
 
-      searchVal: ""
+      searchVal: "",
+      planIncomeCustom: ""
     };
 
     this.onScrollCb = this.onScrollCb.bind(this);
@@ -141,7 +142,7 @@ export default class DashboardRow extends React.Component {
   }
 
   render() {
-    const { tooltipVisible, tooltipText } = this.state;
+    const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
     let { selectedToolName, percentage, item } = this.props;
     const {
       index,
@@ -273,7 +274,7 @@ export default class DashboardRow extends React.Component {
               }}
               disabled={tools.length == 0}
               showSearch
-              onSearch={(value) => this.setState({ searchVal: value })}
+              // onSearch={(value) => this.setState({ searchVal: value })}
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -283,7 +284,7 @@ export default class DashboardRow extends React.Component {
               {(() => {
                 if (tools.length) {
                   let options = tools.map((tool) => String(tool));
-                  options = sortInputFirst(this.state.searchVal, options);
+                  // options = sortInputFirst(this.state.searchVal, options);
                   return options.map((value, index) => (
                     <Option key={index} value={index}>
                       {value}
@@ -361,36 +362,29 @@ export default class DashboardRow extends React.Component {
               const fraction = fractionLength(currentTool.priceStep);
               
               let timeout;
-              if (!tooltipText) {
-                const planIncomeReal = +(planIncome).toFixed(fraction);
-                const steps = round(planIncomeReal / currentTool.priceStep, 2);
-                this.setState({ tooltipText: `${planIncomeReal} = ${steps} п` });
-              }
+              const planIncomeTooltip = Number(planIncomeCustom == "" ? planIncome : planIncomeCustom);
+              const steps = round(planIncomeTooltip / currentTool.priceStep, 2);
 
               return mode == 0
                 ? (
                   <Tooltip 
-                    title={tooltipText}
+                    title={`${+(planIncomeTooltip).toFixed(fraction)} = ${steps} п`}
                     visible={tooltipVisible}
                   >
                     <NumericInput
                       key={Math.random()}
                       className="dashboard__input"
-                      defaultValue={planIncome}
+                      defaultValue={+(planIncome).toFixed(fraction)}
                       unsigned="true"
-                      format={value => {
-                        value = Number(value);
-                        return formatNumber(value.toFixed(fraction))
-                      }}
+                      format={formatNumber}
                       min={0}
                       onBlur={value => {
                         value = Number(value);
                         onChange("planIncome", value);
+                        this.setState({ planIncomeCustom: "" })
                       }}
                       onChange={(e, value = "") => {
-                        value = Number(value);
-                        const tooltipText = `${+(value).toFixed(fraction)} = ${round((value) / currentTool.priceStep, 2)} п`;
-                        this.setState({ tooltipText })
+                        this.setState({ planIncomeCustom: value })
                       }}
                       onFocus={e => this.setState({ tooltipVisible: true })}
                       onMouseEnter={e => {

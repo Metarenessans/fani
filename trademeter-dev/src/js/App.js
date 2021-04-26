@@ -73,7 +73,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = true;
+let shouldLoadFakeSave = false;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -461,9 +461,12 @@ class App extends Component {
   }
 
   fetchSaves() {
+    console.log("fetch saves");
+    
     fetchSavesFor("trademeter")
       .then(response => {
         const saves = response.data;
+        console.log(saves);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -964,10 +967,9 @@ class App extends Component {
   }
 
   recalc(rebuild = true) {
-
-    // const period = days[mode];
     return new Promise((resolve, reject) => {
       this.updateData(null, rebuild)
+        .then(() => this.updatePassiveIncomeMonthly())
         .then(() => chartVisible && updateChart.call(this))
         .then(() => resolve())
         .catch(err => reject(err));
@@ -1017,7 +1019,7 @@ class App extends Component {
   }
 
   getMaxPaymentValue(frequency, rate = this.getRate()) {
-    const { withdrawalInterval, depoStart, mode } = this.state;
+    const { payload, payloadInterval, withdrawalInterval, depoStart, mode } = this.state;
 
     frequency = frequency || withdrawalInterval[mode];
 
@@ -1026,16 +1028,15 @@ class App extends Component {
     let max = 0
     for (let i = 0; i < frequency; i++) {
       let earned = start * (rate / 100);
+      // + пополнения
+      if (((i + 1) % payloadInterval[mode]) == 0) {
+        earned += payload[mode];
+      }
 
       max += earned
 
       start += earned;
     }
-
-    // const max = data
-    //   .slice(0, frequency)
-    //   .map(d => d.goal)
-    //   .reduce((prev, curr) => prev + curr);
 
     return Math.round(max);
   }
@@ -1287,6 +1288,21 @@ class App extends Component {
     }
 
     return result;
+  }
+
+  updatePassiveIncomeMonthly() {
+    const { passiveIncomeMonthly, mode } = this.state;
+
+    const currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
+    if (!currentPassiveIncomeTool) {
+      return;
+    }
+
+    const persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
+    const depoEnd = this.getDepoEnd();
+
+    passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
+    return this.setStateAsync({ passiveIncomeMonthly });
   }
 
   /**
@@ -1545,8 +1561,6 @@ class App extends Component {
     const placeholder = "—";
 
     const tools = this.getTools();
-
-    console.log(this.getCurrentTool(), this.getCurrentTool().guarantee);
 
     return (
       <Provider value={this}>
@@ -1959,11 +1973,7 @@ class App extends Component {
                                 return;
                               }
 
-                              let depoEnd = this.getDepoEnd();
-                              let currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
-                              let persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
-                              passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
-                              this.setState({ passiveIncomeMonthly })
+                              this.updatePassiveIncomeMonthly();
                             })
                           }}
                           showSearch
