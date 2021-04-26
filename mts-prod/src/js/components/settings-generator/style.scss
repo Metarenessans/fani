@@ -463,15 +463,26 @@ $m: .4475;
           h3 {
             margin-right: 2.25em;
             margin-bottom: 0;
+            min-width: 22em;
 
             @include xs {
               margin-right: 0;
+              min-width: none;
             }
           }
         }
 
+        &-mirror-switch {
+          margin-left: auto;
+        }
+
+        &-close-all {
+          font-size: .575em;
+          width: 5em;
+        }
+
         &-modes {
-          padding: .5em 0;
+          padding-bottom: .5em;
           font-size: 0.8em;
 
           @include xs {
@@ -497,7 +508,7 @@ $m: .4475;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        gap: 2.5em * $m;
+        gap: 0.25em;
 
         @include xs {
           width: 100%;
@@ -511,6 +522,14 @@ $m: .4475;
             }
           }
         }
+      }
+
+      &-col-custom {
+        display: inline-flex;
+        align-items: center;
+        @include group-width();
+        width: 100%;
+        max-width: calc(50% - 0.8em);
       }
 
       @include xs {
@@ -713,7 +732,7 @@ $m: .4475;
       justify-content: flex-start;
       align-items: flex-end;
       flex-wrap: nowrap;
-      margin-bottom: 0.3em;
+      margin-bottom: 0.5em;
 
       @include xs {
         margin-bottom: 0;
@@ -742,17 +761,61 @@ $m: .4475;
     }
 
     &__label {
-      font-family: "Circe", sans-serif;
-      font-size: 1.4em * $m;
-      font-weight: bold;
-      color: #999;
+      // display: flex;
+      // align-items: center;
+
+      // font-family: "Circe", sans-serif;
+      // font-size: 1.4em * $m;
+      // font-weight: bold;
+      // color: #999;
+
+      &-wrap {
+        justify-content: space-between;
+        align-items: flex-end;
+
+        .input-group {
+          width: 100%;
+          max-width: 50%;
+        }
+      }
     }
 
     &__value {
-      margin-left: 1em;
+      // margin-left: 1em;
+      // flex-grow: 1;
 
-      font-size: 1.75em;
-      color: #131313;
+      // font-size: .6em;
+      // color: #131313;
+    }
+
+    &__switch-long-short {
+      width: 5em;
+      margin-bottom: .4em !important;
+
+      background: var(--danger-color);
+      font-size: 0.6em;
+
+      @include xs {
+        margin-left: auto;
+      }
+
+      &.ant-switch-checked {
+        background: var(--accent-color);
+
+        .ant-switch-inner {
+          margin-left: .8em !important
+        }
+      }
+
+      .ant-switch {
+        &-inner {
+          margin-left: 1.8em !important;
+          padding-top: .2em;
+
+          font-size:  .8em;
+          line-height: 1em;
+        }
+      }
     }
 
   }

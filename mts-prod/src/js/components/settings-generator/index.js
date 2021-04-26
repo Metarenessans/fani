@@ -22,7 +22,6 @@ import SGRow        from "./sgrow"
 
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
-import ReversedByingRow from "./reversed-bying-row"
 import Table            from "./table"
 import { Tools }        from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
@@ -35,7 +34,6 @@ import createData    from './data'
 import round          from '../../../../../common/utils/round'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
-import roundUp        from '../../../../../common/utils/round-up'
 import { keys } from 'lodash'
 import stepConverter from './step-converter'
 
@@ -43,12 +41,15 @@ const SettingsGenerator = props => {
 
   const { onClose } = props;
 
-  const [risk, setRisk] = useState(0.5);
+  const investorInfo = props.investorInfo || {};
+
+  const [isLong, setIsLong] = useState(true);
+  const [risk, setRisk] = useState(100);
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
-  const tools = props.tools?.length ? props.tools : Tools.createArray();
+  const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const currentTool = tools[currentToolIndex];
   const fraction = fractionLength(currentTool.priceStep);
@@ -63,14 +64,19 @@ const SettingsGenerator = props => {
       type: "СМС + ТОР",
       options: {
         [initialCurrentTab]: {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Закрытие плечевого депозита": {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
-        "Обратные докупки (ТОР)": { percent: optionsTemplate.percent },
+        "Обратные докупки (ТОР)": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
         "Прямые профитные докупки": {
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
@@ -86,18 +92,33 @@ const SettingsGenerator = props => {
       type: "Лимитник",
       options: {
         [initialCurrentTab]: {
+          closeAll: false,
           mode: "custom",
           customData: [{ ...optionsTemplate, length: 1 }]
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
+          closeAll: false,
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+      }
+    },
+    { 
+      name: "Стандарт",
+      type: "Стандарт",
+      options: {
+        [initialCurrentTab]: {
+          closeAll: false,
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom", "fibonacci"],
           customData: [{ ...optionsTemplate, length: 1 }]
         },
       }
     }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState("Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -131,9 +152,8 @@ const SettingsGenerator = props => {
 
   const [menuVisible, setMenuVisible] = useState(false);
 
+  const depoSum = depo + secondaryDepo;
   const depoAvailable = (depo + secondaryDepo) * (load / 100);
-
-  const hasExtraDepo = currentPreset.type != "Лимитник" && (depo < depoAvailable);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -213,43 +233,56 @@ const SettingsGenerator = props => {
     contracts = Math.floor(depoAvailable / currentTool.guarantee);
   }
 
+  // Плечевой депо есть только в режиме СМС + ТОР
+  const hasExtraDepo = (["СМС + ТОР"].indexOf(currentPreset.type) > -1) && contractsSecondary > 0;
+
   const options = {
     currentPreset,
     currentTool,
     contractsTotal,
     contracts,
     contractsSecondary,
-    comission
+    comission,
   };
 
   let data = [];
   data[initialCurrentTab] = createData(initialCurrentTab, options);
   const mainData = data[initialCurrentTab];
 
-  if (currentPreset.type != "Лимитник") {
+  if (currentPreset.options["Закрытие плечевого депозита"]) {
     data['Закрытие плечевого депозита'] = createData('Закрытие плечевого депозита', {
       ...options,
       on: hasExtraDepo,
     });
   }
-  data['Зеркальные докупки'] = createData(initialCurrentTab, {
-    ...options,
-    isBying: true,
-    on: isMirrorBying
-  });
-  data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
-    ...options,
-    mainData,
-    isBying: true,
-    on: isReversedBying
-  });
-  if (currentPreset.type == "СМС + ТОР") {
+  
+  if (currentPreset.options["Зеркальные докупки"]) {
+    data['Зеркальные докупки'] = createData(initialCurrentTab, {
+      ...options,
+      isBying: true,
+      on: isMirrorBying
+    });
+  }
+
+  if (currentPreset.options["Обратные докупки (ТОР)"]) {
+    data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
+      ...options,
+      mainData,
+      isBying: true,
+      on: isReversedBying
+    });
+  }
+
+  if (currentPreset.options["Прямые профитные докупки"]) {
     data['Прямые профитные докупки'] = createData('Прямые профитные докупки', {
       ...options,
       mainData,
       isBying: true,
       on: isProfitableBying
     });
+  }
+
+  if (currentPreset.options["Обратные профитные докупки"]) {
     data['Обратные профитные докупки'] = createData('Обратные профитные докупки', {
       ...options,
       mainData,
@@ -315,18 +348,19 @@ const SettingsGenerator = props => {
   }, [currentTab]);
 
   useEffect(() => {
-    if (currentPreset.type == "Лимитник") {
-      setDepo(investorDepo);
-      setSecondaryDepo(0);
-    }
-    else {
+    // Плечевой депо есть только в режиме СМС + ТОР
+    if (currentPreset.type == "СМС + ТОР") {
       setDepo(Math.floor(investorDepo * .25));
       setSecondaryDepo(Math.floor(investorDepo * .75));
     }
+    else {
+      setDepo(investorDepo);
+      setSecondaryDepo(0);
+    }
 
-    // setReversedBying(currentPreset.type == "СМС + ТОР" ? true );
+    setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
-  }, [currentPreset, investorDepo]);
+  }, [currentPreset.type, investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -366,6 +400,10 @@ const SettingsGenerator = props => {
     setPresets(presetsCopy);
 
   }, [currentTool.code]);
+
+  useEffect(() => {
+    setTools(props.tools?.length ? props.tools : Tools.createArray());
+  }, [props.tools]);
 
   return (
     <>
@@ -579,7 +617,7 @@ const SettingsGenerator = props => {
 
                 {
                   // В лимитнике нет плечевого депо
-                  currentPreset.type != "Лимитник" &&
+                  hasExtraDepo &&
                     <label className="input-group">
                       <span className="input-group__label">Плечевой депо</span>
                       <NumericInput
@@ -648,7 +686,7 @@ const SettingsGenerator = props => {
                       />
                       <PairJSX
                         name="Убыток (риск)"
-                        value={round(investorDepo * risk / 100, fraction)}
+                        value={round((depo + secondaryDepo) * risk / 100, fraction)}
                       />
                     </>
                   )
@@ -665,17 +703,43 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
+                <div className="settings-generator-content__row-col-custom settings-generator-slider__label-wrap">
+
+                  <label className="settings-generator-slider__label input-group">
+                    <span className="input-group__label">Загрузка</span>
+                    <span className="settings-generator-slider__value">
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={load}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => setLoad(value)}
+                        suffix="%"
+                      />
+                    </span>
+                  </label>
+
+                  <Switch
+                    className="settings-generator-slider__switch-long-short"
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    checked={isLong}
+                    onChange={isLong => {
+                      setIsLong(isLong);
+                      const updatedTools = [...tools];
+                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                      setTools(updatedTools);
+                    }}
+                  />
+
+                </div>
+
                 <div className="settings-generator-slider__wrap">
 
-                  <div className="settings-generator-slider__label">
-                    Загрузка
-                    <span className="settings-generator-slider__value">
-                      {load}%
-                    </span>
-                  </div>
                   <CustomSlider 
                     className="settings-generator-slider"
                     value={load}
+                    step={0.01}
                     onChange={value => setLoad(value)}
                   />
 
@@ -714,8 +778,7 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={
-                      // ~~
-                      (investorDepo * risk / 100)
+                      (depoSum * risk / 100)
                       /
                       currentTool.stepPrice
                       /
@@ -724,7 +787,6 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(Math.floor(val))}
                     unsigned="true"
                     onBlur={riskInSteps => {
-                      console.log(investorDepo, "ДЕПО", risk, "РИСК", currentTool.stepPrice, "ШАГ ЦЕНЫ", contracts, "КОНТРАКТЫ", "ГЕНА");
                       setRisk(
                         riskInSteps
                         *
@@ -732,7 +794,7 @@ const SettingsGenerator = props => {
                         *
                         (contracts || 1)
                         /
-                        investorDepo
+                        depoSum
                         *
                         100
                       );
@@ -745,11 +807,11 @@ const SettingsGenerator = props => {
                   <span className="input-group__label visually-hidden">Риск (стоп)</span>
                   <NumericInput
                     className="input-group__input"
-                    defaultValue={investorDepo * risk / 100}
+                    defaultValue={depoSum * risk / 100}
                     format={value => formatNumber(round(value, fraction))}
                     unsigned="true"
                     onBlur={riskInMoney => {
-                      setRisk(riskInMoney / investorDepo * 100);
+                      setRisk(riskInMoney / depoSum * 100);
                     }}
                     suffix="₽"
                   />
@@ -768,7 +830,21 @@ const SettingsGenerator = props => {
                   Закрытие основного депозита
                 </h3>
 
-                <label className="switch-group">
+                <Tooltip title={
+                  currentPreset.options[initialCurrentTab].closeAll
+                    ? "Закрывать все открытые контракты"
+                    : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
+                }>
+                  <Switch
+                    className="settings-generator-content__row-header-close-all"
+                    checked={currentPreset.options[initialCurrentTab].closeAll}
+                    checkedChildren="100%"
+                    unCheckedChildren="100%"
+                    onChange={closeAll => updatePresetProperty(initialCurrentTab, { closeAll })}
+                  />
+                </Tooltip>
+
+                <label className="switch-group settings-generator-content__row-header-mirror-switch">
                   <Switch
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
@@ -793,7 +869,24 @@ const SettingsGenerator = props => {
             {/* Закрытие плечевого депозита */}
             {hasExtraDepo && 
               <div style={{ width: '100%', marginTop: "0.7em" }}>
-                <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
+                <div className="settings-generator-content__row-header-wrap">
+                  <h3 className="settings-generator-content__row-header">Закрытие основного депозита</h3>
+
+                  <Tooltip title={
+                    currentPreset.options["Закрытие плечевого депозита"].closeAll
+                      ? "Закрывать все открытые контракты"
+                      : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
+                  }>
+                    <Switch
+                      className="settings-generator-content__row-header-close-all"
+                      checked={currentPreset.options["Закрытие плечевого депозита"].closeAll}
+                      checkedChildren="100%"
+                      unCheckedChildren="100%"
+                      onChange={closeAll => updatePresetProperty("Закрытие плечевого депозита", { closeAll })}
+                    />
+                  </Tooltip>
+                </div>
+
                 <SGRow
                   options={currentPreset.options["Закрытие плечевого депозита"]}
                   onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
@@ -806,7 +899,7 @@ const SettingsGenerator = props => {
             }
 
             {/* Прямые профитные докупки */}
-            {currentPreset.type == "СМС + ТОР" &&
+            {currentPreset.options["Прямые профитные докупки"] &&
               <>
                 <label className="switch-group">
                   <Switch
@@ -831,7 +924,7 @@ const SettingsGenerator = props => {
             }
 
             {/* Обратные профитные докупки */}
-            {currentPreset.type == "СМС + ТОР" &&
+            {currentPreset.options["Обратные профитные докупки"] &&
               <>
                 <label className="switch-group">
                   <Switch
@@ -855,29 +948,28 @@ const SettingsGenerator = props => {
             }
 
             {/* Обратные докупки (ТОР) */}
-            <>
-              <label className="switch-group">
-                <Switch
-                  checked={isReversedBying}
-                  onChange={checked => setReversedBying(checked)}
-                />
-                <span className="switch-group__label">Обратные докупки (ТОР)</span>
-              </label>
+            {currentPreset.options["Обратные докупки (ТОР)"] &&
+              <>
+                <label className="switch-group">
+                  <Switch
+                    checked={isReversedBying}
+                    onChange={checked => setReversedBying(checked)}
+                  />
+                  <span className="switch-group__label">Обратные докупки (ТОР)</span>
+                </label>
 
-              <div style={{ width: '100%' }} hidden={!isReversedBying}>
-                <SGRow
-                  isBying={true}
-                  inputs={currentPreset.type == "СМС + ТОР" 
-                    ? ["percent"] 
-                    : ["percent", "stepInPercent", "length"]}
-                  data={data["Обратные докупки (ТОР)"]}
-                  options={currentPreset.options["Обратные докупки (ТОР)"]}
-                  contracts={contractsTotal - contracts}
-                  currentTool={currentTool}
-                  onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
-                />
-              </div>
-            </>
+                <div style={{ width: '100%' }} hidden={!isReversedBying}>
+                  <SGRow
+                    isBying={true}
+                    data={data["Обратные докупки (ТОР)"]}
+                    options={currentPreset.options["Обратные докупки (ТОР)"]}
+                    contracts={contractsTotal - contracts}
+                    currentTool={currentTool}
+                    onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
+                  />
+                </div>
+              </>
+            }
 
             {/* Начало таблицы */}
             <div className="settings-generator-table-wrap">

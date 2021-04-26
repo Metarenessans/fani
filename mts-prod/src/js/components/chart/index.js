@@ -59,7 +59,7 @@ const updateChartZoom = days => {
 
 class Chart extends Component {
   update() {
-    const { min, max, priceRange, possibleRisk } = this.props;
+    const { min, max, priceRange, possibleRisk, tool } = this.props;
 
     dataParsed = this.props.data && this.props.data.map(item => {
       const HOUR_IN_MS = 3_600_000;
@@ -123,7 +123,6 @@ class Chart extends Component {
 
     updateChartZoom(this.props.days);
 
-    const tool = this.props.tool;
     // set the chart position and title
     chart.title(tool.toString());
 
