@@ -33,7 +33,7 @@ import {
   updateChartScaleMinMax,
   updateChartZoom,
   minChartValue,
-  maxChartValue
+  maxChartValue,
 } from "./components/chart"
 
 import Stack                   from "../../../common/components/stack"
@@ -501,9 +501,11 @@ class App extends React.Component {
     const kod = round(ratio / (days || 1), 2);
 
     const GetPossibleRisk = () => {
+      const currentTool = this.getCurrentTool();
       let { depo, percentage, priceRange, risk } = this.state;
+      const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
       let possibleRisk = 0;
-
+      const isLong = percentage >= 0;
       let enterPoint = isLong ? priceRange[0] : priceRange[1];
 
       let stopSteps =
@@ -652,7 +654,7 @@ class App extends React.Component {
                     }
                   </div>
 
-                  <Tooltip title="Настройки">
+                  <Tooltip title="Настройка инструментов">
                     <button
                       className="settings-button js-open-modal main-top__settings"
                       onClick={e => dialogAPI.open("config", e.target)}
@@ -832,7 +834,11 @@ class App extends React.Component {
                         <div className="main-content-stats__wrap">
 
                           <div className="main-content-stats__row">
-                            <span>Точка входа</span>
+                            <span>
+                              <Tooltip title="Цена приобретения позиции">
+                                Точка входа
+                              </Tooltip>
+                            </span>
                             <NumericInput
                               min={min}
                               max={max}
@@ -869,7 +875,11 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Точка выхода</span>
+                            <span>
+                              <Tooltip title="Цена закрытия позиции">
+                                Точка выхода
+                              </Tooltip>
+                            </span>
                             <NumericInput
                               min={min}
                               max={max}
@@ -908,21 +918,33 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Величина хода</span>
+                            <span>
+                              <Tooltip title="Величина движения цены от точки входа до выхода">
+                                Величина хода
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
                               {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
                             </span>
                           </div>
                           
                           <div className="main-content-stats__row">
-                            <span>Контрактов</span>
+                            <span>
+                              <Tooltip title="Количество контрактов на заданную загрузку">
+                                Контрактов
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
                               {contracts}
                             </span>
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Коэффициент прибыли</span>
+                            <span>
+                              <Tooltip title="Значение для коррекции прибыли">
+                                Коэффициент прибыли
+                              </Tooltip>
+                            </span>
                             <NumericInput 
                               unsigned="true"
                               key={mode + chance * Math.random()} 
@@ -936,7 +958,11 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Риск движения против</span>
+                            <span>
+                              <Tooltip title="Величина stop loss в процентах от депозита">
+                                Риск движения против
+                              </Tooltip>
+                            </span>
                             <NumericInput
                               min={0}
                               max={100}
@@ -956,7 +982,11 @@ class App extends React.Component {
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Stop Loss</span>
+                            <span>
+                              <Tooltip title="Цена (уровень) закрытия позиции по стопу">
+                                Stop Loss
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
                               {formatNumber(round(possibleRisk, 2))}
                             </span>
@@ -966,14 +996,22 @@ class App extends React.Component {
                             return (
                               <>
                                 <div className="main-content-stats__row">
-                                  <span>Прибыль</span>
+                                  <span>
+                                    <Tooltip title="Размер прибыли на депозит при заданных условиях">
+                                      Прибыль
+                                    </Tooltip>
+                                  </span>
                                   <span className="main-content-stats__val">
                                     {`${formatNumber(Math.floor(income))} (${suffix}%)`}
                                   </span>
                                 </div>
 
                                 <div className="main-content-stats__row">
-                                  <span>Убыток</span>
+                                  <span>
+                                    <Tooltip title="Величина убытка при закрытии позиции по стопу">
+                                      Убыток
+                                    </Tooltip>
+                                  </span>
                                   <span className="main-content-stats__val">
                                     {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
                                     {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
@@ -981,7 +1019,11 @@ class App extends React.Component {
                                 </div>
 
                                 <div className="main-content-stats__row">
-                                  <span>КОД</span>
+                                  <span>
+                                    <Tooltip title="Коэффициент оборачиваемости денег - прибыль в процентах к депозиту">
+                                      КОД
+                                    </Tooltip>
+                                  </span>
                                   <span className="main-content-stats__val">
                                     {(() => {
                                       if (scaleOffset != 0) {
@@ -1015,6 +1057,36 @@ class App extends React.Component {
                     tool={currentTool}
                     data={data}
                     days={days}
+                    onRendered={() => {
+                      const { percentage, } = this.state
+                      const isLong = percentage >= 0;
+                      const GetPossibleRisk = () => {
+                        const currentTool = this.getCurrentTool();
+                        let { depo, percentage, priceRange, risk } = this.state;
+                        const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+
+                        let possibleRisk = 0;
+                        const isLong = percentage >= 0;
+                        let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+                        let stopSteps =
+                          (depo * risk / 100)
+                          /
+                          currentTool.stepPrice
+                          /
+                          (contracts || 1)
+                          *
+                          currentTool.priceStep;
+
+                        if (risk != 0 && percentage != 0) {
+                          possibleRisk =
+                            round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+                          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+                        }
+                        return possibleRisk
+                      }
+                      updateChartMinMax(this.state.priceRange, isLong, GetPossibleRisk())
+                    }}
                   />
 
                   {(() => {
@@ -1025,7 +1097,9 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          Загрузка:{" "}
+                          <Tooltip title="Объём депозита в процентах на вход в сделку">
+                            Загрузка:{" "}
+                          </Tooltip>
 
                           <NumericInput
                             format={number => round(number, 2)}
@@ -1077,7 +1151,11 @@ class App extends React.Component {
                   <div className="main-content-options">
                     <div className="main-content-options__wrap">
                       <div className="main-content-options__row">
-                        <span className="main-content-options__label">Алгоритм МАНИ 144</span>
+                        <span className="main-content-options__label">
+                          <Tooltip title="Настройки торгового робота для расчёта результатов торговой стратегии">
+                            Алгоритм МАНИ 144
+                          </Tooltip>
+                        </span>
                         <Radio.Group 
                           className="main-content-options__radio"
                           value={mode}
@@ -1105,19 +1183,25 @@ class App extends React.Component {
                             лимитник
                           </Radio>
                         </Radio.Group>
-
+                  
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
                           disabled={true}
                         >
-                          <span className="visually-hidden">Открыть конфиг</span>
-                          <SettingFilled className="settings-button__icon" />
+                            <span className="visually-hidden">Открыть конфиг</span>
+                          <Tooltip title=" Генератор настроек МАНИ 144">
+                            <SettingFilled className="settings-button__icon" />
+                          </Tooltip>
                         </button>
                       </div>
 
                       <div className="main-content-options__row">
-                        <span className="main-content-options__label">Дней в позиции</span>
+                        <span className="main-content-options__label">
+                          <Tooltip title="Продолжительность нахождения в сделке">
+                            Дней в позиции
+                          </Tooltip>
+                        </span>
                         <Radio.Group
                           className="main-content-options__radio"
                           key={days}
@@ -1157,7 +1241,11 @@ class App extends React.Component {
 
                     return (
                       <div className="mts-table">
-                        <h3>Статистика КОД</h3>
+                        <h3>
+                          <Tooltip title="Раздел для ввода результатов оборачиваемости средств на депозите в течении сделки">
+                            Статистика КОД
+                          </Tooltip>
+                        </h3>
                         <table>
                           <thead>
                             <tr>
