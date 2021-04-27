@@ -1546,8 +1546,6 @@ class App extends Component {
 
     const tools = this.getTools();
 
-    console.log(this.getCurrentTool(), this.getCurrentTool().guarantee);
-
     return (
       <Provider value={this}>
         <div className="page">

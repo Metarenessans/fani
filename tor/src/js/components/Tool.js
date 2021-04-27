@@ -123,6 +123,20 @@ export default class Item extends React.Component {
 
     return 0;
   }
+  
+  getOptions() {
+    return this.props.tools.map((tool, idx) => {
+      const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
+      return {
+        idx: idx,
+        label: `${toolName}(${tool.code})`,
+      };
+    });
+  }
+
+  getSortedOptions() {
+    return sortInputFirst(this.state.searchVal, this.getOptions());
+  }
 
   render() {
     const { 
@@ -223,7 +237,7 @@ export default class Item extends React.Component {
                   onChange("selectedToolName", name, this);
                 }}
                 showSearch
-                // onSearch={(value) => this.setState({ searchVal: value })}
+                onSearch={(value) => this.setState({ searchVal: value })}
                 optionFilterProp="children"
                 filterOption={(input, option) =>
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -233,11 +247,9 @@ export default class Item extends React.Component {
                 {(() => {
                   let tools = this.props.tools;
                   if (tools.length) {
-                    let options = tools.map((tool) => String(tool));
-                    // options = sortInputFirst(this.state.searchVal, options);
-                    return options.map((value, index) => (
-                      <Option key={index} value={index}>
-                        {value}
+                    return this.getSortedOptions().map((option) => (
+                      <Option key={option.idx} value={option.idx}>
+                        {option.label}
                       </Option>
                     ));
                   }
