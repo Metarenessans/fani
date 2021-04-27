@@ -418,6 +418,20 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools)
   }
 
+  getOptions() {
+    return this.getTools().map((tool, idx) => {
+      const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
+      return {
+        idx: idx,
+        label: `${toolName}(${tool.code})`,
+      };
+    });
+  }
+
+  getSortedOptions() {
+    return sortInputFirst(this.state.searchVal, this.getOptions());
+  }
+
   getToolIndexByCode(code) {
     const tools = this.getTools();
     if (!code || !tools.length) {
@@ -545,6 +559,7 @@ class App extends React.Component {
         round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
         updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
     }
+
     return (
       <div className="page">
 
@@ -691,14 +706,13 @@ class App extends React.Component {
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
-                            console.log(tools[currentToolIndex]);
                             this.setStateAsync({ currentToolCode })
                               .then(() => this.updatePriceRange(tools[currentToolIndex]))
                               .then(() => this.fetchCompanyQuotes());
                           }}
                           disabled={this.getTools().length == 0}
                           showSearch
-                          // onSearch={(value) => this.setState({ searchVal: value })}
+                          onSearch={(value) => this.setState({ searchVal: value })}
                           optionFilterProp="children"
                           filterOption={(input, option) =>
                             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -708,11 +722,9 @@ class App extends React.Component {
                           {(() => {
                             let tools = this.getTools();
                             if (tools.length) {
-                              let options = tools.map((tool) => String(tool));
-                              // options = sortInputFirst(this.state.searchVal, options);
-                              return options.map((value, index) => (
-                                <Option key={index} value={index}>
-                                  {value}
+                              return this.getSortedOptions().map((option) => (
+                                <Option key={option.idx} value={option.idx}>
+                                  {option.label}
                                 </Option>
                               ));
                             }
@@ -1014,7 +1026,7 @@ class App extends React.Component {
                                   </span>
                                   <span className="main-content-stats__val">
                                     {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
-                                    {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
+                                    {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
                                   </span>
                                 </div>
 

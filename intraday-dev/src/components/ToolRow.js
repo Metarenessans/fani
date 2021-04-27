@@ -2,21 +2,9 @@ import React, { useContext, useRef, useState } from "react";
 import { GlobalContext } from "../context/GlobalState";
 import { numWithSpaces } from "../utils/format";
 import { Select } from "antd";
+import sortInputFirst from "../common/utils/sort-input-first"
 
 const { Option } = Select;
-
-function sortInputFirst(searchVal, options) {
-  return options.sort((a, b) => {
-    a = a.label.substr(0, searchVal.length).toLowerCase();
-    b = b.label.substr(0, searchVal.length).toLowerCase();
-    searchVal = searchVal.toLowerCase();
-
-    if (a == searchVal) {
-      if (b != searchVal) return -1;
-    } else if (b == searchVal) return 1;
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
-}
 
 export const ToolRow = ({ tableIdx, rowIdx, tool, options }) => {
   const { tools, updateTool } = useContext(GlobalContext);
@@ -34,9 +22,7 @@ export const ToolRow = ({ tableIdx, rowIdx, tool, options }) => {
     <div className="tool-row">
       <div className="col tool">
         <Select
-          onSearch={(value) => setSearchVal(value)}
           ref={selectRef}
-          showSearch
           optionFilterProp="children"
           value={tool.idx}
           style={{ width: "100%" }}
@@ -49,6 +35,8 @@ export const ToolRow = ({ tableIdx, rowIdx, tool, options }) => {
               tools[optionIdx].ref.toolType
             );
           }}
+          showSearch
+          onSearch={(value) => setSearchVal(value)}
         >
           {sortInputFirst(searchVal, options).map((option) => (
             <Option key={option.idx} value={option.idx}>

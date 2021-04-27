@@ -13,6 +13,16 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
 
   const [searchVal, setSearchVal] = useState("");
 
+  const options = tools.map((tool, idx) => {
+    const toolName =
+      tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
+
+    return {
+      idx: idx,
+      label: `${toolName}(${tool.code})`,
+    };
+  });
+
   return (
     <Select
       value={value}
@@ -28,11 +38,9 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
     >
       {(() => {
         if (tools.length) {
-          let options = tools.map((tool) => String(tool));
-          // options = sortInputFirst(searchVal, options);
-          return options.map((value, index) => (
-            <Select.Option key={index} value={index}>
-              {value}
+          return sortInputFirst(searchVal, options).map((option) => (
+            <Select.Option key={option.idx} value={option.idx}>
+              {option.label}
             </Select.Option>
           ));
         }
