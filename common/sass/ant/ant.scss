@@ -4192,10 +4192,12 @@ html {
   padding-right: 8px;
 }
 .ant-tooltip-inner {
-  min-height: 35px;
-  min-width:  25px;
+  min-width: 30px;
+  min-height: 30px;
   padding: 6px 8px;
+  padding-top: 8px;
   line-height: 1.1em;
+  
   color: #fff;
   text-align: left;
   text-decoration: none;
