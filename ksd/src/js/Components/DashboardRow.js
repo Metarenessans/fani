@@ -141,6 +141,10 @@ export default class DashboardRow extends React.Component {
     return this.getToolIndexByCode(selectedToolName);
   }
 
+  getSortedOptions() {
+    return sortInputFirst(this.state.searchVal, this.props.options);
+  }
+  
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
     let { selectedToolName, percentage, item } = this.props;
@@ -283,11 +287,9 @@ export default class DashboardRow extends React.Component {
             >
               {(() => {
                 if (tools.length) {
-                  let options = tools.map((tool) => String(tool));
-                  // options = sortInputFirst(this.state.searchVal, options);
-                  return options.map((value, index) => (
-                    <Option key={index} value={index}>
-                      {value}
+                  return this.getSortedOptions().map((option) => (
+                    <Option key={option.idx} value={option.idx}>
+                      {option.label}
                     </Option>
                   ));
                 }

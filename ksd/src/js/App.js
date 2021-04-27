@@ -485,6 +485,16 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools);
   }
 
+  getOptions() {
+		return this.getTools().map((tool, idx) => {
+        const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
+        return {
+          idx: idx,
+          label: `${toolName}(${tool.code})`,
+        };
+      });
+  }
+
   getTitle() {
     const { saves, currentSaveIndex, id } = this.state;
     let title = "КСД";
@@ -618,6 +628,7 @@ class App extends React.Component {
                               selectedToolName={item.selectedToolName}
                               planIncome={item.planIncome}
                               tools={this.getTools()}
+                              options={this.getOptions()}
                               onSort={(sortProp, sortDESC) => {
                                 if (sortProp !== this.state.sortProp) {
                                   sortDESC = true;
