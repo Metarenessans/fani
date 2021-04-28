@@ -73,7 +73,7 @@ import IterationsContainer from "./components/iterations-container"
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = true;
+let shouldLoadFakeSave = false;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -418,9 +418,16 @@ class App extends Component {
     }, 1500);
   }
 
+  syncToolsWithInvestorInfo(investorInfo = {}) {
+    const { tools } = this.state;
+    investorInfo = investorInfo || this.state.investorInfo;
+    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
+  }
+
   fetchInvestorInfo() {
     fetchInvestorInfo()
       .then(this.applyInvestorInfo)
+      .then(() => this.syncToolsWithInvestorInfo())   
       .then(response => {
         let { deposit } = response.data;
         let { depoStart, depoEnd } = this.state;
@@ -447,15 +454,19 @@ class App extends Component {
     ]) {
       fetch(request)
         .then(this.applyTools)
+        .then(() => this.syncToolsWithInvestorInfo())
         .then(() => this.updateDepoPersentageStart())
         .catch(error => console.error(error));
     }
   }
 
   fetchSaves() {
+    console.log("fetch saves");
+    
     fetchSavesFor("trademeter")
       .then(response => {
         const saves = response.data;
+        console.log(saves);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -956,10 +967,9 @@ class App extends Component {
   }
 
   recalc(rebuild = true) {
-
-    // const period = days[mode];
     return new Promise((resolve, reject) => {
       this.updateData(null, rebuild)
+        .then(() => this.updatePassiveIncomeMonthly())
         .then(() => chartVisible && updateChart.call(this))
         .then(() => resolve())
         .catch(err => reject(err));
@@ -1009,7 +1019,7 @@ class App extends Component {
   }
 
   getMaxPaymentValue(frequency, rate = this.getRate()) {
-    const { withdrawalInterval, depoStart, mode } = this.state;
+    const { payload, payloadInterval, withdrawalInterval, depoStart, mode } = this.state;
 
     frequency = frequency || withdrawalInterval[mode];
 
@@ -1018,16 +1028,15 @@ class App extends Component {
     let max = 0
     for (let i = 0; i < frequency; i++) {
       let earned = start * (rate / 100);
+      // + пополнения
+      if (((i + 1) % payloadInterval[mode]) == 0) {
+        earned += payload[mode];
+      }
 
       max += earned
 
       start += earned;
     }
-
-    // const max = data
-    //   .slice(0, frequency)
-    //   .map(d => d.goal)
-    //   .reduce((prev, curr) => prev + curr);
 
     return Math.round(max);
   }
@@ -1279,6 +1288,21 @@ class App extends Component {
     }
 
     return result;
+  }
+
+  updatePassiveIncomeMonthly() {
+    const { passiveIncomeMonthly, mode } = this.state;
+
+    const currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
+    if (!currentPassiveIncomeTool) {
+      return;
+    }
+
+    const persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
+    const depoEnd = this.getDepoEnd();
+
+    passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
+    return this.setStateAsync({ passiveIncomeMonthly });
   }
 
   /**
@@ -1535,6 +1559,8 @@ class App extends Component {
     }    
 
     const placeholder = "—";
+
+    const tools = this.getTools();
 
     return (
       <Provider value={this}>
@@ -1947,11 +1973,7 @@ class App extends Component {
                                 return;
                               }
 
-                              let depoEnd = this.getDepoEnd();
-                              let currentPassiveIncomeTool = this.getCurrentPassiveIncomeTool();
-                              let persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
-                              passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
-                              this.setState({ passiveIncomeMonthly })
+                              this.updatePassiveIncomeMonthly();
                             })
                           }}
                           showSearch
@@ -2358,7 +2380,6 @@ class App extends Component {
 
                         {(() => {
                           const { mode, depoStart, depoPersentageStart } = this.state;
-                          const tools = this.getTools();
                           let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
                           if (step > 100) {
                             console.warn('step > 100');
@@ -2445,12 +2466,11 @@ class App extends Component {
                         </header>
                         
                         <ToolSelect
-                          tools={this.getTools()}
+                          tools={tools}
                           value={this.getCurrentToolIndex()}
-                          disabled={this.getTools().length == 0}
+                          disabled={tools.length == 0}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
-                            let tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
 
                             // Искомое значение на ползунке, к котором мы хотим прижаться
@@ -2485,6 +2505,8 @@ class App extends Component {
                             depoPersentageStart = round(depoPersentageStart, 2);
                             depoPersentageStart = Math.max(depoPersentageStart, step);
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
+
+                            console.log("to search", currentTool.getSortProperty());
 
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
@@ -2672,26 +2694,22 @@ class App extends Component {
                               <span>Прямая разгрузка</span>
                               <Switch
                                 className="switch__input"
-                                defaultChecked={this.state.directUnloading}
-                                onChange={directUnloading => this.setState({ directUnloading }, () => {
-                                  this.recalc(false);
-                                })}
+                                checked={directUnloading}
+                                onChange={directUnloading => this.setState({ directUnloading }, () => this.recalc(false))}
                               />
                             </label>
                             <Tooltip title={"Направление позиции"}>
                               <Switch
                                 className="section4__switch-long-short"
-                                key={isLong + ""}
+                                checked={isLong}
                                 checkedChildren="LONG"
                                 unCheckedChildren="SHORT"
-                                defaultChecked={isLong}
                                 onChange={isLong => {
-                                  const { tools } = this.state;
-                                  const investorInfo = this.state.investorInfo;
+                                  const investorInfo = { ...this.state.investorInfo };
                                   investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                                  this.setStateAsync({ investorInfo })
-                                    .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
+                                  this.setStateAsync({ isLong, investorInfo })
+                                    .then(() => this.syncToolsWithInvestorInfo())
                                     .then(() => this.updateDepoPersentageStart())
                                     .then(() => this.recalc(false))
                                 }}

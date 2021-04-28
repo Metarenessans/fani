@@ -7,6 +7,7 @@
     font-size: 1em;
 
     &-selection {
+      
       &--single {
         // height: 1.945em;
         font-size: 1em;
@@ -121,7 +122,7 @@
       .dashboard-key.scroll::after {
         z-index: -1;
         position: absolute;
-        left: .2rem;
+        left: -4.85rem;
         top:  0;
         
         content: "";
@@ -133,9 +134,9 @@
         @include sm {
           height: 1.7rem;
         }
-        
+
         @include lg {
-          left: -2rem;
+          left: -4.9rem;
         }
       }
     }
@@ -148,7 +149,7 @@
       &:nth-child(5) ~ div {
         background-color: #f7fbff !important;
         padding: .35em 0;
-        
+
         #{$root}-key {
           color: #777;
         }
@@ -163,7 +164,7 @@
     @include xs {
       flex-basis: (100% / 2);
       align-items: flex-start;
-
+      
       font-size: 1.85em;
 
       &:nth-child(5) ~ div {
@@ -218,16 +219,16 @@
       position: fixed;
       top: 0.1rem;
       margin-top: -.1rem;
+      padding-left:  0;
+      padding-right: 0;
 
-      width: inherit;
+      width: 5.2em;
     }
     @include xs {
       width: initial;
       display: block;
       margin-bottom: 0;
       padding: 0 .35em;
-      // padding-right: .5em;
-      // margin-right: 1em;
       color: #777;
     }
 

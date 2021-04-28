@@ -1,27 +1,48 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-import { Input, Tooltip, Select } from 'antd/es'
+import React, { useRef } from 'react'
+import { Tooltip, Select } from 'antd/es'
 
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
   LoadingOutlined,
-  QuestionCircleFilled,
-  SettingFilled,
 } from "@ant-design/icons"
 
 import NumericInput from "../../../../common/components/numeric-input"
 import CustomSelect from "../../../../common/components/custom-select"
 import CrossButton  from "../../../../common/components/cross-button"
 
-import { Tools, template } from "../../../../common/tools"
+import { Tools } from "../../../../common/tools"
 import round          from "../../../../common/utils/round"
 import formatNumber   from "../../../../common/utils/format-number"
 import fractionLength from "../../../../common/utils/fraction-length"
-import croppString    from "../../../../common/utils/cropp-string"
-import { merge, cloneDeep as clone, isEqual } from 'lodash'
+import isEqual        from "../../../../common/utils/is-equal"
+import sortInputFirst from "../../../../common/utils/sort-input-first"
 
 const { Option } = Select;
+
+function onScroll() {
+  if (innerWidth <= 768 || this.props.index > 0) {
+    return;
+  }
+
+  const dashboardElement = document.querySelector(".dashboard");
+  const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
+
+  const firstRowElement = dashboardElement.querySelector(".dashboard-row:first-child");
+  if (!firstRowElement) {
+    return;
+  }
+  const headerElements = firstRowElement.querySelectorAll(".dashboard-key");
+
+  if (pageYOffset > dashboardElementStart) {
+    if (this.state.tooltipPlacement == "top") {
+      this.setState({ tooltipPlacement: "bottom" })
+    }
+  }
+  else {
+    if (this.state.tooltipPlacement == "bottom") {
+      this.setState({ tooltipPlacement: "top" });
+    }
+  }
+}
 
 export default class DashboardRow extends React.Component {
   constructor(props) {
@@ -35,12 +56,35 @@ export default class DashboardRow extends React.Component {
       planIncome,
 
       tooltipText: "",
-      tooltipVisible: false
+      tooltipVisible: false,
+
+      tooltipPlacement: "top",
+
+      searchVal: "",
+      planIncomeCustom: ""
     };
+
+    this.onScrollCb = this.onScrollCb.bind(this);
+  }
+
+  onScrollCb() {
+    onScroll.call(this);
+  }
+
+  componentDidMount() {
+    addEventListener("scroll", this.onScrollCb);
+  }
+
+  componentDidUpdate() {
+    onScroll.call(this);
+  }
+
+  componentWillUnmount() {
+    addEventListener("scroll", this.onScrollCb);
   }
 
   getPlanIncome() {
-    const { mode, item, index } = this.props;
+    const { mode, item } = this.props;
     const currentTool = this.getCurrentTool();
     const realSelectedToolName = currentTool.getSortProperty();
     
@@ -48,7 +92,9 @@ export default class DashboardRow extends React.Component {
 
     if (mode == 0) {
       // В приоритете введенное значение, если его нет - откатываемся к дефолтному
-      planIncome = item.planIncome != null && item.realSelectedToolName == realSelectedToolName ? item.planIncome : currentTool.adrDay;
+      planIncome = item.planIncome != null && item.realSelectedToolName == realSelectedToolName 
+        ? item.planIncome 
+        : currentTool.adrDay;
     }
     else {
       var m;
@@ -95,8 +141,12 @@ export default class DashboardRow extends React.Component {
     return this.getToolIndexByCode(selectedToolName);
   }
 
+  getSortedOptions() {
+    return sortInputFirst(this.state.searchVal, this.props.options);
+  }
+  
   render() {
-    const { tooltipVisible, tooltipText } = this.state;
+    const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
     let { selectedToolName, percentage, item } = this.props;
     const {
       index,
@@ -212,13 +262,15 @@ export default class DashboardRow extends React.Component {
       // setTimeout(() => onUpdate(itemUpdated), 50);
     }
 
+    const container = React.createRef();
+
     return (
-      <div className="dashboard-row">
+      <div className="dashboard-row" ref={container}>
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
-              key={currentToolIndex}
+              // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={currentToolIndex}
               onChange={currentToolIndex => {
@@ -226,6 +278,7 @@ export default class DashboardRow extends React.Component {
               }}
               disabled={tools.length == 0}
               showSearch
+              // onSearch={(value) => this.setState({ searchVal: value })}
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -234,9 +287,11 @@ export default class DashboardRow extends React.Component {
             >
               {(() => {
                 if (tools.length) {
-                  return tools
-                    .map(tool => String(tool))
-                    .map((value, index) => <Option key={index} value={index}>{value}</Option>)
+                  return this.getSortedOptions().map((option) => (
+                    <Option key={option.idx} value={option.idx}>
+                      {option.label}
+                    </Option>
+                  ));
                 }
                 else {
                   return (
@@ -254,30 +309,38 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
             <span className="dashboard-key-inner">
-              Цена / ГО
+              Цена /{" "}
+              <Tooltip title={"Гарантийное обеспечение"} placement={this.state.tooltipPlacement}>
+                ГО
+              </Tooltip>
               <SortButton prop="guarantee" />
             </span>
           </span>
           <span className="dashboard-val dashboard-val--wrap">
-            <span className="no-wrap">{formatNumber(this.getCurrentTool().currentPrice)}</span>
+            <span className="no-wrap">{formatNumber(currentTool.currentPrice)}</span>
             &nbsp;/&nbsp;
-            <span className="no-wrap">{formatNumber(this.getCurrentTool().guarantee)}</span>
+            <span className="no-wrap">{formatNumber(currentTool.guarantee)}</span>
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Загрузка</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Объём депозита в процентах на вход в сделку"} placement={this.state.tooltipPlacement}>
+              Загрузка %
+            </Tooltip>  
+          </span>
           <span className="dashboard-val">
             <CustomSelect
               key={percentage}
               className="dashboard__select"
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
-              formatOption={val => val + "%"}
+              // format={val => val + "%"}
               allowFraction={2}
               min={0.01}
               max={100}
               value={percentage}
               onChange={val => onChange("percentage", val)}
+              suffix="%"
             />
           </span>
         </div>
@@ -290,42 +353,40 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
-          <span className="dashboard-key">Ход $/₽</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Предполагаемые изменения цены"} placement={this.state.tooltipPlacement}>
+              Ход
+            </Tooltip>
+            {" "}$/₽
+          </span>
           <span className="dashboard-val">
             {(() => {
               const fraction = fractionLength(currentTool.priceStep);
               
               let timeout;
-              if (!tooltipText) {
-                const planIncomeReal = +(planIncome).toFixed(fraction);
-                const steps = round(planIncomeReal / currentTool.priceStep, 2);
-                this.setState({ tooltipText: `${planIncomeReal} = ${steps} п` });
-              }
+              const planIncomeTooltip = Number(planIncomeCustom == "" ? planIncome : planIncomeCustom);
+              const steps = round(planIncomeTooltip / currentTool.priceStep, 2);
 
               return mode == 0
                 ? (
                   <Tooltip 
-                    title={tooltipText}
+                    title={`${+(planIncomeTooltip).toFixed(fraction)} = ${steps} п`}
                     visible={tooltipVisible}
                   >
                     <NumericInput
                       key={Math.random()}
                       className="dashboard__input"
-                      defaultValue={planIncome}
+                      defaultValue={+(planIncome).toFixed(fraction)}
                       unsigned="true"
-                      format={value => {
-                        value = Number(value);
-                        return formatNumber(value.toFixed(fraction))
-                      }}
+                      format={formatNumber}
                       min={0}
                       onBlur={value => {
                         value = Number(value);
                         onChange("planIncome", value);
+                        this.setState({ planIncomeCustom: "" })
                       }}
                       onChange={(e, value = "") => {
-                        value = Number(value);
-                        const tooltipText = `${+(value).toFixed(fraction)} = ${round((value) / currentTool.priceStep, 2)} п`;
-                        this.setState({ tooltipText })
+                        this.setState({ planIncomeCustom: value })
                       }}
                       onFocus={e => this.setState({ tooltipVisible: true })}
                       onMouseEnter={e => {
@@ -349,7 +410,11 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Руб.</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Прибыль в рублях к депозиту на заданную загрузку при предполагаемом ходе цены"} placement={this.state.tooltipPlacement}>
+              Руб.
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { formatNumber( Math.round(income) ) }
           </span>
@@ -380,14 +445,22 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Риск</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Процент убытка при движении цены в противоположную от позиции сторону"} placement={this.state.tooltipPlacement}>
+              Риск
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { round(risk, 2) }%
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
-          <span className="dashboard-key">Свободно</span>
+          <span className="dashboard-key">
+            <Tooltip title={"Доступные средства на депозите с учётом загрузки и риска"} placement={this.state.tooltipPlacement}>
+              Свободно
+            </Tooltip>
+          </span>
           <span className="dashboard-val">
             { round(freeMoney, 2) }%
           </span>
