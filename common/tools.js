@@ -3,24 +3,24 @@ import fractionLength from "./utils/fraction-length"
 import readyTools      from "./adr.json"
 import readyToolsNew   from "./adr-new.json"
 import readyToolsMarch from "./adr-march.json"
+import readyToolsApril from "./adr-april.json"
 
 const template = {
   ref:             null,
   fullName:        "",
   shortName:       "",
   code:            "",
-  stepPrice:       0,
-  priceStep:       0,
-  averageProgress: 0,
-  guarantee:       0,
-  currentPrice:    55,
-  volume:          0,
-  lotSize:         0,
-  dollarRate:      0,
-  adrDay:          0,
-  adrWeek:         0,
-  adrMonth:        0,
-
+  stepPrice:       1,
+  priceStep:       1,
+  averageProgress: 1,
+  guarantee:       1,
+  currentPrice:    1,
+  volume:          1,
+  lotSize:         1,
+  dollarRate:      1,
+  adrDay:          1,
+  adrWeek:         1,
+  adrMonth:        1,
   points: [
     [70,  70],
     [156, 55],
@@ -95,7 +95,12 @@ class Tool {
     if (this.shortName) {
       return this.shortName;
     }
-    else return this.code;
+    else if (this.code) {
+      return this.code;
+    }
+    else {
+      return this.name;
+    }
   }
 
   toString(options = { long: true }) {
@@ -166,7 +171,12 @@ const parseTool = tool => {
 
   var found = false;
   
-  // Check if we already have pre-written tool
+  /**
+   *
+   *
+   * @param {*} readyTools
+   * @param {boolean} [strict=false] Если включен, то коды фьючерсов будут сравниваться не по первым двум символам, а на предмет полного соответствия
+   */
   const check = (readyTools, strict = false) => {
     for (let readyTool of readyTools) {
       const lastCompareIndex = strict
@@ -205,8 +215,9 @@ const parseTool = tool => {
   check(readyTools.filter(filterFn));
   check(readyToolsNew.filter(filterFn));
   check(readyToolsMarch.filter(filterFn), true);
+  check(readyToolsApril.filter(filterFn), true);
 
-  // We didn't find the tool in pre-written tools
+  // Если инструмент не сметчился ни с одним из заготовленным файлов
   if (!found) {
     const blackSwan = currentPrice * 0.2;
     adrDay = blackSwan / 10;
@@ -296,7 +307,7 @@ class Tools {
     }
 
     if (unmatchedTools.length) {
-      // console.warn("Не сметчились", unmatchedTools);
+      console.warn("Не сметчились", unmatchedTools.map(tool => tool + ""));
     }
 
     return parsedTools;
@@ -515,4 +526,4 @@ class Tools {
   }
 }
 
-export { Tools, template };
+export { Tools, Tool, template };

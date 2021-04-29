@@ -27,6 +27,7 @@ import sortInputFirst from "../../../../common/utils/sort-input-first"
 const { Option } = Select;
 
 export default class Item extends React.Component {
+
   constructor(props) {
     super(props);
 
@@ -133,10 +134,9 @@ export default class Item extends React.Component {
   
   getOptions() {
     return this.props.tools.map((tool, idx) => {
-      const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
       return {
-        idx: idx,
-        label: `${toolName}(${tool.code})`,
+        idx:   idx,
+        label: String(tool),
       };
     });
   }

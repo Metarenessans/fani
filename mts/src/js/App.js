@@ -25,7 +25,7 @@ import fractionLength from "../../../common/utils/fraction-length"
 import sortInputFirst from "../../../common/utils/sort-input-first"
 import promiseWhile   from "../../../common/utils/promise-while"
 
-import { Tools, template } from "../../../common/tools"
+import { Tools, Tool, template } from "../../../common/tools"
 
 import {
   Chart,
@@ -420,10 +420,9 @@ class App extends React.Component {
 
   getOptions() {
     return this.getTools().map((tool, idx) => {
-      const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
       return {
-        idx: idx,
-        label: `${toolName}(${tool.code})`,
+        idx:   idx,
+        label: String(tool),
       };
     });
   }
@@ -1507,6 +1506,7 @@ class App extends React.Component {
           id="config"
           title="Инструменты"
           template={template}
+          templateContructor={Tool}
           tools={this.state.tools}
           toolsInfo={[
             { name: "Инструмент",   prop: "name"         },

@@ -14,12 +14,9 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
   const [searchVal, setSearchVal] = useState("");
 
   const options = tools.map((tool, idx) => {
-    const toolName =
-      tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
-
     return {
-      idx: idx,
-      label: `${toolName}(${tool.code})`,
+      idx:   idx,
+      label: String(tool),
     };
   });
 

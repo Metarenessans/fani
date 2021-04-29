@@ -10,7 +10,7 @@ import formatNumber from "../../../common/utils/format-number"
 import NumericInput          from "../../../common/components/numeric-input"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import { Tools, template }   from "../../../common/tools"
+import { Tools, Tool as ToolConstructor, template }   from "../../../common/tools"
 import Tool                  from "./components/Tool"
 import Header                from "./components/header"
 
@@ -704,6 +704,7 @@ constructor(props) {
             id="config"
             title="Инструменты"
             template={template}
+            templateContructor={ToolConstructor}
             tools={this.state.tools}
             toolsInfo={[
               { name: "Инструмент",   prop: "name"         },

@@ -25,6 +25,7 @@
     "browser-sync": "^2.26.7",
     "css-loader": "^3.4.2",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "fast-csv": "^4.3.6",
     "file-loader": "^4.2.0",
     "group-css-media-queries": "^1.4.1",
     "identity-obj-proxy": "^3.0.0",
