@@ -33,7 +33,7 @@ import typeOf              from "../../../common/utils/type-of"
 import promiseWhile        from "../../../common/utils/promise-while"
 import fractionLength      from "../../../common/utils/fraction-length"
 import readyTools          from "../../../common/adr.json"
-import { Tools, template } from "../../../common/tools"
+import { Tools, Tool, template } from "../../../common/tools"
 
 import Header                from "./components/header"
 import CrossButton           from "../../../common/components/cross-button"
@@ -487,12 +487,11 @@ class App extends React.Component {
 
   getOptions() {
 		return this.getTools().map((tool, idx) => {
-        const toolName = tool.ref.toolType === "futures" ? tool.shortName : tool.fullName;
-        return {
-          idx: idx,
-          label: `${toolName}(${tool.code})`,
-        };
-      });
+      return {
+        idx:   idx,
+        label: String(tool),
+      };
+    });
   }
 
   getTitle() {
@@ -893,6 +892,8 @@ class App extends React.Component {
             id="config"
             title="Инструменты"
             template={template}
+            template={template}
+            templateContructor={Tool}
             tools={this.state.tools}
             toolsInfo={[
               { name: "Инструмент",   prop: "name"         },
