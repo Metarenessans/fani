@@ -41,7 +41,7 @@ import params              from "../../../common/utils/params"
 import round               from "../../../common/utils/round"
 import roundUp             from "../../../common/utils/round-up"
 import typeOf              from "../../../common/utils/type-of"
-import { Tools, template } from "../../../common/tools"
+import { Tools, Tool, template } from "../../../common/tools"
 
 import Iteration from "./utils/iteration"
 import Data      from "./utils/data"
@@ -757,9 +757,11 @@ class App extends Component {
       state.customTools = staticParsed.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
+      // TODO IMPORTANT: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
       
       // Кастомные инструменты пассивного дохода
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
+      // TODO IMPORTANT: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
       
       // Индекс выбранного инструмента пассивного дохода
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
@@ -2506,7 +2508,7 @@ class App extends Component {
                             depoPersentageStart = Math.max(depoPersentageStart, step);
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
 
-                            console.log("to search", currentTool.getSortProperty());
+                            // console.log("to search", currentTool, currentTool.getSortProperty());
 
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
@@ -3734,6 +3736,7 @@ class App extends Component {
           <Config
             id="config"
             title="Инструменты"
+            templateContructor={Tool}
             template={template}
             tools={this.state.tools}
             toolsInfo={[
@@ -3752,7 +3755,6 @@ class App extends Component {
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools }, () => this.update())}
-
             insertBeforeDialog={
               <label className="input-group input-group--fluid trademeter-config__depo">
                 <span className="input-group__label">НДФЛ:</span>

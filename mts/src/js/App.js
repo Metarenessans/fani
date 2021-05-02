@@ -6,13 +6,13 @@ import {
   Radio,
   Input,
   Pagination,
-  InputNumber
 } from 'antd/es'
 const { Option } = Select;
 
 import {
   LoadingOutlined,
   SettingFilled,
+  SettingOutlined,
   WarningOutlined
 } from "@ant-design/icons"
 
@@ -84,7 +84,9 @@ class App extends React.Component {
       movePercantage:         0,
       lastRadioButton:        0,
       profitRatio:           60,
-      searchVal: ""
+      searchVal:             "",
+
+      toolsLoading:        true,
     };
 
     this.state = {
@@ -156,6 +158,19 @@ class App extends React.Component {
   fetchInitialData() {
     this.fetchInvestorInfo();
     this.fetchTools()
+      .then(() => {
+        setInterval(() => {
+          const currentTool = this.getCurrentTool();
+          currentTool.outdated = true;
+          this.setStateAsync({ tools: [currentTool] })
+            .then(() => this.fetchTools(false))
+            .then(() => {
+              const { tools } = this.state;
+              tools.splice(tools.indexOf(tools.find(tool => tool.outdated == true)), 1);
+              return this.setStateAsync({ tools });
+            })
+        }, 1 * 60 * 1000)
+      })
       .then(() => this.fetchCompanyQuotes());
   }
 
@@ -188,22 +203,28 @@ class App extends React.Component {
     });
   }
 
-  fetchTools() {
+  fetchTools( shouldUpdatePriceRange = true ) {
     return new Promise((resolve) => {
-      for (let request of [
-        "getFutures",
-        "getTrademeterInfo"
-      ]) {
-        fetch(request)
-          .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-          .then(tools => Tools.sort(this.state.tools.concat(tools)))
-          .then(tools => this.setStateAsync({ tools }))
-          .then(() => this.updatePriceRange(this.getCurrentTool()))
-          .then(resolve)
-          .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+      const requests = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(this.state.tools.concat(tools)))
+            .then(tools => this.setStateAsync({ tools }))
+            .then(() => shouldUpdatePriceRange && this.updatePriceRange(this.getCurrentTool()) )
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
       }
+
+      Promise.all(requests).then(() => {
+        this.setState({ toolsLoading: false });
+        resolve()
+      });
     })
   }
+  
 
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
@@ -441,13 +462,13 @@ class App extends React.Component {
     if (index < 0) {
       index = 0;
     }
-
-    return index;
+    return Math.min(index, tools.length);
   }
 
   getCurrentToolIndex() {
     let { currentToolCode } = this.state;
-    return this.getToolIndexByCode(currentToolCode);
+    let index = this.getToolIndexByCode(currentToolCode);
+    return index;
   }
 
   getToolByCode(code) {
@@ -470,9 +491,10 @@ class App extends React.Component {
     let {
       mode, depo, data, chance, page, percentage, priceRange,
       days, risk, scaleOffset, changedMinRange, changedMaxRange,
-      movePercantage, lastRadioButton, profitRatio 
+      movePercantage, lastRadioButton, profitRatio, toolsLoading 
     } = this.state;
 
+    const tools = this.getTools();
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r).map(sorted => round(sorted ,2));
@@ -490,7 +512,7 @@ class App extends React.Component {
     }
 
     const fraction = fractionLength(currentTool.priceStep);
-    const price   = round(currentTool.currentPrice, fraction);
+    const price = round(currentTool.currentPrice, fraction);
     let percent = currentTool.adrDay;
     if (days == 5) {
       percent = currentTool.adrWeek;
@@ -700,8 +722,9 @@ class App extends React.Component {
 
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
+                        
                         <Select
-                          value={this.getCurrentToolIndex()}
+                          value={toolsLoading ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
@@ -709,7 +732,8 @@ class App extends React.Component {
                               .then(() => this.updatePriceRange(tools[currentToolIndex]))
                               .then(() => this.fetchCompanyQuotes());
                           }}
-                          disabled={this.getTools().length == 0}
+                          disabled={toolsLoading}
+                          loading={toolsLoading}
                           showSearch
                           onSearch={(value) => this.setState({ searchVal: value })}
                           optionFilterProp="children"
@@ -719,21 +743,20 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            let tools = this.getTools();
-                            if (tools.length) {
-                              return this.getSortedOptions().map((option) => (
-                                <Option key={option.idx} value={option.idx}>
-                                  {option.label}
-                                </Option>
-                              ));
-                            }
-                            else {
+                            if (toolsLoading) {
                               return (
                                 <Option key={0} value={0}>
                                   <LoadingOutlined style={{ marginRight: ".2em" }} />
                                   Загрузка...
                                 </Option>
                               )
+                            }
+                            else {
+                              return this.getSortedOptions().map((option) => (
+                                <Option key={option.idx} value={option.idx}>
+                                  {option.label}
+                                </Option>
+                              ));
                             }
                           })()}
                         </Select>
@@ -743,7 +766,15 @@ class App extends React.Component {
                       <div className="mts-slider1">
                         <span className="mts-slider1-middle">
                           <b>Текущая цена</b><br />
-                          ({formatNumber(price)})
+                          {(() => {
+                            if(toolsLoading) { 
+                              return <LoadingOutlined/>
+                            }
+                            else {
+                              return formatNumber(price)
+                            }
+                          })()}
+                          
                         </span>
                         <span className="mts-slider1-top">
                           <b>{formatNumber(round(max - scaleOffset, fraction))}</b>
@@ -855,7 +886,7 @@ class App extends React.Component {
                               max={max}
                               unsigned="true"
                               format={number => formatNumber(round(number, fraction))}
-                              round={false}
+                              round={"false"}
                               defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                               onBlur={value => {
                                 const callback = () => {
@@ -895,8 +926,8 @@ class App extends React.Component {
                               min={min}
                               max={max}
                               unsigned="true"
-                              format={number => formatNumber(round(number, fraction))}
-                              round={false}
+                              format={ number => formatNumber(round(number, fraction)) }
+                              round={"false"}
                               defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
 
                               onBlur={value => {
@@ -925,7 +956,6 @@ class App extends React.Component {
                                 
                               }}
                             />
-                            
                           </div>
 
                           <div className="main-content-stats__row">
@@ -980,7 +1010,7 @@ class App extends React.Component {
                               unsigned="true"
                               suffix="%"
                               format={number => formatNumber(round(number, fraction))}
-                              round={false}
+                              round={"false"}
                               // defaultValue={formatNumber(round(mode, 1))}
                               defaultValue={ risk }
 
