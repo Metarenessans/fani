@@ -16,7 +16,7 @@ export default function Table ({ data, isBying = false, isReversed = false }) {
         {data.map((row, index) =>
           <table 
             key={index}
-            className="settings-generator-table__row"
+            className={["settings-generator-table__row"].concat(row?.merged ? "merged" : "").join(" ")}
           >
             <thead>
               <tr className="settings-generator-table__row-header">
@@ -77,7 +77,7 @@ export default function Table ({ data, isBying = false, isReversed = false }) {
                   data-label={(!isBying ? "Закрытых" : "Докупленных") + " контрактов"}
                   data-label-xs={(!isBying ? "Закр." : "Докуп.") + " контр."}
                 >
-                  {formatNumber(Math.floor(row.contracts))}
+                  {(row?.merged ? "+" : "") + formatNumber(Math.floor(row.contracts))}
                 </td>
                 <td
                   data-label="Контрактов в работе"

@@ -114,11 +114,17 @@ const SettingsGenerator = props => {
           modes: ["evenly", "custom", "fibonacci"],
           customData: [{ ...optionsTemplate, length: 1 }]
         },
+        "Прямые профитные докупки": {
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
       }
     }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState("Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -248,7 +254,29 @@ const SettingsGenerator = props => {
   };
 
   let data = [];
-  data[initialCurrentTab] = createData(initialCurrentTab, options);
+
+  let profitableByingArray = [];
+  if (currentPreset.options["Прямые профитные докупки"]) {
+    profitableByingArray = createData('Прямые профитные докупки', {
+      ...options,
+      isBying: true,
+      on: isProfitableBying
+    });
+  }
+
+  let reverseProfitableByingArray = [];
+  if (currentPreset.options["Обратные профитные докупки"]) {
+    reverseProfitableByingArray = createData('Обратные профитные докупки', {
+      ...options,
+      isBying: true,
+      on: isReversedProfitableBying
+    });
+  }
+
+  data[initialCurrentTab] = createData(initialCurrentTab, {
+    ...options,
+    profitableByingArray,
+  });
   const mainData = data[initialCurrentTab];
 
   if (currentPreset.options["Закрытие плечевого депозита"]) {
@@ -257,7 +285,7 @@ const SettingsGenerator = props => {
       on: hasExtraDepo,
     });
   }
-  
+
   if (currentPreset.options["Зеркальные докупки"]) {
     data['Зеркальные докупки'] = createData(initialCurrentTab, {
       ...options,
@@ -266,30 +294,20 @@ const SettingsGenerator = props => {
     });
   }
 
+  if (currentPreset.options["Прямые профитные докупки"]) {
+    data['Прямые профитные докупки'] = profitableByingArray;
+  }
+
+  if (currentPreset.options["Обратные профитные докупки"]) {
+    data['Обратные профитные докупки'] = reverseProfitableByingArray;
+  }
+
   if (currentPreset.options["Обратные докупки (ТОР)"]) {
     data['Обратные докупки (ТОР)'] = createData('Обратные докупки (ТОР)', {
       ...options,
       mainData,
       isBying: true,
       on: isReversedBying
-    });
-  }
-
-  if (currentPreset.options["Прямые профитные докупки"]) {
-    data['Прямые профитные докупки'] = createData('Прямые профитные докупки', {
-      ...options,
-      mainData,
-      isBying: true,
-      on: isProfitableBying
-    });
-  }
-
-  if (currentPreset.options["Обратные профитные докупки"]) {
-    data['Обратные профитные докупки'] = createData('Обратные профитные докупки', {
-      ...options,
-      mainData,
-      isBying: true,
-      on: isReversedProfitableBying
     });
   }
 
@@ -627,8 +645,7 @@ const SettingsGenerator = props => {
                 </label>
 
                 {
-                  // В лимитнике нет плечевого депо
-                  hasExtraDepo &&
+                  ["СМС + ТОР"].indexOf(currentPreset.type) > -1 &&
                     <label className="input-group">
                       <span className="input-group__label">Плечевой депо</span>
                       <NumericInput
@@ -947,13 +964,15 @@ const SettingsGenerator = props => {
 
                 <div style={{ width: '100%' }} hidden={!isProfitableBying}>
                   <SGRow
+                    // ~~
                     isBying={true}
                     preferredStepLabel="Прямой ход"
                     data={data["Прямые профитные докупки"]}
                     options={currentPreset.options["Прямые профитные докупки"]}
+                    onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
+                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
                     contracts={contractsTotal - contracts}
                     currentTool={currentTool}
-                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
                   />
                 </div>
               </>

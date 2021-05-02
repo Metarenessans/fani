@@ -17,6 +17,8 @@ const createData = (type, options, meta) => {
     comission,
     mainData,
     on,
+    // Массив прямых профитных докупок
+    profitableByingArray
   } = options;
 
   const isBying = options.isBying || false;
@@ -330,9 +332,7 @@ const createData = (type, options, meta) => {
       }
 
       if (index == length - 1 && j == subLength - 1) {
-        // console.log(j, 'last closing');
         if (closeAll) {
-          // console.log('closing all the contracts');
           _contracts = contractsLeft;
           // percent = Math.floor(_contracts / contracts * 100);
           shouldBreak = true;
@@ -362,8 +362,7 @@ const createData = (type, options, meta) => {
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
 
-      let incomeWithComission = 
-        incomeWithoutComission + (_comission * (isBying ? 1 : -1));
+      let incomeWithComission = incomeWithoutComission + (_comission * (isBying ? 1 : -1));
 
       data[subIndex] = {
         inPercent,
@@ -392,6 +391,37 @@ const createData = (type, options, meta) => {
       break;
     }
   }
+
+  if (profitableByingArray?.length) {
+    const profitableByingArrayFormatted = profitableByingArray.map(row => ({ ...row, merged: true }));
+    data = data.concat(profitableByingArrayFormatted)
+      .sort((l, r) => l.points - r.points)
+      .map((row, index, arr) => {
+        if (index > 0) {
+          if (row.merged) {
+            row.contracts = roundUp(arr[index - 1].contractsLoaded * row.percent / 100);
+            row.contractsLoaded = arr[index - 1].contractsLoaded + row.contracts;
+          }
+          else {
+            row.contractsLoaded = arr[index - 1].contractsLoaded - row.contracts;
+          }
+
+          // Пересчитываем комиссию
+          row.comission = row.contracts * comission;
+
+          row.incomeWithoutComission = row.contracts * row.points / currentTool.priceStep * currentTool.stepPrice;
+          // Прибавляем доход/убыток из предыдущей строки
+          row.incomeWithoutComission += arr[index - 1]?.incomeWithoutComission || 0;
+
+          row.incomeWithComission = row.incomeWithoutComission + (row.comission * (isBying ? 1 : -1));
+        }
+
+        return row;
+      })
+  }
+
+  data.isBying = isBying;
+  data.on = on;
 
   return data;
 };

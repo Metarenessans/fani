@@ -1228,7 +1228,8 @@ class App extends React.Component {
                         <button
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
-                          disabled={true}
+                          // На проде ГЕНА дизейблится
+                          disabled={!location.href.replace(/\/$/, "").endsWith("-dev")}
                         >
                             <span className="visually-hidden">Открыть конфиг</span>
                           <Tooltip title=" Генератор настроек МАНИ 144">
