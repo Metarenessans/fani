@@ -203,7 +203,6 @@ class App extends React.Component {
     });
   }
 
-  fetchTools() {
   fetchTools( shouldUpdatePriceRange = true ) {
     return new Promise((resolve) => {
       const requests = [];
