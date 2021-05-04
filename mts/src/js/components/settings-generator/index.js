@@ -923,7 +923,7 @@ const SettingsGenerator = props => {
             {hasExtraDepo && 
               <div style={{ width: '100%', marginTop: "0.7em" }}>
                 <div className="settings-generator-content__row-header-wrap">
-                  <h3 className="settings-generator-content__row-header">Закрытие основного депозита</h3>
+                <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
 
                   <Tooltip title={
                     currentPreset.options["Закрытие плечевого депозита"].closeAll
