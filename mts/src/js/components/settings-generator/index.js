@@ -23,7 +23,7 @@ import SGRow        from "./sgrow"
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
 import Table            from "./table"
-import { Tools }        from '../../../../../common/tools'
+import { Tool, Tools }        from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
@@ -39,7 +39,7 @@ import stepConverter from './step-converter'
 
 const SettingsGenerator = props => {
 
-  const { onClose } = props;
+  const { onClose, toolsLoading } = props;
 
   const investorInfo = props.investorInfo || {};
 
@@ -50,8 +50,9 @@ const SettingsGenerator = props => {
   const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
   const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
-  const [currentToolIndex, setCurrentToolIndex] = useState(0);
-  const currentTool = tools[currentToolIndex];
+  const [currentToolCode, setCurrentToolCode] = useState("SBER");
+  const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
+  const currentTool = tools[currentToolIndex] || Tools.create();
   const fraction = fractionLength(currentTool.priceStep);
 
   const initialCurrentTab = "Закрытие основного депозита";
@@ -588,11 +589,10 @@ const SettingsGenerator = props => {
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
                   <Select
-                    value={currentToolIndex}
-                    onChange={index => {
-                      setCurrentToolIndex(index);
-                    }}
-                    disabled={tools.length == 0}
+                    loading={toolsLoading}
+                    disabled={toolsLoading}
+                    value={toolsLoading ? 0 : currentToolIndex}
+                    onChange={index => setCurrentToolCode(tools[index].code)}
                     showSearch
                     optionFilterProp="children"
                     filterOption={(input, option) =>
@@ -600,7 +600,7 @@ const SettingsGenerator = props => {
                     }
                     style={{ width: "100%" }}
                   >
-                    {tools.length
+                    {!toolsLoading
                       ?
                         tools
                           .map(tool => String(tool))
@@ -964,7 +964,6 @@ const SettingsGenerator = props => {
 
                 <div style={{ width: '100%' }} hidden={!isProfitableBying}>
                   <SGRow
-                    // ~~
                     isBying={true}
                     preferredStepLabel="Прямой ход"
                     data={data["Прямые профитные докупки"]}
