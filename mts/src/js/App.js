@@ -724,7 +724,7 @@ class App extends React.Component {
                         <span className="visually-hidden">Торговый инструмент</span>
                         
                         <Select
-                          value={toolsLoading ? 0 : this.getCurrentToolIndex()}
+                          value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
@@ -743,7 +743,7 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            if (toolsLoading) {
+                            if (toolsLoading && tools.length == 0) {
                               return (
                                 <Option key={0} value={0}>
                                   <LoadingOutlined style={{ marginRight: ".2em" }} />
@@ -1229,7 +1229,7 @@ class App extends React.Component {
                           className="settings-button js-open-modal main-content-options__settings"
                           onClick={e => dialogAPI.open("settings-generator", e.target)}
                           // На проде ГЕНА дизейблится
-                          disabled={!location.href.replace(/\/$/, "").endsWith("-dev")}
+                          disabled={dev ? false : !location.href.replace(/\/$/, "").endsWith("-dev")}
                         >
                             <span className="visually-hidden">Открыть конфиг</span>
                           <Tooltip title=" Генератор настроек МАНИ 144">
@@ -1371,7 +1371,6 @@ class App extends React.Component {
                 value: defaultValue || ""
               }
             }
-
             vibeCheck() {
               const { validate } = this.props;
               let { value } = this.state;
@@ -1447,7 +1446,6 @@ class App extends React.Component {
               )
             }
           }
-
           let onConfirm = () => {
             let { id, data, saves, currentSaveIndex } = this.state;
 
@@ -1602,6 +1600,7 @@ class App extends React.Component {
             depo={this.state.depo}
             tools={this.getTools()}
             load={percentage}
+            toolsLoading={toolsLoading}
             investorInfo={this.state.investorInfo}
             onClose={() => {
               dialogAPI.close("settings-generator");
