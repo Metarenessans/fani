@@ -87,6 +87,7 @@ class App extends React.Component {
       searchVal:             "",
 
       toolsLoading:        true,
+      isFocused:          false,
     };
 
     this.state = {
@@ -95,6 +96,7 @@ class App extends React.Component {
         saves:              [],
         currentSaveIndex:    0,
         tools:              [],
+        toolsStorage:       [],
       } 
     };
   }
@@ -159,17 +161,34 @@ class App extends React.Component {
     this.fetchInvestorInfo();
     this.fetchTools()
       .then(() => {
-        setInterval(() => {
-          const currentTool = this.getCurrentTool();
-          currentTool.outdated = true;
-          this.setStateAsync({ tools: [currentTool] })
-            .then(() => this.fetchTools(false))
-            .then(() => {
-              const { tools } = this.state;
-              tools.splice(tools.indexOf(tools.find(tool => tool.outdated == true)), 1);
-              return this.setStateAsync({ tools });
-            })
-        }, 1 * 60 * 1000)
+        const callback = () => {
+          return new Promise(resolve => {
+            setTimeout(() => {
+
+              this.preFetchTools()
+                .then(() => {
+                  const { isToolsDropdownOpen } = this.state;
+                  if (!isToolsDropdownOpen) {
+                    this.setStateAsync({ toolsLoading: true });
+                    setTimeout(() => {
+                      this.setStateAsync({
+                        tools: this.state.toolsStorage,
+                        toolsStorage: [],
+                        toolsLoading: false
+                      })
+                        .then(() => callback());
+                    }, 2_000);
+                  }
+                  else {
+                    callback();
+                  }
+                });
+
+            }, 1 * 60 * 1000);
+            
+          })
+        };
+        callback();
       })
       .then(() => this.fetchCompanyQuotes());
   }
@@ -203,8 +222,26 @@ class App extends React.Component {
     });
   }
 
-  fetchTools( shouldUpdatePriceRange = true ) {
-    return new Promise((resolve) => {
+  preFetchTools() {
+    return new Promise(resolve => {
+      const { toolsStorage } = this.state;
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(toolsStorage.concat(tools)))
+            .then(tools => this.setStateAsync({ toolsStorage: tools }))
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests).then(() => resolve(this.state.toolsStorage))
+    })
+  }
+
+  fetchTools(shouldUpdatePriceRange = true) {
+    return new Promise(resolve => {
       const requests = [];
       this.setState({ toolsLoading: true })
       for (let request of ["getFutures", "getTrademeterInfo"]) {
@@ -218,10 +255,9 @@ class App extends React.Component {
         )
       }
 
-      Promise.all(requests).then(() => {
-        this.setState({ toolsLoading: false });
-        resolve()
-      });
+    Promise.all(requests)
+      .then(() => this.setStateAsync({ toolsLoading: false }))
+      .then(() => resolve())
     })
   }
   
@@ -491,7 +527,7 @@ class App extends React.Component {
     let {
       mode, depo, data, chance, page, percentage, priceRange,
       days, risk, scaleOffset, changedMinRange, changedMaxRange,
-      movePercantage, lastRadioButton, profitRatio, toolsLoading 
+      movePercantage, lastRadioButton, profitRatio, toolsLoading,
     } = this.state;
 
     const tools = this.getTools();
@@ -724,6 +760,20 @@ class App extends React.Component {
                         <span className="visually-hidden">Торговый инструмент</span>
                         
                         <Select
+                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                          onBlur={() => {
+                            if (this.state.toolsStorage?.length) {
+                              this.setStateAsync({ toolsLoading: true });
+                              setTimeout(() => {
+                                this.setState({ 
+                                  tools: this.state.toolsStorage, 
+                                  toolsStorage: [],
+                                  toolsLoading: false
+                                });
+                              }, 2_000);
+                            }
+                            this.setState({ isToolsDropdownOpen: false });
+                          }}
                           value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
