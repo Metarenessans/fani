@@ -591,7 +591,7 @@ const SettingsGenerator = props => {
                   <Select
                     loading={toolsLoading}
                     disabled={toolsLoading}
-                    value={toolsLoading ? 0 : currentToolIndex}
+                    value={toolsLoading && tools.length == 0 ? 0 :currentToolIndex}
                     onChange={index => setCurrentToolCode(tools[index].code)}
                     showSearch
                     optionFilterProp="children"
@@ -600,15 +600,15 @@ const SettingsGenerator = props => {
                     }
                     style={{ width: "100%" }}
                   >
-                    {!toolsLoading
+                    {toolsLoading && tools.length == 0
                       ?
-                        tools
-                          .map(tool => String(tool))
-                          .map((value, index) => <Select.Option key={index} value={index}>{value}</Select.Option>) 
-                      :
                         <Select.Option key={0} value={0}>
                           <LoadingOutlined style={{ marginRight: ".2em" }} /> Загрузка...
                         </Select.Option>
+                      :
+                        tools
+                          .map(tool => String(tool))
+                          .map((value, index) => <Select.Option key={index} value={index}>{value}</Select.Option>) 
                     }
                   </Select>
                 </label>
