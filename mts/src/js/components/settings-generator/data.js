@@ -229,17 +229,13 @@ const createData = (type, options, meta) => {
           );
       }
 
-      points = round(points, fraction);
-
-      if (isNaN(points)) {
-        points = 0;
-      }
-
       if (mode == 'fibonacci') {
         const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
         const multiplier = blockPointsMultipliers[indexInBlock - 1];
-        points = Math.floor(currentTool.adrDay * currentTool.currentPrice * (multiplier / 100));
+        points = currentTool.adrDay * currentTool.currentPrice * (multiplier / 100);
       }
+
+      points = round(points, fraction);
 
       if (mode == 'custom') {
         let preferredStepInMoney = currentOptions.preferredStep;
@@ -250,11 +246,6 @@ const createData = (type, options, meta) => {
           }
           else {
             preferredStepInMoney = percentToStepsConverter(preferredStepInMoney, currentTool, contracts + contractsSecondary);
-
-            // preferredStepInMoney = stepConverter.fromPercentsToStep(
-            //   preferredStepInMoney,
-            //   currentTool
-            // );
           }
         }
         else {
@@ -301,6 +292,10 @@ const createData = (type, options, meta) => {
       //     ? round((mainData[0].points / 2) * (index + 1), fraction)
       //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
       // }
+
+      if (isNaN(points)) {
+        points = 0;
+      }
 
       // Если ход больше желаемого хода - массив заканчивается
       if (
