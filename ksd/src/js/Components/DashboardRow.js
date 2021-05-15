@@ -273,6 +273,8 @@ export default class DashboardRow extends React.Component {
               // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={currentToolIndex}
+              onFocus={onChange("isToolsDropdownOpen", true)}
+              onBlur={onChange("isToolsDropdownOpen", false)}
               onChange={currentToolIndex => {
                 onChange("selectedToolName", tools[currentToolIndex].getSortProperty());
               }}
@@ -348,6 +350,8 @@ export default class DashboardRow extends React.Component {
               className="dashboard__select"
               loading={toolsLoading}
               disabled={toolsLoading}
+              onFocus={onChange("isToolsDropdownOpen", true)}
+              onBlur={onChange("isToolsDropdownOpen", false)}
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
               // format={val => val + "%"}
               allowFraction={2}
@@ -413,12 +417,16 @@ export default class DashboardRow extends React.Component {
                       onBlur={value => {
                         value = Number(value);
                         onChange("planIncome", value);
+                        onChange("isToolsDropdownOpen", false);
                         this.setState({ planIncomeCustom: "" })
                       }}
                       onChange={(e, value = "") => {
                         this.setState({ planIncomeCustom: value })
                       }}
-                      onFocus={e => this.setState({ tooltipVisible: true })}
+                      onFocus={e => {
+                        onChange("isToolsDropdownOpen", true)
+                        this.setState({ tooltipVisible: true })}
+                      }
                       onMouseEnter={e => {
                         if (timeout) {
                           clearTimeout(timeout);
