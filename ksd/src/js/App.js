@@ -124,16 +124,18 @@ class App extends React.Component {
       saved: false,
       
       currentSaveIndex: 0,
+
+      toolsLoading: true,
     };
 
     this.state = {
       ...this.initialState,
       ...{
-
         tools: [],
 
+        toolsStorage: [],
+
         saves: [],
-        
       },
       tooltipPlacement: "top",
     };
@@ -615,6 +617,7 @@ class App extends React.Component {
                         ? (
                           data.map((item, index) =>
                             <DashboardRow
+                            // ~~
                               tooltipPlacement={this.state.tooltipPlacement}
                               key={index}
                               item={item}
@@ -623,6 +626,8 @@ class App extends React.Component {
                               sortDESC={sortDESC}
                               mode={this.state.mode}
                               depo={this.state.depo}
+                              toolsLoading={this.state.toolsLoading}
+                              toolsStorage={this.state.toolsStorage}
                               percentage={item.percentage}
                               selectedToolName={item.selectedToolName}
                               planIncome={item.planIncome}

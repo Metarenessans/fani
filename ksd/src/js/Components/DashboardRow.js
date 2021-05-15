@@ -48,7 +48,7 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    let { percentage, selectedToolName, planIncome } = this.props;
+    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage } = this.props;
 
     this.state = {
       percentage,
@@ -147,7 +147,7 @@ export default class DashboardRow extends React.Component {
   
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
-    let { selectedToolName, percentage, item } = this.props;
+    let { selectedToolName, percentage, item, toolsLoading, toolsStorage } = this.props;
     const {
       index,
       sortProp,
@@ -276,7 +276,8 @@ export default class DashboardRow extends React.Component {
               onChange={currentToolIndex => {
                 onChange("selectedToolName", tools[currentToolIndex].getSortProperty());
               }}
-              disabled={tools.length == 0}
+              loading={toolsLoading}
+              disabled={toolsLoading}
               showSearch
               onSearch={(value) => this.setState({ searchVal: value })}
               optionFilterProp="children"
@@ -316,13 +317,25 @@ export default class DashboardRow extends React.Component {
               <SortButton prop="guarantee" />
             </span>
           </span>
-          <span className="dashboard-val dashboard-val--wrap">
-            <span className="no-wrap">{formatNumber(currentTool.currentPrice)}</span>
-            &nbsp;/&nbsp;
-            <span className="no-wrap">{formatNumber(currentTool.guarantee)}</span>
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined/>
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <span className="no-wrap">{formatNumber(currentTool.currentPrice)}</span>
+                    &nbsp;/&nbsp;
+                  <span className="no-wrap">{formatNumber(currentTool.guarantee)}</span>
+                </span>
+              )
+            }
+          })()}
         </div>
-        {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
             <Tooltip title={"Объём депозита в процентах на вход в сделку"} placement={this.state.tooltipPlacement}>
@@ -333,6 +346,8 @@ export default class DashboardRow extends React.Component {
             <CustomSelect
               key={percentage}
               className="dashboard__select"
+              loading={toolsLoading}
+              disabled={toolsLoading}
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
               // format={val => val + "%"}
               allowFraction={2}
@@ -347,9 +362,22 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">Контракты</span>
-          <span className="dashboard-val">
-            { contracts }
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return ( 
+                <span className="dashboard-val">
+                  { contracts}
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
@@ -378,6 +406,8 @@ export default class DashboardRow extends React.Component {
                       className="dashboard__input"
                       defaultValue={+(planIncome).toFixed(fraction)}
                       unsigned="true"
+                      loading={toolsLoading}
+                      disabled={toolsLoading}
                       format={formatNumber}
                       min={0}
                       onBlur={value => {
@@ -415,9 +445,22 @@ export default class DashboardRow extends React.Component {
               Руб.
             </Tooltip>
           </span>
-          <span className="dashboard-val">
-            { formatNumber( Math.round(income) ) }
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val">
+                  { formatNumber(Math.round(income))}
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -427,9 +470,22 @@ export default class DashboardRow extends React.Component {
               <SortButton prop="incomePercentage" />
             </span>
           </span>
-          <span className="dashboard-val">
-            { formatNumber(round(incomePercentage, 2)) }%
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val">
+                  { formatNumber(round(incomePercentage, 2))}%
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -439,9 +495,22 @@ export default class DashboardRow extends React.Component {
               <SortButton prop="loadingPercentage" />
             </span>
           </span>
-          <span className="dashboard-val">
-            { formatNumber(round(loadingPercentage, 2)) }%
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val">
+                  { formatNumber(round(loadingPercentage, 2))}%
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -450,9 +519,22 @@ export default class DashboardRow extends React.Component {
               Риск
             </Tooltip>
           </span>
-          <span className="dashboard-val">
-            { round(risk, 2) }%
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val">
+                  { round(risk, 2)}%
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -461,9 +543,22 @@ export default class DashboardRow extends React.Component {
               Свободно
             </Tooltip>
           </span>
-          <span className="dashboard-val">
-            { round(freeMoney, 2) }%
-          </span>
+          {(() => {
+            if (toolsLoading) {
+              return (
+                <span className="dashboard-val dashboard-val--wrap">
+                  <LoadingOutlined />
+                </span>
+              )
+            }
+            else {
+              return (
+                <span className="dashboard-val">
+                  { round(freeMoney, 2)}%
+                </span>
+              )
+            }
+          })()}
         </div>
         {/* col */}
 
