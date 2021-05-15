@@ -70,10 +70,15 @@ export default memo(class CustomSelect extends React.Component {
 
   onSelect(value, callback) {
     const { options } = this.state;
+    const { onBlur } = this.props;
 
     // Option exists
     if (options.indexOf(value) != -1) {
       this.setState({ index: options.indexOf(value) });
+      if (onBlur) {
+        onBlur();
+      }
+
       if (callback) {
         callback(value);
       }
@@ -81,6 +86,10 @@ export default memo(class CustomSelect extends React.Component {
     // Option doesn't exists
     else {
       this.addOption(value, () => {
+        if (onBlur) {
+          onBlur();
+        }
+
         if (callback) {
           callback(value);
         }
@@ -131,6 +140,7 @@ export default memo(class CustomSelect extends React.Component {
 
   render() {
     const { options, index } = this.state;
+    const { onBlur, onFocus } = this.props;
 
     if (this.props.name == "Частота") {
       console.log('rendering Частота CustomSelect');
@@ -143,6 +153,7 @@ export default memo(class CustomSelect extends React.Component {
         showSearch
         filterOption={false}
         style={{ width: "100%" }}
+        onFocus={e => onFocus && onFocus()}
         onBlur={e => {
           let value = this.parseValue(this.inputValue);
           if (value != null && !isNaN(value)) {
@@ -150,6 +161,9 @@ export default memo(class CustomSelect extends React.Component {
           }
 
           this.inputElement = null;
+          if (onBlur) {
+            onBlur();
+          }
         }}
         onChange={(index, element) => {
           // Предотвращаем вызов this.onSelect() дважды

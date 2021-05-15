@@ -159,6 +159,7 @@ export default class DashboardRow extends React.Component {
       onChange,
       onUpdate,
       onDelete,
+      onDropdownClose,
     } = this.props;
 
     selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].getSortProperty();
@@ -248,18 +249,11 @@ export default class DashboardRow extends React.Component {
       updatedOnce: item.updatedOnce,
     };
 
-    // console.log(item.realSelectedToolName, realSelectedToolName);
-    if (item.realSelectedToolName != realSelectedToolName) {
-      // console.log(item, itemUpdated);
-      // delete itemUpdated.planIncome;
-      // itemUpdated.updatedOnce = false;
-      // console.log("!");
-    }
+    const pureItem = { ...item };
+    delete pureItem.isToolsDropdownOpen;
     
-    if (!isEqual(itemUpdated, item)) {
-      // console.log(item, itemUpdated);
+    if (!isEqual(itemUpdated, pureItem)) {
       onUpdate(itemUpdated)
-      // setTimeout(() => onUpdate(itemUpdated), 50);
     }
 
     const container = React.createRef();
@@ -273,9 +267,14 @@ export default class DashboardRow extends React.Component {
               // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={currentToolIndex}
-              onFocus={onChange("isToolsDropdownOpen", true)}
-              onBlur={onChange("isToolsDropdownOpen", false)}
+              onFocus={() => onChange("isToolsDropdownOpen", true)}
+              onBlur={() => {
+                onChange("isToolsDropdownOpen", false);
+                onDropdownClose();
+              }}
               onChange={currentToolIndex => {
+                onDropdownClose();
+                onChange("isToolsDropdownOpen", false);
                 onChange("selectedToolName", tools[currentToolIndex].getSortProperty());
               }}
               loading={toolsLoading}
@@ -350,8 +349,15 @@ export default class DashboardRow extends React.Component {
               className="dashboard__select"
               loading={toolsLoading}
               disabled={toolsLoading}
-              onFocus={onChange("isToolsDropdownOpen", true)}
-              onBlur={onChange("isToolsDropdownOpen", false)}
+              onFocus={() => {
+                console.log("custom select focus");
+                onChange("isToolsDropdownOpen", true);
+              }}
+              onBlur={() => {
+                console.log("custom select blur");
+                onChange("isToolsDropdownOpen", false);
+                onDropdownClose();
+              }}
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
               // format={val => val + "%"}
               allowFraction={2}
@@ -409,8 +415,7 @@ export default class DashboardRow extends React.Component {
                       key={Math.random()}
                       className="dashboard__input"
                       defaultValue={+(planIncome).toFixed(fraction)}
-                      unsigned="true"
-                      loading={toolsLoading}
+                      unsigned="true" 
                       disabled={toolsLoading}
                       format={formatNumber}
                       min={0}
@@ -418,14 +423,16 @@ export default class DashboardRow extends React.Component {
                         value = Number(value);
                         onChange("planIncome", value);
                         onChange("isToolsDropdownOpen", false);
-                        this.setState({ planIncomeCustom: "" })
+                        onDropdownClose();
+                        this.setState({ planIncomeCustom: "", tooltipVisible: false })
                       }}
                       onChange={(e, value = "") => {
                         this.setState({ planIncomeCustom: value })
                       }}
                       onFocus={e => {
-                        onChange("isToolsDropdownOpen", true)
-                        this.setState({ tooltipVisible: true })}
+                        onChange("isToolsDropdownOpen", true);
+                        this.setState({ tooltipVisible: true });
+                        }
                       }
                       onMouseEnter={e => {
                         if (timeout) {
