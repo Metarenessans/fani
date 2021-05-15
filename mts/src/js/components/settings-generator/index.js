@@ -589,8 +589,8 @@ const SettingsGenerator = props => {
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
                   <Select
-                    onFocus={() => onToolSelectFocus()}
-                    onBlur={() => onToolSelectBlur()}
+                    onFocus={() => onToolSelectFocus && onToolSelectFocus()}
+                    onBlur={() => onToolSelectBlur && onToolSelectBlur()}
                     loading={toolsLoading}
                     disabled={toolsLoading}
                     value={toolsLoading && tools.length == 0 ? 0 :currentToolIndex}

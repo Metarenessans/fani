@@ -170,7 +170,7 @@ class App extends React.Component {
             }
           });
 
-      }, 1 * 60 * 1000);
+      }, 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -238,19 +238,23 @@ class App extends React.Component {
 
   prefetchTools() {
     return new Promise(resolve => {
-      const { toolsStorage } = this.state;
+      let toolsStorage = [];
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
             .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
             .then(tools => Tools.sort(toolsStorage.concat(tools)))
-            .then(tools => this.setStateAsync({ toolsStorage: tools }))
+            .then(tools => {
+              toolsStorage = [...tools];
+            })
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
-      Promise.all(requests).then(() => resolve(this.state.toolsStorage))
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsStorage }))
+        .then(() => resolve(toolsStorage))
     })
   }
 

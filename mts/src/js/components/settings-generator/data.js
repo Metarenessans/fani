@@ -327,13 +327,12 @@ const createData = (type, options, meta) => {
         shouldBreak = true;
       }
 
-      if (index == length - 1 && j == subLength - 1) {
-        if (closeAll) {
-          _contracts = contractsLeft;
-          // percent = Math.floor(_contracts / contracts * 100);
-          shouldBreak = true;
-        }
-      }
+      // if (index == length - 1 && j == subLength - 1) {
+      //   if (closeAll) {
+      //     _contracts = contractsLeft;
+      //     shouldBreak = true;
+      //   }
+      // }
 
       if (contractsLeft - _contracts >= 0) {
         contractsLeft -= _contracts;
@@ -414,6 +413,12 @@ const createData = (type, options, meta) => {
 
         return row;
       })
+  }
+
+  if (closeAll) {
+    const lastItem = data[data.length - 1];
+    lastItem.contracts = lastItem.contractsLoaded;
+    lastItem.contractsLoaded = 0;
   }
 
   data.isBying = isBying;
