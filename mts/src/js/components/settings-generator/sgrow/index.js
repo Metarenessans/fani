@@ -373,6 +373,7 @@ export default function SGRow({
                   disabled={disabled}
                   defaultValue={stepInPercent}
                   format={inputFormatter}
+                  placeholder={round(stepConverter.fromStepToPercents((preferredStep / (length || 1)), currentTool), fraction)}
                   unsigned="true"
                   min={0}
                   onBlur={stepInPercent => onPropertyChange({ stepInPercent })}

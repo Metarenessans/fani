@@ -39,7 +39,7 @@ import stepConverter from './step-converter'
 
 const SettingsGenerator = props => {
 
-  const { onClose, toolsLoading } = props;
+  const { onClose, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
 
   const investorInfo = props.investorInfo || {};
 
@@ -589,6 +589,8 @@ const SettingsGenerator = props => {
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
                   <Select
+                    onFocus={() => onToolSelectFocus()}
+                    onBlur={() => onToolSelectBlur()}
                     loading={toolsLoading}
                     disabled={toolsLoading}
                     value={toolsLoading && tools.length == 0 ? 0 :currentToolIndex}

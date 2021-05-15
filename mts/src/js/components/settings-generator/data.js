@@ -52,7 +52,7 @@ const createData = (type, options, meta) => {
     ? stepConverter.complexFromPercentToSteps
     : stepConverter.fromPercentsToStep;
 
-  let { mode, stepInPercent, length } = presetOptions;
+  let { mode, stepInPercent, length, preferredStep, inPercent } = presetOptions;
 
   const presetRules = {
     blockStartIndicies: [0, 4, 8],
@@ -159,7 +159,6 @@ const createData = (type, options, meta) => {
       // Округляем до 2 знаков
       percent = round(percent, 2);
 
-      let { preferredStep, inPercent } = presetOptions;
       if (inPercent) {
         if (preferredStep == "") {
           preferredStep = currentTool.adrDay;
@@ -177,7 +176,7 @@ const createData = (type, options, meta) => {
         }
       }
 
-      if (mode == 'custom') {
+      if (mode == "custom") {
         preferredStep = currentOptions.preferredStep;
         inPercent = currentOptions.inPercent;
         if (inPercent) {
@@ -185,7 +184,9 @@ const createData = (type, options, meta) => {
         }
       }
 
-      let { stepInPercent } = presetOptions;
+      if (!stepInPercent) {
+        stepInPercent = round(stepConverter.fromStepToPercents((preferredStep / (length || 1)), currentTool), fraction);
+      }
 
       // Ход
       let points =
@@ -232,7 +233,7 @@ const createData = (type, options, meta) => {
       if (mode == 'fibonacci') {
         const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
         const multiplier = blockPointsMultipliers[indexInBlock - 1];
-        points = currentTool.adrDay * currentTool.currentPrice * (multiplier / 100);
+        points = currentTool.adrDay * (multiplier / 100);
       }
 
       points = round(points, fraction);
