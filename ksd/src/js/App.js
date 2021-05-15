@@ -124,16 +124,18 @@ class App extends React.Component {
       saved: false,
       
       currentSaveIndex: 0,
+
+      toolsLoading: true,
     };
 
     this.state = {
       ...this.initialState,
       ...{
-
         tools: [],
 
+        toolsStorage: [],
+
         saves: [],
-        
       },
       tooltipPlacement: "top",
     };
@@ -161,7 +163,9 @@ class App extends React.Component {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools();
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout())
+
     if (dev) {
       this.loadFakeSave();
       return;
@@ -219,15 +223,89 @@ class App extends React.Component {
       .catch(error => console.error(error))
   }
   
+  setFetchingToolsTimeout() {
+    new Promise(resolve => {
+      console.log('staring 10sec timeout');
+      setTimeout(() => {
+
+        this.prefetchTools()
+          .then(() => {
+            console.log(this.state.data.map(row => row.isToolsDropdownOpen));
+            const isToolsDropdownOpen = this.state.data.some(row => row.isToolsDropdownOpen == true);
+            if (!isToolsDropdownOpen) {
+              this.imitateFetchcingTools()
+                .then(() => resolve());
+            }
+            else {
+              console.log('no way!');
+              resolve();
+            }
+          });
+      }, 1 * 60 * 1000);
+
+    }).then(() => this.setFetchingToolsTimeout())
+  }
+
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
+      const { toolsStorage } = this.state;
+      if (toolsStorage?.length) {
+        console.warn('fake fetching');
+        this.setStateAsync({ toolsLoading: true });
+        setTimeout(() => {
+          this.setState({
+            tools: toolsStorage,
+            toolsStorage: [],
+            toolsLoading: false,
+          }, () => resolve());
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      let toolsStorage = [];
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(toolsStorage.concat(tools)))
+            .then(tools => {
+              toolsStorage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsStorage }))
+        .then(() => resolve(toolsStorage))
+    })
+  }
+
   fetchTools() {
-    const requests = ["getFutures", "getTrademeterInfo"];
-    for (let request of requests) {
-      fetch(request)
-        .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-        .then(tools => Tools.sort(this.state.tools.concat(tools)))
-        .then(tools => this.setState({ tools }))
-        .catch(error => this.showMessageDialog(`Не удалось получить инстурменты! ${error}`))
-    }
+    return new Promise(resolve => {
+      const requests = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(this.state.tools.concat(tools)))
+            .then(tools => this.setStateAsync({ tools }))
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsLoading: false }))
+        .then(() => resolve())
+    })
   }
 
   fetchSaves() {
@@ -615,6 +693,7 @@ class App extends React.Component {
                         ? (
                           data.map((item, index) =>
                             <DashboardRow
+                            // ~~
                               tooltipPlacement={this.state.tooltipPlacement}
                               key={index}
                               item={item}
@@ -623,11 +702,16 @@ class App extends React.Component {
                               sortDESC={sortDESC}
                               mode={this.state.mode}
                               depo={this.state.depo}
+                              toolsLoading={this.state.toolsLoading}
+                              toolsStorage={this.state.toolsStorage}
                               percentage={item.percentage}
                               selectedToolName={item.selectedToolName}
                               planIncome={item.planIncome}
                               tools={this.getTools()}
                               options={this.getOptions()}
+                              onDropdownClose={() => {
+                                this.imitateFetchcingTools();
+                              }}
                               onSort={(sortProp, sortDESC) => {
                                 if (sortProp !== this.state.sortProp) {
                                   sortDESC = true;
