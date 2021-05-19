@@ -23,10 +23,11 @@ import SGRow        from "./sgrow"
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
 import Table            from "./table"
-import { Tool, Tools }        from '../../../../../common/tools'
+import { Tool, Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
+import sortInputFirst   from "../../../../../common/utils/sort-input-first"
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import createData    from './data'
@@ -49,6 +50,7 @@ const SettingsGenerator = props => {
   const [comission, setComission] = useState(0);
   const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
+  const [searchVal, setSearchVal] = useState("");
   const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [currentToolCode, setCurrentToolCode] = useState("SBER");
   const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
@@ -151,7 +153,7 @@ const SettingsGenerator = props => {
   const [isProfitableBying, setProfitableBying] = useState(false);
   // Обратные профитные докупки 
   const [isReversedProfitableBying, setReversedProfitableBying] = useState(false);
-  // Зеркальные докупки 
+  // Зеркальные докупки
   const [isMirrorBying, setMirrorBying] = useState(false);
   // Обратные докупки (ТОР)
   // По дефолту включен в СМС + ТОР
@@ -588,6 +590,7 @@ const SettingsGenerator = props => {
 
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
+                  {/* ~~ */}
                   <Select
                     onFocus={() => onToolSelectFocus && onToolSelectFocus()}
                     onBlur={() => onToolSelectBlur && onToolSelectBlur()}
@@ -596,6 +599,7 @@ const SettingsGenerator = props => {
                     value={toolsLoading && tools.length == 0 ? 0 :currentToolIndex}
                     onChange={index => setCurrentToolCode(tools[index].code)}
                     showSearch
+                    onSearch={value => setSearchVal(value)}
                     optionFilterProp="children"
                     filterOption={(input, option) =>
                       option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -608,9 +612,18 @@ const SettingsGenerator = props => {
                           <LoadingOutlined style={{ marginRight: ".2em" }} /> Загрузка...
                         </Select.Option>
                       :
-                        tools
-                          .map(tool => String(tool))
-                          .map((value, index) => <Select.Option key={index} value={index}>{value}</Select.Option>) 
+                        sortInputFirst(
+                          searchVal,
+                          tools.map((tool, idx) => ({
+                            idx:   idx,
+                            label: String(tool),
+                          }))
+                        )
+                          .map(option => (
+                            <Select.Option key={option.idx} value={option.idx}>
+                              {option.label}
+                            </Select.Option>
+                          ))
                     }
                   </Select>
                 </label>

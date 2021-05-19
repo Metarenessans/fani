@@ -12,7 +12,6 @@ const { Option } = Select;
 import {
   LoadingOutlined,
   SettingFilled,
-  SettingOutlined,
   WarningOutlined
 } from "@ant-design/icons"
 
@@ -23,7 +22,6 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import sortInputFirst from "../../../common/utils/sort-input-first"
-import promiseWhile   from "../../../common/utils/promise-while"
 
 import { Tools, Tool, template } from "../../../common/tools"
 
