@@ -142,10 +142,6 @@ export default memo(class CustomSelect extends React.Component {
     const { options, index } = this.state;
     const { onBlur, onFocus } = this.props;
 
-    if (this.props.name == "Частота") {
-      console.log('rendering Частота CustomSelect');
-    }
-
     return (
       <Select
         { ...this.props }
