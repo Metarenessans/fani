@@ -44,11 +44,12 @@ export default function SGRow({
 
   const inputFormatter = (number, digits) => formatNumber(number != "" ? round(number, digits != null ? digits : fraction) : number);
 
-  const contractsSum = data
-    .map(row => row.contracts)
-    .reduce((acc, curr) => acc + curr, 0);
-
-  const sumPercent = contractsSum / (contracts || 1) * 100;
+  const contractsArray = data.map(row => row.merged ? -row.contracts : row.contracts);
+  const contractsSum = contractsArray.reduce((acc, curr) => acc + curr, 0);
+  let sumPercent = contractsSum / (contracts || 1) * 100;
+  if (options.closeAll) {
+    sumPercent = 100;
+  }
 
   return (
     <div style={{ width: '100%' }}>
@@ -234,10 +235,14 @@ export default function SGRow({
                     <b>{(() => {
                       const contractsSum = data
                         .filter(row => row.group == i)
-                        .map(row => row.contracts)
-                        .reduce((prev, next) => prev + next, 0);
+                        .map(row => row.merged ? -row.contracts : row.contracts)
+                        .reduce((prev, curr) => prev + curr, 0);
 
-                      return round(contractsSum / (contracts || 1) * 100, 1);
+                      let value = round(contractsSum / (contracts || 1) * 100, 1);
+                      if (options.closeAll) {
+                        value = 100;
+                      }
+                      return value;
                     })()}%</b>
                   </div>
 
@@ -373,6 +378,7 @@ export default function SGRow({
                   disabled={disabled}
                   defaultValue={stepInPercent}
                   format={inputFormatter}
+                  placeholder={round(stepConverter.fromStepToPercents((preferredStep / (length || 1)), currentTool), fraction)}
                   unsigned="true"
                   min={0}
                   onBlur={stepInPercent => onPropertyChange({ stepInPercent })}

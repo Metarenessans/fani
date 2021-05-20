@@ -12,7 +12,6 @@ const { Option } = Select;
 import {
   LoadingOutlined,
   SettingFilled,
-  SettingOutlined,
   WarningOutlined
 } from "@ant-design/icons"
 
@@ -23,7 +22,6 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import sortInputFirst from "../../../common/utils/sort-input-first"
-import promiseWhile   from "../../../common/utils/promise-while"
 
 import { Tools, Tool, template } from "../../../common/tools"
 
@@ -152,6 +150,29 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
+  setFetchingToolsTimeout() {
+    new Promise(resolve => {
+      console.log('staring 10sec timeout');
+      setTimeout(() => {
+
+        this.prefetchTools()
+          .then(() => {
+            const { isToolsDropdownOpen } = this.state;
+            if (!isToolsDropdownOpen) {
+              this.imitateFetchcingTools()
+                .then(() => resolve());
+            }
+            else {
+              console.log('no way!');
+              resolve();
+            }
+          });
+
+      }, 1 * 60 * 1_000);
+
+    }).then(() => this.setFetchingToolsTimeout())
+  }
+
   // ----------
   // Fetch
   // ----------
@@ -160,37 +181,8 @@ class App extends React.Component {
   fetchInitialData() {
     this.fetchInvestorInfo();
     this.fetchTools()
-      .then(() => {
-        const callback = () => {
-          return new Promise(resolve => {
-            setTimeout(() => {
-
-              this.preFetchTools()
-                .then(() => {
-                  const { isToolsDropdownOpen } = this.state;
-                  if (!isToolsDropdownOpen) {
-                    this.setStateAsync({ toolsLoading: true });
-                    setTimeout(() => {
-                      this.setStateAsync({
-                        tools: this.state.toolsStorage,
-                        toolsStorage: [],
-                        toolsLoading: false
-                      })
-                        .then(() => callback());
-                    }, 2_000);
-                  }
-                  else {
-                    callback();
-                  }
-                });
-
-            }, 1 * 60 * 1000);
-            
-          })
-        };
-        callback();
-      })
-      .then(() => this.fetchCompanyQuotes());
+      .then(() => this.setFetchingToolsTimeout())
+      .then(() => this.fetchCompanyQuotes())
   }
 
   fetchSaves() {
@@ -222,21 +214,45 @@ class App extends React.Component {
     });
   }
 
-  preFetchTools() {
-    return new Promise(resolve => {
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
       const { toolsStorage } = this.state;
+      if (toolsStorage?.length) {
+        console.warn('fake fetching');
+        this.setStateAsync({ toolsLoading: true });
+        setTimeout(() => {
+          this.setState({
+            tools: toolsStorage,
+            toolsStorage: [],
+            toolsLoading: false,
+          }, () => resolve());
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      let toolsStorage = [];
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
             .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
             .then(tools => Tools.sort(toolsStorage.concat(tools)))
-            .then(tools => this.setStateAsync({ toolsStorage: tools }))
+            .then(tools => {
+              toolsStorage = [...tools];
+            })
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
-      Promise.all(requests).then(() => resolve(this.state.toolsStorage))
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsStorage }))
+        .then(() => resolve(toolsStorage))
     })
   }
 
@@ -762,17 +778,8 @@ class App extends React.Component {
                         <Select
                           onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                           onBlur={() => {
-                            if (this.state.toolsStorage?.length) {
-                              this.setStateAsync({ toolsLoading: true });
-                              setTimeout(() => {
-                                this.setState({ 
-                                  tools: this.state.toolsStorage, 
-                                  toolsStorage: [],
-                                  toolsLoading: false
-                                });
-                              }, 2_000);
-                            }
-                            this.setState({ isToolsDropdownOpen: false });
+                            this.setStateAsync({ isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools());
                           }}
                           value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
@@ -1654,6 +1661,11 @@ class App extends React.Component {
             investorInfo={this.state.investorInfo}
             onClose={() => {
               dialogAPI.close("settings-generator");
+            }}
+            onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
+            onToolSelectBlur={() => {
+              this.setStateAsync({ isToolsDropdownOpen: false })
+                .then(() => this.imitateFetchcingTools());
             }}
           />
         </Dialog>

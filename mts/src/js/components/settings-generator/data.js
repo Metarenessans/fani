@@ -52,7 +52,7 @@ const createData = (type, options, meta) => {
     ? stepConverter.complexFromPercentToSteps
     : stepConverter.fromPercentsToStep;
 
-  let { mode, stepInPercent, length } = presetOptions;
+  let { mode, stepInPercent, length, preferredStep, inPercent } = presetOptions;
 
   const presetRules = {
     blockStartIndicies: [0, 4, 8],
@@ -159,7 +159,6 @@ const createData = (type, options, meta) => {
       // Округляем до 2 знаков
       percent = round(percent, 2);
 
-      let { preferredStep, inPercent } = presetOptions;
       if (inPercent) {
         if (preferredStep == "") {
           preferredStep = currentTool.adrDay;
@@ -177,7 +176,7 @@ const createData = (type, options, meta) => {
         }
       }
 
-      if (mode == 'custom') {
+      if (mode == "custom") {
         preferredStep = currentOptions.preferredStep;
         inPercent = currentOptions.inPercent;
         if (inPercent) {
@@ -185,7 +184,9 @@ const createData = (type, options, meta) => {
         }
       }
 
-      let { stepInPercent } = presetOptions;
+      if (!stepInPercent) {
+        stepInPercent = round(stepConverter.fromStepToPercents((preferredStep / (length || 1)), currentTool), fraction);
+      }
 
       // Ход
       let points =
@@ -229,17 +230,13 @@ const createData = (type, options, meta) => {
           );
       }
 
-      points = round(points, fraction);
-
-      if (isNaN(points)) {
-        points = 0;
-      }
-
       if (mode == 'fibonacci') {
         const blockPointsMultipliers = presetRules.multipliers[blockNumber - 1];
         const multiplier = blockPointsMultipliers[indexInBlock - 1];
-        points = Math.floor(currentTool.adrDay * currentTool.currentPrice * (multiplier / 100));
+        points = currentTool.adrDay * (multiplier / 100);
       }
+
+      points = round(points, fraction);
 
       if (mode == 'custom') {
         let preferredStepInMoney = currentOptions.preferredStep;
@@ -250,11 +247,6 @@ const createData = (type, options, meta) => {
           }
           else {
             preferredStepInMoney = percentToStepsConverter(preferredStepInMoney, currentTool, contracts + contractsSecondary);
-
-            // preferredStepInMoney = stepConverter.fromPercentsToStep(
-            //   preferredStepInMoney,
-            //   currentTool
-            // );
           }
         }
         else {
@@ -302,6 +294,10 @@ const createData = (type, options, meta) => {
       //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
       // }
 
+      if (isNaN(points)) {
+        points = 0;
+      }
+
       // Если ход больше желаемого хода - массив заканчивается
       if (
         !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
@@ -331,13 +327,12 @@ const createData = (type, options, meta) => {
         shouldBreak = true;
       }
 
-      if (index == length - 1 && j == subLength - 1) {
-        if (closeAll) {
-          _contracts = contractsLeft;
-          // percent = Math.floor(_contracts / contracts * 100);
-          shouldBreak = true;
-        }
-      }
+      // if (index == length - 1 && j == subLength - 1) {
+      //   if (closeAll) {
+      //     _contracts = contractsLeft;
+      //     shouldBreak = true;
+      //   }
+      // }
 
       if (contractsLeft - _contracts >= 0) {
         contractsLeft -= _contracts;
@@ -418,6 +413,12 @@ const createData = (type, options, meta) => {
 
         return row;
       })
+  }
+
+  if (closeAll) {
+    const lastItem = data[data.length - 1];
+    lastItem.contracts = lastItem.contractsLoaded;
+    lastItem.contractsLoaded = 0;
   }
 
   data.isBying = isBying;

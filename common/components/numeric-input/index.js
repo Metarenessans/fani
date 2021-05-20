@@ -8,7 +8,6 @@ export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.format    = this.props.format    || function (val) { return val };
     this.onInvalid = this.props.onInvalid || function () { return "" };
     this.className = this.props.className || "";
 
@@ -21,6 +20,10 @@ export default class NumericInput extends React.Component {
     if (this.props.onRef) {
       this.props.onRef(this);
     }
+  }
+
+  get format() {
+    return this.props.format || (val => val);
   }
 
   get round() {
