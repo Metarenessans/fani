@@ -227,20 +227,22 @@ class App extends React.Component {
     new Promise(resolve => {
       console.log('staring 10sec timeout');
       setTimeout(() => {
-
-        this.prefetchTools()
-          .then(() => {
-            console.log(this.state.data.map(row => row.isToolsDropdownOpen));
-            const isToolsDropdownOpen = this.state.data.some(row => row.isToolsDropdownOpen == true);
-            if (!isToolsDropdownOpen) {
-              this.imitateFetchcingTools()
-                .then(() => resolve());
-            }
-            else {
-              console.log('no way!');
-              resolve();
-            }
-          });
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              console.log(this.state.data.map(row => row.isToolsDropdownOpen));
+              const isToolsDropdownOpen = this.state.data.some(row => row.isToolsDropdownOpen == true);
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
       }, 1 * 60 * 1000);
 
     }).then(() => this.setFetchingToolsTimeout())
