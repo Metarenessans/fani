@@ -150,24 +150,31 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
+  isTabActive() {
+    document.addEventListener("visibilitychange", function () {
+      return document.hidden
+    });
+  }
+
   setFetchingToolsTimeout() {
     new Promise(resolve => {
-      console.log('staring 10sec timeout');
       setTimeout(() => {
-
-        this.prefetchTools()
-          .then(() => {
-            const { isToolsDropdownOpen } = this.state;
-            if (!isToolsDropdownOpen) {
-              this.imitateFetchcingTools()
-                .then(() => resolve());
-            }
-            else {
-              console.log('no way!');
-              resolve();
-            }
-          });
-
+        if (!document.hidden) {
+          console.log('staring 10sec timeout');
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
       }, 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
@@ -312,7 +319,6 @@ class App extends React.Component {
   }
 
   bindEvents() {
-    
   }
 
   packSave() {
