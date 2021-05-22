@@ -150,23 +150,30 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
+  isTabActive() {
+    document.addEventListener("visibilitychange", function () {
+      return document.hidden
+    });
+  }
+
   setFetchingToolsTimeout() {
     new Promise(resolve => {
-      console.log('staring 10sec timeout');
       setTimeout(() => {
-
-        this.prefetchTools()
-          .then(() => {
-            const { isToolsDropdownOpen } = this.state;
-            if (!isToolsDropdownOpen) {
-              this.imitateFetchcingTools()
-                .then(() => resolve());
-            }
-            else {
-              console.log('no way!');
-              resolve();
-            }
-          });
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
 
       }, dev ? 6_000 : 1 * 60 * 1_000);
 
@@ -322,7 +329,6 @@ class App extends React.Component {
   }
 
   bindEvents() {
-    
   }
 
   packSave() {
@@ -804,7 +810,8 @@ class App extends React.Component {
                           onChange={currentToolIndex => {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
-                            this.setStateAsync({ currentToolCode })
+                            this.setStateAsync({ currentToolCode, isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools())
                               .then(() => this.updatePriceRange(tools[currentToolIndex]))
                               .then(() => this.fetchCompanyQuotes());
                           }}
@@ -843,7 +850,7 @@ class App extends React.Component {
                         <span className="mts-slider1-middle">
                           <b>Текущая цена</b><br />
                           {(() => {
-                            if(toolsLoading) { 
+                            if(toolsLoading) {
                               return <LoadingOutlined/>
                             }
                             else {
