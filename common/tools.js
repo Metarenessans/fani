@@ -6,7 +6,7 @@ import readyToolsMarch from "./adr-march.json"
 import readyToolsApril from "./adr-april.json"
 
 const template = {
-  ref:             null,
+  ref:             {},
   fullName:        "",
   shortName:       "",
   code:            "",
@@ -361,7 +361,7 @@ class Tools {
 
   static create(
     toolInfo = {
-      ref:             null,
+      ref:             {},
       fullName:        "Сбербанк России ПАО ао",
       shortName:       "",
       code:            "SBER",
@@ -390,7 +390,7 @@ class Tools {
     return [
       this.create(),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "BR-3.21",
         shortName:       "",
         code:            "BRH1",
@@ -407,7 +407,7 @@ class Tools {
         adrMonth:        8.27,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Si-3.21",
         shortName:       "",
         code:            "SiH1",
@@ -424,7 +424,7 @@ class Tools {
         adrMonth:        5882,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "3D Systems Corp.",
         shortName:       "",
         code:            "DDD",
@@ -441,7 +441,7 @@ class Tools {
         adrMonth:        16.51,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Abbvie Inc",
         shortName:       "",
         code:            "ABBV",
@@ -458,7 +458,7 @@ class Tools {
         adrMonth:        11.9,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Abiomed Inc.",
         shortName:       "",
         code:            "ABMD",
@@ -475,7 +475,7 @@ class Tools {
         adrMonth:        60.91,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Apple Inc",
         shortName:       "",
         code:            "AAPL",

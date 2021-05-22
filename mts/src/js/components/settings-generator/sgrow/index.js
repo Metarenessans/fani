@@ -51,6 +51,21 @@ export default function SGRow({
     sumPercent = 100;
   }
 
+  let preferredStepInMoney = preferredStep;
+  if (inPercent) {
+    if (preferredStep == "") {
+      preferredStepInMoney = currentTool.adrDay;
+    }
+    else {
+      preferredStepInMoney = percentToStepsConverter(preferredStep, currentTool, contracts);
+    }
+  }
+  else {
+    if (preferredStep == "") {
+      preferredStepInMoney = currentTool.adrDay;
+    }
+  }
+
   return (
     <div style={{ width: '100%' }}>
 
@@ -198,7 +213,7 @@ export default function SGRow({
                           className="input-group__input"
                           defaultValue={customDataRow.stepInPercent || 1}
                           placeholder={""}
-                          format={inputFormatter}
+                          format={number => inputFormatter(number, 2)}
                           unsigned="true"
                           min={1}
                           onBlur={stepInPercent => {
@@ -377,8 +392,8 @@ export default function SGRow({
                   className="input-group__input"
                   disabled={disabled}
                   defaultValue={stepInPercent}
-                  format={inputFormatter}
-                  placeholder={round(stepConverter.fromStepToPercents((preferredStep / (length || 1)), currentTool), fraction)}
+                  format={number => inputFormatter(number, 2)}
+                  placeholder={round(stepConverter.fromStepToPercents((preferredStepInMoney / (length || 1)), currentTool), fraction)}
                   unsigned="true"
                   min={0}
                   onBlur={stepInPercent => onPropertyChange({ stepInPercent })}

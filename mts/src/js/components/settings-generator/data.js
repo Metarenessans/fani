@@ -350,14 +350,24 @@ const createData = (type, options, meta) => {
       }
 
       let _comission = _contracts * comission;
+      // Если выбрана акция 
+      if (currentTool.dollarRate >= 1) {
+        _comission = comission;
+
+        if (subIndex == 0) {
+          _comission *= 2;
+        }
+      }
       // NOTE: больше не прибавляем комиссию из предыдущей строки
       // _comission += data[subIndex - 1]?.comission || 0;
 
       let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
-
-      let incomeWithComission = incomeWithoutComission + (_comission * (isBying ? 1 : -1));
+      
+      let comissionsSum = data.slice(0, subIndex).map(row => row.comission).reduce((prev, curr) => prev + curr, 0);
+      comissionsSum += _comission;
+      let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
 
       data[subIndex] = {
         inPercent,
