@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "antd";
 
 import NanniLogo from "../../image/nanni.svg";
 import { CloseOutlined } from "@ant-design/icons";
 import "./style.scss";
+import axios from "axios";
 
 export const NanniBot = () => {
   const messages = [
@@ -79,6 +80,30 @@ export const NanniBot = () => {
       }
     } else return "";
   };
+
+  useEffect(async () => {
+    // await axios
+    //   .get("http://nimba.ru:82/nanni/has_session?user_id=user@mail.ru", {
+    //     headers: { "Content-Type": "application/json" },
+    //   })
+    //   .then((response) => {
+    //     console.log(response);
+    //   })
+    //   .catch((err) => console.log(err));
+    fetch("http://nimba.ru:82/nanni/has_session", {
+      body: "{'user_id':'user@mail.ru'}",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+      });
+  }, []);
 
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>

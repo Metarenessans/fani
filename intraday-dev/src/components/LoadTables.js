@@ -5,18 +5,13 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const LoadTables = () => {
-  const { loadTables, getTools, getInvestorInfo, loading } = useContext(
-    GlobalContext
-  );
-
-  const getData = () => {
-    getInvestorInfo();
-    getTools();
-  };
+  const { loadTables, getTools, getInvestorInfo, loading } =
+    useContext(GlobalContext);
 
   useEffect(() => {
-    getData();
-    setInterval(getData, 120000);
+    getInvestorInfo();
+    getTools();
+    setInterval(getTools, 120000);
   }, []);
 
   const tables = loadTables.map((table, tableIdx) => (

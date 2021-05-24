@@ -32,7 +32,7 @@ export const PriceMove = () => {
           <Col md={24} xs={0}>
             <Radio.Group
               className="tabs"
-              defaultValue={adrMode}
+              value={adrMode}
               name="radiogroup"
               onChange={(e) => setAdrMode(e.target.value)}
             >
@@ -49,25 +49,13 @@ export const PriceMove = () => {
                 <span className="prefix">ход цены</span>
               </Radio>
             </Radio.Group>
-
-            <Tooltip title="Настройки" overlayStyle={{ fontSize: "1.25em" }}>
-              <button
-                className="settings-button js-open-modal main-top__settings"
-                onClick={(e) => dialogAPI.open("config", e.target)}
-              >
-                <span className="visually-hidden">Открыть конфиг</span>
-                <SettingFilled className="settings-button__icon" />
-              </button>
-            </Tooltip>
           </Col>
-        </Row>
 
-        <Row>
           <Col xs={24} md={0}>
             <Select
               style={{ width: "100%" }}
               value={adrMode}
-              onChange={(mode) => setAdrMode(mode.value)}
+              onChange={(mode) => setAdrMode(mode)}
             >
               <Option value="day">Дневной</Option>
               <Option value="week">Недельный</Option>
@@ -75,6 +63,16 @@ export const PriceMove = () => {
             </Select>
           </Col>
         </Row>
+
+        <Tooltip title="Настройки" overlayStyle={{ fontSize: "1.25em" }}>
+          <button
+            className="settings-button js-open-modal main-top__settings"
+            onClick={(e) => dialogAPI.open("config", e.target)}
+          >
+            <span className="visually-hidden">Открыть конфиг</span>
+            <SettingFilled className="settings-button__icon" />
+          </button>
+        </Tooltip>
       </div>
 
       <Config

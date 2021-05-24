@@ -14,7 +14,7 @@ const initialState = {
   loadTables: [
     {
       selectedTools: [
-        { code: "BRK1", toolType: "futures" },
+        { code: "VLO", toolType: "shareUs" },
         { code: "TTM1", toolType: "futures" },
         { code: "AAPL", toolType: "shareUs" },
         { code: "ABRD", toolType: "shareRu" },
