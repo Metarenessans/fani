@@ -133,8 +133,6 @@ class App extends React.Component {
       ...{
         tools: [],
 
-        toolsStorage: [],
-
         saves: [],
       },
       tooltipPlacement: "top",
@@ -230,7 +228,6 @@ class App extends React.Component {
         if (!document.hidden) {
           this.prefetchTools()
             .then(() => {
-              console.log(this.state.data.map(row => row.isToolsDropdownOpen));
               const isToolsDropdownOpen = this.state.data.some(row => row.isToolsDropdownOpen == true);
               if (!isToolsDropdownOpen) {
                 this.imitateFetchcingTools()
@@ -243,21 +240,20 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, 1 * 60 * 1000);
+      }, dev ? 6_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
-
+  // ~~
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
-      const { toolsStorage } = this.state;
-      if (toolsStorage?.length) {
+      if (Tools.storage?.length) {
         console.warn('fake fetching');
         this.setStateAsync({ toolsLoading: true });
+        const newTools = Tools.storage;
         setTimeout(() => {
           this.setState({
-            tools: toolsStorage,
-            toolsStorage: [],
+            tools: newTools,
             toolsLoading: false,
           }, () => resolve());
         }, 2_000);
@@ -270,23 +266,22 @@ class App extends React.Component {
 
   prefetchTools() {
     return new Promise(resolve => {
-      let toolsStorage = [];
+      Tools.storage = [];
+      const { investorInfo } = this.state;
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-            .then(tools => Tools.sort(toolsStorage.concat(tools)))
+            .then(response => Tools.parse(response.data, { investorInfo: investorInfo }))
+            .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
-              toolsStorage = [...tools];
+              Tools.storage = [...tools];
             })
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ toolsStorage }))
-        .then(() => resolve(toolsStorage))
+      Promise.all(requests).then(() => resolve())
     })
   }
 

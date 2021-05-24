@@ -48,7 +48,7 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage } = this.props;
+    let { percentage, selectedToolName, planIncome, toolsLoading } = this.props;
 
     this.state = {
       percentage,
@@ -147,7 +147,7 @@ export default class DashboardRow extends React.Component {
   
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
-    let { selectedToolName, percentage, item, toolsLoading, toolsStorage } = this.props;
+    let { selectedToolName, percentage, item, toolsLoading } = this.props;
     const {
       index,
       sortProp,

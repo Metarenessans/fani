@@ -801,6 +801,7 @@ class App extends React.Component {
                         <span className="visually-hidden">Торговый инструмент</span>
                         
                         <Select
+                        // ~~
                           onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                           onBlur={() => {
                             this.setStateAsync({ isToolsDropdownOpen: false })

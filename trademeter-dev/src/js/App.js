@@ -247,6 +247,8 @@ class App extends Component {
       pitError: "",
 
       errorMessage: "",
+      
+      toolsLoading: true,
     };
 
     this.state = merge(
@@ -269,6 +271,7 @@ class App extends Component {
         // Tools
         // -----
         tools: [],
+
 
         /**
          * Индекс текущего сохранения
@@ -1954,8 +1957,11 @@ class App extends Component {
                         </header>
 
                         <Select
+                        // ~~
                           id="passive-tools"
                           value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+                          loading={this.state.toolsLoading}
+                          disabled={this.state.toolsLoading}
                           onChange={index => {
                             let { mode, currentPassiveIncomeToolIndex } = this.state;
                             currentPassiveIncomeToolIndex[mode] = index;
@@ -2468,9 +2474,10 @@ class App extends Component {
                         </header>
                         
                         <ToolSelect
+                          toolsLoading={this.state.toolsLoading}
+                          disabled={this.state.toolsLoading}
                           tools={tools}
                           value={this.getCurrentToolIndex()}
-                          disabled={tools.length == 0}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
                             const currentTool = tools[currentToolIndex]; 
