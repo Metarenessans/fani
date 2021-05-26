@@ -2556,7 +2556,7 @@ class App extends Component {
                           toolsLoading={this.state.toolsLoading}
                           disabled={this.state.toolsLoading}
                           tools={tools}
-                          value={this.getCurrentToolIndex()}
+                          value={this.state.toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
                             const currentTool = tools[currentToolIndex]; 
@@ -2595,14 +2595,15 @@ class App extends Component {
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
 
                             // console.log("to search", currentTool, currentTool.getSortProperty());
-
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
+                              isToolsDropdownOpen: false,
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
                             }, () => {
                               this.updateData(days[mode])
+                                .then(() => this.imitateFetchcingTools())
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
