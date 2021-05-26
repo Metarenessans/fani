@@ -248,7 +248,9 @@ class App extends Component {
 
       errorMessage: "",
       
-      toolsLoading: true,
+      toolsLoading: false,
+
+      isToolsDropdownOpen: false
     };
 
     this.state = merge(
@@ -450,18 +452,91 @@ class App extends Component {
       .catch(error => console.error(error))
   }
 
-  fetchTools() {
-    for (let request of [
-      "getFutures",
-      "getTrademeterInfo"
-    ]) {
-      fetch(request)
-        .then(this.applyTools)
-        .then(() => this.syncToolsWithInvestorInfo())
-        .then(() => this.updateDepoPersentageStart())
-        .catch(error => console.error(error));
-    }
+  setFetchingToolsTimeout() {
+    console.log("start");
+    new Promise(resolve => {
+      setTimeout(() => {
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
+
+      }, dev ? 6_000 : 1 * 60 * 1_000);
+
+    }).then(() => this.setFetchingToolsTimeout())
   }
+
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
+      if (Tools.storage?.length) {
+        this.setStateAsync({ toolsLoading: true });
+        const oldTool = this.getCurrentTool();
+        const newTools = Tools.storage;
+        setTimeout(() => {
+          this.setState({
+            tools: newTools,
+            toolsLoading: false,
+          }, () => resolve());
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      Tools.storage = [];
+      const { investorInfo } = this.state;
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(tools => Tools.sort(Tools.storage.concat(tools)))
+            .then(tools => {
+              Tools.storage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests).then(() => resolve())
+    })
+  }
+
+  fetchTools() {
+    return new Promise(resolve => {
+      const requests = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures","getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(this.applyTools)
+            .then(() => this.syncToolsWithInvestorInfo())
+            .then(() => this.updateDepoPersentageStart())
+            .catch(error => console.error(error))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsLoading: false }))
+        .then(() => resolve())
+    })
+  }
+  
 
   fetchSaves() {
     console.log("fetch saves");
@@ -492,7 +567,8 @@ class App extends Component {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools();
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout())
     if (dev) {
       if (shouldLoadFakeSave) {
         this.loadFakeSave();
@@ -1957,7 +2033,6 @@ class App extends Component {
                         </header>
 
                         <Select
-                        // ~~
                           id="passive-tools"
                           value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
                           loading={this.state.toolsLoading}
@@ -2472,8 +2547,12 @@ class App extends Component {
                             </button>
                           </Tooltip>
                         </header>
-                        
                         <ToolSelect
+                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                          onBlur={() => {
+                            this.setStateAsync({ isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools());
+                          }}
                           toolsLoading={this.state.toolsLoading}
                           disabled={this.state.toolsLoading}
                           tools={tools}

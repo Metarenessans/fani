@@ -150,12 +150,6 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
-  isTabActive() {
-    document.addEventListener("visibilitychange", function () {
-      return document.hidden
-    });
-  }
-
   setFetchingToolsTimeout() {
     new Promise(resolve => {
       setTimeout(() => {
@@ -293,7 +287,6 @@ class App extends React.Component {
       .then(() => resolve())
     })
   }
-  
 
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
