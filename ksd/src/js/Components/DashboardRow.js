@@ -266,7 +266,7 @@ export default class DashboardRow extends React.Component {
             <Select
               // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
-              value={currentToolIndex}
+              value={toolsLoading && tools.length == 0 ? 0 : currentToolIndex}
               onFocus={() => onChange("isToolsDropdownOpen", true)}
               onBlur={() => {
                 onChange("isToolsDropdownOpen", false);
@@ -288,20 +288,20 @@ export default class DashboardRow extends React.Component {
               style={{ width: "100%" }}
             >
               {(() => {
-                if (tools.length) {
+                if (toolsLoading && tools.length == 0) {
+                  return (
+                    <Option key={0} value={0}>
+                      <LoadingOutlined style={{ marginRight: ".2em" }} />
+                        Загрузка...
+                    </Option>
+                  )
+                }
+                else {
                   return this.getSortedOptions().map((option) => (
                     <Option key={option.idx} value={option.idx}>
                       {option.label}
                     </Option>
                   ));
-                }
-                else {
-                  return (
-                    <Option key={0} value={0}>
-                      <LoadingOutlined style={{ marginRight: ".2em" }} />
-                      Загрузка...
-                    </Option>
-                  )
                 }
               })()}
             </Select>

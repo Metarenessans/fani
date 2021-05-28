@@ -240,7 +240,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, dev ? 6_000 : 1 * 60 * 1_000);
+      }, dev ? 15_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -690,7 +690,6 @@ class App extends React.Component {
                         ? (
                           data.map((item, index) =>
                             <DashboardRow
-                            // ~~
                               tooltipPlacement={this.state.tooltipPlacement}
                               key={index}
                               item={item}
@@ -720,6 +719,7 @@ class App extends React.Component {
                                 this.setState({ data });
                               }}
                               onChange={(prop, val) => {
+                                const { data } = this.state;
                                 data[index][prop] = val;
                                 if (prop == "selectedToolName") {
                                   data[index].planIncome = null;
