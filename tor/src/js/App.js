@@ -77,6 +77,10 @@ constructor(props) {
       saved:              false,
 
       currentSaveIndex:   0,
+
+      toolsLoading: true,
+
+      isFocused: false,
     };
 
     this.state = {
@@ -110,7 +114,8 @@ constructor(props) {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools();
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout())
     if (dev) {
       // this.loadFakeSave();
       return;
@@ -159,23 +164,95 @@ constructor(props) {
       .then(depo => this.setState({ depo: depo || 10000 }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
+
+  setFetchingToolsTimeout() {
+    new Promise(resolve => {
+      setTimeout(() => {
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
+
+      }, dev ? 6_000 : 1 * 60 * 1_000);
+
+    }).then(() => this.setFetchingToolsTimeout())
+  }
+
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
+      if (Tools.storage?.length) {
+        this.setStateAsync({ toolsLoading: true });
+        // const oldTool = this.getCurrentTool();
+        const newTools = Tools.storage;
+        setTimeout(() => {
+          this.setState({
+            tools: newTools,
+            toolsLoading: false,
+          }, () => resolve());
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      Tools.storage = [];
+      const { investorInfo } = this.state;
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(tools => Tools.sort(Tools.storage.concat(tools)))
+            .then(tools => {
+              Tools.storage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests).then(() => resolve())
+    })
+  }
   
   fetchTools() {
-    let first = true;
-    for (let request of ["getFutures", "getTrademeterInfo"]) {
-      fetch(request)
-        .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-        .then(tools => Tools.sort(this.state.tools.concat(tools)))
-        .then(tools => this.setStateAsync({ tools }))
-        .then(() => {
-          if (first) {
-            first = false;
-            const selectedToolName = this.getTools()[0].getSortProperty();
-            this.setStateAsync({ selectedToolName });
-          }
-        })
-        .catch(error => console.error(error));
-    }
+    return new Promise(resolve => {
+      let first = true;
+      const requests = [];
+      this.setState({ toolsLoading: true });
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        fetch(request)
+          .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+          .then(tools => Tools.sort(this.state.tools.concat(tools)))
+          .then(tools => this.setStateAsync({ tools }))
+          .then(() => {
+            if (first) {
+              first = false;
+              const selectedToolName = this.getTools()[0].getSortProperty();
+              this.setStateAsync({ selectedToolName });
+            }
+          })
+          .catch(error => console.error(error));
+      }
+
+    Promise.all(requests)
+      .then(() => this.setStateAsync({ toolsLoading: false }))
+      .then(() => resolve())
+    })
   }
 
   fetchSaves() {
@@ -448,6 +525,12 @@ constructor(props) {
                 {
                   this.state.items.map((obj, index) =>
                     <Tool
+                      toolsLoading={this.state.toolsLoading}
+                      onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                      onBlur={() => {
+                        this.setStateAsync({ isToolsDropdownOpen: false })
+                          .then(() => this.imitateFetchcingTools());
+                      }}
                       index={index}
                       investorInfo={this.state.investorInfo}
                       tools={this.getTools()}
@@ -462,6 +545,8 @@ constructor(props) {
                         const { items } = this.state;
                         if (prop == "selectedToolName") {
                           items[index].stepExpected = jsx.getToolByName(val).priceStep * 100;
+                          this.setStateAsync({ isToolsDropdownOpen: false })
+                            .then(() => this.imitateFetchcingTools());
                         }
                         items[index][prop] = val;
                         this.setState({ items, changed: true });

@@ -155,6 +155,10 @@ export default class Item extends React.Component {
       depo,
       data,
       investorInfo,
+      onBlur,
+      onFocus,
+      toolsLoading,
+      value
     } = this.props;
 
     const drawdown           = this.state.drawdown;
@@ -237,8 +241,11 @@ export default class Item extends React.Component {
             <label className="tool-header__select">
               <span className="input-group__title search__title">Торговый инструмент</span>
               <Select
-                value={currentToolIndex}
-                disabled={this.props.tools.length == 0}
+                onBlur={onBlur}
+                onFocus={onFocus}
+                value={toolsLoading && this.props.tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                loading={toolsLoading}
+                disabled={this.props.tools.length == 0 || toolsLoading}
                 onChange={index => {
                   let name = this.props.tools[index].getSortProperty();
                   onChange("selectedToolName", name, this);
@@ -252,21 +259,20 @@ export default class Item extends React.Component {
                 style={{ width: "100%" }}
               >
                 {(() => {
-                  let tools = this.props.tools;
-                  if (tools.length) {
+                  if (toolsLoading && this.props.tools.length == 0) {
+                    return (
+                      <Option key={0} value={0}>
+                        <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                  Загрузка...
+                      </Option>
+                    )
+                  }
+                  else {
                     return this.getSortedOptions().map((option) => (
                       <Option key={option.idx} value={option.idx}>
                         {option.label}
                       </Option>
                     ));
-                  }
-                  else {
-                    return (
-                      <Option key={0} value={0}>
-                        <LoadingOutlined style={{ marginRight: ".2em" }} />
-                        Загрузка...
-                      </Option>
-                    )
                   }
                 })()}
               </Select>
