@@ -9,7 +9,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons"
 
-const ToolSelect = ({ tools, value, disabled, onChange }) => {
+const ToolSelect = ({ tools, value, disabled, onChange, toolsLoading, onFocus, onBlur }) => {
 
   const [searchVal, setSearchVal] = useState("");
 
@@ -22,7 +22,10 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
 
   return (
     <Select
+      onFocus={onFocus}
+      onBlur={onBlur}
       value={value}
+      loading={toolsLoading}
       disabled={disabled}
       onChange={index => onChange && onChange(index)}
       showSearch
@@ -55,5 +58,5 @@ const ToolSelect = ({ tools, value, disabled, onChange }) => {
 }
 
 export default memo(ToolSelect, (prevProps, nextProps) => {
-  return prevProps.value == nextProps.value && isEqual(prevProps.tools, nextProps.tools)
+  return prevProps.value == nextProps.value && isEqual(prevProps.tools, nextProps.tools && prevProps.toolsLoading == nextProps.toolsLoading)
 });

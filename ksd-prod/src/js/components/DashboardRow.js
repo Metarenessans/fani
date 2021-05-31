@@ -278,7 +278,7 @@ export default class DashboardRow extends React.Component {
               }}
               disabled={tools.length == 0}
               showSearch
-              // onSearch={(value) => this.setState({ searchVal: value })}
+              onSearch={(value) => this.setState({ searchVal: value })}
               optionFilterProp="children"
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
