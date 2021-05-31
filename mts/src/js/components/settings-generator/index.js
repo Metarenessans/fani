@@ -44,18 +44,18 @@ const SettingsGenerator = props => {
 
   const investorInfo = props.investorInfo || {};
 
-  const [isLong, setIsLong] = useState(true);
-  const [risk, setRisk] = useState(100);
-  const [isRiskStatic, setIsRiskStatic] = useState(true);
-  const [comission, setComission] = useState(0);
-  const [load, setLoad] = useState(dev ? 20 : props.load || 0);
-
-  const [searchVal, setSearchVal] = useState("");
   const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [currentToolCode, setCurrentToolCode] = useState("SBER");
   const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
   const currentTool = tools[currentToolIndex] || Tools.create();
   const fraction = fractionLength(currentTool.priceStep);
+  
+  const [searchVal, setSearchVal] = useState("");
+  const [isLong, setIsLong] = useState(true);
+  const [risk, setRisk] = useState(100);
+  const [isRiskStatic, setIsRiskStatic] = useState(true);
+  const [comission, setComission] = useState(currentTool.dollarRate >= 1 ? 45 : 1);
+  const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
   const initialCurrentTab = "Закрытие основного депозита";
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
@@ -388,9 +388,6 @@ const SettingsGenerator = props => {
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
 
-    // TODO: Не забыть!
-    // Меняем желаемый ход
-
     const presetsCopy = [...presets];
 
     let currentPresetCopy = { ...currentPreset };
@@ -421,6 +418,10 @@ const SettingsGenerator = props => {
 
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
+
+    if (comission == 45 || comission == 1) {
+      setComission(currentTool.dollarRate >= 1 ? 45 : 1);
+    }
 
   }, [currentTool.code]);
 
@@ -590,7 +591,6 @@ const SettingsGenerator = props => {
 
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
-                  {/* ~~ */}
                   <Select
                     onFocus={() => onToolSelectFocus && onToolSelectFocus()}
                     onBlur={() => onToolSelectBlur && onToolSelectBlur()}
@@ -744,7 +744,7 @@ const SettingsGenerator = props => {
                         value={
                           Math.round(
                             mainData
-                              .map(row => row.merged ? -row.contracts : row.contracts)
+                              .map(row => row.comission)
                               .reduce((prev, curr) => prev + curr, 0)
                           )
                         }
@@ -921,6 +921,14 @@ const SettingsGenerator = props => {
                     onChange={closeAll => updatePresetProperty(initialCurrentTab, { closeAll })}
                   />
                 </Tooltip>
+
+                <label className="switch-group">
+                  <Switch
+                    checked={currentPreset.options[initialCurrentTab].shouldResetByings}
+                    onChange={shouldResetByings => updatePresetProperty(initialCurrentTab, { shouldResetByings })}
+                  />
+                  <span className="switch-group__label">Сброс массива закрытия</span>
+                </label>                
 
                 <label className="switch-group settings-generator-content__row-header-mirror-switch">
                   <Switch

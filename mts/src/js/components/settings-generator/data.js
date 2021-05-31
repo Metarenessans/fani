@@ -8,6 +8,8 @@ import stepConverter from './step-converter'
 
 const createData = (type, options, meta) => {
 
+  const optionsCopy = {...options};
+
   let {
     currentPreset,
     currentTool,
@@ -23,7 +25,9 @@ const createData = (type, options, meta) => {
 
   const isBying = options.isBying || false;
   const presetOptions = options.options || currentPreset.options[type];
-  const closeAll = presetOptions.closeAll
+  const { closeAll, shouldResetByings } = presetOptions;
+
+  const infiniteLength = meta?.infiniteLength;
 
   if (contractsSecondary > 0) {
     contracts -= contractsSecondary;
@@ -124,6 +128,11 @@ const createData = (type, options, meta) => {
     }
 
     let shouldBreak = false;
+
+    if (infiniteLength) {
+      // console.log('expected length:', subLength);
+      subLength = 1_000;
+    }
 
     for (let j = 0; j < subLength; j++) {
 
@@ -317,9 +326,18 @@ const createData = (type, options, meta) => {
       }
 
       // Кол-во закрытых/докупленных контрактов
-      let _contracts = roundUp(contracts * percent / 100);
+      let _contracts = contracts * percent / 100;
       if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
-        _contracts = roundUp(contractsLeft * percent / 100);
+        _contracts = contractsLeft * percent / 100;
+      }
+
+      // если контрактов получается меньше одного - тогда округляется до 1
+      // а если контрактов к примеру 1,2 на закрытие получилось - то округление математическое
+      if (_contracts < 1) {
+        _contracts = roundUp(_contracts);
+      }
+      else {
+        _contracts = Math.round(_contracts);
       }
 
       if (readyToClosedAll) {
@@ -327,14 +345,7 @@ const createData = (type, options, meta) => {
         shouldBreak = true;
       }
 
-      // if (index == length - 1 && j == subLength - 1) {
-      //   if (closeAll) {
-      //     _contracts = contractsLeft;
-      //     shouldBreak = true;
-      //   }
-      // }
-
-      if (contractsLeft - _contracts >= 0) {
+      if (infiniteLength || contractsLeft - _contracts >= 0) {
         contractsLeft -= _contracts;
       }
       else {
@@ -365,8 +376,12 @@ const createData = (type, options, meta) => {
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
       
-      let comissionsSum = data.slice(0, subIndex).map(row => row.comission).reduce((prev, curr) => prev + curr, 0);
+      let comissionsSum = data
+        .slice(0, subIndex)
+        .map(row => row.comission)
+        .reduce((prev, curr) => prev + curr, 0);
       comissionsSum += _comission;
+      
       let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
 
       data[subIndex] = {
@@ -397,6 +412,36 @@ const createData = (type, options, meta) => {
     }
   }
 
+  const updateContracts = (c, data, index) => {
+    const row = data[index];
+
+    row.contracts = c;
+
+    // Пересчитываем комиссию
+    row.comission = row.contracts * comission;
+    // Если выбрана акция 
+    if (currentTool.dollarRate >= 1) {
+      row.comission = comission;
+
+      if (index == 0) {
+        row.comission *= 2;
+      }
+    }
+
+    row.incomeWithoutComission = row.contracts * row.points / currentTool.priceStep * currentTool.stepPrice;
+    // Прибавляем доход/убыток из предыдущей строки
+    row.incomeWithoutComission += data[index - 1]?.incomeWithoutComission || 0;
+
+    let comissionsSum = data
+      .slice(0, index)
+      .map(row => row.comission)
+      .reduce((prev, curr) => prev + curr, 0);
+    comissionsSum += row.comission;
+
+    row.incomeWithComission = row.incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
+  }
+
+  // Массив профитных докупок сливается с основным массивом
   if (profitableByingArray?.length) {
     const profitableByingArrayFormatted = profitableByingArray.map(row => ({ ...row, merged: true }));
     data = data.concat(profitableByingArrayFormatted)
@@ -404,7 +449,16 @@ const createData = (type, options, meta) => {
       .map((row, index, arr) => {
         if (index > 0) {
           if (row.merged) {
-            row.contracts = roundUp(arr[index - 1].contractsLoaded * row.percent / 100);
+            row.contracts = arr[index - 1].contractsLoaded * row.percent / 100;
+            // если контрактов получается меньше одного - тогда округляется до 1
+            // а если контрактов к примеру 1,2 на закрытие получилось - то округление математическое
+            if (row.contracts < 1) {
+              row.contracts = roundUp(row.contracts);
+            }
+            else {
+              row.contracts = Math.round(row.contracts);
+            }
+
             row.contractsLoaded = arr[index - 1].contractsLoaded + row.contracts;
           }
           else {
@@ -413,22 +467,63 @@ const createData = (type, options, meta) => {
 
           // Пересчитываем комиссию
           row.comission = row.contracts * comission;
+          // Если выбрана акция 
+          if (currentTool.dollarRate >= 1) {
+            row.comission = comission;
+
+            if (index == 0) {
+              row.comission *= 2;
+            }
+          }
 
           row.incomeWithoutComission = row.contracts * row.points / currentTool.priceStep * currentTool.stepPrice;
           // Прибавляем доход/убыток из предыдущей строки
           row.incomeWithoutComission += arr[index - 1]?.incomeWithoutComission || 0;
 
-          row.incomeWithComission = row.incomeWithoutComission + (row.comission * (isBying ? 1 : -1));
+          let comissionsSum = data
+            .slice(0, index)
+            .map(row => row.comission)
+            .reduce((prev, curr) => prev + curr, 0);
+          comissionsSum += row.comission;
+
+          row.incomeWithComission = row.incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
         }
 
         return row;
       })
   }
 
+  if (!shouldResetByings) {
+    if (data.slice(-1)[0]?.merged) {
+      data.splice(data.length - 1, 1);
+    }
+  }
+  else {
+    if (!infiniteLength) {
+      return createData(type, optionsCopy, { infiniteLength: true });
+    }
+    else {
+      const indexOfLast = data.indexOf(data.find(row => row.contractsLoaded < 0));
+      if (indexOfLast > -1) {
+        data = data.slice(0, indexOfLast + 1);
+        const _contracts = data.length > 1
+          ? data[indexOfLast - 1].contractsLoaded
+          : contracts;
+        data[indexOfLast].contractsLoaded = 0;
+        updateContracts(_contracts, data, indexOfLast);
+      }
+    }
+  }
+
+  // Отрабатывает свитч "100%""
   if (closeAll) {
-    const lastItem = data[data.length - 1];
-    lastItem.contracts = lastItem.contractsLoaded;
+    const { length } = data;
+    const lastItem = data[length - 1];
+    const _contracts = length > 1 
+      ? data[length - 2].contractsLoaded
+      : contracts;
     lastItem.contractsLoaded = 0;
+    updateContracts(_contracts, data, length - 1);
   }
 
   data.isBying = isBying;

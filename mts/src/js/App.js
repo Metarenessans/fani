@@ -168,7 +168,7 @@ class App extends React.Component {
             }
           });
 
-      }, dev ? 6_000 : 1 * 60 * 1_000);
+      }, dev ? 25_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }

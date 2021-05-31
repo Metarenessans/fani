@@ -40,7 +40,7 @@ class Tool {
   }
 
   update(investorInfo) {
-    if (this.ref) {
+    if (this.ref && Object.keys(this.ref).length > 0) {
       let guarantee = this.ref.guarantee || this.ref.guaranteeValue;
 
       if (typeof guarantee == "object") {
@@ -60,6 +60,7 @@ class Tool {
 
       this.guarantee = round(guarantee, 1);
     }
+
     return this;
   }
 
