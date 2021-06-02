@@ -453,7 +453,6 @@ class App extends Component {
   }
 
   setFetchingToolsTimeout() {
-    console.log("start");
     new Promise(resolve => {
       setTimeout(() => {
         if (!document.hidden) {
@@ -543,8 +542,7 @@ class App extends Component {
     
     fetchSavesFor("trademeter")
       .then(response => {
-        const saves = response.data.sort((l, r) => r.dateCreate - l.dateCreate);
-        console.log("sorted saves:", saves);
+        const saves = response.data;
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -567,10 +565,10 @@ class App extends Component {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout())
+    this.fetchTools().then(() => this.setFetchingToolsTimeout());
+    
     if (dev) {
-      if (shouldLoadFakeSave) {
+      if (shouldLoadFakeSave && !(params.get("pure") === "true")) {
         this.loadFakeSave();
       }
       return;
@@ -1440,7 +1438,18 @@ class App extends Component {
       if (data.length) {
         depo += data
           .slice(0, days[mode])
-          .map(d => d.incomePlan + (corrected ? (d.payload || 0) - (d.payment || 0) : 0))
+          .map(d => {
+            let value = d.incomePlan;
+            if (corrected) {
+              if (!d.payloadPlan) {
+                value += (d.payload || 0);
+              }
+              if (!d.paymentPlan) {
+                value -= (d.payment || 0);
+              }
+            }
+            return value;
+          })
           .reduce((acc, curr) => acc + curr);
       }
       return depo;
@@ -2715,7 +2724,7 @@ class App extends Component {
                           {/* /.row */}
                           <div className="section4-row">
                             <div className="section4-l">Целевой депо</div>
-                            <div className="section4-r">{formatNumber(data[currentDay - 1].getRealDepoEnd(mode))}</div>
+                            <div className="section4-r">{formatNumber(data[currentDay - 1].getRealDepoEnd(mode, true))}</div>
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
@@ -3591,7 +3600,7 @@ class App extends Component {
                                     }
                                     {" "}/{" "}
                                     {
-                                      formatNumber(data[currentDay - 1].getRealDepoEnd(mode))
+                                      formatNumber(data[currentDay - 1].getRealDepoEnd(mode, true))
                                     }
                                   </span>
 

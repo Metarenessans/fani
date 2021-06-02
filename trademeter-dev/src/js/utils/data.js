@@ -30,13 +30,24 @@ export default class Data extends Array {
       let rate         = this[i]?.rate;
       let rateRequired = this[i]?.rateRequired != null ? this[i]?.rateRequired : $rateRequired;
 
+      
+      let extended = false;
       if (this.extendedFrom != null && i >= this.extendedFrom) {
         $rate = rateRequired;
+        extended = true;
       }
 
       let day = i + 1;
 
       let expanded = fallbackBoolean(this[i]?.expanded, false);
+      // to avoid crashes while running tests
+      try {
+        if (dev) {
+          expanded = true;
+        }
+      }
+      catch(e) {}
+
       let saved    = fallbackBoolean(this[i]?.saved, false);
       let changed  = fallbackBoolean(this[i]?.changed, false);
 
@@ -57,7 +68,6 @@ export default class Data extends Array {
 
       let goal = Math.round(depoStart * $rate / 100);
 
-      // TODO: решить, нужен он вообще или нет
       let incomePlan = Math.round(depoStartPlan * $rate / 100);
       incomePlan -= paymentPlan;
       incomePlan += payloadPlan;
@@ -98,8 +108,12 @@ export default class Data extends Array {
       // Плановый целевой депозит без учета факта
       let depoEndPlan = depoStartPlan + incomePlan;
       if ($mode == 1) {
-        depoEndPlan += payload || 0;
-        depoEndPlan -= payment || 0;
+        if (!paymentPlan) {
+          depoEndPlan -= payment || 0;
+        }
+        if (!payloadPlan) {
+          depoEndPlan += payload || 0;
+        }
       }
 
       /* Tool-related stuff */
@@ -147,6 +161,7 @@ export default class Data extends Array {
         contracts,
         pointsForIteration,
 
+        extended,
         expanded,
         changed,
         saved,
@@ -158,10 +173,16 @@ export default class Data extends Array {
         set customIncome(val) { this.income = val },
         get iterationsList() { return this.iterations },
 
-        getRealDepoEnd(mode = 0) {
+        getRealDepoEnd(mode = 0, pure = false) {
           const { depoStart, goal, payment, paymentPlan, payload, payloadPlan } = this;
-          let result = (this[i - 1]?.getRealDepoEnd(mode) || depoStart) + goal - paymentPlan + payloadPlan;
-          if (mode == 1) {
+          let result = (this[i - 1]?.getRealDepoEnd(mode, pure) || depoStart);
+          if (!this.extended) {
+            result += goal;
+          }
+          result -= paymentPlan;
+          result += payloadPlan
+
+          if (!pure && mode == 1) {
             result -= payment || 0;
             result += payload || 0;
           }
