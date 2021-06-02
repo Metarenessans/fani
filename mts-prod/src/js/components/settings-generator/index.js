@@ -165,9 +165,11 @@ const SettingsGenerator = props => {
     return (
       <ul className="preset-options">
         <li>
-          <button className="round-btn" aria-label="Скачать">
-            <DownloadIcon />
-          </button>
+          <Tooltip title="Скачать файл">
+            <button className="round-btn" aria-label="Скачать">
+              <DownloadIcon />
+            </button>
+          </Tooltip>
         </li>
         <li>
           <button 
@@ -490,15 +492,17 @@ const SettingsGenerator = props => {
             />
 
             <h3 className="settings-generator__title">Генератор настроек МАНИ 144</h3>
-
-            <CrossButton 
-              className="settings-generator__close js-dialog-focus-first"
-              onClick={e => {
-                if (onClose) {
-                  onClose(e);
-                }
-              }}
-            />
+            
+            <Tooltip title="Закрыть генератор настроек">
+              <CrossButton 
+                className="settings-generator__close js-dialog-focus-first"
+                onClick={e => {
+                  if (onClose) {
+                    onClose(e);
+                  }
+                }}
+              />
+            </Tooltip>
 
           </div>
 
@@ -541,15 +545,18 @@ const SettingsGenerator = props => {
                 >
                   {currentPresetName}
                 </h3>
-
-                <button className="round-btn settings-generator-content-header__download" aria-label="Скачать">
-                  <DownloadIcon />
-                </button>
+                <Tooltip title="Скачать файл">
+                  <button className="round-btn settings-generator-content-header__download" aria-label="Скачать">
+                    <DownloadIcon />
+                  </button>
+                </Tooltip>
               </div>
 
               <ul className="settings-generator-content-header-options">
                 <li>
-                  <Button className="custom-btn">Сохранить</Button>
+                  <Tooltip title="Сохранить текущие настройки">
+                    <Button className="custom-btn">Сохранить</Button>
+                  </Tooltip>
                 </li>
               </ul>
 
@@ -590,7 +597,11 @@ const SettingsGenerator = props => {
                 {/* Торговый инструмент */}
 
                 <label className="input-group">
-                  <span className="input-group__label">Комиссия</span>
+                  <span className="input-group__label">
+                    <Tooltip title="Комиссия в рублях за сделку (вход + выход)">
+                      Комиссия
+                    </Tooltip>
+                  </span>
                   <NumericInput
                     className="input-group__input"
                     defaultValue={comission}
@@ -658,11 +669,19 @@ const SettingsGenerator = props => {
                   return (
                     <>
                       <PairJSX 
-                        name="Контрактов max."
+                        name={
+                          <Tooltip title="Максимальное количество контрактов на депозит">
+                            Контрактов max.
+                          </Tooltip>
+                        }
                         value={contractsTotal}
                       />
                       <PairJSX
-                        name={"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
+                        name={
+                          <Tooltip title="Количество контрактов на заданный объём загрузки">
+                            {"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
+                          </Tooltip>
+                        }
                         value={
                           <span>
                             {formatNumber(contracts)}
@@ -681,11 +700,19 @@ const SettingsGenerator = props => {
                         formatValue={false}
                       />
                       <PairJSX 
-                        name="Прибыль"
+                        name={
+                          <Tooltip title="Величина прибыли с учётом алгоритмов разгрузки">
+                            Прибыль
+                          </Tooltip>
+                        }
                         value={round(totalIncome, 1)}
                       />
                       <PairJSX
-                        name="Убыток (риск)"
+                        name={
+                          <Tooltip title="Величина убытка при закрытии позиции по стопу">
+                            Убыток (риск)
+                          </Tooltip>
+                        }
                         value={round((depo + secondaryDepo) * risk / 100, fraction)}
                       />
                     </>
@@ -706,7 +733,11 @@ const SettingsGenerator = props => {
                 <div className="settings-generator-content__row-col-custom settings-generator-slider__label-wrap">
 
                   <label className="settings-generator-slider__label input-group">
-                    <span className="input-group__label">Загрузка</span>
+                    <span className="input-group__label">
+                      <Tooltip title="Объём депозита в процентах на вход в сделку">
+                        Загрузка
+                      </Tooltip>
+                    </span>
                     <span className="settings-generator-slider__value">
                       <NumericInput
                         className="input-group__input"
@@ -718,19 +749,20 @@ const SettingsGenerator = props => {
                       />
                     </span>
                   </label>
-
-                  <Switch
-                    className="settings-generator-slider__switch-long-short"
-                    checkedChildren="LONG"
-                    unCheckedChildren="SHORT"
-                    checked={isLong}
-                    onChange={isLong => {
-                      setIsLong(isLong);
-                      const updatedTools = [...tools];
-                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
-                      setTools(updatedTools);
-                    }}
-                  />
+                  <Tooltip title="Направление позиции">
+                    <Switch
+                      className="settings-generator-slider__switch-long-short"
+                      checkedChildren="LONG"
+                      unCheckedChildren="SHORT"
+                      checked={isLong}
+                      onChange={isLong => {
+                        setIsLong(isLong);
+                        const updatedTools = [...tools];
+                        updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                        setTools(updatedTools);
+                      }}
+                    />
+                  </Tooltip>
 
                 </div>
 
@@ -752,7 +784,11 @@ const SettingsGenerator = props => {
 
                 <div className="input-group">
                   <div className="risk-label-wrap">
-                    <span className="input-group__label">Риск (стоп)</span>
+                    <span className="input-group__label">
+                      <Tooltip title="Stop loss в процентах, пунктах или рублях на весь депозит">
+                        Риск (стоп)
+                      </Tooltip>
+                    </span>
                     <button className="risk-label__switch"
                             onClick={() => setIsRiskStatic(!isRiskStatic)}>
                       {isRiskStatic ? "статический" : "динамический"}
