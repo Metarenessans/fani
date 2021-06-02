@@ -740,7 +740,6 @@ const SettingsGenerator = props => {
                         value={round(totalIncome, 1)}
                       />
                       <PairJSX
-<<<<<<< HEAD
                         name={<span>Комиссия</span>}
                         value={
                           Math.round(
@@ -751,8 +750,6 @@ const SettingsGenerator = props => {
                         }
                       />
                       <PairJSX
-=======
->>>>>>> parent of fa168178 (Merge branch 'master' into meta)
                         name={
                           <Tooltip title="Величина убытка при закрытии позиции по стопу">
                             Убыток (риск)

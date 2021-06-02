@@ -160,10 +160,6 @@ class App extends React.Component {
     new Promise(resolve => {
       setTimeout(() => {
         if (!document.hidden) {
-<<<<<<< HEAD
-=======
-          console.log('staring 10sec timeout');
->>>>>>> parent of fa168178 (Merge branch 'master' into meta)
           this.prefetchTools()
             .then(() => {
               const { isToolsDropdownOpen } = this.state;
@@ -178,12 +174,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-<<<<<<< HEAD
-
-      }, dev ? 25_000 : 1 * 60 * 1_000);
-=======
       }, 1 * 60 * 1_000);
->>>>>>> parent of fa168178 (Merge branch 'master' into meta)
 
     }).then(() => this.setFetchingToolsTimeout())
   }

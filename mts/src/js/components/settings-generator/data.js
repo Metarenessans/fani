@@ -367,7 +367,6 @@ const createData = (type, options, meta) => {
       let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
-<<<<<<< HEAD
       
       let comissionsSum = data
         .slice(0, subIndex)
@@ -376,10 +375,6 @@ const createData = (type, options, meta) => {
       comissionsSum += _comission;
       
       let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
-=======
-
-      let incomeWithComission = incomeWithoutComission + (_comission * (isBying ? 1 : -1));
->>>>>>> parent of fa168178 (Merge branch 'master' into meta)
 
       data[subIndex] = {
         inPercent,
