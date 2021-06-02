@@ -493,6 +493,7 @@ const createData = (type, options, meta) => {
       })
   }
 
+  // Выключен свитч "Сброс массива закрытия"
   if (!shouldResetByings) {
     if (data.slice(-1)[0]?.merged) {
       data.splice(data.length - 1, 1);
