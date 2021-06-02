@@ -1,0 +1,75 @@
+.custom-slider {
+  $root: &;
+
+  position: relative;
+  padding-right: 10em + 2em;
+  padding-left:  0    + 2em;
+
+  user-select: none;
+  
+  &__value {
+    position: absolute;
+    right:   0.4em;
+    bottom: -0.4em;
+    width: 2.5em;
+
+    font-family: "Roboto", sans-serif;
+    font-size: 3em;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  // reset defaults
+  .ant-slider {
+    
+    &-rail {
+      background-color: #ccc
+    }
+
+    &-rail,
+    &-step,
+    &-track {
+      height: .2rem
+    }
+    
+    &-track {
+      background-color: var( --primary-color-lighter );
+    }
+    
+    &-handle {
+      margin-top:  -0.55em;
+      margin-left:  0;
+      width:  1.35em;
+      height: 1.35em;
+
+      border-color: white;
+      background:   var( --primary-color );
+
+      &:hover,
+      &:focus {
+        background:   white !important;
+        border-color: var( --primary-color ) !important;
+      }
+    }
+
+    &:focus,
+    &:hover {
+
+      .ant-slider {
+        &-handle {
+          background:   white !important;
+          border-color: var( --primary-color ) !important;
+        }
+  
+        &-track {
+          background: var( --primary-color ) !important;
+        }
+      }
+
+    }
+  }
+  
+  &__input {
+    width: 100%;
+  }
+}

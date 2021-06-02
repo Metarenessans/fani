@@ -63,25 +63,6 @@ const SettingsGenerator = props => {
 
   const [presets, setPresets] = useState([
     {
-      name: "Стандарт",
-      type: "Стандарт",
-      options: {
-        [initialCurrentTab]: {
-          closeAll: false,
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom", "fibonacci"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-        "Прямые профитные докупки": {
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-      }
-    },
-    {
       name: "СМС + ТОР",
       type: "СМС + ТОР",
       options: {
@@ -125,6 +106,25 @@ const SettingsGenerator = props => {
         },
       }
     },
+    { 
+      name: "Стандарт",
+      type: "Стандарт",
+      options: {
+        [initialCurrentTab]: {
+          closeAll: false,
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom", "fibonacci"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Прямые профитные докупки": {
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+      }
+    }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
   const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Лимитник");
@@ -587,7 +587,7 @@ const SettingsGenerator = props => {
 
             <div className="settings-generator-content__row settings-generator-content__row--1">
 
-              <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
+              <div className="settings-generator-content__row-col-half">
 
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
@@ -740,6 +740,7 @@ const SettingsGenerator = props => {
                         value={round(totalIncome, 1)}
                       />
                       <PairJSX
+<<<<<<< HEAD
                         name={<span>Комиссия</span>}
                         value={
                           Math.round(
@@ -750,6 +751,8 @@ const SettingsGenerator = props => {
                         }
                       />
                       <PairJSX
+=======
+>>>>>>> parent of fa168178 (Merge branch 'master' into meta)
                         name={
                           <Tooltip title="Величина убытка при закрытии позиции по стопу">
                             Убыток (риск)
