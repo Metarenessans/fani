@@ -543,8 +543,8 @@ class App extends Component {
     
     fetchSavesFor("trademeter")
       .then(response => {
-        const saves = response.data;
-        console.log(saves);
+        const saves = response.data.sort((l, r) => r.dateCreate - l.dateCreate);
+        console.log("sorted saves:", saves);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {

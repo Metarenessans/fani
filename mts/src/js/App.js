@@ -22,7 +22,6 @@ import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
 import sortInputFirst from "../../../common/utils/sort-input-first"
-import isEqual        from '../../../common/utils/is-equal';
 
 import { Tools, Tool, template } from "../../../common/tools"
 
@@ -95,6 +94,7 @@ class App extends React.Component {
         saves:              [],
         currentSaveIndex:    0,
         tools:              [],
+        toolsStorage:       [],
       } 
     };
   }
@@ -150,10 +150,20 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
+  isTabActive() {
+    document.addEventListener("visibilitychange", function () {
+      return document.hidden
+    });
+  }
+
   setFetchingToolsTimeout() {
     new Promise(resolve => {
       setTimeout(() => {
         if (!document.hidden) {
+<<<<<<< HEAD
+=======
+          console.log('staring 10sec timeout');
+>>>>>>> parent of fa168178 (Merge branch 'master' into meta)
           this.prefetchTools()
             .then(() => {
               const { isToolsDropdownOpen } = this.state;
@@ -168,8 +178,12 @@ class App extends React.Component {
             });
         }
         else resolve();
+<<<<<<< HEAD
 
       }, dev ? 25_000 : 1 * 60 * 1_000);
+=======
+      }, 1 * 60 * 1_000);
+>>>>>>> parent of fa168178 (Merge branch 'master' into meta)
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -217,27 +231,16 @@ class App extends React.Component {
 
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
-      if (Tools.storage?.length) {
+      const { toolsStorage } = this.state;
+      if (toolsStorage?.length) {
+        console.warn('fake fetching');
         this.setStateAsync({ toolsLoading: true });
-        const oldTool = this.getCurrentTool();
-        const newTools = Tools.storage;
         setTimeout(() => {
           this.setState({
-            tools: newTools,
+            tools: toolsStorage,
+            toolsStorage: [],
             toolsLoading: false,
-          }, () => {
-            Tools.storage = [];
-            const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
-            if (!isEqual(oldTool.ref, newTool.ref)) {
-              // TODO: доработать на локальных инструментах
-              console.log('не равны', newTool);
-              this.updatePriceRange(newTool)
-                .then(() => resolve())
-            }
-            else {
-              resolve()
-            }
-          });
+          }, () => resolve());
         }, 2_000);
       }
       else {
@@ -248,22 +251,23 @@ class App extends React.Component {
 
   prefetchTools() {
     return new Promise(resolve => {
-      Tools.storage = [];
-      const { investorInfo } = this.state;
+      let toolsStorage = [];
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo }))
-            .then(tools => Tools.sort(Tools.storage.concat(tools)))
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(toolsStorage.concat(tools)))
             .then(tools => {
-              Tools.storage = [...tools];
+              toolsStorage = [...tools];
             })
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
-      Promise.all(requests).then(() => resolve())
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsStorage }))
+        .then(() => resolve(toolsStorage))
     })
   }
 
@@ -550,26 +554,15 @@ class App extends React.Component {
 
   render() {
     let {
-      data,
-      days,
-      depo,
-      mode,
-      page,
-      risk,
-      chance,
-      percentage,
-      priceRange,
-      profitRatio,
-      scaleOffset,
-      toolsLoading,
-      movePercantage,
-      lastRadioButton,
+      mode, depo, data, chance, page, percentage, priceRange,
+      days, risk, scaleOffset, changedMinRange, changedMaxRange,
+      movePercantage, lastRadioButton, profitRatio, toolsLoading,
     } = this.state;
 
     const tools = this.getTools();
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r).map(sorted => round(sorted ,2));
     
     const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
@@ -584,7 +577,7 @@ class App extends React.Component {
     }
 
     const fraction = fractionLength(currentTool.priceStep);
-    const price = currentTool.currentPrice;
+    const price = round(currentTool.currentPrice, fraction);
     let percent = currentTool.adrDay;
     if (days == 5) {
       percent = currentTool.adrWeek;
@@ -593,10 +586,8 @@ class App extends React.Component {
       percent = currentTool.adrMonth;
     }
 
-    const max = price + percent;
-    const min = price - percent;
-    const STEP_IN_EACH_DIRECTION = 20;
-    const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+    const max = round(price + percent, fraction);
+    const min = round(price - percent, fraction);
     
     let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
     income *= profitRatio / 100
@@ -609,7 +600,7 @@ class App extends React.Component {
 
     const kod = round(ratio / (days || 1), 2);
 
-    const getPossibleRisk = () => {
+    const GetPossibleRisk = () => {
       const currentTool = this.getCurrentTool();
       let { depo, percentage, priceRange, risk } = this.state;
       const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
@@ -632,8 +623,9 @@ class App extends React.Component {
           updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
       }
 
-      return possibleRisk;
+      return possibleRisk
     }
+
 
     let possibleRisk = 0;
 
@@ -787,6 +779,9 @@ class App extends React.Component {
 
               <div className="main-content__wrap">
                 {(() => {
+                  const STEP_IN_EACH_DIRECTION = 20;
+                  const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+                  
                   return (
                     <Stack className="main-content__left">
 
@@ -868,12 +863,12 @@ class App extends React.Component {
                           range
                           vertical
                           value={priceRange}
-                          max={max - scaleOffset}
-                          min={min + scaleOffset}
+                          max={round(max - scaleOffset, 1)}
+                          min={round(min + scaleOffset, 1)}
                           step={step}
                           precision={1}
                           tooltipPlacement="left"
-                          tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
+                          tipFormatter={val => formatNumber((val).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
                             updateChartMinMax(priceRange, isLong, possibleRisk);
@@ -967,7 +962,7 @@ class App extends React.Component {
                               defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                               onBlur={value => {
                                 const callback = () => {
-                                  let possibleRisk = getPossibleRisk()
+                                  let possibleRisk = GetPossibleRisk()
                                   updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                 };
 
@@ -1093,7 +1088,7 @@ class App extends React.Component {
 
                               onBlur={ risk => {
                                 this.setState({risk});
-                                let possibleRisk = getPossibleRisk();
+                                let possibleRisk = GetPossibleRisk();
                                 updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                               }}
                             />
@@ -1178,7 +1173,7 @@ class App extends React.Component {
                     onRendered={() => {
                       const { percentage, } = this.state
                       const isLong = percentage >= 0;
-                      const getPossibleRisk = () => {
+                      const GetPossibleRisk = () => {
                         const currentTool = this.getCurrentTool();
                         let { depo, percentage, priceRange, risk } = this.state;
                         const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
@@ -1203,7 +1198,7 @@ class App extends React.Component {
                         }
                         return possibleRisk
                       }
-                      updateChartMinMax(this.state.priceRange, isLong, getPossibleRisk())
+                      updateChartMinMax(this.state.priceRange, isLong, GetPossibleRisk())
                     }}
                   />
 
