@@ -158,7 +158,11 @@ const createData = (type, options, meta) => {
         percent = presetRules.percents[blockNumber - 1] || 0;
       }
       else if (mode == 'custom') {
-        percent = currentOptions.percent || 0;
+        percent = currentOptions.percent;
+      }
+
+      if (percent == "") {
+        percent = round(100 / (subLength || 1), fraction);
       }
 
       if (isSMS_TOR) {

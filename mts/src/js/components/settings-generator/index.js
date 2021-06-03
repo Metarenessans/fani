@@ -48,6 +48,7 @@ const SettingsGenerator = props => {
   const [currentToolCode, setCurrentToolCode] = useState("SBER");
   const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
   const currentTool = tools[currentToolIndex] || Tools.create();
+  const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
   
   const [searchVal, setSearchVal] = useState("");
@@ -391,37 +392,45 @@ const SettingsGenerator = props => {
     const presetsCopy = [...presets];
 
     let currentPresetCopy = { ...currentPreset };
-    
-    keys(currentPreset.options).map(key => {
-      const { preferredStep, customData } = currentPreset.options[key];
 
-      const obj = {
-        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
-        customData: customData?.map(row => {
-          row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
-          return row;
-        })
-      };
-
-      currentPresetCopy = {
-        ...currentPresetCopy,
-        options: {
-          ...currentPresetCopy.options,
-          [key]: {
-            ...currentPresetCopy.options[key],
-            ...obj
+    // Обновляем ход только если новый инструмент отличается от предыдущего
+    // а не является устаревшей/новой версией текущего
+    if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
+      keys(currentPreset.options).map(key => {
+        const { preferredStep, customData } = currentPreset.options[key];
+  
+        const obj = {
+          preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+          customData: customData?.map(row => {
+            row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
+            return row;
+          })
+        };
+  
+        currentPresetCopy = {
+          ...currentPresetCopy,
+          options: {
+            ...currentPresetCopy.options,
+            [key]: {
+              ...currentPresetCopy.options[key],
+              ...obj
+            }
           }
-        }
-      };
+        };
+  
+      });
+  
+      presetsCopy[currentPresetIndex] = currentPresetCopy;
+      setPresets(presetsCopy);
+    }
 
-    });
-
-    presetsCopy[currentPresetIndex] = currentPresetCopy;
-    setPresets(presetsCopy);
-
+    // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
+    // для нового инструмента
     if (comission == 45 || comission == 1) {
       setComission(currentTool.dollarRate >= 1 ? 45 : 1);
     }
+
+    prevTool.current = currentTool;
 
   }, [currentTool.code]);
 

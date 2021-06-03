@@ -168,12 +168,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-<<<<<<< HEAD
       }, 1 * 60 * 1_000);
-=======
-
-      }, dev ? 25_000 : 1 * 60 * 1_000);
->>>>>>> parent of b7a27532 (Merge branch 'meta')
 
     }).then(() => this.setFetchingToolsTimeout())
   }
