@@ -1,6 +1,10 @@
 import React from 'react'
 const { Provider, Consumer } = React.createContext();
 import ReactDOM from 'react-dom'
+
+import { Dialog, dialogAPI } from "../../../common/components/dialog"
+import Config from "../../../common/components/config"
+
 import {
   Row,
   Col,
@@ -39,8 +43,6 @@ import Header                from "./components/header"
 import CrossButton           from "../../../common/components/cross-button"
 import NumericInput          from "../../../common/components/numeric-input"
 import CustomSlider          from "../../../common/components/custom-slider"
-import Config                from "../../../common/components/config"
-import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import Stack                 from "../../../common/components/stack"
 import DashboardRow          from "./components/DashboardRow"
 
@@ -637,6 +639,16 @@ class App extends React.Component {
                   <span className="prefix">цель</span>
                 </Radio>
               </Radio.Group>
+              {/* ~~ */}
+              <Tooltip title="Настроить инструменты">
+                <button
+                  aria-label="Инструменты"
+                  className="settings-button controls__tool-select-icon"
+                  onClick={e => dialogAPI.open("passive-income-config", e.target)}>
+                  <SettingFilled className="settings-button__icon" />
+                </button>
+              </Tooltip>
+              
             </Header>
 
             <div className="main-content">
@@ -917,6 +929,29 @@ class App extends React.Component {
           })()}
           {/* Save Popup */}
 
+
+          <Config
+            id="passive-income-config"
+            title="Настройка инструментов"
+            template={{
+              name: "Инструмент",
+              rate: 0
+            }}
+            // tools={this.state.passiveIncomeTools}
+            // currentToolIndex={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+            toolsInfo={[
+              { name: "Стоимость недвижимости", prop: "name", defaultValue: "Инструмент" },
+              { name: "Ставка по ипотеке", prop: "rate", defaultValue: 0 },
+              { name: "Прибыль от аренды в мес.", prop: "rate", defaultValue: 0 },
+              { name: "Упущенная прибыль", prop: "rate", defaultValue: 0 },
+            ]}
+            // customTools={this.state.customPassiveIncomeTools}
+            // onChange={customPassiveIncomeTools => {
+            //   this.setState({ customPassiveIncomeTools }, () => this.update())
+            //   console.log('Updated in config:', customPassiveIncomeTools);
+            // }}
+          />
+
           <Dialog
             id="dialog4"
             title="Удаление трейдометра"
@@ -932,7 +967,7 @@ class App extends React.Component {
             Вы уверены, что хотите удалить {this.getTitle()}?
           </Dialog>
           {/* Delete Popup */}
-
+          
           <Config
             id="config"
             title="Инструменты"

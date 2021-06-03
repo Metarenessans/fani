@@ -90,7 +90,6 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
-              // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={0}
               loading={toolsLoading}
@@ -140,7 +139,6 @@ export default class DashboardRow extends React.Component {
               return (
                 <span className="dashboard-val dashboard-val--wrap">
                   <NumericInput
-                    // key={Math.random()}
                     className="dashboard__input"
                     defaultValue={1_000_000}
                     unsigned="true"
