@@ -63,6 +63,25 @@ const SettingsGenerator = props => {
 
   const [presets, setPresets] = useState([
     {
+      name: "Стандарт",
+      type: "Стандарт",
+      options: {
+        [initialCurrentTab]: {
+          closeAll: false,
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom", "fibonacci"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Прямые профитные докупки": {
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+      }
+    },
+    {
       name: "СМС + ТОР",
       type: "СМС + ТОР",
       options: {
@@ -106,25 +125,6 @@ const SettingsGenerator = props => {
         },
       }
     },
-    { 
-      name: "Стандарт",
-      type: "Стандарт",
-      options: {
-        [initialCurrentTab]: {
-          closeAll: false,
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom", "fibonacci"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-        "Прямые профитные докупки": {
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-      }
-    }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
   const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Лимитник");
@@ -587,7 +587,7 @@ const SettingsGenerator = props => {
 
             <div className="settings-generator-content__row settings-generator-content__row--1">
 
-              <div className="settings-generator-content__row-col-half">
+              <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
 
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>

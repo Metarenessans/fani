@@ -361,6 +361,14 @@ const createData = (type, options, meta) => {
       }
 
       let _comission = _contracts * comission;
+      // Если выбрана акция 
+      if (currentTool.dollarRate >= 1) {
+        _comission = comission;
+
+        if (subIndex == 0) {
+          _comission *= 2;
+        }
+      }
       // NOTE: больше не прибавляем комиссию из предыдущей строки
       // _comission += data[subIndex - 1]?.comission || 0;
 
