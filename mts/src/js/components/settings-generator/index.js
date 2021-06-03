@@ -48,7 +48,6 @@ const SettingsGenerator = props => {
   const [currentToolCode, setCurrentToolCode] = useState("SBER");
   const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
   const currentTool = tools[currentToolIndex] || Tools.create();
-  const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
   
   const [searchVal, setSearchVal] = useState("");
@@ -63,25 +62,6 @@ const SettingsGenerator = props => {
   const prevCurrentTab = useRef();
 
   const [presets, setPresets] = useState([
-    {
-      name: "Стандарт",
-      type: "Стандарт",
-      options: {
-        [initialCurrentTab]: {
-          closeAll: false,
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom", "fibonacci"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-        "Прямые профитные докупки": {
-          ...optionsTemplate,
-          mode: "custom",
-          modes: ["evenly", "custom"],
-          customData: [{ ...optionsTemplate, length: 1 }]
-        },
-      }
-    },
     {
       name: "СМС + ТОР",
       type: "СМС + ТОР",
@@ -126,6 +106,25 @@ const SettingsGenerator = props => {
         },
       }
     },
+    { 
+      name: "Стандарт",
+      type: "Стандарт",
+      options: {
+        [initialCurrentTab]: {
+          closeAll: false,
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom", "fibonacci"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+        "Прямые профитные докупки": {
+          ...optionsTemplate,
+          mode: "custom",
+          modes: ["evenly", "custom"],
+          customData: [{ ...optionsTemplate, length: 1 }]
+        },
+      }
+    }
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
   const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Лимитник");
@@ -392,45 +391,37 @@ const SettingsGenerator = props => {
     const presetsCopy = [...presets];
 
     let currentPresetCopy = { ...currentPreset };
+    
+    keys(currentPreset.options).map(key => {
+      const { preferredStep, customData } = currentPreset.options[key];
 
-    // Обновляем ход только если новый инструмент отличается от предыдущего
-    // а не является устаревшей/новой версией текущего
-    if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
-      keys(currentPreset.options).map(key => {
-        const { preferredStep, customData } = currentPreset.options[key];
-  
-        const obj = {
-          preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
-          customData: customData?.map(row => {
-            row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
-            return row;
-          })
-        };
-  
-        currentPresetCopy = {
-          ...currentPresetCopy,
-          options: {
-            ...currentPresetCopy.options,
-            [key]: {
-              ...currentPresetCopy.options[key],
-              ...obj
-            }
+      const obj = {
+        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+        customData: customData?.map(row => {
+          row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
+          return row;
+        })
+      };
+
+      currentPresetCopy = {
+        ...currentPresetCopy,
+        options: {
+          ...currentPresetCopy.options,
+          [key]: {
+            ...currentPresetCopy.options[key],
+            ...obj
           }
-        };
-  
-      });
-  
-      presetsCopy[currentPresetIndex] = currentPresetCopy;
-      setPresets(presetsCopy);
-    }
+        }
+      };
 
-    // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
-    // для нового инструмента
+    });
+
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    setPresets(presetsCopy);
+
     if (comission == 45 || comission == 1) {
       setComission(currentTool.dollarRate >= 1 ? 45 : 1);
     }
-
-    prevTool.current = currentTool;
 
   }, [currentTool.code]);
 
@@ -596,7 +587,7 @@ const SettingsGenerator = props => {
 
             <div className="settings-generator-content__row settings-generator-content__row--1">
 
-              <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
+              <div className="settings-generator-content__row-col-half">
 
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
@@ -749,6 +740,7 @@ const SettingsGenerator = props => {
                         value={round(totalIncome, 1)}
                       />
                       <PairJSX
+<<<<<<< HEAD
                         name={<span>Комиссия</span>}
                         value={
                           Math.round(
@@ -759,6 +751,8 @@ const SettingsGenerator = props => {
                         }
                       />
                       <PairJSX
+=======
+>>>>>>> parent of fa168178 (Merge branch 'master' into meta)
                         name={
                           <Tooltip title="Величина убытка при закрытии позиции по стопу">
                             Убыток (риск)
