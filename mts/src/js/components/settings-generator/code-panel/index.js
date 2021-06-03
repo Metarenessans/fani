@@ -152,14 +152,14 @@ export default function CodePanel(props) {
           }
         }
 
-        // В Лимитнике в массиве закрытия добавляем еще пару фигурных скобок
-        if (currentPreset.type == "Лимитник" && !arr.isBying) {
+        // В Лимитнике и СМС + ТОР в массиве закрытия добавляем еще пару фигурных скобок
+        if ((currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && !arr.isBying) {
           parsedData = `{${parsedData}}`;
         }
 
         let param = currentPreset.type == "Лимитник" ? "profit_arr" : "stop_arr";
         if (key == "Обратные докупки (ТОР)") {
-          param = currentPreset.type == "Лимитник" ? "aapercent" : "aaperc";
+          param = currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР" ? "aapercent" : "aaperc";
         }
         else if (key == "Зеркальные докупки") {
           title = "Массив зеркальных докупок";
