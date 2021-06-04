@@ -168,7 +168,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, 1 * 60 * 1_000);
+      }, dev ? 10_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -958,6 +958,7 @@ class App extends React.Component {
                               </Tooltip>
                             </span>
                             <NumericInput
+                              key={this.state.priceRange}
                               min={min}
                               max={max}
                               unsigned="true"
@@ -999,14 +1000,16 @@ class App extends React.Component {
                               </Tooltip>
                             </span>
                             <NumericInput
+                              key={this.state.priceRange}
                               min={min}
                               max={max}
-                              unsigned="true"
                               format={ number => formatNumber(round(number, fraction)) }
+                              unsigned="true"
                               round={"false"}
                               defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
 
                               onBlur={value => {
+                                const { possibleRisk } = this.state
                                 const callback = () => {
                                   updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                 };
@@ -1022,14 +1025,13 @@ class App extends React.Component {
                                 }
                                 // ШОРТ: то есть точка выхода - снизу (число больше)
                                 else {
-                                  if (value > priceRange[0]) {
-                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  if (value > priceRange[1]) {
+                                    this.setState({ priceRange: [priceRange[1], value] }, callback);
                                   }
                                   else {
-                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                    this.setState({ priceRange: [value, priceRange[1]] }, callback);
                                   }
                                 }
-                                
                               }}
                             />
                           </div>
