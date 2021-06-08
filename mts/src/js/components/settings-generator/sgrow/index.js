@@ -123,7 +123,7 @@ export default function SGRow({
                               preferredStep = stepsToPercentConverter(preferredStep, currentTool, contracts);
                             }
                           }
-
+                          
                           const customDataCopy = [...options.customData];
                           customDataCopy[i] = {
                             ...customDataCopy[i],
@@ -294,8 +294,8 @@ export default function SGRow({
                     <button
                       className="settings-generator-content__step-mode-switcher"
                       onClick={e => {
-                        let { inPercent, preferredStep } = options;
-
+                        let { inPercent, preferredStep } = options;                        
+                        
                         if (preferredStep) {
                           // Были в процентах, теперь переводим в доллары
                           if (inPercent) {
@@ -330,7 +330,7 @@ export default function SGRow({
                       ? stepsToPercentConverter(currentTool.adrDay, currentTool, contracts)
                       : currentTool.adrDay
                   }
-                  format={inputFormatter}
+                  format={number => inputFormatter(number, inPercent ? 4 : undefined)}
                   unsigned="true"
                   min={0}
                   onBlur={preferredStep => {
