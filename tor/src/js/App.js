@@ -258,7 +258,7 @@ constructor(props) {
   fetchSaves() {
     fetchSavesFor("tor")
       .then(response => {
-        const saves = response.data;
+        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -325,20 +325,6 @@ constructor(props) {
 
     let state = {};
 
-    const getSaveIndex = save => {
-      for (let i = 0; i < saves.length; i++) {
-        let currentSave = saves[i];
-        if (Object.keys(currentSave).every(key => currentSave[key] == save[key])) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
-    const savePure = { ...save };
-    delete savePure.static;
-    delete savePure.error;
-
     try {
 
       staticParsed = JSON.parse(save.static);
@@ -355,7 +341,7 @@ constructor(props) {
       state.id      = save.id;
       state.saved   = true;
       state.loading = false;
-      state.currentSaveIndex = getSaveIndex(savePure) + 1;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       state = {
