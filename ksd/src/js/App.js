@@ -125,7 +125,7 @@ class App extends React.Component {
       
       currentSaveIndex: 0,
 
-      toolsLoading: true,
+      toolsLoading: false,
     };
 
     this.state = {
@@ -244,7 +244,7 @@ class App extends React.Component {
 
     }).then(() => this.setFetchingToolsTimeout())
   }
-  // ~~
+
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storage?.length) {
@@ -255,7 +255,10 @@ class App extends React.Component {
           this.setState({
             tools: newTools,
             toolsLoading: false,
-          }, () => resolve());
+          }, () => {
+            Tools.storage = [];
+            resolve()
+          });
         }, 2_000);
       }
       else {
