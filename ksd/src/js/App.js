@@ -125,7 +125,7 @@ class App extends React.Component {
       
       currentSaveIndex: 0,
 
-      toolsLoading: true,
+      toolsLoading: false,
     };
 
     this.state = {
@@ -244,7 +244,7 @@ class App extends React.Component {
 
     }).then(() => this.setFetchingToolsTimeout())
   }
-  // ~~
+
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storage?.length) {
@@ -255,7 +255,10 @@ class App extends React.Component {
           this.setState({
             tools: newTools,
             toolsLoading: false,
-          }, () => resolve());
+          }, () => {
+            Tools.storage = [];
+            resolve()
+          });
         }, 2_000);
       }
       else {
@@ -308,7 +311,7 @@ class App extends React.Component {
   fetchSaves() {
     fetchSavesFor("ksd")
       .then(response => {
-        const saves = response.data;
+        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -385,21 +388,6 @@ class App extends React.Component {
     let state = {};
     let failed = false;
 
-    const getSaveIndex = save => {
-      for (let i = 0; i < saves.length; i++) {
-        let currentSave = saves[i];
-        if (Object.keys(currentSave).every(key => currentSave[key] == save[key])) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
-    const savePure = { ...save };
-    delete savePure.static;
-
-    // console.log(saves, savePure, getSaveIndex(savePure));
-
     try {
 
       staticParsed = JSON.parse(save.static);
@@ -441,7 +429,7 @@ class App extends React.Component {
       state.id      = save.id;
       state.saved   = true;
       state.loading = false;
-      state.currentSaveIndex = getSaveIndex(savePure) + 1;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       failed = true;

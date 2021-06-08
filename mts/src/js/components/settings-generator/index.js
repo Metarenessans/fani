@@ -397,12 +397,59 @@ const SettingsGenerator = props => {
     // а не является устаревшей/новой версией текущего
     if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
       keys(currentPreset.options).map(key => {
-        const { preferredStep, customData } = currentPreset.options[key];
-  
+        const { preferredStep, inPercent, customData } = currentPreset.options[key];
+
+        let _prefStep = preferredStep;
+        if (inPercent) {
+          if (preferredStep != "") {
+            _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
+          }
+        }
+        else {
+          if (preferredStep != "") {
+            _prefStep = currentTool.adrDay;
+          }
+        }
+        
+        
+        if (inPercent) {
+          // Должно быть
+          let oldDefaultStep = preferredStep;
+          if (inPercent) {
+            if (preferredStep != "") {
+              oldDefaultStep = stepConverter.fromStepToPercents(prevTool.current.adrDay, prevTool.current);
+            }
+          }
+          else {
+            if (preferredStep != "") {
+              oldDefaultStep = prevTool.current.adrDay;
+            }
+          }
+
+          
+          if (preferredStep != oldDefaultStep) {
+            console.log("custom!", preferredStep, _prefStep, oldDefaultStep);
+            _prefStep = oldDefaultStep;
+          }
+        }
+
+
         const obj = {
-          preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
+          preferredStep: _prefStep,
           customData: customData?.map(row => {
-            row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
+            let _prefStep = row.preferredStep;
+            if (row.inPercent) {
+              if (preferredStep != "") {
+                _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
+              }
+            }
+            else {
+              if (preferredStep != "") {
+                _prefStep = currentTool.adrDay;
+              }
+            }
+
+            row.preferredStep = _prefStep
             return row;
           })
         };
@@ -944,7 +991,12 @@ const SettingsGenerator = props => {
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
                   />
-                  <span className="switch-group__label">Зеркальные докупки (СМС)</span>
+                  <span className="switch-group__label">
+                    {currentPreset.type == "Лимитник" 
+                      ? "Перевыставление в точку входа"
+                      : "Зеркальные докупки (СМС)"
+                    }
+                  </span>
                 </label>
               </div>
 
@@ -1051,7 +1103,12 @@ const SettingsGenerator = props => {
                     checked={isReversedBying}
                     onChange={checked => setReversedBying(checked)}
                   />
-                  <span className="switch-group__label">Обратные докупки (ТОР)</span>
+                  <span className="switch-group__label">
+                    {currentPreset.type == "Лимитник"
+                      ? "Докупки"
+                      : "Обратные докупки (ТОР)"
+                    }
+                  </span>
                 </label>
 
                 <div style={{ width: '100%' }} hidden={!isReversedBying}>
@@ -1129,7 +1186,10 @@ const SettingsGenerator = props => {
                           id="settings-generator-tab5-control"
                           hidden={!isMirrorBying}
                           onClick={e => setCurrentTab("Зеркальные докупки")}>
-                    Зеркальные докупки
+                    {currentPreset.type == "Лимитник"
+                      ? "Перевыставление в точку входа"
+                      : "Зеркальные докупки (СМС)"
+                    }
                   </Button>
 
                   <Button className="custom-btn"
@@ -1140,7 +1200,10 @@ const SettingsGenerator = props => {
                           id="settings-generator-tab6-control"
                           hidden={!isReversedBying}
                           onClick={e => setCurrentTab("Обратные докупки (ТОР)")}>
-                    Обратные докупки (ТОР)
+                    {currentPreset.type == "Лимитник"
+                      ? "Докупки"
+                      : "Обратные докупки (ТОР)"
+                    }
                   </Button>
 
                   <Button className="settings-generator-table__show-code"

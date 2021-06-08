@@ -123,7 +123,7 @@ export default function SGRow({
                               preferredStep = stepsToPercentConverter(preferredStep, currentTool, contracts);
                             }
                           }
-
+                          
                           const customDataCopy = [...options.customData];
                           customDataCopy[i] = {
                             ...customDataCopy[i],
@@ -147,7 +147,7 @@ export default function SGRow({
                           ? round(stepsToPercentConverter(currentTool.adrDay, currentTool, contracts), 4)
                           : currentTool.adrDay
                       }
-                      format={number => inputFormatter(number, customDataRow.inPercent ? 4 : undefined)}
+                      format={number => inputFormatter(number, customDataRow.inPercent ? 2 : undefined)}
                       unsigned="true"
                       min={0}
                       onBlur={preferredStep => {
@@ -169,7 +169,7 @@ export default function SGRow({
                       className="input-group__input"
                       defaultValue={customDataRow.percent}
                       placeholder={round(100 / (customDataRow.length || 1), fraction)}
-                      format={inputFormatter}
+                      format={value => inputFormatter(value, 2)}
                       unsigned="true"
                       min={0}
                       onBlur={percent => {
@@ -294,8 +294,8 @@ export default function SGRow({
                     <button
                       className="settings-generator-content__step-mode-switcher"
                       onClick={e => {
-                        let { inPercent, preferredStep } = options;
-
+                        let { inPercent, preferredStep } = options;                        
+                        
                         if (preferredStep) {
                           // Были в процентах, теперь переводим в доллары
                           if (inPercent) {
@@ -330,7 +330,7 @@ export default function SGRow({
                       ? stepsToPercentConverter(currentTool.adrDay, currentTool, contracts)
                       : currentTool.adrDay
                   }
-                  format={inputFormatter}
+                  format={number => inputFormatter(number, inPercent ? 2 : undefined)}
                   unsigned="true"
                   min={0}
                   onBlur={preferredStep => {
@@ -378,7 +378,7 @@ export default function SGRow({
                   disabled={disabled}
                   defaultValue={percent}
                   placeholder={round(100 / (length || 1), fraction)}
-                  format={inputFormatter}
+                  format={value => inputFormatter(value, 2)}
                   unsigned="true"
                   min={0}
                   onBlur={percent => onPropertyChange({ percent })}

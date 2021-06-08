@@ -72,7 +72,9 @@ const stepConverter = {
         )
         *
         // лот
-        tool.lotSize;
+        tool.lotSize
+        /
+        100;
     }
     // ФОРТС
     else {
