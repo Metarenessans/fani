@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import Config from "../../../common/components/config"
+import CustomSelect from "../../../common/components/custom-select"
 
 import {
   Row,
@@ -31,6 +32,7 @@ import {
 import "../../../common/api/fetch";
 
 import params              from "../../../common/utils/params"
+import num2str              from "../../../common/utils/num2str"
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
 import typeOf              from "../../../common/utils/type-of"
@@ -54,10 +56,21 @@ import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import "../sass/style.sass"
-
+// ~~~
 const defaultToolData = {
-  percentage: 10,
-  selectedToolName: "SBER"
+  toolType: "Недвижимость",
+  tool: {},
+  firstPay: 1_000_000,
+  period:          10,
+
+
+  percent: 999,
+  incomeMonthly: 1_000_000,
+  monthPay:              0,
+
+  // config 
+  payRate: 10,
+  abc: 500
 };
 
 function onScroll() {
@@ -79,18 +92,12 @@ function onScroll() {
       headerElements[i].classList.add("scroll");
       firstRowElement.classList.add("scroll");
     }
-    // if (this.state.tooltipPlacement == "top") {
-    //   this.setState({ tooltipPlacement: "bottom" })
-    // }
   } 
   else {
     for (let i = 0; i < headerElements.length; i++) {
       headerElements[i].classList.remove("scroll");
       firstRowElement.classList.remove("scroll");
     }
-    // if (this.state.tooltipPlacement == "bottom") {
-    //   this.setState({ tooltipPlacement: "top" });
-    // }
   }
 }
 
@@ -113,21 +120,22 @@ class App extends React.Component {
 
       data: [{ ...defaultToolData }],
 
-      // Режим
-      mode: 0,
+      lineConfigIndex: 0,
+
       //Размер депозита
-      depo: 1000000,
+      depo: 1_000_000,
       
       customTools: [],
-
-      sortProp:  null,
-      sortDESC:  true,
 
       saved: false,
       
       currentSaveIndex: 0,
 
       toolsLoading: false,
+
+      realtyPrice:  0,
+      firstPay:     0,
+      ofzValue:   0.4,
     };
 
     this.state = {
@@ -146,7 +154,7 @@ class App extends React.Component {
 
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
-    this.fetchSaveById     = fetchSaveById.bind(this, "ksd");
+    this.fetchSaveById     = fetchSaveById.bind(this, "kis");
   }
 
   componentDidMount() {
@@ -169,7 +177,7 @@ class App extends React.Component {
       .then(() => this.setFetchingToolsTimeout())
 
     if (dev) {
-      this.loadFakeSave();
+      // this.loadFakeSave();
       return;
     }
     this.fetchSaves();
@@ -586,7 +594,8 @@ class App extends React.Component {
   }
 
   render() {
-    const { mode, data, sortProp, sortDESC, isLong } = this.state;
+    // ~~
+    const { mode, data, sortProp, sortDESC, realtyPrice, creditRate, firstPay, ofzValue, period, lineConfigIndex } = this.state;
 
     return (
       <Provider value={this}>
@@ -623,31 +632,16 @@ class App extends React.Component {
                 }
               }}
             >
-              <Radio.Group
-                className="tabs"
-                key={mode}
-                defaultValue={mode}
-                name="radiogroup"
-                onChange={e => this.setState({ mode: e.target.value, changed: true })}
-              >
-                <Radio className="tabs__label tabs__label--1" value={0}>
-                  Желаемая итоговая сумма
-                  <span className="prefix">цель</span>
-                </Radio>
-                <Radio className="tabs__label tabs__label--1" value={1}>
-                  Желаемый пассивный доход
-                  <span className="prefix">цель</span>
-                </Radio>
-              </Radio.Group>
-              {/* ~~ */}
-              <Tooltip title="Настроить инструменты">
+
+              {/* пк */}
+              {/* <Tooltip title="Настроить инструменты">
                 <button
                   aria-label="Инструменты"
                   className="settings-button controls__tool-select-icon"
-                  onClick={e => dialogAPI.open("passive-income-config", e.target)}>
+                  onClick={e => dialogAPI.open("config", e.target)}>
                   <SettingFilled className="settings-button__icon" />
                 </button>
-              </Tooltip>
+              </Tooltip> */}
               
             </Header>
 
@@ -656,69 +650,52 @@ class App extends React.Component {
               <div className="container">
                 <div className="dashboard">
                   {(() => {
-                    let data = [...this.state.data];
-                    if (sortProp != null && sortDESC != null) {
-                      data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
-                    }
-
                     return (
-                      this.state.tools.length > 0
-                        ? (
-                          data.map((item, index) =>
-                            <DashboardRow
-                            // ~~
-                              tooltipPlacement={this.state.tooltipPlacement}
-                              key={index}
-                              item={item}
-                              index={index}
-                              sortProp={sortProp}
-                              sortDESC={sortDESC}
-                              mode={this.state.mode}
-                              depo={this.state.depo}
-                              toolsLoading={this.state.toolsLoading}
-                              toolsStorage={this.state.toolsStorage}
-                              percentage={item.percentage}
-                              selectedToolName={item.selectedToolName}
-                              planIncome={item.planIncome}
-                              tools={this.getTools()}
-                              options={this.getOptions()}
-                              onDropdownClose={() => {
-                                this.imitateFetchcingTools();
-                              }}
-                              onSort={(sortProp, sortDESC) => {
-                                if (sortProp !== this.state.sortProp) {
-                                  sortDESC = true;
-                                }
-                                this.setState({ sortProp, sortDESC })
-                              }}
-                              onUpdate={state => {
-                                data[index] = { ...data[index], ...state, updatedOnce: true };
-                                this.setState({ data });
-                              }}
-                              onChange={(prop, val) => {
-                                data[index][prop] = val;
-                                if (prop == "selectedToolName") {
-                                  data[index].planIncome = null;
-                                }
-                                this.setState({ data, changed: true });
-                              }}
-                              onDelete={index => {
-                                data.splice(index, 1);
-                                this.setState({ data, changed: true })
-                              }}
-                            />
-                          )
-                        )
-                        : (
-                          <span className="dashboard__loading">
-                            <Spin
-                              className="dashboard__loading-icon"
-                              indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
-                              />
-                            Подождите, инструменты загружаются...
-                          </span>
-                        )
-                    );
+                      data.map((item, index) =>
+                        // ~~~
+                        <DashboardRow
+                          tooltipPlacement={this.state.tooltipPlacement}
+                          key={index}
+                          item={item}
+                          index={index}
+                          sortProp={sortProp}
+                          sortDESC={sortDESC}
+                          mode={this.state.mode}
+                          depo={this.state.depo}
+                          toolsLoading={this.state.toolsLoading}
+                          toolsStorage={this.state.toolsStorage}
+                          percentage={item.percentage}
+                          selectedToolName={item.selectedToolName}
+                          planIncome={item.planIncome}
+                          tools={this.getTools()}
+                          options={this.getOptions()}
+
+
+
+                          onSort={(sortProp, sortDESC) => {
+                            if (sortProp !== this.state.sortProp) {
+                              sortDESC = true;
+                            }
+                            this.setState({ sortProp, sortDESC })
+                          }}
+                          onUpdate={state => {
+                            data[index] = { ...data[index], ...state, updatedOnce: true };
+                            this.setState({ data });
+                          }}
+                          onChange={(prop, val) => {
+                            data[index][prop] = val;
+                            this.setState({ data, changed: true });
+                          }}
+                          onDelete={index => {
+                            data.splice(index, 1);
+                            this.setState({ data, changed: true })
+                          }}
+                          onConfigOpen={() => {
+                            this.setState({ lineConfigIndex: index });
+                          }}
+                        />
+                      )
+                    )
                   })()}
                 </div>
 
@@ -734,9 +711,9 @@ class App extends React.Component {
                     <PlusOutlined aria-label="Добавить" />
                     инструмент
                   </Button>
-
                 </footer>
                 
+
               </div>
               {/* /.container */}
 
@@ -927,109 +904,164 @@ class App extends React.Component {
 
             return modalJSX;
           })()}
+
           {/* Save Popup */}
 
-
-          <Config
-            id="passive-income-config"
+          {/* ск */}
+          {/* <Dialog
+            id="config"
             title="Настройка инструментов"
-            template={{
-              name: "Инструмент",
-              rate: 0
-            }}
-            // tools={this.state.passiveIncomeTools}
-            // currentToolIndex={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
-            toolsInfo={[
-              { name: "Стоимость недвижимости", prop: "name", defaultValue: "Инструмент" },
-              { name: "Ставка по ипотеке", prop: "rate", defaultValue: 0 },
-              { name: "Прибыль от аренды в мес.", prop: "rate", defaultValue: 0 },
-              { name: "Упущенная прибыль", prop: "rate", defaultValue: 0 },
-            ]}
-            // customTools={this.state.customPassiveIncomeTools}
-            // onChange={customPassiveIncomeTools => {
-            //   this.setState({ customPassiveIncomeTools }, () => this.update())
-            //   console.log('Updated in config:', customPassiveIncomeTools);
-            // }}
-          />
+          >
+            <div className="dashboard-row" >
+              <div className="dashboard-col dashboard-col--main dashboard-col--config-dialog">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Кредит
+                  </span>
+                </span>
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    className="dashboard__input"
+                    defaultValue={realtyPrice}
+                    onBlur={ realtyPrice => this.setState({realtyPrice})}
+                    unsigned="true"
+                    format={formatNumber}
+                    min={0}
+                  />
+                </span>
+              </div>
 
+              <div className="dashboard-col dashboard-col--main">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Первоначальный взнос
+                  </span>
+                </span>
+
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    className="dashboard__input"
+
+                    defaultValue={firstPay}
+                    onBlur={firstPay => this.setState({ firstPay })}
+                    unsigned="true"
+                    format={formatNumber}
+                    min={0}
+                  />
+                </span>
+              </div>
+
+              <div className="dashboard-col dashboard-col--main">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Ставка по ипотеке
+                  </span>
+                </span>
+
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    defaultValue={creditRate}
+                    onBlur={creditRate => this.setState({ creditRate })}
+
+                    className="dashboard__input"
+                    format={formatNumber}
+                    unsigned="true"
+                    suffix={"%"}
+                    min={0}
+                    max={100}
+                  />
+                </span>
+              </div>
+
+              <div className="dashboard-col dashboard-col--main">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Ставка ОФЗ
+                  </span>
+                </span>
+
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    defaultValue={ofzValue}
+                    onBlur={ofzValue => this.setState({ ofzValue })}
+
+                    className="dashboard__input"
+                    format={formatNumber}
+                    unsigned="true"
+                    suffix={"%"}
+                    min={0}
+                    max={100}
+                  />
+                </span>
+              </div>
+              
+            </div>
+          </Dialog> */}
+          {/* настройка инструментов */}
           <Dialog
-            id="dialog4"
-            title="Удаление трейдометра"
+            id="dashboard-config"
+            // title={data[lineConfigIndex].toolType}
+            title={"Настройка инструмента"}
             confirmText={"Удалить"}
             onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
               return true;
             }}
           >
-            Вы уверены, что хотите удалить {this.getTitle()}?
+            <div className="dashboard-row" >
+
+              <div className="dashboard-col dashboard-col--main">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Ставка по ипотеке
+                  </span>
+                </span>
+
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    key={Math.random()}
+                    className="dashboard__input"
+                    defaultValue={data[lineConfigIndex || 0].payRate}
+                    onBlur={value => {
+                      const dataCopy = [...data];
+                      dataCopy[lineConfigIndex].payRate = value;
+                      this.setState({ data: dataCopy, changed: true });
+                    }}
+                    unsigned="true"
+                    format={formatNumber}
+                    min={0}
+                    max={100}
+                    suffix={"%"}
+                  />
+                </span>
+              </div>
+              {/* ~~~ */}
+              {/* <div className="dashboard-col dashboard-col--main">
+                <span className="dashboard-key">
+                  <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                    Ежемесячный платёж
+                  </span>
+                </span>
+
+                <span className="dashboard-val dashboard-val--wrap">
+                  <NumericInput
+                    key={Math.random()}
+                    className="dashboard__input"
+                    defaultValue={data[lineConfigIndex || 0].payRate}
+                    onBlur={value => {
+                      const dataCopy = [...data];
+                      dataCopy[lineConfigIndex].payRate = value;
+                      this.setState({ data: dataCopy, changed: true });
+                    }}
+                    unsigned="true"
+                    format={formatNumber}
+                    min={0}
+                    max={100}
+                    suffix={"%"}
+                  />
+                </span>
+              </div> */}
+            </div>
           </Dialog>
-          {/* Delete Popup */}
-          
-          <Config
-            id="config"
-            title="Инструменты"
-            template={template}
-            template={template}
-            templateContructor={Tool}
-            tools={this.state.tools}
-            toolsInfo={[
-              { name: "Инструмент",   prop: "name"         },
-              { name: "Код",          prop: "code"         },
-              { name: "Цена шага",    prop: "stepPrice"    },
-              { name: "Шаг цены",     prop: "priceStep"    },
-              { name: "ГО",           prop: "guarantee"    },
-              { name: "Текущая цена", prop: "currentPrice" },
-              { name: "Размер лота",  prop: "lotSize"      },
-              { name: "Курс доллара", prop: "dollarRate"   },
-              { name: "ADR",          prop: "adrDay"       },
-              { name: "ADR неделя",   prop: "adrWeek"      },
-              { name: "ADR месяц",    prop: "adrMonth"     },
-            ]}
-            customTools={this.state.customTools}
-            onChange={customTools => this.setState({ customTools })}
-
-            insertBeforeDialog={
-              <label className="input-group input-group--fluid ksd-config__depo">
-                <span className="input-group__label">Размер депозита:</span>
-                <NumericInput
-                  className="input-group__input"
-                  key={this.state.depo}
-                  defaultValue={this.state.depo}
-                  format={formatNumber}
-                  min={10000}
-                  max={Infinity}
-                  onBlur={val => {
-                    const { depo } = this.state;
-                    if (val == depo) {
-                      return;
-                    }
-
-                    this.setState({ depo: val, changed: true });
-                  }}
-                />
-              </label>
-            }
-          />
-          {/* Инструменты */}
-
-          {(() => {
-            const { errorMessage } = this.state;
-            return (
-              <Dialog
-                id="dialog-msg"
-                title="Сообщение"
-                hideConfirm={true}
-                cancelText="ОК"
-              >
-                {errorMessage}
-              </Dialog>
-            )
-          })()}
-          {/* Error Popup */}
-
         </div>
       </Provider>
     );

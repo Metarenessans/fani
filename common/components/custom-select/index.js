@@ -36,7 +36,7 @@ export default memo(class CustomSelect extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { value, options } = this.props;
+    const { value, options} = this.props;
     if (value != prevProps.value) {
       this.onSelect(this.parseValue(value));
     }
@@ -145,6 +145,7 @@ export default memo(class CustomSelect extends React.Component {
     return (
       <Select
         { ...this.props }
+        suffix={this.props.suffix}
         value={index}
         showSearch
         filterOption={false}

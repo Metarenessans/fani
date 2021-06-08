@@ -66,7 +66,7 @@ class App extends React.Component {
       chance: 50,
       page: 1,
       priceRange: [null, null],
-      percentage: 0,
+      percentage: 10,
       days: 1,
       data: null,
 
@@ -868,6 +868,8 @@ class App extends React.Component {
                           value={priceRange}
                           max={max - scaleOffset}
                           min={min + scaleOffset}
+                          percentage={percentage}
+                          // disabled={percentage == 0}
                           step={step}
                           precision={1}
                           tooltipPlacement="left"

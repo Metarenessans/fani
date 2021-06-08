@@ -32,7 +32,7 @@ export default class CustomSlider extends React.Component {
   }
 
   render() {
-    var { value, precision, className, showValue, tooltipVisible } = this.props;
+    var { value, precision, className, showValue, tooltipVisible, percentage } = this.props;
     tooltipVisible = tooltipVisible;
     precision      = precision || 0; 
     showValue      = showValue || false;
