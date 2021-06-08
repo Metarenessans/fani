@@ -82,7 +82,7 @@ export default function CodePanel(props) {
                 formattedPoints = stepConverter.fromStepToPercents(points, tool, contracts);
               }
 
-              formattedPoints = round(formattedPoints, 4);
+              formattedPoints = round(formattedPoints, 2);
             }
             return `{${percent},${formattedPoints}${showRollback ? "," + rollback : ""}}`;
           })
