@@ -542,7 +542,7 @@ class App extends Component {
     
     fetchSavesFor("trademeter")
       .then(response => {
-        const saves = response.data;
+        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -705,6 +705,8 @@ class App extends Component {
    * Распаковывает данные из сейва и записывает их в стейт
    **/
   extractSave(save) {
+    console.log('extracting save', save);
+
     const onError = e => {
       this.showAlert(String(e));
 
@@ -717,21 +719,7 @@ class App extends Component {
 
     const { depoEnd, saves } = this.state;
 
-    const getSaveIndex = save => {
-      for (let i = 0; i < saves.length; i++) {
-        let currentSave = saves[i];
-        if (Object.keys(currentSave).every(key => currentSave[key] == save[key])) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
     saveToDownload = { ...save };
-
-    const savePure = clone(save);
-    delete savePure.static;
-    delete savePure.dynamic;
 
     let staticParsed;
     let dynamicParsed;
@@ -892,7 +880,7 @@ class App extends Component {
       state.id = save.id;
       state.saved = true;
       state.loading = false;
-      state.currentSaveIndex = getSaveIndex(savePure) + 1;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       failed = true;
