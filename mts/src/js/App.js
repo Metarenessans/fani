@@ -220,7 +220,6 @@ class App extends React.Component {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
         const newTools = Tools.storage;
-        updateChartMinMax(this.state.priceRange, this.state.isLong, this.state.possibleRisk)
         setTimeout(() => {
           this.setState({
             tools: newTools,
@@ -278,7 +277,6 @@ class App extends React.Component {
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .then(() => shouldUpdatePriceRange && this.updatePriceRange(this.getCurrentTool()) )
-            .then(() => updateChartMinMax(this.state.priceRange, this.state.isLong, this.state.possibleRisk) )
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
@@ -571,7 +569,7 @@ class App extends React.Component {
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
-
+    
     const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
 
@@ -628,32 +626,14 @@ class App extends React.Component {
         currentTool.priceStep;
 
       if (risk != 0 && percentage != 0) {
-        possibleRisk =
-          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+        possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
       }
 
-      return possibleRisk;
+      return possibleRisk
     }
 
-    let possibleRisk = 0;
-
-    let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-    let stopSteps =
-      (depo * risk / 100)
-      /
-      currentTool.stepPrice
-      /
-      (contracts || 1)
-      *
-      currentTool.priceStep;
-
-    if (risk != 0 && percentage != 0) {
-      possibleRisk =
-        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-    }
+    let possibleRisk = getPossibleRisk();
 
     return (
       <div className="page">
@@ -1169,7 +1149,6 @@ class App extends React.Component {
                 })()}
 
                 <Stack className="main-content__right">
-                  {/* ~~ */}
                   <Chart 
                     className="mts__chart"
                     key={currentTool.toString() + this.state.loadingChartData}
@@ -1181,34 +1160,11 @@ class App extends React.Component {
                     data={data}
                     days={days}
                     onRendered={() => {
-                      const { percentage, } = this.state
+                      const { percentage, priceRange } = this.state
                       const isLong = percentage >= 0;
-                      const getPossibleRisk = () => {
-                        const currentTool = this.getCurrentTool();
-                        let { depo, percentage, priceRange, risk } = this.state;
-                        const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
-
-                        let possibleRisk = 0;
-                        const isLong = percentage >= 0;
-                        let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-                        let stopSteps =
-                          (depo * risk / 100)
-                          /
-                          currentTool.stepPrice
-                          /
-                          (contracts || 1)
-                          *
-                          currentTool.priceStep;
-
-                        if (risk != 0 && percentage != 0) {
-                          possibleRisk =
-                            round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-                          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-                        }
-                        return possibleRisk
-                      }
-                      updateChartMinMax(this.state.priceRange, isLong, getPossibleRisk())
+                      const possibleRisk = getPossibleRisk();
+                      console.log("finished rendering", possibleRisk);
+                      updateChartMinMax(priceRange, isLong, possibleRisk);
                     }}
                   />
 
@@ -1251,7 +1207,7 @@ class App extends React.Component {
                           onChange={(range = []) => {
                             let { tools, investorInfo } = this.state;
                             const percentage = range[0] + range[1];
-
+                            
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
