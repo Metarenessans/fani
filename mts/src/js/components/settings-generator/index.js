@@ -895,7 +895,7 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={risk}
-                    format={val => formatNumber(round(val, fraction))}
+                    format={val => formatNumber(round(val, 2))}
                     unsigned="true"
                     onBlur={value => {
                       if (value == round(risk, fraction)) {
