@@ -115,9 +115,9 @@
       flex-shrink: 0;
     }
 
-    &--config-dialog {
-      font-size: 1.3;
-    }
+    // &--config-dialog {
+    //   font-size: 1.3;
+    // }
 
     &__config {
       .settings-button__icon {
@@ -212,7 +212,8 @@
     padding: .5rem .5rem;
     padding-right: 0.8rem;
     width: 100%;
-    display: none;
+
+    // display: none;
     margin-bottom: .5em;
 
     font-weight: bold;
@@ -329,5 +330,9 @@
   
   &__input {
     text-align: center;
+  }
+  
+  &--config {
+    background-color: none;
   }
 }

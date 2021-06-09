@@ -225,6 +225,7 @@ class App extends React.Component {
             tools: newTools,
             toolsLoading: false,
           }, () => {
+            getPossibleRisk();
             Tools.storage = [];
             const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
             if (!isEqual(oldTool.ref, newTool.ref)) {
@@ -280,9 +281,10 @@ class App extends React.Component {
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
-
+      // ~~
     Promise.all(requests)
       .then(() => this.setStateAsync({ toolsLoading: false }))
+      .then(() => getPossibleRisk())
       .then(() => resolve())
     })
   }
@@ -530,7 +532,7 @@ class App extends React.Component {
     let index = this.getToolIndexByCode(currentToolCode);
     return index;
   }
-
+  
   getToolByCode(code) {
     const { tools } = this.state;
     return tools.find(tool => tool.code == code) || Tools.create();
@@ -1167,6 +1169,7 @@ class App extends React.Component {
                 })()}
 
                 <Stack className="main-content__right">
+                  {/* ~~ */}
                   <Chart 
                     className="mts__chart"
                     key={currentTool.toString() + this.state.loadingChartData}

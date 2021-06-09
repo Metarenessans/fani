@@ -136,7 +136,35 @@ export default class DashboardRow extends React.Component {
 
         </div>
         {/* col */}
+        
+        {(() => {
+          if(toolType == "Вклад") {
+            return (
+              <div className="dashboard-col dashboard-col--main">
 
+                <span className="dashboard-key">
+                  <Tooltip title={""}>
+                    Первонач. взнос
+                  </Tooltip>
+                </span>
+
+                <span className="dashboard-val dashboard-col--main">
+                  <NumericInput
+                    key={Math.random()}
+                    className="dashboard__input"
+                    defaultValue={firstPay}
+                    onBlur={value => onChange("firstPay", value)}
+                    format={formatNumber}
+                    unsigned="true"
+                    min={0}
+                  />
+                </span>
+
+              </div>
+            )
+          }
+
+        })()}
         <div className="dashboard-col dashboard-col--splitted">
           <span className="dashboard-key">
             <Tooltip title={""}>
@@ -192,9 +220,9 @@ export default class DashboardRow extends React.Component {
         
         {/* dialog button */}
         <div className="dashboard-col dashboard-col--narrow">
-          <span className="dashboard-key"> {" "}</span>
-          <span className="dashboard-val dashboard-col--wide">
-            <Tooltip title="Настроить инструмент">
+          <span className="dashboard-key"> Конфиг</span>
+          <span className="dashboard-val dashboard-val--config dashboard-col--wide">
+            {/* <Tooltip title="Настроить инструмент"> */}
               <button
                 className="settings-button dashboard-col__config"
                 aria-label="Открыть"
@@ -204,7 +232,7 @@ export default class DashboardRow extends React.Component {
                 }}>
                 <SettingFilled className="settings-button__icon" />
               </button>
-            </Tooltip>
+            {/* </Tooltip> */}
           </span>
         </div>
         {/* dialog button */}

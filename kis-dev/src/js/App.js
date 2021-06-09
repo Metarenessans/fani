@@ -1008,6 +1008,38 @@ class App extends React.Component {
             }}
           >
             <div className="dashboard-row" >
+              {/* ~~~ */}
+              {(() => {
+                if (data[lineConfigIndex].toolType == "Вклад") {
+                  return (
+                    <div className="dashboard-col dashboard-col--main">
+                      <span className="dashboard-key">
+                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                          Доп инпут при выбранном вкладе
+                        </span>
+                      </span>
+
+                      <span className="dashboard-val dashboard-val--wrap">
+                        <NumericInput
+                          key={Math.random()}
+                          className="dashboard__input"
+                          defaultValue={data[lineConfigIndex || 0].payRate}
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].payRate = value;
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned="true"
+                          format={formatNumber}
+                          min={0}
+                          max={100}
+                          suffix={"%"}
+                        />
+                      </span>
+                    </div>
+                  )
+                }
+              })()}
 
               <div className="dashboard-col dashboard-col--main">
                 <span className="dashboard-key">
