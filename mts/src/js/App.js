@@ -220,12 +220,12 @@ class App extends React.Component {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
         const newTools = Tools.storage;
+        updateChartMinMax(this.state.priceRange, this.state.isLong, this.state.possibleRisk)
         setTimeout(() => {
           this.setState({
             tools: newTools,
             toolsLoading: false,
           }, () => {
-            getPossibleRisk();
             Tools.storage = [];
             const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
             if (!isEqual(oldTool.ref, newTool.ref)) {
@@ -278,13 +278,13 @@ class App extends React.Component {
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .then(() => shouldUpdatePriceRange && this.updatePriceRange(this.getCurrentTool()) )
+            .then(() => updateChartMinMax(this.state.priceRange, this.state.isLong, this.state.possibleRisk) )
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
-      // ~~
+
     Promise.all(requests)
       .then(() => this.setStateAsync({ toolsLoading: false }))
-      .then(() => getPossibleRisk())
       .then(() => resolve())
     })
   }
