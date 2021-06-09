@@ -571,7 +571,7 @@ class App extends React.Component {
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
-    
+
     const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
 
