@@ -898,7 +898,7 @@ const SettingsGenerator = props => {
                     format={val => formatNumber(round(val, 2))}
                     unsigned="true"
                     onBlur={value => {
-                      if (value == round(risk, fraction)) {
+                      if (value == round(risk, 2)) {
                         value = risk;
                       }
                       setRisk(value)
