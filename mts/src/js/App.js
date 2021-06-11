@@ -163,12 +163,14 @@ class App extends React.Component {
               }
               else {
                 console.log('no way!');
+                Tools.storage = [];
                 resolve();
               }
             });
         }
         else resolve();
-      }, dev ? 10_000 : 1 * 60 * 1_000);
+      // }, dev ? 10_000 : 1 * 60 * 1_000);
+      }, dev ? 5_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -219,17 +221,19 @@ class App extends React.Component {
       if (Tools.storage?.length) {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
-        const newTools = Tools.storage;
+        const newTools = [...Tools.storage];
         setTimeout(() => {
           this.setState({
             tools: newTools,
             toolsLoading: false,
           }, () => {
+            // ~~~
             Tools.storage = [];
-            const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
+            const newTool = newTools[Tools.getToolIndexByCode(newTools, oldTool.code)];
+            console.log(oldTool.code, newTool.code, newTools, newTools.indexOf( newTools.find( tool => tool.code == oldTool.code) ));
+
             if (!isEqual(oldTool.ref, newTool.ref)) {
               // TODO: доработать на локальных инструментах
-              console.log('не равны', newTool);
               this.updatePriceRange(newTool)
                 .then(() => resolve())
             }
@@ -253,7 +257,12 @@ class App extends React.Component {
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(response => {
+              if (response.data?.length == 0) {
+                console.warn("В ответе с сервера нет " + (request == "getFutures" ? "фючерсов" : "акций"));
+              }
+              return Tools.parse(response.data, { investorInfo })
+            })
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
               Tools.storage = [...tools];
@@ -262,7 +271,23 @@ class App extends React.Component {
         )
       }
 
-      Promise.all(requests).then(() => resolve())
+      Promise.all(requests).then(() => {
+        const tools = [...Tools.storage];
+        const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
+        const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
+
+        console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
+
+        if (futuresCount == 0) {
+          console.warn("В массиве нет фьючерсов!", tools);
+        }
+        
+        if (stocksCount == 0) {
+          console.warn("В массиве нет акций!", tools);
+        }
+
+        resolve();
+      })
     })
   }
 
@@ -785,8 +810,8 @@ class App extends React.Component {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
                             this.setStateAsync({ currentToolCode, isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchcingTools())
                               .then(() => this.updatePriceRange(tools[currentToolIndex]))
+                              .then(() => this.imitateFetchcingTools())
                               .then(() => this.fetchCompanyQuotes());
                           }}
                           disabled={toolsLoading}
@@ -1149,7 +1174,7 @@ class App extends React.Component {
                 })()}
 
                 <Stack className="main-content__right">
-                  <Chart 
+                  <Chart
                     className="mts__chart"
                     key={currentTool.toString() + this.state.loadingChartData}
                     min={min}

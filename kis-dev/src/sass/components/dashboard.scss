@@ -99,7 +99,7 @@
     line-height: 1.2;
     
     &--tool {
-      width: 10em;
+      width: 18em;
     }
 
     &--main {
@@ -207,13 +207,14 @@
 
   &-key {
     text-align: center;
+    height: 2.4rem;
 
     box-sizing: content-box;
     padding: .5rem .5rem;
     padding-right: 0.8rem;
     width: 100%;
 
-    // display: none;
+    display: none;
     margin-bottom: .5em;
 
     font-weight: bold;

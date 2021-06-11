@@ -64,6 +64,7 @@ export default class DashboardRow extends React.Component {
     this.onScrollCb = this.onScrollCb.bind(this);
   }
 
+
   onScrollCb() {
     onScroll.call(this);
   }
@@ -87,12 +88,26 @@ export default class DashboardRow extends React.Component {
 
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
-    let { selectedToolName, percentage, item, toolsLoading, toolsStorage, onChange, onConfigOpen } = this.props;
-
+    let {item, onChange, onConfigOpen } = this.props;
     const container = React.createRef();
 
-    const { toolType, percent, incomeMonthly, firstPay, period} = item;
-    let calculatedIncome = percent * incomeMonthly;
+
+    const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue} = item;
+    
+    // процент платежа в месяц
+    let monthPercent = round(payRate / 12, 3)
+
+    // месячный платёж
+    let monthPay = round( (depo - firstPay) * monthPercent , 2)
+
+    // упущенная прибыль
+    let lostProfit = ( (firstPay - (rentIncome - monthPay)) * ofzValue ) / 12
+
+    // баланс по итогу месяца
+    let monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
+  
+    console.log(monthEndSum * period);
+    // console.log("monthPercent - ", monthPercent, "monthPay-", monthPay);
 
     return (
       <div className="dashboard-row" ref={container}>
@@ -118,13 +133,12 @@ export default class DashboardRow extends React.Component {
 
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Первонач. взнос
+              Первонач. взнос 
             </Tooltip>
           </span>
 
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
-              key={Math.random()}
               className="dashboard__input"
               defaultValue={firstPay}
               onBlur={value => onChange("firstPay", value)}
@@ -137,34 +151,6 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         
-        {(() => {
-          if(toolType == "Вклад") {
-            return (
-              <div className="dashboard-col dashboard-col--main">
-
-                <span className="dashboard-key">
-                  <Tooltip title={""}>
-                    Первонач. взнос
-                  </Tooltip>
-                </span>
-
-                <span className="dashboard-val dashboard-col--main">
-                  <NumericInput
-                    key={Math.random()}
-                    className="dashboard__input"
-                    defaultValue={firstPay}
-                    onBlur={value => onChange("firstPay", value)}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={0}
-                  />
-                </span>
-
-              </div>
-            )
-          }
-
-        })()}
         <div className="dashboard-col dashboard-col--splitted">
           <span className="dashboard-key">
             <Tooltip title={""}>
@@ -173,7 +159,6 @@ export default class DashboardRow extends React.Component {
           </span>
           <span className="dashboard-val dashboard-col--wide">
             <NumericInput
-              key={Math.random()}
               className="dashboard__input"
               defaultValue={period}
               onBlur={value => onChange("period", value)}
@@ -185,8 +170,8 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={Math.random()}
               className="dashboard__input"
-              defaultValue={period * 365}
-              onBlur={value => onChange("period", round(value / 365, 2))}
+              defaultValue={period * (toolType == "Недвижимость"? 365 : 248) }
+              onBlur={value => onChange("period", round( value / (toolType == "Недвижимость" ? 365 : 248) , 2))}
               unsigned="true"
               format={formatNumber}
               min={0}
@@ -195,28 +180,112 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
 
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
 
-        {/* <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Баланс месяц
+              Ежемесячный доход
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
-            {formatNumber(calculatedIncome)}р (5%)
+
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              key={item}
+              className="dashboard__input"
+              defaultValue={rentIncome}
+              onBlur={value => onChange("rentIncome", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+            />
           </span>
+
         </div>
+        {/* col */}
 
-        <div className="dashboard-col dashboard-col--narrow">
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Баланс период
+              Ежемесячный вывод
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
-            - 1 900 000р (5%)
+
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              key={Math.random()}
+              className="dashboard__input"
+              defaultValue={monthOutcome}
+              onBlur={value => onChange("monthOutcome", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+              max={rentIncome}
+            />
           </span>
-        </div> */}
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
+          <span className="dashboard-key">
+            <Tooltip title={""}>
+              Ежемесячное пополнение
+            </Tooltip>
+          </span>
+
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              key={Math.random()}
+              className="dashboard__input"
+              defaultValue={monthAppend}
+              onBlur={value => onChange("monthAppend", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+            />
+          </span>
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
+          <span className="dashboard-key">
+            <Tooltip title={""}>
+              Баланс по итогам месяца
+            </Tooltip>
+          </span>
+
+          <span className="dashboard-val dashboard-col--main">
+            {formatNumber(monthEndSum)}
+          </span>
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
+          <span className="dashboard-key">
+            <Tooltip title={""}>
+              Баланс по итогам периода
+            </Tooltip>
+          </span>
+
+          <span className="dashboard-val dashboard-col--main ">
+            <span className="dashboard__input">
+              { formatNumber( round(monthEndSum * period, 2) ) }
+            </span>
+          </span>
+
+        </div>
+        {/* col */}
         
         {/* dialog button */}
         <div className="dashboard-col dashboard-col--narrow">

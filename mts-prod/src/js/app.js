@@ -7,37 +7,44 @@ import {
   Input,
   Pagination,
 } from 'antd/es'
+const { Option } = Select;
 
 import {
+  LoadingOutlined,
   SettingFilled,
-  WarningOutlined,
-} from '@ant-design/icons'
+  WarningOutlined
+} from "@ant-design/icons"
 
 import fetch          from "../../../common/api/fetch"
 import params         from "../../../common/utils/params"
-import round          from "../../../common/utils/round";
+import round          from "../../../common/utils/round"
 import formatNumber   from "../../../common/utils/format-number"
 import typeOf         from "../../../common/utils/type-of"
 import fractionLength from "../../../common/utils/fraction-length"
-import promiseWhile   from "../../../common/utils/promise-while"
+import sortInputFirst from "../../../common/utils/sort-input-first"
+import isEqual        from '../../../common/utils/is-equal';
 
-import { Tools, template }     from "../../../common/tools"
-import Stack                   from "../../../common/components/stack"
-import CustomSlider            from "./components/custom-slider"
-import CrossButton             from "../../../common/components/cross-button"
-import NumericInput            from "../../../common/components/numeric-input"
-import { Dialog, dialogAPI }   from "../../../common/components/dialog"
-import Config                  from "../../../common/components/config"
+import { Tools, Tool, template } from "../../../common/tools"
+
 import {
   Chart,
   updateChartMinMax,
   updateChartScaleMinMax,
-  updateChartZoom
+  updateChartZoom,
+  minChartValue,
+  maxChartValue,
 } from "./components/chart"
 
-const { Option } = Select;
+import Stack                   from "../../../common/components/stack"
+import CrossButton             from "../../../common/components/cross-button"
+import { Dialog, dialogAPI }   from "../../../common/components/dialog"
 
-import "../sass/style.sass"
+import "../sass/style.sass";
+
+import Config                  from "../../../common/components/config"
+import NumericInput            from "../../../common/components/numeric-input"
+import SettingsGenerator       from "./components/settings-generator"
+import CustomSlider            from "../../../common/components/custom-slider"
 
 class App extends React.Component {
 
@@ -66,15 +73,27 @@ class App extends React.Component {
       customTools: [],
       currentToolCode: "SBER",
 
-      id:                 null,
+      id:                  null,
       saved:              false,
+      risk:                  .5,
+      isResetDisabled:     true,
+      scaleOffset:            0,
+      changedMinRange:        0,
+      changedMaxRange:        0,
+      movePercantage:         0,
+      lastRadioButton:        0,
+      profitRatio:           60,
+      searchVal:             "",
+
+      toolsLoading:        true,
+      isFocused:          false,
     };
 
     this.state = {
       ...this.initial,
       ...{
         saves:              [],
-        currentSaveIndex:   0,
+        currentSaveIndex:    0,
         tools:              [],
       } 
     };
@@ -82,47 +101,7 @@ class App extends React.Component {
 
   componentDidMount() {
     this.bindEvents();
-
-    if (dev) {
-      this.fetchInitialData();
-      return;
-    }
-
-    const checkIfAuthorized = () => {
-      return new Promise((resolve, reject) => {
-        fetch("getAuthInfo")
-          .then(res => {
-            if (res.authorized) {
-              resolve();
-            }
-            else {
-              reject();
-            }
-          })
-          .catch(() => reject())
-      })
-    }
-
-    let counter = 0;
-    promiseWhile(false, i => !i, () => {
-      return new Promise(resolve => {
-        counter++;
-        checkIfAuthorized()
-          .then(() => {
-            this.fetchInitialData();
-            resolve(true);
-          })
-          .catch(() => {
-            if (counter >= 10) {
-              this.showAlert("Не удалось получить статус авторизации, попробуйте обновить страницу с кэшем через Сtrl+F5 или обратитесь в техподдержку");
-              resolve(true);
-            }
-            else {
-              setTimeout(() => resolve(false), 1000);
-            }
-          });
-      });
-    });
+    this.fetchInitialData();
   }
 
   setStateAsync(state = {}) {
@@ -149,7 +128,7 @@ class App extends React.Component {
     }
 
     let body = {
-      code:   tool.code,
+      code: tool.code,
       from,
       to,
     };
@@ -171,6 +150,30 @@ class App extends React.Component {
       .catch(error => console.error(error));
   }
 
+  setFetchingToolsTimeout() {
+    new Promise(resolve => {
+      setTimeout(() => {
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
+
+      }, dev ? 25_000 : 1 * 60 * 1_000);
+
+    }).then(() => this.setFetchingToolsTimeout())
+  }
+
   // ----------
   // Fetch
   // ----------
@@ -179,50 +182,8 @@ class App extends React.Component {
   fetchInitialData() {
     this.fetchInvestorInfo();
     this.fetchTools()
-      .then(() => this.fetchCompanyQuotes());
-
-
-    return;
-    this.fetchSaves()
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            let found = false;
-            console.log(saves);
-
-            for (let index = 0, p = Promise.resolve(); index < saves.length; index++) {
-              p = p.then(_ => new Promise(resolve => {
-                const save = saves[index];
-                const id = save.id;
-                this.fetchSaveById(id)
-                  .then(save => {
-                    const corrupt = !this.validateSave();
-                    if (!corrupt && !found) {
-                      found = true;
-                      // Try to load it
-                      this.extractSave(Object.assign(save, { id }));
-                      this.setState({ currentSaveIndex: index + 1 });
-                    }
-
-                    saves[index].corrupt = corrupt;
-                    this.setState({ saves });
-                    resolve();
-                  });
-              }));
-            }
-          }
-        }
-        else {
-          console.log("No saves found!");
-        }
-
-        this.setState({ saves });
-      })
-      .catch(error => {
-        // this.showAlert(`Не удалось получить сохранения! ${error}`);
-        console.log(error);
-      });
+      .then(() => this.setFetchingToolsTimeout())
+      .then(() => this.fetchCompanyQuotes())
   }
 
   fetchSaves() {
@@ -254,20 +215,76 @@ class App extends React.Component {
     });
   }
 
-  fetchTools() {
+  imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
-      for (let request of [
-        "getFutures",
-        "getTrademeterInfo"
-      ]) {
-        fetch(request)
-          .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-          .then(tools => Tools.sort(this.state.tools.concat(tools)))
-          .then(tools => this.setStateAsync({ tools }))
-          .then(() => this.updatePriceRange(this.getCurrentTool()))
-          .then(resolve)
-          .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+      if (Tools.storage?.length) {
+        this.setStateAsync({ toolsLoading: true });
+        const oldTool = this.getCurrentTool();
+        const newTools = Tools.storage;
+        setTimeout(() => {
+          this.setState({
+            tools: newTools,
+            toolsLoading: false,
+          }, () => {
+            Tools.storage = [];
+            const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
+            if (!isEqual(oldTool.ref, newTool.ref)) {
+              // TODO: доработать на локальных инструментах
+              console.log('не равны', newTool);
+              this.updatePriceRange(newTool)
+                .then(() => resolve())
+            }
+            else {
+              resolve()
+            }
+          });
+        }, 2_000);
       }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      Tools.storage = [];
+      const { investorInfo } = this.state;
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(tools => Tools.sort(Tools.storage.concat(tools)))
+            .then(tools => {
+              Tools.storage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests).then(() => resolve())
+    })
+  }
+
+  fetchTools(shouldUpdatePriceRange = true) {
+    return new Promise(resolve => {
+      const requests = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(this.state.tools.concat(tools)))
+            .then(tools => this.setStateAsync({ tools }))
+            .then(() => shouldUpdatePriceRange && this.updatePriceRange(this.getCurrentTool()) )
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+    Promise.all(requests)
+      .then(() => this.setStateAsync({ toolsLoading: false }))
+      .then(() => resolve())
     })
   }
 
@@ -280,7 +297,12 @@ class App extends React.Component {
         });
       })
       .then(depo => this.setState({ depo: depo || 10000 }))
-      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
+      .catch(error => {
+        this.showAlert(`Не удалось получить начальный депозит! ${error}`)
+        if (dev) {
+          this.setState({ depo: 12_000_000 });
+        }
+      });
   }
 
   updatePriceRange(tool) {
@@ -300,7 +322,6 @@ class App extends React.Component {
   }
 
   bindEvents() {
-    
   }
 
   packSave() {
@@ -339,7 +360,6 @@ class App extends React.Component {
     let state = {};
 
     try {
-
       staticParsed = JSON.parse(save.data.static);
       console.log("staticParsed", staticParsed);
 
@@ -480,6 +500,38 @@ class App extends React.Component {
     return [].concat(tools).concat(customTools)
   }
 
+  getOptions() {
+    return this.getTools().map((tool, idx) => {
+      return {
+        idx:   idx,
+        label: String(tool),
+      };
+    });
+  }
+
+  getSortedOptions() {
+    return sortInputFirst(this.state.searchVal, this.getOptions());
+  }
+
+  getToolIndexByCode(code) {
+    const tools = this.getTools();
+    if (!code || !tools.length) {
+      return 0;
+    }
+    
+    let index = tools.indexOf( tools.find(tool => tool.code == code) );
+    if (index < 0) {
+      index = 0;
+    }
+    return Math.min(index, tools.length);
+  }
+
+  getCurrentToolIndex() {
+    let { currentToolCode } = this.state;
+    let index = this.getToolIndexByCode(currentToolCode);
+    return index;
+  }
+
   getToolByCode(code) {
     const { tools } = this.state;
     return tools.find(tool => tool.code == code) || Tools.create();
@@ -497,13 +549,30 @@ class App extends React.Component {
   }
 
   render() {
-    let { mode, depo, data, chance, page, percentage, priceRange, days } = this.state;
+    let {
+      data,
+      days,
+      depo,
+      mode,
+      page,
+      risk,
+      chance,
+      percentage,
+      priceRange,
+      profitRatio,
+      scaleOffset,
+      toolsLoading,
+      movePercantage,
+      lastRadioButton,
+    } = this.state;
 
+    const tools = this.getTools();
     const currentTool = this.getCurrentTool();
     const isLong = percentage >= 0;
-    const priceRangeSorted = priceRange.sort((l, r) => l - r);
-    const planIncome = priceRangeSorted[1] - priceRangeSorted[0];
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
+    
+    const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
@@ -515,7 +584,7 @@ class App extends React.Component {
     }
 
     const fraction = fractionLength(currentTool.priceStep);
-    const price   = round(currentTool.currentPrice, fraction);
+    const price = currentTool.currentPrice;
     let percent = currentTool.adrDay;
     if (days == 5) {
       percent = currentTool.adrWeek;
@@ -524,19 +593,66 @@ class App extends React.Component {
       percent = currentTool.adrMonth;
     }
 
-    const max = round(price + percent, fraction);
-    const min = round(price - percent, fraction);
-
-    let income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
-    income *= mode == 0 ? 0.6 : 0.9;
-
+    const max = price + percent;
+    const min = price - percent;
+    const STEP_IN_EACH_DIRECTION = 20;
+    const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+    
+    let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
+    income *= profitRatio / 100
+    
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
     if (suffix > 0) {
       suffix = "+" + suffix;
     }
 
-    const kod = round(ratio / days, 2);
+    const kod = round(ratio / (days || 1), 2);
+
+    const getPossibleRisk = () => {
+      const currentTool = this.getCurrentTool();
+      let { depo, percentage, priceRange, risk } = this.state;
+      const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+      let possibleRisk = 0;
+      const isLong = percentage >= 0;
+      let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+      let stopSteps =
+        (depo * risk / 100)
+        /
+        currentTool.stepPrice
+        /
+        (contracts || 1)
+        *
+        currentTool.priceStep;
+
+      if (risk != 0 && percentage != 0) {
+        possibleRisk =
+          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+      }
+
+      return possibleRisk;
+    }
+
+    let possibleRisk = 0;
+
+    let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+    let stopSteps =
+      (depo * risk / 100)
+      /
+      currentTool.stepPrice
+      /
+      (contracts || 1)
+      *
+      currentTool.priceStep;
+
+    if (risk != 0 && percentage != 0) {
+      possibleRisk =
+        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+    }
 
     return (
       <div className="page">
@@ -645,10 +761,9 @@ class App extends React.Component {
                       )
                       : null
                     }
-
                   </div>
 
-                  <Tooltip title="Настройки">
+                  <Tooltip title="Настройка инструментов">
                     <button
                       className="settings-button js-open-modal main-top__settings"
                       onClick={e => dialogAPI.open("config", e.target)}
@@ -672,23 +787,32 @@ class App extends React.Component {
 
               <div className="main-content__wrap">
                 {(() => {
-                  const STEP_IN_EACH_DIRECTION = 20;
-                  const step  = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
-
                   return (
                     <Stack className="main-content__left">
 
                       <label>
                         <span className="visually-hidden">Торговый инструмент</span>
+                        
                         <Select
-                          value={this.state.currentToolCode}
-                          onChange={currentToolCode => {
-                            this.setStateAsync({ currentToolCode })
-                              .then(() => this.updatePriceRange(this.getToolByCode(currentToolCode)))
+                        // ~~
+                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                          onBlur={() => {
+                            this.setStateAsync({ isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools());
+                          }}
+                          value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                          onChange={currentToolIndex => {
+                            const tools = this.getTools();
+                            const currentToolCode = tools[currentToolIndex].code;
+                            this.setStateAsync({ currentToolCode, isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools())
+                              .then(() => this.updatePriceRange(tools[currentToolIndex]))
                               .then(() => this.fetchCompanyQuotes());
                           }}
-                          disabled={this.getTools().length == 0}
+                          disabled={toolsLoading}
+                          loading={toolsLoading}
                           showSearch
+                          onSearch={(value) => this.setState({ searchVal: value })}
                           optionFilterProp="children"
                           filterOption={(input, option) =>
                             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -696,14 +820,21 @@ class App extends React.Component {
                           style={{ width: "100%" }}
                         >
                           {(() => {
-                            const tools = this.getTools();
-                            return tools.length > 0
-                              ? (
-                                tools.map((tool, index) => (
-                                  <Option key={index} value={tool.code}>{tool.toString()}</Option>
-                                ))
+                            if (toolsLoading && tools.length == 0) {
+                              return (
+                                <Option key={0} value={0}>
+                                  <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                  Загрузка...
+                                </Option>
                               )
-                              : <Option key={0} value={0}>Загрузка...</Option>
+                            }
+                            else {
+                              return this.getSortedOptions().map((option) => (
+                                <Option key={option.idx} value={option.idx}>
+                                  {option.label}
+                                </Option>
+                              ));
+                            }
                           })()}
                         </Select>
                       </label>
@@ -712,116 +843,314 @@ class App extends React.Component {
                       <div className="mts-slider1">
                         <span className="mts-slider1-middle">
                           <b>Текущая цена</b><br />
-                          ({formatNumber(price)})
+                          {(() => {
+                            if(toolsLoading) {
+                              return <LoadingOutlined/>
+                            }
+                            else {
+                              return formatNumber(price)
+                            }
+                          })()}
+                          
                         </span>
                         <span className="mts-slider1-top">
-                          <b>{formatNumber(round(max, fraction))}</b>
+                          <b>{formatNumber(round(max - scaleOffset, fraction))}</b>
                           &nbsp;
-                          (+{round(percent / currentTool.currentPrice * 100, fraction)}%)
+                          (+{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
                         <span className="mts-slider1-bottom">
-                          <b>{formatNumber(round(min, fraction))}</b>
+                          <b>{formatNumber(round(min + scaleOffset, fraction))}</b>
                           &nbsp;
-                          (-{round(percent / currentTool.currentPrice * 100, fraction)}%)
+                          (-{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                         </span>
                         <CustomSlider
                           className="mts-slider1__input"
                           range
                           vertical
                           value={priceRange}
-                          min={min}
-                          max={max}
+                          max={max - scaleOffset}
+                          min={min + scaleOffset}
                           step={step}
                           precision={1}
                           tooltipPlacement="left"
-                          tipFormatter={val => formatNumber((val).toFixed(fraction))}
+                          tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
                           onChange={priceRange => {
                             this.setState({ priceRange });
-                            updateChartMinMax(priceRange);
+                            updateChartMinMax(priceRange, isLong, possibleRisk);
                           }}
                         />
+
+                        <Button
+                          className="scale-button scale-button--default"
+                          onClick={ e => {
+                            updateChartScaleMinMax(min, max);
+                            this.setState({
+                              scaleOffset: 0, changedMinRange: min,
+                              changedMaxRange: max,  movePercantage: 0,
+                              days: lastRadioButton
+                            });
+                          }}
+                          disabled={scaleOffset == 0}
+                        >
+                          отмена
+                        </Button>
+
+                        <Button
+                          className="scale-button scale-button--minus"
+                          onClick={ () => {
+                            let { scaleOffset } = this.state;
+                            const sliderStepPercent = .5;
+                            const scaleStep = round(price * .005 , 2);
+
+                            const updatedScaleOffset = scaleOffset - scaleStep;
+                            
+                            if (min + updatedScaleOffset != 0) {
+                              this.setState({
+                                scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                                changedMaxRange: max - updatedScaleOffset,
+                                movePercantage: movePercantage + sliderStepPercent, days: 0
+                              });
+                              updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            }
+                          }}
+                          aria-label="Увеличить масштаб графика"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 227.406 227.406"><g ><path d="M217.575 214.708l-65.188-67.793c16.139-15.55 26.209-37.356 26.209-61.485C178.596 38.323 140.272 0 93.167 0 46.06 0 7.737 38.323 7.737 85.43c0 47.106 38.323 85.43 85.43 85.43 17.574 0 33.922-5.339 47.518-14.473l66.078 68.718a7.482 7.482 0 005.407 2.302 7.5 7.5 0 005.405-12.699zM22.737 85.43c0-38.835 31.595-70.43 70.43-70.43 38.835 0 70.429 31.595 70.429 70.43s-31.594 70.43-70.429 70.43c-38.835-.001-70.43-31.595-70.43-70.43z" /><path d="M131.414 77.93H54.919c-4.143 0-7.5 3.357-7.5 7.5s3.357 7.5 7.5 7.5h76.495c4.143 0 7.5-3.357 7.5-7.5s-3.357-7.5-7.5-7.5z" /></g></svg>
+                        </Button>
+
+                        <Button
+                          className="scale-button scale-button--plus"
+                          disabled={(() => {
+                            let { scaleOffset } = this.state;
+                            let scaleStep = round(price * .005, 2);
+                            const updatedScaleOffset = scaleOffset + scaleStep;
+                            return Math.abs((min + updatedScaleOffset) - (max - updatedScaleOffset)) < step;
+                          })()}
+                          onClick={ () => {
+                            let { scaleOffset } = this.state;
+                            const sliderStepPercent = .5;
+                            let scaleStep = round(price * .005, 2);
+                            
+                            const updatedScaleOffset = scaleOffset + scaleStep;
+                            Math.abs((min + updatedScaleOffset + scaleStep) - (max - updatedScaleOffset + scaleStep))
+                            if (min + updatedScaleOffset < max - updatedScaleOffset) {
+                              this.setState({
+                                scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
+                                changedMaxRange: max - updatedScaleOffset,
+                                movePercantage: movePercantage + sliderStepPercent,
+                                days: 0
+                              });
+                              updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                            }
+                          }}
+                          aria-label="Уменьшить масштаб графика"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480.606 480.606"><path d="M202.039 125.423h-30v46.616h-46.617v30h46.617v46.616h30v-46.616h46.615v-30h-46.615z" /><path d="M480.606 459.394L329.409 308.195c27.838-32.663 44.668-74.978 44.668-121.157C374.077 83.905 290.172 0 187.039 0S0 83.905 0 187.039s83.905 187.039 187.039 187.039c46.179 0 88.495-16.831 121.157-44.669l151.198 151.198 21.212-21.213zM187.039 344.077C100.447 344.077 30 273.63 30 187.039S100.447 30 187.039 30s157.039 70.447 157.039 157.039-70.448 157.038-157.039 157.038z" /></svg>
+                        </Button>
                       </div>
 
                       <div className="card main-content-stats">
                         <div className="main-content-stats__wrap">
 
                           <div className="main-content-stats__row">
-                            <span>Точка входа</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round(isLong ? priceRange[0] : priceRange[1], fraction))}
+                            <span>
+                              <Tooltip title="Цена приобретения позиции">
+                                Точка входа
+                              </Tooltip>
                             </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={"false"}
+                              defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
+                              onBlur={value => {
+                                const callback = () => {
+                                  let possibleRisk = getPossibleRisk()
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                };
+
+                                // ЛОНГ: то есть точка входа - снизу (число меньше)
+                                if (isLong) {
+                                  if (value > priceRange[1]) {
+                                    this.setState({ priceRange: [priceRange[1], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[1]] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка входа - сверху (число больше)
+                                else {
+                                  if (value < priceRange[0]) {
+                                    this.setState({ priceRange: [value, priceRange[0],] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                              }}
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Точка выхода</span>
-                            <span className="main-content-stats__val">
-                              {formatNumber(round(isLong ? priceRange[1] : priceRange[0], fraction))}
+                            <span>
+                              <Tooltip title="Цена закрытия позиции">
+                                Точка выхода
+                              </Tooltip>
                             </span>
+                            <NumericInput
+                              min={min}
+                              max={max}
+                              unsigned="true"
+                              format={ number => formatNumber(round(number, fraction)) }
+                              round={"false"}
+                              defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
+
+                              onBlur={value => {
+                                const callback = () => {
+                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                };
+
+                                // ЛОНГ: то есть точка выхода - сверху (число меньше)
+                                if (isLong) {
+                                  if (value < priceRange[0]) {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                }
+                                // ШОРТ: то есть точка выхода - снизу (число больше)
+                                else {
+                                  if (value > priceRange[0]) {
+                                    this.setState({ priceRange: [priceRange[0], value] }, callback);
+                                  }
+                                  else {
+                                    this.setState({ priceRange: [value, priceRange[0]] }, callback);
+                                  }
+                                }
+                                
+                              }}
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Величина хода</span>
+                            <span>
+                              <Tooltip title="Величина движения цены от точки входа до выхода">
+                                Величина хода
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
                               {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
                             </span>
                           </div>
                           
                           <div className="main-content-stats__row">
-                            <span>Контрактов</span>
+                            <span>
+                              <Tooltip title="Количество контрактов на заданную загрузку">
+                                Контрактов
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
                               {contracts}
                             </span>
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Вероятность</span>
-                            <span className="main-content-stats__val">
-                              <NumericInput 
-                                key={mode + chance * Math.random()} 
-                                disabled={mode == 0}
-                                defaultValue={mode == 0 ? 0.5 : chance} 
-                                onBlur={chance => this.setState({ chance })}
-                                suffix="%"
-                              />
+                            <span>
+                              <Tooltip title="Значение для коррекции прибыли">
+                                Коэффициент прибыли
+                              </Tooltip>
                             </span>
+                            <NumericInput 
+                              unsigned="true"
+                              key={mode + chance * Math.random()} 
+                              disabled={mode == 0}
+                              defaultValue={profitRatio}
+                              min={0}
+                              max={100}
+                              onBlur={profitRatio => this.setState({ profitRatio })}
+                              suffix="%"
+                            />
                           </div>
 
                           <div className="main-content-stats__row">
-                            <span>Риск движения против</span>
+                            <span>
+                              <Tooltip title="Величина stop loss в процентах от депозита">
+                                Риск движения против
+                              </Tooltip>
+                            </span>
+                            <NumericInput
+                              min={0}
+                              max={100}
+                              unsigned="true"
+                              suffix="%"
+                              format={number => formatNumber(round(number, fraction))}
+                              round={"false"}
+                              // defaultValue={formatNumber(round(mode, 1))}
+                              defaultValue={ risk }
+
+                              onBlur={ risk => {
+                                this.setState({risk});
+                                let possibleRisk = getPossibleRisk();
+                                updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                              }}
+                            />
+                          </div>
+
+                          <div className="main-content-stats__row">
+                            <span>
+                              <Tooltip title="Цена (уровень) закрытия позиции по стопу">
+                                Stop Loss
+                              </Tooltip>
+                            </span>
                             <span className="main-content-stats__val">
-                              {(() => {
-                                let risk = .5;
-                                if (mode != 0) {
-                                  risk = 
-                                      contracts 
-                                    * planIncome
-                                    / currentTool.priceStep 
-                                    * currentTool.stepPrice 
-                                    / depo
-                                    * 100;
-                                  risk *= chance / 100;
-                                }
-                                return `${formatNumber(round(risk, 1))}%`
-                              })()}
+                              {formatNumber(round(possibleRisk, 2))}
                             </span>
                           </div>
-                          
-                          {(() => {
-                            
 
+                          {(() => {
                             return (
                               <>
                                 <div className="main-content-stats__row">
-                                  <span>Прибыль</span>
+                                  <span>
+                                    <Tooltip title="Размер прибыли на депозит при заданных условиях">
+                                      Прибыль
+                                    </Tooltip>
+                                  </span>
                                   <span className="main-content-stats__val">
                                     {`${formatNumber(Math.floor(income))} (${suffix}%)`}
                                   </span>
                                 </div>
 
                                 <div className="main-content-stats__row">
-                                  <span>КОД</span>
+                                  <span>
+                                    <Tooltip title="Величина убытка при закрытии позиции по стопу">
+                                      Убыток
+                                    </Tooltip>
+                                  </span>
                                   <span className="main-content-stats__val">
-                                    {`${formatNumber(kod)}%`}
+                                    {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
+                                    {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
+                                  </span>
+                                </div>
+
+                                <div className="main-content-stats__row">
+                                  <span>
+                                    <Tooltip title="Коэффициент оборачиваемости денег - прибыль в процентах к депозиту">
+                                      КОД
+                                    </Tooltip>
+                                  </span>
+                                  <span className="main-content-stats__val">
+                                    {(() => {
+                                      if (scaleOffset != 0) {
+                                        return "-"
+                                      }
+                                      else {
+                                        return formatNumber(kod) + "%"
+                                      }
+                                    })()}
                                   </span>
                                 </div>
                               </>
@@ -838,14 +1167,44 @@ class App extends React.Component {
                 <Stack className="main-content__right">
                   <Chart 
                     className="mts__chart"
-                    key={currentTool.toString() + this.state.loadingChartData} 
+                    key={currentTool.toString() + this.state.loadingChartData}
                     min={min}
                     max={max}
                     priceRange={priceRange}
                     loading={this.state.loadingChartData}
-                    tool={currentTool} 
+                    tool={currentTool}
                     data={data}
                     days={days}
+                    onRendered={() => {
+                      const { percentage, } = this.state
+                      const isLong = percentage >= 0;
+                      const getPossibleRisk = () => {
+                        const currentTool = this.getCurrentTool();
+                        let { depo, percentage, priceRange, risk } = this.state;
+                        const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+
+                        let possibleRisk = 0;
+                        const isLong = percentage >= 0;
+                        let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+                        let stopSteps =
+                          (depo * risk / 100)
+                          /
+                          currentTool.stepPrice
+                          /
+                          (contracts || 1)
+                          *
+                          currentTool.priceStep;
+
+                        if (risk != 0 && percentage != 0) {
+                          possibleRisk =
+                            round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+                          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+                        }
+                        return possibleRisk
+                      }
+                      updateChartMinMax(this.state.priceRange, isLong, getPossibleRisk())
+                    }}
                   />
 
                   {(() => {
@@ -856,12 +1215,18 @@ class App extends React.Component {
                           .trim()
                       }>
                         <span className="mts-slider2-middle">
-                          Загрузка:
-                          <b style={{
-                            color: `var(--${percentage >= 0 ? "accent-color" : "danger-color"})`
-                          }}>
-                            {formatNumber(Math.abs(percentage))}%
-                          </b>
+                          <Tooltip title="Объём депозита в процентах на вход в сделку">
+                            Загрузка:{" "}
+                          </Tooltip>
+
+                          <NumericInput
+                            format={number => round(number, 2)}
+                            suffix="%"
+                            round={"false"}
+                            key={percentage}
+                            defaultValue={percentage}
+                            onBlur={ percentage => this.setState({ percentage }) }
+                          />
                         </span>
 
                         <CustomSlider
@@ -874,8 +1239,8 @@ class App extends React.Component {
                           range
                           value={[0, percentage].sort((l, r) => l - r)}
                           min={-100}
-                          max={100}
-                          step={1}
+                          max= {100}
+                          step= {.5}
                           precision={1}
                           tooltipVisible={false}
                           onChange={(range = []) => {
@@ -885,8 +1250,7 @@ class App extends React.Component {
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 
-                            updateChartMinMax(priceRange, percentage >= 0);
-
+                            updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
                             this.setState({
                               investorInfo,
                               percentage, 
@@ -905,26 +1269,58 @@ class App extends React.Component {
                   <div className="main-content-options">
                     <div className="main-content-options__wrap">
                       <div className="main-content-options__row">
-                        <span className="main-content-options__label">Алгоритм МАНИ 144</span>
+                        <span className="main-content-options__label">
+                          <Tooltip title="Настройки торгового робота для расчёта результатов торговой стратегии">
+                            Алгоритм МАНИ 144
+                          </Tooltip>
+                        </span>
                         <Radio.Group 
                           className="main-content-options__radio"
                           value={mode}
                           onChange={e => this.setState({ mode: e.target.value })} 
                         >
-                          <Radio value={0} disabled={disabledModes[0]}>
+                          <Radio 
+                            value={0} 
+                            disabled={disabledModes[0]}
+                            onClick={ e => this.setState({ profitRatio: 60 }) }
+                          >
                             стандарт
                           </Radio>
-                          <Radio value={1} disabled={disabledModes[1]}>
+                          <Radio 
+                            value={1}
+                            disabled={disabledModes[1]}
+                            onClick={ e => this.setState({ profitRatio: 60 })}
+                          >
                             смс<span style={{ fontFamily: "serif", fontWeight: 300 }}>+</span>тор
                           </Radio>
-                          <Radio value={2} disabled={disabledModes[2]}>
+                          <Radio 
+                            value={2} 
+                            disabled={disabledModes[2]}
+                            onClick={ e => this.setState({ profitRatio: 90 })}
+                          >
                             лимитник
                           </Radio>
                         </Radio.Group>
+                  
+                        <button
+                          className="settings-button js-open-modal main-content-options__settings"
+                          onClick={e => dialogAPI.open("settings-generator", e.target)}
+                          // На проде ГЕНА дизейблится
+                          disabled={dev ? false : !location.href.replace(/\/$/, "").endsWith("-dev")}
+                        >
+                            <span className="visually-hidden">Открыть конфиг</span>
+                          <Tooltip title=" Генератор настроек МАНИ 144">
+                            <SettingFilled className="settings-button__icon" />
+                          </Tooltip>
+                        </button>
                       </div>
 
                       <div className="main-content-options__row">
-                        <span className="main-content-options__label">Дней в позиции</span>
+                        <span className="main-content-options__label">
+                          <Tooltip title="Продолжительность нахождения в сделке">
+                            Дней в позиции
+                          </Tooltip>
+                        </span>
                         <Radio.Group
                           className="main-content-options__radio"
                           key={days}
@@ -945,7 +1341,7 @@ class App extends React.Component {
                             const max = round(price + percent, fraction);
                             const min = round(price - percent, fraction);
 
-                            this.setState({ days });
+                            this.setState({ days, lastRadioButton: days});
                             updateChartScaleMinMax(min, max);
                             updateChartZoom(days);
                           }}
@@ -964,22 +1360,30 @@ class App extends React.Component {
 
                     return (
                       <div className="mts-table">
-                        <h3>Статистика КОД</h3>
+                        <h3>
+                          <Tooltip title="Раздел для ввода результатов оборачиваемости средств на депозите в течении сделки">
+                            Статистика КОД
+                          </Tooltip>
+                        </h3>
                         <table>
-                          <tr>
-                            <th>День</th>
-                            <th>План %</th>
-                            <th>Факт %</th>
-                            <th>Доходность</th>
-                          </tr>
-                          {new Array(period).fill(0).map((value, index) =>
+                          <thead>
                             <tr>
-                              <td>{((page - 1) * period) + (index + 1)}</td>
-                              <td>{kod}</td>
-                              <td><Input defaultValue="1"/></td>
-                              <td><Input defaultValue="1"/></td>
+                              <th>День</th>
+                              <th>План %</th>
+                              <th>Факт %</th>
+                              <th>Доходность</th>
                             </tr>
-                          )}
+                          </thead>
+                          <tbody>
+                            {new Array(period).fill(0).map((value, index) =>
+                              <tr key={index}>
+                                <td>{((page - 1) * period) + (index + 1)}</td>
+                                <td>{kod}</td>
+                                <td><Input defaultValue="1"/></td>
+                                <td><Input defaultValue="1"/></td>
+                              </tr>
+                            )}
+                          </tbody>
                         </table>
                         <Pagination
                           key={days}
@@ -1044,7 +1448,6 @@ class App extends React.Component {
                 value: defaultValue || ""
               }
             }
-
             vibeCheck() {
               const { validate } = this.props;
               let { value } = this.state;
@@ -1120,7 +1523,6 @@ class App extends React.Component {
               )
             }
           }
-
           let onConfirm = () => {
             let { id, data, saves, currentSaveIndex } = this.state;
 
@@ -1210,6 +1612,7 @@ class App extends React.Component {
           id="config"
           title="Инструменты"
           template={template}
+          templateContructor={Tool}
           tools={this.state.tools}
           toolsInfo={[
             { name: "Инструмент",   prop: "name"         },
@@ -1265,6 +1668,28 @@ class App extends React.Component {
           )
         })()}
         {/* Error Popup */}
+
+        <Dialog
+          id="settings-generator"
+          pure={true}
+        >
+          <SettingsGenerator
+            depo={this.state.depo}
+            tools={this.getTools()}
+            load={percentage}
+            toolsLoading={toolsLoading}
+            investorInfo={this.state.investorInfo}
+            onClose={() => {
+              dialogAPI.close("settings-generator");
+            }}
+            onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
+            onToolSelectBlur={() => {
+              this.setStateAsync({ isToolsDropdownOpen: false })
+                .then(() => this.imitateFetchcingTools());
+            }}
+          />
+        </Dialog>
+        {/* ГЕНА */}
 
       </div>
     );
