@@ -133,7 +133,6 @@ const SettingsGenerator = props => {
   const currentPresetIndex = presets.indexOf(currentPreset);
 
   const [investorDepo, setInvestorDepo] = useState(props?.depo || 1_000_000);
-
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -141,7 +140,6 @@ const SettingsGenerator = props => {
         : Math.floor(investorDepo * .25)
       : 0
   );
-
   const [secondaryDepo, setSecondaryDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -149,6 +147,8 @@ const SettingsGenerator = props => {
         : Math.floor(investorDepo * .75)
       : 0
   );
+  const depoSum = depo + secondaryDepo;
+  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   // Прямые профитные докупки 
   const [isProfitableBying, setProfitableBying] = useState(false);
@@ -159,11 +159,7 @@ const SettingsGenerator = props => {
   // Обратные докупки (ТОР)
   // По дефолту включен в СМС + ТОР
   const [isReversedBying, setReversedBying] = useState(currentPreset.type == "СМС + ТОР");
-
   const [menuVisible, setMenuVisible] = useState(false);
-
-  const depoSum = depo + secondaryDepo;
-  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -372,19 +368,24 @@ const SettingsGenerator = props => {
   }, [currentTab]);
 
   useEffect(() => {
+    let base = investorDepo;
+    if (depoSum != investorDepo) {
+      base = depoSum;
+    }
+
     // Плечевой депо есть только в режиме СМС + ТОР
     if (currentPreset.type == "СМС + ТОР") {
-      setDepo(Math.floor(investorDepo * .25));
-      setSecondaryDepo(Math.floor(investorDepo * .75));
+      setDepo(Math.floor(base * .25));
+      setSecondaryDepo(Math.floor(base * .75));
     }
     else {
-      setDepo(investorDepo);
+      setDepo(base);
       setSecondaryDepo(0);
     }
 
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
-  }, [currentPreset.type, investorDepo]);
+  }, [currentPreset.type]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -724,11 +725,8 @@ const SettingsGenerator = props => {
                         defaultValue={secondaryDepo}
                         format={formatNumber}
                         unsigned="true"
-                        min={10000}
-                        max={Infinity}
-                        onBlur={secondaryDepo => {
-                          setSecondaryDepo(secondaryDepo);
-                        }}
+                        min={0}
+                        onBlur={secondaryDepo => setSecondaryDepo(secondaryDepo)}
                       />
                     </label>
                 }

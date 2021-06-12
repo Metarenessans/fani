@@ -168,7 +168,7 @@ export default function SGRow({
                     <NumericInput
                       className="input-group__input"
                       defaultValue={customDataRow.percent}
-                      placeholder={round(100 / (customDataRow.length || 1), fraction)}
+                      placeholder={round(100 / (customDataRow.length || 1), 2)}
                       format={value => inputFormatter(value, 2)}
                       unsigned="true"
                       min={0}
@@ -377,7 +377,7 @@ export default function SGRow({
                   className="input-group__input"
                   disabled={disabled}
                   defaultValue={percent}
-                  placeholder={round(100 / (length || 1), fraction)}
+                  placeholder={round(100 / (length || 1), 2)}
                   format={value => inputFormatter(value, 2)}
                   unsigned="true"
                   min={0}
