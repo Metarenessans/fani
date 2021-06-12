@@ -276,8 +276,9 @@ $m: .4475;
 
       .ant-switch {
         font-size: .7em;
-        min-width: initial;
-        width: 2.7em;
+        min-width: 2.7em;
+        max-width: 2.7em;
+        width: 100%;
         margin-right: -.75em;
 
         transform: scale(.7);

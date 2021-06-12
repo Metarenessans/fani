@@ -205,7 +205,6 @@ class App extends Component {
       // --------------------
       // Passive income tools
       // --------------------
-      passiveIncomeTools: [],
       customPassiveIncomeTools: [],
       currentPassiveIncomeToolIndex: [-1, -1],
 
@@ -279,6 +278,8 @@ class App extends Component {
          * Индекс текущего сохранения
          */
         currentSaveIndex: 0,
+
+        passiveIncomeTools: [],
       }
     );
 
