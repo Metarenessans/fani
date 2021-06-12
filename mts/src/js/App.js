@@ -66,7 +66,7 @@ class App extends React.Component {
       chance: 50,
       page: 1,
       priceRange: [null, null],
-      percentage: 0,
+      percentage: 10,
       days: 1,
       data: null,
 
@@ -163,12 +163,14 @@ class App extends React.Component {
               }
               else {
                 console.log('no way!');
+                Tools.storage = [];
                 resolve();
               }
             });
         }
         else resolve();
-      }, dev ? 10_000 : 1 * 60 * 1_000);
+      // }, dev ? 10_000 : 1 * 60 * 1_000);
+      }, dev ? 5_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -219,17 +221,19 @@ class App extends React.Component {
       if (Tools.storage?.length) {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
-        const newTools = Tools.storage;
+        const newTools = [...Tools.storage];
         setTimeout(() => {
           this.setState({
             tools: newTools,
             toolsLoading: false,
           }, () => {
+            // ~~~
             Tools.storage = [];
-            const newTool = newTools[Tools.getToolIndexByCode(newTools, this.state.currentToolCode)];
+            const newTool = newTools[Tools.getToolIndexByCode(newTools, oldTool.code)];
+            console.log(oldTool.code, newTool.code, newTools, newTools.indexOf( newTools.find( tool => tool.code == oldTool.code) ));
+
             if (!isEqual(oldTool.ref, newTool.ref)) {
               // TODO: доработать на локальных инструментах
-              console.log('не равны', newTool);
               this.updatePriceRange(newTool)
                 .then(() => resolve())
             }
@@ -253,7 +257,12 @@ class App extends React.Component {
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(response => {
+              if (response.data?.length == 0) {
+                console.warn("В ответе с сервера нет " + (request == "getFutures" ? "фючерсов" : "акций"));
+              }
+              return Tools.parse(response.data, { investorInfo })
+            })
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
               Tools.storage = [...tools];
@@ -262,7 +271,23 @@ class App extends React.Component {
         )
       }
 
-      Promise.all(requests).then(() => resolve())
+      Promise.all(requests).then(() => {
+        const tools = [...Tools.storage];
+        const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
+        const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
+
+        console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
+
+        if (futuresCount == 0) {
+          console.warn("В массиве нет фьючерсов!", tools);
+        }
+        
+        if (stocksCount == 0) {
+          console.warn("В массиве нет акций!", tools);
+        }
+
+        resolve();
+      })
     })
   }
 
@@ -530,7 +555,7 @@ class App extends React.Component {
     let index = this.getToolIndexByCode(currentToolCode);
     return index;
   }
-
+  
   getToolByCode(code) {
     const { tools } = this.state;
     return tools.find(tool => tool.code == code) || Tools.create();
@@ -626,32 +651,14 @@ class App extends React.Component {
         currentTool.priceStep;
 
       if (risk != 0 && percentage != 0) {
-        possibleRisk =
-          round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+        possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
       }
 
-      return possibleRisk;
+      return possibleRisk
     }
 
-    let possibleRisk = 0;
-
-    let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-    let stopSteps =
-      (depo * risk / 100)
-      /
-      currentTool.stepPrice
-      /
-      (contracts || 1)
-      *
-      currentTool.priceStep;
-
-    if (risk != 0 && percentage != 0) {
-      possibleRisk =
-        round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-    }
+    let possibleRisk = getPossibleRisk();
 
     return (
       <div className="page">
@@ -803,8 +810,8 @@ class App extends React.Component {
                             const tools = this.getTools();
                             const currentToolCode = tools[currentToolIndex].code;
                             this.setStateAsync({ currentToolCode, isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchcingTools())
                               .then(() => this.updatePriceRange(tools[currentToolIndex]))
+                              .then(() => this.imitateFetchcingTools())
                               .then(() => this.fetchCompanyQuotes());
                           }}
                           disabled={toolsLoading}
@@ -868,6 +875,8 @@ class App extends React.Component {
                           value={priceRange}
                           max={max - scaleOffset}
                           min={min + scaleOffset}
+                          percentage={percentage}
+                          // disabled={percentage == 0}
                           step={step}
                           precision={1}
                           tooltipPlacement="left"
@@ -1165,7 +1174,7 @@ class App extends React.Component {
                 })()}
 
                 <Stack className="main-content__right">
-                  <Chart 
+                  <Chart
                     className="mts__chart"
                     key={currentTool.toString() + this.state.loadingChartData}
                     min={min}
@@ -1176,34 +1185,11 @@ class App extends React.Component {
                     data={data}
                     days={days}
                     onRendered={() => {
-                      const { percentage, } = this.state
+                      const { percentage, priceRange } = this.state
                       const isLong = percentage >= 0;
-                      const getPossibleRisk = () => {
-                        const currentTool = this.getCurrentTool();
-                        let { depo, percentage, priceRange, risk } = this.state;
-                        const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
-
-                        let possibleRisk = 0;
-                        const isLong = percentage >= 0;
-                        let enterPoint = isLong ? priceRange[0] : priceRange[1];
-
-                        let stopSteps =
-                          (depo * risk / 100)
-                          /
-                          currentTool.stepPrice
-                          /
-                          (contracts || 1)
-                          *
-                          currentTool.priceStep;
-
-                        if (risk != 0 && percentage != 0) {
-                          possibleRisk =
-                            round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-                          updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
-                        }
-                        return possibleRisk
-                      }
-                      updateChartMinMax(this.state.priceRange, isLong, getPossibleRisk())
+                      const possibleRisk = getPossibleRisk();
+                      console.log("finished rendering", possibleRisk);
+                      updateChartMinMax(priceRange, isLong, possibleRisk);
                     }}
                   />
 
@@ -1246,7 +1232,7 @@ class App extends React.Component {
                           onChange={(range = []) => {
                             let { tools, investorInfo } = this.state;
                             const percentage = range[0] + range[1];
-
+                            
                             investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
                             tools = tools.map(tool => tool.update(investorInfo));
 

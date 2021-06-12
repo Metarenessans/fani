@@ -2,19 +2,24 @@ import React, { useRef } from 'react'
 import { Tooltip, Select } from 'antd/es'
 
 import {
+  PlusOutlined,
+  SettingFilled,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  QuestionCircleFilled,
   LoadingOutlined,
-} from "@ant-design/icons"
+  WarningOutlined,
+} from '@ant-design/icons'
 
 import NumericInput from "../../../../common/components/numeric-input"
 import CustomSelect from "../../../../common/components/custom-select"
 import CrossButton  from "../../../../common/components/cross-button"
 
-import { Tools } from "../../../../common/tools"
 import round          from "../../../../common/utils/round"
+import num2str from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
-import fractionLength from "../../../../common/utils/fraction-length"
-import isEqual        from "../../../../common/utils/is-equal"
-import sortInputFirst from "../../../../common/utils/sort-input-first"
+
+import { Dialog, dialogAPI } from "../../../../common/components/dialog"
 
 const { Option } = Select;
 
@@ -48,13 +53,14 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage } = this.props;
+    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage, index } = this.props;
 
     this.state = {
     };
 
     this.onScrollCb = this.onScrollCb.bind(this);
   }
+
 
   onScrollCb() {
     onScroll.call(this);
@@ -79,205 +85,226 @@ export default class DashboardRow extends React.Component {
 
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
-    let { selectedToolName, percentage, item, toolsLoading, toolsStorage } = this.props;
-    const {} = this.props;
-
+    let {item, onChange, onConfigOpen, onDelete,index } = this.props;
     const container = React.createRef();
+    
+    const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue, lineConfigIndex} = item;
+    
+    // процент платежа в месяц
+    let monthPercent = round(payRate / 12, 3)
 
+    // месячный платёж
+    let monthPay = round( (depo - firstPay) * monthPercent , 2)
+
+    // упущенная прибыль
+    let lostProfit = ( (firstPay - (rentIncome - monthPay)) * ofzValue ) / 12
+
+    // баланс по итогу месяца
+    let monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
+  
     return (
       <div className="dashboard-row" ref={container}>
+        {/* col */}
         <div className="dashboard-col dashboard-col--tool">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
               className="dashboard__select dashboard__select--wide" 
-              value={0}
-              loading={toolsLoading}
-              disabled={toolsLoading}
+              value={toolType}
               showSearch
               style={{ width: "100%" }}
+              onSelect={value => onChange("toolType", value)}
             >
-              {(() => {
-                if (!toolsLoading) {
-                  return ["Недвижимость","Вклад","Трейдинг"].map(
-                    (label, index) => {
-                      return <Option value={index} key={index} >{label}</Option>
-                    }
-                  )
-                }
-                else {
-                  return (
-                    <Option key={0} value={0}>
-                      <LoadingOutlined style={{ marginRight: ".2em" }} />
-                      Загрузка...
-                    </Option>
-                  )
-                }
-              })()}
+              {["Недвижимость", "Вклад", "Трейдинг"].map((label, index) => <Option value={label} key={index} >{label}</Option>)}
             </Select>
           </span>
         </div>
         {/* col */}
+
+        {/* col */}
         <div className="dashboard-col dashboard-col--main">
+
           <span className="dashboard-key">
-            <span className="dashboard-key-inner" style={{ width: "100%" }}>
-              <Tooltip title={""}>
-                Первонач. взнос
-              </Tooltip>
-              {/* ~~ */}
-            </span>
+            <Tooltip title={""}>
+              Первонач. взнос 
+            </Tooltip>
           </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined/>
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <NumericInput
-                    className="dashboard__input"
-                    defaultValue={1_000_000}
-                    unsigned="true"
-                    disabled={toolsLoading}
-                    format={formatNumber}
-                    min={0}
-                  />
-                </span>
-              ) 
-            }
-          })()}
+
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              className="dashboard__input"
+              defaultValue={firstPay}
+              onBlur={value => onChange("firstPay", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+            />
+          </span>
+
         </div>
+        {/* col */}
+        
         <div className="dashboard-col dashboard-col--splitted">
           <span className="dashboard-key">
             <Tooltip title={""}>
               Период
-            </Tooltip>  
-          </span>
-          <span className="dashboard-val dashboard-col--wide">
-            {/* <CustomSelect
-              className="dashboard__select"
-              // className="dashboard__select--tool dashboard__select--custom"
-              loading={toolsLoading}
-              disabled={toolsLoading}
-              defaultValue={256}
-              suffix="%"
-              options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
-              allowFraction={2}
-              min={0.01}
-              max={100}
-            /> */}
-            <NumericInput
-              key={Math.random()}
-              className="dashboard__input dashboard__input--custom"
-              defaultValue={10 + " лет"}
-              unsigned="true"
-              disabled={toolsLoading}
-              format={formatNumber}
-              min={0}
-            />
-
-            <NumericInput
-              key={Math.random()}
-              className="dashboard__input dashboard__input--custom"
-              defaultValue={2600 + " дн"}
-              unsigned="true"
-              disabled={toolsLoading}
-              format={formatNumber}
-              min={0}
-            />
-          </span>
-        </div>
-
-        <div className="dashboard-col dashboard-col--splitted">
-          <span className="dashboard-key">
-            <Tooltip title={""}>
-              Доход в мес.
             </Tooltip>
           </span>
           <span className="dashboard-val dashboard-col--wide">
-            <CustomSelect
-              className="dashboard__select"
-              loading={toolsLoading}
-              disabled={toolsLoading}
-              options={new Array(10).fill(0).map((n, i) => 10 * (i + 1) + " %")}
-              suffix="%"
+            <NumericInput
+              className="dashboard__input"
+              defaultValue={period}
+              onBlur={value => onChange("period", value)}
+              unsigned="true"
+              format={formatNumber}
+              min={0}
+              suffix={ num2str(period, ["год", "года", "лет"]) }
             />
         
             <NumericInput
               key={Math.random()}
               className="dashboard__input"
-              defaultValue={100_000 + "р"}
+              defaultValue={period * (toolType == "Недвижимость"? 365 : 248) }
+              onBlur={value => onChange("period", round( value / (toolType == "Недвижимость" ? 365 : 248) , 2))}
               unsigned="true"
-              disabled={toolsLoading}
+              onFocus={value => formatNumber(value)}
               format={formatNumber}
               min={0}
+              suffix="дн"
             />
           </span>
         </div>
+        {/* col */}
 
+        {/* col */}
         <div className="dashboard-col dashboard-col--main">
+
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Вывод в мес.
+              Ежемесячный доход
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
-            <NumericInput
-              // key={Math.random()}
-              className="dashboard__input"
-              defaultValue={-1 * 1_000_000}
-              unsigned="true"
-              disabled={toolsLoading}
-              format={formatNumber}
-              min={0}
-            />
-          </span>
-        </div>
 
-        <div className="dashboard-col dashboard-col--main">
-          <span className="dashboard-key">
-            <Tooltip title={""}>
-              Платёж по кред.
-            </Tooltip>
-          </span>
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
-              // key={Math.random()}
+              key={item}
               className="dashboard__input"
-              defaultValue={1_000_000}
-              unsigned="true"
-              disabled={toolsLoading}
+              defaultValue={rentIncome}
+              onBlur={value => onChange("rentIncome", value)}
               format={formatNumber}
+              unsigned="true"
               min={0}
             />
           </span>
-        </div>
 
-        <div className="dashboard-col dashboard-col--narrow">
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Баланс месяц
+              Ежемесячный вывод
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
-            900 000р (5%)
-          </span>
-        </div>
 
-        <div className="dashboard-col dashboard-col--narrow">
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              key={Math.random()}
+              className="dashboard__input"
+              defaultValue={monthOutcome}
+              onBlur={value => onChange("monthOutcome", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+              max={rentIncome}
+            />
+          </span>
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Баланс период
+              Ежемесячное пополнение
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
-            - 1 900 000р (5%)
+
+          <span className="dashboard-val dashboard-col--main">
+            <NumericInput
+              key={Math.random()}
+              className="dashboard__input"
+              defaultValue={monthAppend}
+              onBlur={value => onChange("monthAppend", value)}
+              format={formatNumber}
+              unsigned="true"
+              min={0}
+            />
+          </span>
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
+          <span className="dashboard-key">
+            <Tooltip title={""}>
+              Баланс по итогам месяца
+            </Tooltip>
+          </span>
+
+          <span className="dashboard-val dashboard-col--main">
+            {formatNumber(monthEndSum)}
+          </span>
+
+        </div>
+        {/* col */}
+
+        {/* col */}
+        <div className="dashboard-col dashboard-col--main">
+
+          <span className="dashboard-key">
+            <Tooltip title={""}>
+              Баланс по итогам периода
+            </Tooltip>
+          </span>
+
+          <span className="dashboard-val dashboard-col--main ">
+            <span className="dashboard__input">
+              { formatNumber( round( monthEndSum * (period * 12), 2) ) }
+            </span>
+          </span>
+
+        </div>
+        {/* col */}
+        
+        {/* dialog button */}
+        <div className="dashboard-col dashboard-col--narrow">
+          <span className="dashboard-key">Настройка</span>
+          <span className="dashboard-val dashboard-val--config dashboard-col--wide">
+            <button
+              className="settings-button dashboard-col__config"
+              aria-label="Открыть"
+              onClick={e => {
+                dialogAPI.open("dashboard-config", e.target);
+                onConfigOpen();
+              }}>
+              <SettingFilled className="settings-button__icon" />
+            </button>
           </span>
         </div>
+        {/* dialog button */}
+
+        <CrossButton
+          aria-hidden={index == 0 ? "true" : "false"}
+          className={["dashboard-row__delete"].concat(index == 0 ? "invisible" : "").join(" ").trim()}
+          onClick={e => onDelete(index)}
+        />
       </div>
     )
   }

@@ -32,18 +32,18 @@ export default class NumericInput extends React.Component {
 
   get unsigned() {
     return this.props.unsigned == "true"
-  }
+  } 
 
   componentDidUpdate(prevProps) {
-    const { defaultValue } = this.props;
-     
-    if (isNaN(defaultValue)) {
+    const { defaultValue, test } = this.props;
+    const { value } = this.state;
+
+    if ((isNaN(defaultValue) || defaultValue == null) && value != "0") {
       console.warn("defaultValue equals NaN!");
       this.setState({ value: 0 })
       return;
     }
-
-    if (defaultValue != prevProps.defaultValue) {
+    else if (defaultValue != prevProps.defaultValue) {
       this.setState({ value: this.format(defaultValue) })
     }
   }
