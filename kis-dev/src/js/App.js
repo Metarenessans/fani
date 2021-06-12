@@ -119,10 +119,6 @@ class App extends React.Component {
 
       loading: false,
 
-      investorInfo: {
-        status: "KSUR",
-        type:   "LONG",
-      },
       isLong: true,
 
       data: [{ ...defaultToolData }],
@@ -1000,125 +996,124 @@ class App extends React.Component {
           >
             <div className="dashboard-row" >
               {(() => {
-                let { depo, payPeriod, ofzValue, payRate } = data[lineConfigIndex || 0];
-                if (data[lineConfigIndex].toolType == "Недвижимость") {
-                  return (
-                    <>
-                      <div className="dashboard-col dashboard-col--main">
-                        <span className="dashboard-key">
-                          <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                            Стоимость
-                          </span>
+                let { depo, payPeriod, ofzValue, payRate, toolType } = data[lineConfigIndex || 0];
+                if (data[lineConfigIndex].toolType == "Недвижимость") {}
+                return (
+                  <>
+                    <div className="dashboard-col dashboard-col--main">
+                      <span className="dashboard-key">
+                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                          Стоимость
                         </span>
+                      </span>
 
-                        <span className="dashboard-val dashboard-val--wrap">
-                          <NumericInput
-                            key={Math.random()}
-                            className="dashboard__input"
-                            defaultValue={depo}
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].depo = value;
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned="true"
-                            format={formatNumber}
-                            min={0}
-                          />
-                        </span>
-                      </div>
+                      <span className="dashboard-val dashboard-val--wrap">
+                        <NumericInput
+                          key={Math.random()}
+                          className="dashboard__input"
+                          defaultValue={depo}
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].depo = value;
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned="true"
+                          format={formatNumber}
+                          min={0}
+                        />
+                      </span>
+                    </div>
 
-                      <div className="dashboard-col dashboard-col--splitted">
-                        <span className="dashboard-key">
-                          <Tooltip title={""}>
-                            Период
-                          </Tooltip>
-                        </span>
-                        <span className="dashboard-val dashboard-col--wide">
-                          <NumericInput
-                            className="dashboard__input dialog-period"
-                            defaultValue={ payPeriod }
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].payPeriod = value;
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned={"true"}
-                            format={formatNumber}
-                            min={0}
-                            suffix={num2str(payPeriod, ["год", "года", "лет"])}
-                          />
+                    <div className="dashboard-col dashboard-col--splitted">
+                      <span className="dashboard-key">
+                        <Tooltip title={""}>
+                          Период
+                        </Tooltip>
+                      </span>
+                      <span className="dashboard-val dashboard-col--wide">
+                        <NumericInput
+                          className="dashboard__input dialog-period"
+                          defaultValue={ payPeriod }
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].payPeriod = value;
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned={"true"}
+                          format={formatNumber}
+                          min={0}
+                          suffix={num2str(payPeriod, ["год", "года", "лет"])}
+                        />
 
-                          <NumericInput
-                            className="dashboard__input"
-                            defaultValue={payPeriod * 365}
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].payPeriod = round(value / 365, 2);
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned="true"
-                            format={formatNumber}
-                            min={0}
-                            suffix="дн"
-                          />
+                        <NumericInput
+                          className="dashboard__input"
+                          defaultValue={payPeriod * (toolType == "Трейдинг" ? 248 : 365)}
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].payPeriod = round(value / (toolType == "Трейдинг" ? 248 : 365), 2);
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned="true"
+                          format={formatNumber}
+                          min={0}
+                          suffix="дн"
+                        />
+                      </span>
+                    </div>
+                    {/* ~~~ */}
+                    <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                      <span className="dashboard-key">
+                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                          Ставка по ипотеке
                         </span>
-                      </div>
-                      {/* ~~~ */}
-                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                        <span className="dashboard-key">
-                          <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                            Ставка по ипотеке
-                          </span>
-                        </span>
+                      </span>
 
-                        <span className="dashboard-val dashboard-col--wide">
-                          <NumericInput
-                            key={payRate}
-                            className="dashboard__input"
-                            defaultValue={payRate * 100}
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].payRate = value / 100;
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned="true"
-                            format={formatNumber}
-                            min={0}
-                            max={100}
-                            suffix={"%"}
-                          />
-                        </span>
-                      </div>
+                      <span className="dashboard-val dashboard-col--wide">
+                        <NumericInput
+                          key={payRate}
+                          className="dashboard__input"
+                          defaultValue={payRate * 100}
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].payRate = value / 100;
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned="true"
+                          format={formatNumber}
+                          min={0}
+                          max={100}
+                          suffix={"%"}
+                        />
+                      </span>
+                    </div>
 
-                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                        <span className="dashboard-key">
-                          <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                            Ставка ОФЗ
-                          </span>
+                    <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                      <span className="dashboard-key">
+                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                          Ставка ОФЗ
                         </span>
+                      </span>
 
-                        <span className="dashboard-val dashboard-col--wide">
-                          <NumericInput
-                            key={Math.random()}
-                            className="dashboard__input"
-                            defaultValue={ofzValue * 100}
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].ofzValue = value / 100;
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned="true"
-                            format={formatNumber}
-                            min={0}
-                            max={100}
-                            suffix={"%"}
-                          />
-                        </span>
-                      </div>
-                    </>
-                  )
-                }
+                      <span className="dashboard-val dashboard-col--wide">
+                        <NumericInput
+                          key={Math.random()}
+                          className="dashboard__input"
+                          defaultValue={ofzValue * 100}
+                          onBlur={value => {
+                            const dataCopy = [...data];
+                            dataCopy[lineConfigIndex].ofzValue = value / 100;
+                            this.setState({ data: dataCopy, changed: true });
+                          }}
+                          unsigned="true"
+                          format={formatNumber}
+                          min={0}
+                          max={100}
+                          suffix={"%"}
+                        />
+                      </span>
+                    </div>
+                  </>
+                )
               })()}
             </div>
           </Dialog>

@@ -164,8 +164,8 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={Math.random()}
               className="dashboard__input"
-              defaultValue={period * (toolType == "Недвижимость"? 365 : 248) }
-              onBlur={value => onChange("period", round( value / (toolType == "Недвижимость" ? 365 : 248) , 2))}
+              defaultValue={period * (toolType == "Трейдинг"? 248 : 365) }
+              onBlur={value => onChange("period", round(value / (toolType == "Трейдинг"? 248 : 365) , 2))}
               unsigned="true"
               onFocus={value => formatNumber(value)}
               format={formatNumber}
