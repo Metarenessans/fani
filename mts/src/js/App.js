@@ -170,8 +170,8 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, dev ? 10_000 : 1 * 60 * 1_000);
-      // }, dev ? 5_000 : 1 * 60 * 1_000);
+      // }, dev ? 10_000 : 1 * 60 * 1_000);
+      }, dev ? 5_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
