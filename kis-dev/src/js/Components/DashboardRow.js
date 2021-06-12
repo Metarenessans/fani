@@ -103,9 +103,6 @@ export default class DashboardRow extends React.Component {
     // баланс по итогу месяца
     let monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
   
-    console.log(monthEndSum * period);
-    // console.log("monthPercent - ", monthPercent, "monthPay-", monthPay);
-
     return (
       <div className="dashboard-row" ref={container}>
         {/* col */}
@@ -280,7 +277,7 @@ export default class DashboardRow extends React.Component {
 
           <span className="dashboard-val dashboard-col--main ">
             <span className="dashboard__input">
-              { formatNumber( round(monthEndSum * period, 2) ) }
+              { formatNumber( round( monthEndSum * (period * 12), 2) ) }
             </span>
           </span>
 
