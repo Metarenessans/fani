@@ -679,8 +679,8 @@ class App extends React.Component {
                             this.setState({ data, changed: true });
                           }}
                           onDelete={index => {
-                            data.splice(index, 1);
-                            this.setState({ data, changed: true })
+                            data.splice(index, 1)
+                            this.setState({ data, changed: true });
                           }}
                           onConfigOpen={() => {
                             this.setState({ lineConfigIndex: index });

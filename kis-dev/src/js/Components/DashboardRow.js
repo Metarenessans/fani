@@ -53,7 +53,7 @@ export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
 
-    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage } = this.props;
+    let { percentage, selectedToolName, planIncome, toolsLoading, toolsStorage, index } = this.props;
 
     this.state = {
     };
@@ -85,11 +85,10 @@ export default class DashboardRow extends React.Component {
 
   render() {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
-    let {item, onChange, onConfigOpen } = this.props;
+    let {item, onChange, onConfigOpen, onDelete,index } = this.props;
     const container = React.createRef();
-
-
-    const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue} = item;
+    
+    const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue, lineConfigIndex} = item;
     
     // процент платежа в месяц
     let monthPercent = round(payRate / 12, 3)
@@ -288,21 +287,24 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">Настройка</span>
           <span className="dashboard-val dashboard-val--config dashboard-col--wide">
-            {/* <Tooltip title="Настроить инструмент"> */}
-              <button
-                className="settings-button dashboard-col__config"
-                aria-label="Открыть"
-                onClick={e => {
-                  dialogAPI.open("dashboard-config", e.target);
-                  onConfigOpen();
-                }}>
-                <SettingFilled className="settings-button__icon" />
-              </button>
-            {/* </Tooltip> */}
+            <button
+              className="settings-button dashboard-col__config"
+              aria-label="Открыть"
+              onClick={e => {
+                dialogAPI.open("dashboard-config", e.target);
+                onConfigOpen();
+              }}>
+              <SettingFilled className="settings-button__icon" />
+            </button>
           </span>
         </div>
         {/* dialog button */}
 
+        <CrossButton
+          aria-hidden={index == 0 ? "true" : "false"}
+          className={["dashboard-row__delete"].concat(index == 0 ? "invisible" : "").join(" ").trim()}
+          onClick={e => onDelete(index)}
+        />
       </div>
     )
   }
