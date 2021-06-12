@@ -6,7 +6,8 @@
 
   .ant-select {
     font-size: 1em;
-// ~~
+    padding-right: 0.4em;
+    
     &-selection {
       &--single {
         font-size: 1em;
@@ -18,9 +19,16 @@
   }
 
   .ant-input {
-    text-align: start;
+    text-align: start!important;
     font-size: 1em;
     padding-top: .2em;
+    padding-right: 0.4em!important;
+
+    &-suffix {
+      // top: 51.5%;
+      right: 0.6em;
+      font-size: 1em;
+    }
   }
 
   &__loading {
@@ -115,12 +123,18 @@
       flex-shrink: 0;
     }
 
+    &--percent {
+      width: 9.2em;
+    }
+
     // &--config-dialog {
     //   font-size: 1.3;
     // }
 
     &__config {
+
       .settings-button__icon {
+        font-size: 1.7em!important;
         color: #4859b4!important;
       }
     }
@@ -215,7 +229,6 @@
     width: 100%;
 
     display: none;
-    margin-bottom: .5em;
 
     font-weight: bold;
 
@@ -315,6 +328,8 @@
   }
 
   &__input {
+    align-items: start;
+
     &--custom {
       width: 50%;
     }

@@ -15,12 +15,9 @@ import NumericInput from "../../../../common/components/numeric-input"
 import CustomSelect from "../../../../common/components/custom-select"
 import CrossButton  from "../../../../common/components/cross-button"
 
-import { Tools } from "../../../../common/tools"
 import round          from "../../../../common/utils/round"
+import num2str from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
-import fractionLength from "../../../../common/utils/fraction-length"
-import isEqual        from "../../../../common/utils/is-equal"
-import sortInputFirst from "../../../../common/utils/sort-input-first"
 
 import { Dialog, dialogAPI } from "../../../../common/components/dialog"
 
@@ -165,6 +162,7 @@ export default class DashboardRow extends React.Component {
               unsigned="true"
               format={formatNumber}
               min={0}
+              suffix={ num2str(period, ["год", "года", "лет"]) }
             />
         
             <NumericInput
@@ -173,8 +171,10 @@ export default class DashboardRow extends React.Component {
               defaultValue={period * (toolType == "Недвижимость"? 365 : 248) }
               onBlur={value => onChange("period", round( value / (toolType == "Недвижимость" ? 365 : 248) , 2))}
               unsigned="true"
+              onFocus={value => formatNumber(value)}
               format={formatNumber}
               min={0}
+              suffix="дн"
             />
           </span>
         </div>
@@ -289,7 +289,7 @@ export default class DashboardRow extends React.Component {
         
         {/* dialog button */}
         <div className="dashboard-col dashboard-col--narrow">
-          <span className="dashboard-key"> Конфиг</span>
+          <span className="dashboard-key">Настройка</span>
           <span className="dashboard-val dashboard-val--config dashboard-col--wide">
             {/* <Tooltip title="Настроить инструмент"> */}
               <button

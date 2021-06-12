@@ -62,7 +62,7 @@ const defaultToolData = {
   tool: {},
 
   period:          10,
-  firstPay: 1_000_000,
+  firstPay:   200_000,
   monthOutcome:     0,
   rentIncome:  20_000,
   
@@ -1036,8 +1036,7 @@ class App extends React.Component {
                         </span>
                         <span className="dashboard-val dashboard-col--wide">
                           <NumericInput
-                            test="true"
-                            className="dashboard__input"
+                            className="dashboard__input dialog-period"
                             defaultValue={ payPeriod }
                             onBlur={value => {
                               const dataCopy = [...data];
@@ -1047,6 +1046,7 @@ class App extends React.Component {
                             unsigned={"true"}
                             format={formatNumber}
                             min={0}
+                            suffix={num2str(payPeriod, ["год", "года", "лет"])}
                           />
 
                           <NumericInput
@@ -1060,11 +1060,12 @@ class App extends React.Component {
                             unsigned="true"
                             format={formatNumber}
                             min={0}
+                            suffix="дн"
                           />
                         </span>
                       </div>
                       {/* ~~~ */}
-                      <div className="dashboard-col dashboard-col--main">
+                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                         <span className="dashboard-key">
                           <span className="dashboard-key-inner" style={{ width: "100%" }}>
                             Ставка по ипотеке
@@ -1090,7 +1091,7 @@ class App extends React.Component {
                         </span>
                       </div>
 
-                      <div className="dashboard-col dashboard-col--main">
+                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                         <span className="dashboard-key">
                           <span className="dashboard-key-inner" style={{ width: "100%" }}>
                             Ставка ОФЗ

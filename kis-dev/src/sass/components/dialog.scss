@@ -1,0 +1,19 @@
+.dialog {
+  font-size: 0.7em;
+
+  .ant-input {
+    padding-left: 0.4em!important;
+  }
+
+  .dashboard-key {
+    height: 1.5rem;
+  }
+}
+.ant-input {
+  text-align: start!important;
+  &-suffix {
+    top: 51.5%;
+    right: 0.6em;
+    // font-size: 1em;
+  }
+}
