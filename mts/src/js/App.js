@@ -164,6 +164,7 @@ class App extends React.Component {
               else {
                 console.log('no way!');
                 Tools.storage = [];
+                Tools.storageReady = false;
                 resolve();
               }
             });
@@ -218,7 +219,8 @@ class App extends React.Component {
 
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
-      if (Tools.storage?.length) {
+      console.log(Tools.storageReady, Tools.storage.length);
+      if (Tools.storageReady) {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
         const newTools = [...Tools.storage];
@@ -227,15 +229,14 @@ class App extends React.Component {
             tools: newTools,
             toolsLoading: false,
           }, () => {
-            // ~~~
             Tools.storage = [];
+            Tools.storageReady = false;
+
             const newTool = newTools[Tools.getToolIndexByCode(newTools, oldTool.code)];
-            console.log(oldTool.code, newTool.code, newTools, newTools.indexOf( newTools.find( tool => tool.code == oldTool.code) ));
 
             if (!isEqual(oldTool.ref, newTool.ref)) {
               // TODO: доработать на локальных инструментах
-              this.updatePriceRange(newTool)
-                .then(() => resolve())
+              this.updatePriceRange(newTool).then(() => resolve())
             }
             else {
               resolve()
@@ -252,6 +253,7 @@ class App extends React.Component {
   prefetchTools() {
     return new Promise(resolve => {
       Tools.storage = [];
+      Tools.storageReady = false;
       const { investorInfo } = this.state;
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
@@ -272,6 +274,8 @@ class App extends React.Component {
       }
 
       Promise.all(requests).then(() => {
+        Tools.storageReady = true;
+
         const tools = [...Tools.storage];
         const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
         const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
