@@ -823,19 +823,11 @@ class App extends Component {
       state.customTools = staticParsed.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
-      // TODO IMPORTANT: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
+      // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
       
       // Кастомные инструменты пассивного дохода
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
-      // TODO IMPORTANT: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
-      
-      // Индекс выбранного инструмента пассивного дохода
-      state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
-      if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
-        const temp = state.currentPassiveIncomeToolIndex;
-        state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
-        state.currentPassiveIncomeToolIndex[m] = Number(temp);
-      }
+      // TODO: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
 
       if (state.currentPassiveIncomeToolIndex[m] == -1 && isEqual(state.customPassiveIncomeTools, [
         {
@@ -860,6 +852,19 @@ class App extends Component {
         },
       ])) {
         state.customPassiveIncomeTools = [];
+      }
+
+      // Индекс выбранного инструмента пассивного дохода
+      state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
+      if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
+        const temp = state.currentPassiveIncomeToolIndex;
+        state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
+        state.currentPassiveIncomeToolIndex[m] = Number(temp);
+      }
+
+      // Предотвращаем ситуацию, когда в массиве нет объекта под сохраненным индексом
+      if (state.currentPassiveIncomeToolIndex[m] > state.customPassiveIncomeTools?.length - 1) {
+        state.currentPassiveIncomeToolIndex[m] = 0;
       }
 
       // В старых сейвах указан currentToolIndex (number)
@@ -2284,17 +2289,20 @@ class App extends Component {
 
                   // Вывод
                   let paymentTotal = 0;
-                  let paymentTax   = 0;
+                  let paymentTaxTotal = 0;
                   if (days[mode] > withdrawalInterval[mode]) {
-                    const multiplier = Math.floor(days[mode] / payloadInterval[mode]);
-                    paymentTotal = (withdrawal[mode] - withdrawal[mode] * (tax / 100)) * multiplier;
-                    paymentTax = (withdrawal[mode] * (tax / 100)) * multiplier;
+                    const numberOfPayments = Math.floor(days[mode] / withdrawalInterval[mode]);
+                    const paymentTax = withdrawal[mode] * (tax / 100);
+                    const paymentWithTax = withdrawal[mode] - paymentTax;
+                    paymentTotal = paymentWithTax * numberOfPayments;
+                    paymentTaxTotal = paymentTax * numberOfPayments;
                   }
                   
                   // Пополнение
                   let payloadTotal = 0;
                   if (days[mode] > payloadInterval[mode]) {
-                    payloadTotal = payload[mode] * Math.floor(days[mode] / payloadInterval[mode]);
+                    const numberOfPayloads = Math.floor(days[mode] / payloadInterval[mode]);
+                    payloadTotal = payload[mode] * numberOfPayloads;
                   }
 
                   return (
@@ -2414,7 +2422,7 @@ class App extends Component {
                               { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
                             </h3>
 
-                            <Tooltip title={paymentTax != 0 && "Удержан НДФЛ: " + formatNumber(Math.round(paymentTax))}>
+                            <Tooltip title={paymentTaxTotal != 0 && "Удержан НДФЛ: " + formatNumber(Math.round(paymentTaxTotal))}>
                               <div className="stats-val">
                                 {
                                   paymentTotal != 0
