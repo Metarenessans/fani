@@ -219,7 +219,7 @@ class App extends React.Component {
 
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
-      console.log(Tools.storageReady, Tools.storage.length);
+      // console.log(Tools.storageReady, Tools.storage.length);
       if (Tools.storageReady) {
         this.setStateAsync({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
@@ -519,7 +519,7 @@ class App extends React.Component {
 
   getCurrentTool() {
     const { tools, currentToolCode } = this.state;
-
+    console.log(tools);
     return tools.find(tool => tool.code == currentToolCode) || Tools.create();
   }
 

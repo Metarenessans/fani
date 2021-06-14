@@ -997,13 +997,13 @@ class App extends React.Component {
             <div className="dashboard-row" >
               {(() => {
                 let { depo, payPeriod, ofzValue, payRate, toolType } = data[lineConfigIndex || 0];
-                if (data[lineConfigIndex].toolType == "Недвижимость") {}
+                if (toolType == "Недвижимость") {}
                 return (
                   <>
                     <div className="dashboard-col dashboard-col--main">
                       <span className="dashboard-key">
                         <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                          Стоимость
+                          {toolType == "Недвижимость" ? "Стоимость" : "Сумма"} 
                         </span>
                       </span>
 
@@ -1064,7 +1064,7 @@ class App extends React.Component {
                     <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                       <span className="dashboard-key">
                         <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                          Ставка по ипотеке
+                          { toolType == "Недвижимость"? "Ставка по ипотеке" : "Ставка по кредиту" }
                         </span>
                       </span>
 
