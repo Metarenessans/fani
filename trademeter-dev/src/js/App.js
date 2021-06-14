@@ -829,6 +829,14 @@ class App extends Component {
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
       // TODO: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
 
+      // Индекс выбранного инструмента пассивного дохода
+      state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
+      if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
+        const temp = state.currentPassiveIncomeToolIndex;
+        state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
+        state.currentPassiveIncomeToolIndex[m] = Number(temp);
+      }
+
       if (state.currentPassiveIncomeToolIndex[m] == -1 && isEqual(state.customPassiveIncomeTools, [
         {
           name: "ОФЗ 26214",
@@ -852,14 +860,6 @@ class App extends Component {
         },
       ])) {
         state.customPassiveIncomeTools = [];
-      }
-
-      // Индекс выбранного инструмента пассивного дохода
-      state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
-      if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
-        const temp = state.currentPassiveIncomeToolIndex;
-        state.currentPassiveIncomeToolIndex = initialState.currentPassiveIncomeToolIndex;
-        state.currentPassiveIncomeToolIndex[m] = Number(temp);
       }
 
       // Предотвращаем ситуацию, когда в массиве нет объекта под сохраненным индексом
