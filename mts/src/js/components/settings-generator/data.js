@@ -38,8 +38,12 @@ const createData = (type, options, meta) => {
   
   let contractsLeft = contracts;
   if (isBying) {
-    // contractsLeft = contracts + contractsSecondary;
-    contractsLeft = contractsTotal - (contracts + contractsSecondary);
+    if (currentPreset.type == "СМС + ТОР") {
+      contractsLeft = contractsTotal;
+    }
+    else {
+      contractsLeft = contractsTotal - (contracts + contractsSecondary);
+    }
     contracts = contractsLeft;
   }
 
@@ -313,6 +317,7 @@ const createData = (type, options, meta) => {
 
       // Если ход больше желаемого хода - массив заканчивается
       if (
+        !(currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") &&
         !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
         !(isSMS_TOR) &&
         (mode != 'fibonacci' && mode != 'custom') &&

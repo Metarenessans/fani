@@ -1114,7 +1114,7 @@ const SettingsGenerator = props => {
                     isBying={true}
                     data={data["Обратные докупки (ТОР)"]}
                     options={currentPreset.options["Обратные докупки (ТОР)"]}
-                    contracts={contractsTotal - contracts}
+                    contracts={currentPreset.type == "СМС + ТОР" ? contracts : contractsTotal - contracts}
                     currentTool={currentTool}
                     onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
                   />
