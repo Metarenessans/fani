@@ -519,7 +519,6 @@ class App extends React.Component {
 
   getCurrentTool() {
     const { tools, currentToolCode } = this.state;
-    console.log(tools);
     return tools.find(tool => tool.code == currentToolCode) || Tools.create();
   }
 

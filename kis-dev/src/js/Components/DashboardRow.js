@@ -87,9 +87,11 @@ export default class DashboardRow extends React.Component {
     const { tooltipVisible, tooltipText, planIncomeCustom } = this.state;
     let {item, onChange, onConfigOpen, onDelete,index } = this.props;
     const container = React.createRef();
+
     
     const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue, lineConfigIndex} = item;
     
+    // console.log("firstPay-", firstPay, "depo-", depo);
     // процент платежа в месяц
     let monthPercent = round(payRate / 12, 3)
 
@@ -101,7 +103,7 @@ export default class DashboardRow extends React.Component {
 
     // баланс по итогу месяца
     let monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
-  
+    
     return (
       <div className="dashboard-row" ref={container}>
         {/* col */}
@@ -133,8 +135,8 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
               className="dashboard__input"
-              defaultValue={firstPay}
-              onBlur={value => onChange("firstPay", value)}
+              defaultValue={toolType !== "Вклад"? firstPay : depo}
+              onBlur={value => toolType !== "Вклад" ? onChange("firstPay", value) : onChange("depo", value)}
               format={formatNumber}
               unsigned="true"
               min={0}
@@ -164,8 +166,8 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={Math.random()}
               className="dashboard__input"
-              defaultValue={period * (toolType == "Трейдинг"? 248 : 365) }
-              onBlur={value => onChange("period", round(value / (toolType == "Трейдинг"? 248 : 365) , 2))}
+              defaultValue={period * 260 }
+              onBlur={value => onChange("period", round(value / 260 , 2))}
               unsigned="true"
               onFocus={value => formatNumber(value)}
               format={formatNumber}
