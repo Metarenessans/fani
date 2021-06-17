@@ -18,6 +18,8 @@ import CrossButton  from "../../../../common/components/cross-button"
 import round          from "../../../../common/utils/round"
 import num2str from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
+import extRateReal    from "../utils/rate";
+
 
 import { Dialog, dialogAPI } from "../../../../common/components/dialog"
 
@@ -89,21 +91,62 @@ export default class DashboardRow extends React.Component {
     const container = React.createRef();
 
     
-    const { toolType, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, depo, ofzValue, lineConfigIndex} = item;
+    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal} = item;
     
-    // console.log("firstPay-", firstPay, "depo-", depo);
     // процент платежа в месяц
-    let monthPercent = round(payRate / 12, 3)
+    const monthPercent = round(payRate / 12, 3)
 
     // месячный платёж
-    let monthPay = round( (depo - firstPay) * monthPercent , 2)
+    const monthPay = round( (depo - firstPay) * monthPercent , 2)
 
     // упущенная прибыль
-    let lostProfit = ( (firstPay - (rentIncome - monthPay)) * ofzValue ) / 12
+    const lostProfit = ((firstPay - (rentIncome - monthPay)) * profitPercent ) / 12
 
     // баланс по итогу месяца
-    let monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
+    const monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
     
+    //годовая прибыль от ОФЗ
+    const ofzProfit = depo * ofzVal
+    
+    // сумма всех выводов в месяц
+    const allMonthOutCome = monthPay + monthOutcome
+
+    // итог от активных инвестиций в зависимости от входящего периода
+    const personalInvestProfitVal = period => {
+      return (
+        extRateReal(depo, null, monthOutcome + monthPay, 30, monthAppend, 30, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
+      )
+    }
+
+    // возврат необходимого значения на основе (офз, активных инвестиций) и периода - "Трейдинг"
+    const finalVal = (activeInvestPeriod, months) => {
+      if (ofzVal == 0 && activeInvestVal == 0) {
+        return 0
+      }
+
+      else {
+        if (ofzVal > 0 && activeInvestVal > 0) {
+          return (
+            months == 1?
+              personalInvestProfitVal(activeInvestPeriod) :
+              personalInvestProfitVal(activeInvestPeriod) + ofzProfit * period
+          )
+        }
+  
+        else if (ofzVal > 0 && activeInvestVal == 0) {
+          return (
+            months == 1 ?
+              depo - allMonthOutCome :
+              depo + (ofzProfit * period)
+          )
+        }
+  
+        else if (activeInvestVal > 0 && ofzVal == 0) {
+          personalInvestProfitVal(activeInvestPeriod)
+        }
+      }
+    }
+
     return (
       <div className="dashboard-row" ref={container}>
         {/* col */}
@@ -191,7 +234,8 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={item}
               className="dashboard__input"
-              defaultValue={rentIncome}
+              defaultValue={toolType == "Трейдинг"? 0 : rentIncome}
+              disabled={toolType == "Трейдинг"}
               onBlur={value => onChange("rentIncome", value)}
               format={formatNumber}
               unsigned="true"
@@ -261,9 +305,9 @@ export default class DashboardRow extends React.Component {
           </span>
 
           <span className="dashboard-val dashboard-col--main">
-            {formatNumber(monthEndSum)}
+            {formatNumber(round(toolType == "Трейдинг" ? finalVal(260 / 12, 1) : monthEndSum, 2) ) }
           </span>
-
+ 
         </div>
         {/* col */}
 
@@ -278,7 +322,14 @@ export default class DashboardRow extends React.Component {
 
           <span className="dashboard-val dashboard-col--main ">
             <span className="dashboard__input">
-              { formatNumber( round( monthEndSum * (period * 12), 2) ) }
+              {
+                formatNumber(
+                  round( toolType == "Трейдинг"?
+                    finalVal(260 * period, 12) :
+                    monthEndSum * (period * 12)
+                  , 2)
+                )
+              }
             </span>
           </span>
 

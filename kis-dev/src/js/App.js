@@ -56,7 +56,7 @@ import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import "../sass/style.sass"
-// ~~~
+
 const defaultToolData = {
   toolType: "Недвижимость",
   tool: {},
@@ -66,19 +66,18 @@ const defaultToolData = {
   monthOutcome:     0,
   rentIncome:  20_000,
   
-  percent:             999,
+  // percent:             999,
   incomeMonthly: 1_000_000,
   monthPay:              0,
   monthAppend:           0,
   
-  // realty config
+  // config
   depo:       1_500_000,
   payPeriod:         10,
   payRate:          .08,
-  ofzValue:         .04,
   profitPercent:    .04,
-  activeInvestVal:  .04,
-
+  activeInvestVal:  .03,
+  ofzVal:           .05,
 };
 
 function onScroll() {
@@ -174,7 +173,7 @@ class App extends React.Component {
   fetchInitialData() {
     this.fetchInvestorInfo();
     this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout())
+      // .then(() => this.setFetchingToolsTimeout())
 
     if (dev) {
       // this.loadFakeSave();
@@ -594,7 +593,6 @@ class App extends React.Component {
   }
 
   render() {
-    // ~~~
     const { data, sortProp, sortDESC, lineConfigIndex } = this.state;
 
     return (
@@ -898,7 +896,8 @@ class App extends React.Component {
 
           <Dialog
             id="dashboard-config"
-            title={data[lineConfigIndex].toolType}
+            // title={data[lineConfigIndex || 0].toolType}
+            title="Настройка инструмента"
             confirmText={"Удалить"}
             onConfirm={() => {
               return true;
@@ -906,9 +905,9 @@ class App extends React.Component {
           >
             <div className="dashboard-row" >
               {(() => {
-                let { depo, payPeriod, ofzValue, payRate, toolType, profitPercent, activeInvestVal } = data[lineConfigIndex || 0];
-                // console.log("profitPercent-", profitPercent, "ofzValue-", ofzValue);
-                const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzValue
+                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal } = data[lineConfigIndex || 0];
+
+                const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
                   <>
                     {toolType !== "Вклад" && 
@@ -1001,100 +1000,6 @@ class App extends React.Component {
                         </div>
                       </>
                     }
-                    {/* {(() => {
-                      if (toolType !== "Вклад") {
-                        return(
-                          <>
-                            <div className="dashboard-col dashboard-col--main">
-                              <span className="dashboard-key">
-                                <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                                  {toolType == "Недвижимость" ? "Стоимость" : "Сумма"}
-                                </span>
-                              </span>
-
-                              <span className="dashboard-val dashboard-val--wrap">
-                                <NumericInput
-                                  key={Math.random()}
-                                  className="dashboard__input"
-                                  defaultValue={depo}
-                                  onBlur={value => {
-                                    const dataCopy = [...data];
-                                    dataCopy[lineConfigIndex].depo = value;
-                                    this.setState({ data: dataCopy, changed: true });
-                                  }}
-                                  unsigned="true"
-                                  format={formatNumber}
-                                  min={0}
-                                />
-                              </span>
-                            </div>
-
-                            <div className="dashboard-col dashboard-col--splitted">
-                              <span className="dashboard-key">
-                                <Tooltip title={""}>
-                                  Период
-                                </Tooltip>
-                              </span>
-                              <span className="dashboard-val dashboard-col--wide">
-                                <NumericInput
-                                  className="dashboard__input dialog-period"
-                                  defaultValue={payPeriod}
-                                  onBlur={value => {
-                                    const dataCopy = [...data];
-                                    dataCopy[lineConfigIndex].payPeriod = value;
-                                    this.setState({ data: dataCopy, changed: true });
-                                  }}
-                                  unsigned={"true"}
-                                  format={formatNumber}
-                                  min={0}
-                                  suffix={num2str(payPeriod, ["год", "года", "лет"])}
-                                />
-
-                                <NumericInput
-                                  className="dashboard__input"
-                                  defaultValue={payPeriod * (toolType == "Трейдинг" ? 248 : 365)}
-                                  onBlur={value => {
-                                    const dataCopy = [...data];
-                                    dataCopy[lineConfigIndex].payPeriod = round(value / (toolType == "Трейдинг" ? 248 : 365), 2);
-                                    this.setState({ data: dataCopy, changed: true });
-                                  }}
-                                  unsigned="true"
-                                  format={formatNumber}
-                                  min={0}
-                                  suffix="дн"
-                                />
-                              </span>
-                            </div>
-
-                            <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                              <span className="dashboard-key">
-                                {toolType == "Недвижимость" ? "Ставка по ипотеке" : "Ставка по кредиту"}
-                                <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                                </span>
-                              </span>
-
-                              <span className="dashboard-val dashboard-col--wide">
-                                <NumericInput
-                                  key={payRate}
-                                  className="dashboard__input"
-                                  defaultValue={payRate * 100}
-                                  onBlur={value => {
-                                    const dataCopy = [...data];
-                                    dataCopy[lineConfigIndex].payRate = value / 100;
-                                    this.setState({ data: dataCopy, changed: true });
-                                  }}
-                                  unsigned="true"
-                                  format={formatNumber}
-                                  min={0}
-                                  max={100}
-                                  suffix={"%"}
-                                />
-                              </span>
-                            </div>
-                          </>
-                        )
-                      }
-                    })()} */}
                     
                     <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                       <span className="dashboard-key">
@@ -1112,9 +1017,8 @@ class App extends React.Component {
                           defaultValue={ requiredVal * 100 }
                           onBlur={value => {
                             const dataCopy = [...data];
-                            const prop = toolType == "Недвижимость" ? "profitPercent" : "ofzValue";
+                            const prop = toolType == "Недвижимость" ? "profitPercent" : "ofzVal";
                             dataCopy[lineConfigIndex][prop] = value / 100;
-
                             this.setState({ data: dataCopy, changed: true });
                           }}
                           unsigned="true"
@@ -1130,7 +1034,7 @@ class App extends React.Component {
                       <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                         <span className="dashboard-key">
                           <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                            <Tooltip title={"Прибыль от актив. инвестиций за один день"}>
+                            <Tooltip title={"Прибыль за один день"}>
                               Прибыль от актив. инвестиций
                             </Tooltip>
                           </span>
@@ -1140,10 +1044,10 @@ class App extends React.Component {
                           <NumericInput
                             key={Math.random()}
                             className="dashboard__input"
-                            defaultValue={activeInvestVal}
+                            defaultValue={activeInvestVal == 0.03? 0.03 : activeInvestVal * 100}
                             onBlur={value => {
                               const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].activeInvestVal = value;
+                              dataCopy[lineConfigIndex].activeInvestVal = value / 100;
                               this.setState({ data: dataCopy, changed: true });
                             }}
                             unsigned="true"
