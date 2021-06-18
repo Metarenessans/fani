@@ -657,8 +657,6 @@ class App extends React.Component {
                           tools={this.getTools()}
                           options={this.getOptions()}
 
-
-
                           onSort={(sortProp, sortDESC) => {
                             if (sortProp !== this.state.sortProp) {
                               sortDESC = true;
@@ -676,6 +674,7 @@ class App extends React.Component {
                           onDelete={index => {
                             data.splice(index, 1)
                             this.setState({ data, changed: true });
+                            this.setState({ lineConfigIndex: index - 1 });
                           }}
                           onConfigOpen={() => {
                             this.setState({ lineConfigIndex: index });
@@ -896,8 +895,7 @@ class App extends React.Component {
 
           <Dialog
             id="dashboard-config"
-            // title={data[lineConfigIndex || 0].toolType}
-            title="Настройка инструмента"
+            title={data[lineConfigIndex || 0].toolType}
             confirmText={"Удалить"}
             onConfirm={() => {
               return true;
@@ -1004,9 +1002,9 @@ class App extends React.Component {
                     <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                       <span className="dashboard-key">
                         <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                          <Tooltip title={"Процент возможной годовой прибыли"}>
+                          {/* <Tooltip title={"Процент годовой прибыли"}> */}
                             {toolType == "Недвижимость" ? "Возможная прибыль" : "Ставка ОФЗ"}
-                          </Tooltip>
+                          {/* </Tooltip> */}
                         </span>
                       </span>
 
