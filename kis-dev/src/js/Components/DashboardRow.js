@@ -152,7 +152,7 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col dashboard-col--tool">
           <span className="dashboard-key">Инструмент</span>
-          <span className="dashboard-val">
+          <span className="dashboard-val dashboard-val--tool">
             <Select
               className="dashboard__select dashboard__select--wide" 
               value={toolType}
@@ -339,7 +339,7 @@ export default class DashboardRow extends React.Component {
         {/* dialog button */}
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">Настройка</span>
-          <span className="dashboard-val dashboard-val--config dashboard-col--wide">
+          <span className="dashboard-val dashboard-val--config dashboard-col--config">
             <button
               className="settings-button dashboard-col__config"
               aria-label="Открыть"

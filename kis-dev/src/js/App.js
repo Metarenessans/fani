@@ -63,10 +63,9 @@ const defaultToolData = {
 
   period:          10,
   firstPay:   200_000,
-  monthOutcome:     0,
   rentIncome:  20_000,
+  monthOutcome:     0,
   
-  // percent:             999,
   incomeMonthly: 1_000_000,
   monthPay:              0,
   monthAppend:           0,
@@ -910,7 +909,7 @@ class App extends React.Component {
                   <>
                     {toolType !== "Вклад" && 
                       <>
-                        <div className="dashboard-col dashboard-col--main">
+                        <div className="dashboard-col dashboard-col--dialog-depo">
                           <span className="dashboard-key">
                             <span className="dashboard-key-inner" style={{ width: "100%" }}>
                               {toolType == "Недвижимость" ? "Стоимость" : "Сумма"}
@@ -940,7 +939,7 @@ class App extends React.Component {
                               Период
                             </Tooltip>
                           </span>
-                          <span className="dashboard-val dashboard-col--wide">
+                          <span className="dashboard-val dashboard-col--dialog-period">
                             <NumericInput
                               className="dashboard__input dialog-period"
                               defaultValue={payPeriod}
@@ -974,11 +973,11 @@ class App extends React.Component {
                         <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                           <span className="dashboard-key">
                             {toolType == "Недвижимость" ? "Ставка по ипотеке" : "Ставка по кредиту"}
-                            <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                            <span className="dashboard-key-inner">
                             </span>
                           </span>
 
-                          <span className="dashboard-val dashboard-col--wide">
+                          <span className="dashboard-val dashboard-col--rate">
                             <NumericInput
                               key={payRate}
                               className="dashboard__input"
@@ -1008,7 +1007,7 @@ class App extends React.Component {
                         </span>
                       </span>
 
-                      <span className="dashboard-val dashboard-col--wide">
+                      <span className="dashboard-val dashboard-col--rate">
                         <NumericInput
                           key={Math.random()}
                           className="dashboard__input"
@@ -1038,10 +1037,10 @@ class App extends React.Component {
                           </span>
                         </span>
 
-                        <span className="dashboard-val dashboard-col--wide">
+                        <span className="dashboard-val dashboard-col--rate">
                           <NumericInput
                             key={Math.random()}
-                            className="dashboard__input"
+                            className="dashboard__input" 
                             defaultValue={activeInvestVal == 0.03? 0.03 : activeInvestVal * 100}
                             onBlur={value => {
                               const dataCopy = [...data];
