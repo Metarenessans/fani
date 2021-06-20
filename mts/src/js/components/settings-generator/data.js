@@ -78,6 +78,7 @@ const createData = (type, options, meta) => {
   let data = [];
   data.isBying = isBying;
   data.on      = on;
+  data.type    = type;
   if (!on || contracts == 0) {
     return data;
   }

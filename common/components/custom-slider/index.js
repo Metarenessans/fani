@@ -17,7 +17,7 @@ export default class CustomSlider extends React.Component {
     }
     
     this.state = {
-      value: value || 0
+      value: value || 0,
     };
 
     this.filter = filter || (value => value);

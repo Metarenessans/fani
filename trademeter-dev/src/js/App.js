@@ -432,8 +432,7 @@ class App extends Component {
 
   fetchInvestorInfo() {
     fetchInvestorInfo()
-      .then(this.applyInvestorInfo)
-      .then(() => this.syncToolsWithInvestorInfo())   
+      .then(this.applyInvestorInfo)  
       .then(response => {
         let { deposit } = response.data;
         let { depoStart, depoEnd } = this.state;
@@ -449,6 +448,7 @@ class App extends Component {
 
         return this.setStateAsync({ depoStart, depoEnd });
       })
+      .then(() => this.syncToolsWithInvestorInfo())
       .then(this.recalc)
       .catch(error => console.error(error))
   }
@@ -539,8 +539,6 @@ class App extends Component {
   
 
   fetchSaves() {
-    console.log("fetch saves");
-    
     fetchSavesFor("trademeter")
       .then(response => {
         const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
@@ -566,7 +564,8 @@ class App extends Component {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools().then(() => this.setFetchingToolsTimeout());
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout());
     
     if (dev) {
       if (shouldLoadFakeSave && !(params.get("pure") === "true")) {
@@ -1371,10 +1370,10 @@ class App extends Component {
       return;
     }
 
-    const persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
+    const percentage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
     const depoEnd = this.getDepoEnd();
 
-    passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
+    passiveIncomeMonthly[mode] = Math.round(percentage * depoEnd * 21.6667);
     return this.setStateAsync({ passiveIncomeMonthly });
   }
 
