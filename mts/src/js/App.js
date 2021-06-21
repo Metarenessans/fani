@@ -179,7 +179,8 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, dev ? 5_000 : 1 * 60 * 1_000);
+      }, dev ? 10_000 : 1 * 60 * 1_000);
+
     }).then(() => this.setFetchingToolsTimeout())
   }
 
@@ -604,7 +605,6 @@ class App extends React.Component {
 
   getCurrentTool() {
     const { tools, currentToolCode } = this.state;
-
     return tools.find(tool => tool.code == currentToolCode) || Tools.create();
   }
 
