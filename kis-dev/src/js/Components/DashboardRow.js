@@ -141,8 +141,10 @@ export default class DashboardRow extends React.Component {
           )
         }
   
-        else if (activeInvestVal > 0 && ofzVal == 0) {
-          personalInvestProfitVal(activeInvestPeriod)
+        else if (ofzVal == 0 && activeInvestVal > 0) {
+          return (
+            personalInvestProfitVal(activeInvestPeriod)
+          )
         }
       }
     }

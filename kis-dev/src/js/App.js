@@ -593,7 +593,7 @@ class App extends React.Component {
 
   render() {
     const { data, sortProp, sortDESC, lineConfigIndex } = this.state;
-
+    
     return (
       <Provider value={this}>
         <div className="page">
@@ -673,7 +673,8 @@ class App extends React.Component {
                           onDelete={index => {
                             data.splice(index, 1)
                             this.setState({ data, changed: true });
-                            this.setState({ lineConfigIndex: index - 1 });
+                            // решение кейса undefined при удалении строки
+                            this.setState({ lineConfigIndex: 0 });
                           }}
                           onConfigOpen={() => {
                             this.setState({ lineConfigIndex: index });
