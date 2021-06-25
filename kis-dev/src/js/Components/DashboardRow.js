@@ -107,19 +107,31 @@ export default class DashboardRow extends React.Component {
     
     //годовая прибыль от ОФЗ
     const ofzProfit = depo * ofzVal
-    
+
+    // аннуитетный месячный платёж
+    const annuitetMonthPay =
+      round(
+        (monthPercent * (1 + monthPercent) ** (period * 12))
+        /
+        ((1 + monthPercent) ** (period * 12) - 1)
+        *
+        (depo - firstPay)
+      ,2)
+
     // сумма всех выводов в месяц
-    const allMonthOutCome = monthPay + monthOutcome
+    const allMonthOutCome = (toolType !== "Вклад" ? monthPay : annuitetMonthPay) + monthOutcome
 
     // итог от активных инвестиций в зависимости от входящего периода
     const personalInvestProfitVal = period => {
       return (
-        extRateReal(depo, null, monthOutcome + monthPay, 30, monthAppend, 30, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
+        extRateReal(depo, null, allMonthOutCome, 30, monthAppend, 30, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
       )
     }
 
-    // возврат необходимого значения на основе (офз, активных инвестиций) и периода - "Трейдинг"
+    // возврат необходимого значения на основе (офз, активных инвестиций) и периода - "Трейдинг" и "Вклад"
     const finalVal = (activeInvestPeriod, months) => {
+      const { activeInvestVal, ofzVal, depo } = item
+      
       if (ofzVal == 0 && activeInvestVal == 0) {
         return 0
       }
@@ -132,7 +144,7 @@ export default class DashboardRow extends React.Component {
               personalInvestProfitVal(activeInvestPeriod) + ofzProfit * period
           )
         }
-  
+
         else if (ofzVal > 0 && activeInvestVal == 0) {
           return (
             months == 1 ?
@@ -180,8 +192,8 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
               className="dashboard__input"
-              defaultValue={toolType !== "Вклад"? firstPay : depo}
-              onBlur={value => toolType !== "Вклад" ? onChange("firstPay", value) : onChange("depo", value)}
+              defaultValue={firstPay}
+              onBlur={value => onChange("firstPay", value)}
               format={formatNumber}
               unsigned="true"
               min={0}
@@ -236,8 +248,8 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={item}
               className="dashboard__input"
-              defaultValue={toolType == "Трейдинг"? 0 : rentIncome}
-              disabled={toolType == "Трейдинг"}
+              defaultValue={toolType !== "Недвижимость"? 0 : rentIncome}
+              disabled={toolType !== "Недвижимость"}
               onBlur={value => onChange("rentIncome", value)}
               format={formatNumber}
               unsigned="true"
@@ -307,7 +319,7 @@ export default class DashboardRow extends React.Component {
           </span>
 
           <span className="dashboard-val dashboard-col--main">
-            {formatNumber(round(toolType == "Трейдинг" ? finalVal(260 / 12, 1) : monthEndSum, 2) ) }
+            {formatNumber(round(toolType !== "Недвижимость" ? finalVal(260 / 12, 1) : monthEndSum, 2) ) }
           </span>
  
         </div>
@@ -326,7 +338,7 @@ export default class DashboardRow extends React.Component {
             <span className="dashboard__input">
               {
                 formatNumber(
-                  round( toolType == "Трейдинг"?
+                  round( toolType !== "Недвижимость"?
                     finalVal(260 * period, 12) :
                     monthEndSum * (period * 12)
                   , 2)
