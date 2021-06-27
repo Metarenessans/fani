@@ -75,7 +75,7 @@ export const GlobalProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
-        payload: err.response.data.error,
+        payload: err.response,
       });
     }
   }

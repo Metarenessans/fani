@@ -244,16 +244,6 @@ body {
   height: 4em;
   word-break: break-word;
 }
-.config-table-wrap {
-  max-width: 100%;
-  -ms-flex-preferred-size: 32em;
-  flex-basis: 32em;
-  -webkit-box-flex: 1;
-  -ms-flex-positive: 1;
-  flex-grow: 1;
-  overflow: auto;
-  font-size: 0.75em;
-}
 .input-group--fluid .input-group__input {
   width: 10em;
 }
@@ -825,6 +815,12 @@ body {
   }
 }
 
+@media (max-width: 1200px) {
+  .price-move .dialog {
+    font-size: 0.9vw;
+  }
+}
+
 @media (max-width: 991px) {
   .loads,
   .tools {
@@ -962,6 +958,9 @@ body {
     }
     .dialog__title {
       font-size: 2em;
+    }
+    .config.stack {
+      width: 100%;
     }
   }
   #root .container {
@@ -1107,5 +1106,11 @@ body {
   }
   .tool-wrap {
     position: relative;
+  }
+}
+
+@media (max-width: 576px) {
+  .config-table-wrap {
+    flex-basis: 31em;
   }
 }

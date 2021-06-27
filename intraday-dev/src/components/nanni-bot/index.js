@@ -4,67 +4,59 @@ import { Button } from "antd";
 import NanniLogo from "../../image/nanni.svg";
 import { CloseOutlined } from "@ant-design/icons";
 import "./style.scss";
-import axios from "axios";
+
+import $ from "jquery";
 
 export const NanniBot = () => {
-  const messages = [
-    {
-      id: 0,
-      text: "Работа со страхом. Чем вызвана тревожность?",
-      choices: ["Просадка по депозиту", "Другое"],
-      correct: 0,
-    },
-    {
-      id: 1,
-      text: "Какой размер просадки?",
-      choices: ["Меньше 10%", "Больше 10%"],
-      correct: 1,
-    },
-    {
-      id: 2,
-      text: "Какая загрузка депозита?",
-      choices: ["Меньше 50%", "Больше 50%"],
-      correct: 1,
-    },
-    {
-      id: 3,
-      text: "Какое количество инструментов в работе?",
-      choices: ["Один", "Несколько"],
-      correct: 1,
-    },
-    {
-      id: 4,
-      text: "Советуем закрыть плюсовые позиции. На оставшийся объем запустить прямую разгрузку роботом МАНИ Лимитник для снижения суммарной загрузки по депозиту до 30%. Как только загрузка по депозиту придёт в норму, смоделируйте ситуацию по каждому из инструментов в МТС сервиса ФАНИ и запустите алгоритм робота МАНИ 144 СМС+ТОР с зеркальными докупками, с необходимыми для выхода в профит настройками. Подробнее: https://fani144.ru/mts/",
-      choices: [],
-    },
-  ];
+  const [userID, setUserID] = useState("user@mail.ru");
   const [chatOpen, setChatOpen] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
   const [haveUnread, setHaveUnread] = useState(false);
   const [messageLog, setMessageLog] = useState([]);
 
+  useEffect(() => {
+    getInvestorInfo();
+  }, []);
+
+  useEffect(() => {
+    cancelSession();
+  }, [userID]);
+
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current.scrollIntoView();
   };
 
-  const printMessage = () => {
-    setTimeout(() => {
-      setBotTyping(true);
-    }, 500);
+  const messageRef = useRef(null);
+  const scrollToMessage = () => {
+    messageRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
+  };
 
-    setTimeout(() => {
-      console.log(messages[messageLog.length]);
-      setMessageLog([...messageLog, messages[messageLog.length]]);
-      setBotTyping(false);
-      setHaveUnread(true);
-      scrollToBottom();
-    }, 1500);
+  const getInvestorInfo = async () => {
+    try {
+      await $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/?method=getInvestorInfo",
+        success: function (response) {
+          const error = JSON.parse(response).error;
+          if (!error) setUserID(JSON.parse(response).data.email);
+          else setUserID("user@mail.ru");
+        },
+      });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const setMessageChosen = (choiceIdx, messageIdx) => {
     const log = [...messageLog];
     log[messageIdx].chosen = choiceIdx;
+
+    setMessageLog(log);
+  };
+
+  const setMessagePrinted = async () => {
+    const log = [...messageLog];
+    log.map((message) => (message.printed = true));
 
     setMessageLog(log);
   };
@@ -81,39 +73,175 @@ export const NanniBot = () => {
     } else return "";
   };
 
-  useEffect(async () => {
-    // await axios
-    //   .get("http://nimba.ru:82/nanni/has_session?user_id=user@mail.ru", {
-    //     headers: { "Content-Type": "application/json" },
-    //   })
-    //   .then((response) => {
-    //     console.log(response);
-    //   })
-    //   .catch((err) => console.log(err));
-    fetch("http://nimba.ru:82/nanni/has_session", {
-      body: "{'user_id':'user@mail.ru'}",
-      headers: {
-        "Content-Type": "application/json",
-      },
+  const conclusionChosen = (messageIdx) => {
+    if ("chosen" in messageLog[messageIdx]) return "chosen";
+    else return "";
+  };
+
+  const hasSession = async () => {
+    const response = await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
       method: "POST",
-    })
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        console.log(data);
-      });
-  }, []);
+      data: {
+        url: "http://nimba.ru:82/nanni/has_session",
+        method: "GET",
+        data: JSON.stringify({ user_id: userID }),
+      },
+      success: function (response) {
+        return response;
+      },
+    });
+
+    return JSON.parse(response).has_session;
+  };
+
+  const startSession = async () => {
+    await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/start_session",
+        method: "PUT",
+        data: JSON.stringify({ user_id: userID }),
+      },
+      success: function (response) {
+        console.log("Session has started to", userID);
+      },
+    });
+  };
+
+  const cancelSession = async () => {
+    await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/cancel_session",
+        method: "DELETE",
+        data: JSON.stringify({ user_id: userID }),
+      },
+      success: function (response) {
+        console.log("Session canceled to", userID);
+      },
+    });
+  };
+
+  const askQuestion = async () => {
+    const response = await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/ask",
+        method: "GET",
+        data: JSON.stringify({ user_id: userID }),
+      },
+      success: function (response) {
+        return response;
+      },
+    });
+    const message = JSON.parse(response);
+    message.time = currentTime();
+
+    setTimeout(() => {
+      setBotTyping(true);
+    }, 500);
+
+    setTimeout(() => {
+      setBotTyping(false);
+      setHaveUnread(true);
+      setMessageLog([...messageLog, message]);
+      scrollToMessage();
+    }, 1500);
+  };
+
+  const sendAnswer = async (choiceIdx, messageIdx) => {
+    const response = await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/answer",
+        method: "POST",
+        data: JSON.stringify({
+          user_id: userID,
+          answer: { choice: choiceIdx },
+        }),
+      },
+      success: function (response) {
+        return response;
+      },
+    });
+
+    setMessageChosen(choiceIdx, messageIdx);
+    setHaveUnread(false);
+
+    const coversationFinished = JSON.parse(response).conversation_finished;
+
+    if (!coversationFinished) {
+      await askQuestion();
+    } else {
+      await cancelSession();
+    }
+  };
+
+  const answerConclusion = async (messageIdx) => {
+    await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/answer",
+        method: "POST",
+        data: JSON.stringify({
+          user_id: userID,
+          answer: {},
+        }),
+      },
+      success: function (response) {
+        return response;
+      },
+    });
+
+    setMessageChosen(0, messageIdx);
+    setHaveUnread(false);
+
+    await askQuestion();
+  };
+
+  const botInit = async () => {
+    setChatOpen(true);
+
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      document.body.style.overflowY = "hidden";
+      document.body.style.position = "fixed";
+    }
+
+    const session = await hasSession();
+
+    if (!session) {
+      await startSession();
+      await askQuestion();
+    }
+    await setMessagePrinted();
+    scrollToBottom();
+  };
+
+  const currentTime = () => {
+    const today = new Date();
+    const min = today.getMinutes();
+    return today.getHours() + ":" + (min < 10 ? "0" + min : min);
+  };
+
+  const closeChat = () => {
+    setChatOpen(false);
+    setHaveUnread(false);
+    document.body.style.overflowY = "";
+    document.body.style.position = "";
+  };
 
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>
       <Button
         type="primary"
         shape="round"
-        onClick={() => {
-          setChatOpen(true);
-          if (!messageLog.length) printMessage();
-        }}
+        onClick={() => botInit()}
         className="nanni-btn"
       >
         <img src={NanniLogo} />
@@ -137,11 +265,27 @@ export const NanniBot = () => {
             )}
           </div>
           <Button
-            shape="circle"
+            className="close-session"
+            type="ghost"
+            size="small"
+            style={{
+              height: "auto",
+            }}
             onClick={async () => {
-              await setChatOpen(false);
-              await setHaveUnread(false);
-              await setMessageLog([]);
+              await cancelSession();
+              setMessageLog([]);
+              closeChat();
+            }}
+          >
+            Завершить
+            <br />
+            разговор
+          </Button>
+          <Button
+            className="close-chat"
+            shape="circle"
+            onClick={() => {
+              closeChat();
             }}
           >
             <CloseOutlined />
@@ -150,46 +294,97 @@ export const NanniBot = () => {
         <div className="chat-body">
           {messageLog.map((message, messageIdx) => {
             return (
-              <div className="message" key={message.id}>
-                <div className="question">
+              <div className="message" key={messageIdx} ref={messageRef}>
+                <div
+                  className={`question fade-in-left ${
+                    message.hasOwnProperty("chosen") ? "chosen" : ""
+                  } ${message.hasOwnProperty("printed") ? "printed" : ""}`}
+                >
                   <div className="icon">
                     <img src={NanniLogo} />
                   </div>
                   <div className="content">
                     <div className="question-header">
                       <div className="name">NANNI Bot</div>
-                      <div className="time">16:15</div>
+                      <div className="time">{message.time}</div>
                     </div>
-                    <div className="question-body">{message.text}</div>
+                    <div className="question-body">
+                      {message.question_with_choice ? (
+                        message.question_with_choice.question
+                      ) : message.conclusion.description ? (
+                        <div>
+                          <p>
+                            <b>{message.conclusion.title}</b>
+                          </p>
+                          <p>{message.conclusion.description}</p>
+                        </div>
+                      ) : (
+                        message.conclusion.title
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="choices">
-                  {message.choices.map((choice, choiceIdx) => {
-                    return (
-                      <div
-                        className={`choice ${whatChosen(
-                          choiceIdx,
-                          messageIdx
-                        )}`}
+                {message.question_with_choice ? (
+                  <div className="choices">
+                    {message.question_with_choice.possible_answers.map(
+                      (choice, choiceIdx) => {
+                        return (
+                          <div
+                            className={`choice fade-in-right ${whatChosen(
+                              choiceIdx,
+                              messageIdx
+                            )} ${
+                              message.hasOwnProperty("printed") ? "printed" : ""
+                            }`}
+                            key={choiceIdx}
+                          >
+                            <button
+                              key={choiceIdx}
+                              disabled={message.hasOwnProperty("chosen")}
+                              onClick={() => sendAnswer(choiceIdx, messageIdx)}
+                            >
+                              {choice}
+                            </button>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                ) : message.conclusion.is_final ? (
+                  <div className="choices">
+                    <div
+                      className={`choice fade-in-right ${conclusionChosen(
+                        messageIdx
+                      )} ${message.hasOwnProperty("printed") ? "printed" : ""}`}
+                    >
+                      <button
+                        disabled={message.hasOwnProperty("chosen")}
+                        onClick={async () => {
+                          await cancelSession();
+                          closeChat();
+                          setMessageLog([]);
+                        }}
                       >
-                        <button
-                          key={choiceIdx}
-                          disabled={message.hasOwnProperty("chosen")}
-                          onClick={() => {
-                            if (choiceIdx === message.correct) {
-                              setMessageChosen(choiceIdx, messageIdx);
-                              setHaveUnread(false);
-                              printMessage();
-                            }
-                          }}
-                        >
-                          {choice}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                        Ок, понятно
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="choices">
+                    <div
+                      className={`choice fade-in-right ${conclusionChosen(
+                        messageIdx
+                      )} ${message.hasOwnProperty("printed") ? "printed" : ""}`}
+                    >
+                      <button
+                        disabled={message.hasOwnProperty("chosen")}
+                        onClick={() => answerConclusion(messageIdx)}
+                      >
+                        Ок
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

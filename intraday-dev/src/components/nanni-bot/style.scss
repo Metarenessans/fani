@@ -23,6 +23,7 @@
   height: 55px;
   font-family: "SF Pro Display";
   transition: all 0.3s ease-out;
+  -webkit-transition: all 0.3s ease-out;
 
   p {
     margin-bottom: 0;
@@ -89,7 +90,7 @@
   }
   .chat-header .name {
     color: #2b303c;
-    font-size: 24px;
+    font-size: 1.5em;
     font-weight: 600;
     line-height: 1;
   }
@@ -100,14 +101,21 @@
     color: #2a8bf2;
     line-height: 1.25;
   }
-  .chat-header .ant-btn {
+  .chat-header .close-chat {
     background: transparent;
     border: none;
     color: #999999;
     box-shadow: none;
+    margin-left: 0.5em;
   }
   .chat-header .ant-btn:hover {
     color: #2b303c;
+  }
+  .chat-header .close-session {
+    font-size: 0.85em;
+    border: none;
+    box-shadow: none;
+    line-height: 1.25;
   }
   .chat-header .botTyping {
     display: flex;
@@ -115,6 +123,10 @@
   }
   .chat-header .dot {
     animation: shimmy 0.75s infinite;
+    -webkit-animation: shimmy 0.75s infinite;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
   }
   .chat-header .dot1 {
     margin-left: 2px;
@@ -162,11 +174,10 @@
     margin-bottom: 20px;
   }
   .question {
+    padding: 0.25em 0;
     display: flex;
-    margin-bottom: 20px;
-    animation: fadeInLeft 0.5s;
+    margin-bottom: 1.25em;
     visibility: hidden;
-    animation-fill-mode: forwards;
     @keyframes fadeInLeft {
       from {
         opacity: 0;
@@ -178,6 +189,15 @@
         transform: translateX(0);
       }
     }
+  }
+  .fade-in-left {
+    animation: fadeInLeft 0.5s;
+    -webkit-animation: fadeInLeft 0.5s;
+    animation-fill-mode: forwards;
+    animation-delay: 0.4s;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
   }
   .question .content {
     display: flex;
@@ -214,6 +234,7 @@
     font-size: 16px;
     line-height: 19px;
     color: #c4c4c4;
+    margin-right: 0.5em;
   }
   .question .time {
     color: #999999;
@@ -232,9 +253,16 @@
     flex-direction: column;
     align-items: flex-end;
     flex: 1;
+  }
+  .fade-in-right {
     animation: fadeInRight 0.5s 0.5s;
-    visibility: hidden;
+    -webkit-animation: fadeInRight 0.5s 0.5s;
     animation-fill-mode: forwards;
+    animation-delay: 0.4s;
+    visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
   }
   @keyframes fadeInRight {
     from {
@@ -268,6 +296,7 @@
     color: #2b303c;
     cursor: pointer;
     transition: 0.5s;
+    -webkit-transition: 0.5s;
   }
   .choice:last-child {
     margin-bottom: 0;
@@ -283,7 +312,12 @@
   }
   .fade-out-right {
     animation: fadeOutRight 0.3s;
+    -webkit-animation: fadeOutRight 0.3s;
     animation-fill-mode: forwards;
+    animation-delay: 0.3s;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
   }
   @keyframes fadeOutRight {
     0% {
@@ -297,9 +331,17 @@
       transform: translateX(100%);
     }
   }
+  .chosen {
+    animation-name: none;
+    visibility: visible;
+  }
   .chosen.nth {
     animation: moveTop 0.3s;
+    -webkit-animation: moveTop 0.3s;
     animation-fill-mode: forwards;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
   }
   @keyframes moveTop {
     0% {
@@ -310,10 +352,13 @@
       transform: translateY(0);
     }
   }
-
   .fade-to-top {
     animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
+    -webkit-animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
     animation-fill-mode: forwards;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform, opacity;
   }
   @keyframes fadeTop {
     0% {
@@ -330,6 +375,14 @@
       height: 0;
     }
   }
+  .printed {
+    animation-name: none;
+    -webkit-animation-name: none;
+    visibility: visible;
+  }
+  .printed.hidden {
+    display: none;
+  }
 }
 
 @media (max-width: 767px) {
@@ -337,14 +390,24 @@
     width: 20em;
     height: 4em;
     &.active {
-      width: 85%;
-      max-width: 25em;
+      max-width: initial;
+      max-height: initial;
+      width: 95%;
+      height: 98%;
+      top: 50%;
+      left: 50%;
+      transform: translate3d(-50%, -50%, 0);
+      -webkit-transform: translate3d(-50%, -50%, 0);
+      will-change: transform;
     }
     .nanni-btn {
       font-size: 20px;
     }
     .nanni-btn img {
       width: 45px;
+    }
+    .chat-header .name {
+      font-size: 1.4em;
     }
   }
 }
