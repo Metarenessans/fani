@@ -61,9 +61,8 @@ export default (state, action) => {
   const addStepColumn = ({ tableIdx }) => {
     const updatedTable = [...state.loadTables][tableIdx];
     const lastStep = +updatedTable.steps[updatedTable.steps.length - 1];
-    const lastExtraStep = +updatedTable.extraSteps[
-      updatedTable.extraSteps.length - 1
-    ];
+    const lastExtraStep =
+      +updatedTable.extraSteps[updatedTable.extraSteps.length - 1];
     let newStep = 0;
 
     if (lastExtraStep) {
@@ -113,6 +112,10 @@ export default (state, action) => {
       return {
         ...state,
         investorInfo: action.payload,
+      };
+    case "GET_INTRADAY_SNAPSHOTS":
+      return {
+        ...state,
       };
     case "ADD_TOOL":
       return addTool(action.payload);

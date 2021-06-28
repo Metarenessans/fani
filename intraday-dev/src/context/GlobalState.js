@@ -1,5 +1,7 @@
 import React, { createContext, useReducer } from "react";
 import axios from "axios";
+import $ from "jquery";
+
 import AppReducer from "./AppReducer";
 
 const initialState = {
@@ -72,6 +74,128 @@ export const GlobalProvider = ({ children }) => {
           type: "GET_INVESTOR_INFO",
           payload: res.data.data,
         });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function getIntradaySnapshots() {
+    try {
+      const res = await axios.get(
+        "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
+      );
+      if (res.data.data) {
+        console.log(res.data.data);
+        dispatch({
+          type: "GET_INTRADAY_SNAPSHOTS",
+          payload: res.data.data,
+        });
+      } else {
+        console.log(res.data);
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function getIntradaySnapshot(id) {
+    try {
+      const res = await axios.get(
+        `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
+      );
+      if (res.data) {
+        console.log(res.data.data);
+        dispatch({
+          type: "GET_INTRADAY_SNAPSHOT",
+          payload: res.data.data,
+        });
+      } else {
+        console.log(res.data);
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function addIntradaySnapshot(snapshotName, snapshotData) {
+    try {
+      const res = await axios.post(
+        "https://fani144.ru/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
+        {
+          name: snapshotName,
+          static: snapshotData,
+        }
+      );
+      if (res.data) {
+        console.log(res.data);
+        dispatch({
+          type: "ADD_INTRADAY_SNAPSHOT",
+          payload: res.data.data,
+        });
+      } else {
+        console.log(res.data);
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function updateIntradaySnapshot(id, snapshotName, snapshotData) {
+    try {
+      const res = await axios.post(
+        "https://fani144.ru/local/php_interface/s1/ajax/?method=updateIntradaySnapshot",
+        {
+          id: id,
+          name: snapshotName,
+          static: snapshotData,
+        }
+      );
+      if (res.data) {
+        console.log(res.data);
+        dispatch({
+          type: "UPDATE_INTRADAY_SNAPSHOT",
+          payload: res.data.data,
+        });
+      } else {
+        console.log(res.data);
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function deleteIntradaySnapshot(id) {
+    try {
+      const res = await axios.post(
+        "https://fani144.ru/local/php_interface/s1/ajax/?method=deleteIntradaySnapshot",
+        {
+          id,
+        }
+      );
+      if (res.data) {
+        console.log(res.data);
+        dispatch({
+          type: "DELETE_INTRADAY_SNAPSHOT",
+          payload: res.data.data,
+        });
+      } else {
+        console.log(res.data);
+      }
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
@@ -338,6 +462,11 @@ export const GlobalProvider = ({ children }) => {
 
         getTools,
         getInvestorInfo,
+        getIntradaySnapshots,
+        getIntradaySnapshot,
+        addIntradaySnapshot,
+        updateIntradaySnapshot,
+        deleteIntradaySnapshot,
         addTool,
         updateTool,
         deleteTool,
