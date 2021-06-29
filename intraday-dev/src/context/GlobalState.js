@@ -1,6 +1,6 @@
 import React, { createContext, useReducer } from "react";
 import axios from "axios";
-import $ from "jquery";
+import { ajax } from "jquery";
 
 import AppReducer from "./AppReducer";
 
@@ -126,24 +126,23 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function addIntradaySnapshot(snapshotName, snapshotData) {
+  async function addIntradaySnapshot(data) {
     try {
-      const res = await axios.post(
-        "https://fani144.ru/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
-        {
-          name: snapshotName,
-          static: snapshotData,
-        }
-      );
-      if (res.data) {
-        console.log(res.data);
-        dispatch({
-          type: "ADD_INTRADAY_SNAPSHOT",
-          payload: res.data.data,
-        });
-      } else {
-        console.log(res.data);
-      }
+      const res = await ajax({
+        url: "/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
+        method: "POST",
+        data,
+        success: (response) => {
+          return response;
+        },
+      });
+
+      console.log("response:", res);
+
+      dispatch({
+        type: "ADD_INTRADAY_SNAPSHOT",
+        payload: res,
+      });
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
@@ -182,7 +181,7 @@ export const GlobalProvider = ({ children }) => {
   async function deleteIntradaySnapshot(id) {
     try {
       const res = await axios.post(
-        "https://fani144.ru/local/php_interface/s1/ajax/?method=deleteIntradaySnapshot",
+        "/local/php_interface/s1/ajax/?method=deleteIntradaySnapshot",
         {
           id,
         }
