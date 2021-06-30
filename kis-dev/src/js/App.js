@@ -78,6 +78,7 @@ const defaultToolData = {
   activeInvestVal:  .03,
   ofzVal:           .05,
   monthPay:           0,
+  investPercent:   0.03,
 };
 
 function onScroll() {
@@ -904,7 +905,7 @@ class App extends React.Component {
           >
             <div className="dashboard-row" >
               {(() => {
-                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal, monthPay } = data[lineConfigIndex || 0];
+                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal, monthPay, investPercent } = data[lineConfigIndex || 0];
 
                 const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
@@ -969,30 +970,60 @@ class App extends React.Component {
                         />
                       </span>
                     </div> */}
-
-                    <div className="dashboard-col dashboard-col--main dashboard-col--month-pay">
-                      <span className="dashboard-key">
-                        <span className="dashboard-key-inner">
-                          Месячный платёж
-                        </span>
-                      </span>
                     
-                      <span className="dashboard-val dashboard-col--rate">
-                        <NumericInput
-                          key={monthPay}
-                          className="dashboard__input"
-                          defaultValue={monthPay}
-                          onBlur={value => {
-                            const dataCopy = [...data];
-                            dataCopy[lineConfigIndex].monthPay = value;
-                            this.setState({ data: dataCopy, changed: true });
-                          }}
-                          unsigned="true"
-                          format={formatNumber}
-                          min={0}
-                        />
-                      </span>
-                    </div>
+                    {(toolType !== "Вклад" && 
+                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                        <span className="dashboard-key">
+                          <span className="dashboard-key-inner">
+                            Месячный платёж
+                          </span>
+                        </span>
+                      
+                        <span className="dashboard-val dashboard-col--rate">
+                          <NumericInput
+                            key={monthPay}
+                            className="dashboard__input"
+                            defaultValue={monthPay}
+                            onBlur={value => {
+                              const dataCopy = [...data];
+                              dataCopy[lineConfigIndex].monthPay = value;
+                              this.setState({ data: dataCopy, changed: true });
+                            }}
+                            unsigned="true"
+                            format={formatNumber}
+                            min={0}
+                          />
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(toolType == "Вклад" && 
+                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                        <span className="dashboard-key">
+                          <span className="dashboard-key-inner">
+                            Ставка по вкладу
+                          </span>
+                        </span>
+                        
+                        <span className="dashboard-val dashboard-col--rate">
+                          <NumericInput
+                            key={investPercent}
+                            className="dashboard__input"
+                            defaultValue={investPercent * 100}
+                            onBlur={value => {
+                              const dataCopy = [...data];
+                              dataCopy[lineConfigIndex].investPercent = value / 100;
+                              this.setState({ data: dataCopy, changed: true });
+                            }}
+                            unsigned="true"
+                            format={formatNumber}
+                            min={0}
+                            max={100}
+                            suffix="%"
+                          />
+                        </span>
+                      </div>
+                    )}
                     
                     {(toolType == "Недвижимость" &&
                       <div className="dashboard-col dashboard-col--main dashboard-col--percent">
