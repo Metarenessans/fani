@@ -21,6 +21,8 @@ const names = {
 
 export default function SGRow({
   test,
+  currentPreset,
+  currentOption,
   preferredStepLabel,
   isBying = false,
   disabled,
@@ -47,6 +49,9 @@ export default function SGRow({
   const contractsArray = data.map(row => row.merged ? -row.contracts : row.contracts);
   const contractsSum = contractsArray.reduce((acc, curr) => acc + curr, 0);
   let sumPercent = contractsSum / (contracts || 1) * 100;
+  if (currentPreset?.type == "СМС + ТОР" && data.type == "Обратные докупки (ТОР)") {
+    sumPercent = data.map(row => row.percent).reduce((prev, curr) => prev + curr, 0);
+  }
   if (options.closeAll) {
     sumPercent = 100;
   }
@@ -255,10 +260,17 @@ export default function SGRow({
                         .reduce((prev, curr) => prev + curr, 0);
 
                       let value = round(contractsSum / (contracts || 1) * 100, 1);
+                      if (currentPreset?.type == "СМС + ТОР" && data.type == "Обратные докупки (ТОР)") {
+                        value = data
+                          .filter(row => row.group == i)
+                          .map(row => row.percent)
+                          .reduce((prev, curr) => prev + curr, 0);
+                      }
                       if (options.closeAll) {
                         value = 100;
                       }
-                      return value;
+
+                      return formatNumber(round(value, 2));
                     })()}%</b>
                   </div>
 
@@ -408,7 +420,7 @@ export default function SGRow({
 
             <div className="settings-generator-content__print-group">
               <span>Суммарный % {isBying ? "докупки" : "закрытия"}</span>
-              <b>{round(sumPercent, 1)}%</b>
+              <b>{formatNumber(round(sumPercent, 2))}%</b>
             </div>
 
           </div>

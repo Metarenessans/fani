@@ -23,29 +23,37 @@
   &-top
     position: relative
     z-index: 2
-    background: var( --primary-color ) url("dist/img/pattern.png") center / 115em
+    background: var( --primary-color )
     box-shadow: 0 1.1em 2.1em rgba(0,0,0,.15)
     padding: 2em 0 2.5em
 
     color: white
     text-align: center
 
+    .stack
+      --space: 1.15em
+
     &-wrap
       position: relative
-      padding: 0 6em
+      padding: 0 45ch
 
       +sm
         display: flex
         flex-direction: column
         // align-items: center
         padding: 0
-
+    
     &__footer
-      margin-top: 2.5em
+      margin: 1.9em auto 0
 
       font-size: 1.6em
 
+      +sm
+        font-size: 1.3em
+
       > *
+        min-width: 16em
+
         +xs
           width: 100%
 
@@ -56,54 +64,39 @@
           margin-left: 0
           margin-top: 1em
 
-    &__breadcrumbs
-      position: relative
-      top: 0.2em
-      margin: 1.8em 0
-
-      +sm
-        display: none
-
     &__new
       background: white
       color: var( --primary-color )
+      border-color: var( --primary-color )
 
       &:hover,
       &:focus
         border-color: white
 
     &__save
-      &:hover
-        box-shadow: 0 0 0 0.1em var( --primary-color-lighter )
+      border-color: white
+
+      &:hover,
+      &:focus
         background: white
         color: var( --primary-color )
 
       &:focus
-        // box-shadow: 0 0 0 0.1em var( --primary-color-lighter )
-        // border: 1px solid white
+        border: 1px solid var( --primary-color-light )
 
-    &__remove
-      position: absolute
-      z-index: 0
-      right: -1.15em
-      top:    .025em
+      &:hover
+        box-shadow: 0 0 0 0.1em var( --primary-color-lighter )
+        border: 1px solid var( --primary-color-light ) !important
 
-      +sm
-        position: absolute
-        left: initial
-        right: 0
-        top:   50%
-        transform: translateY(-50%) !important
-    
     &__settings
       position: absolute
-      right:  0
-      bottom: .25em
+      right: 0
+      bottom: 1em
 
       +sm
         position: static
         margin: 1.5em auto 0
-        
+
         font-size: 1.5em
 
       .settings-button__icon
@@ -112,8 +105,8 @@
     &__select
       position: absolute
       right: 0
-      top:   .5em
-      width: 20em
+      top:   .75em
+      width:  20em
 
       color: white !important
 
@@ -121,35 +114,11 @@
         position: static
         order: -1
         width: 100%
-        margin-bottom: 1.75em
-    
-    &__mode-select
-      display: none
+        margin-bottom: 2em
 
-      +sm
-        display: block
-        float: right
-        margin-right: 4.5em
-
-        float: none
-        margin: 2em 0
-        margin-right: 0
-
-      +xs
-        float: none
-        margin-right: 0
-
-    &__strategy,
-    &__mode-select
-      &-label
-        display: none
-        +sm
-          display: block
-      
-      .ant-select
-        +xs
-          width: 100%
-
+  &-save
+    font-size: 1.5em
+  
   &__footer
     margin-top: 2em
 

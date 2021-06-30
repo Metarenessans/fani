@@ -128,7 +128,7 @@ const SettingsGenerator = props => {
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Лимитник");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -286,13 +286,11 @@ const SettingsGenerator = props => {
     });
   }
 
-  if (currentPreset.options["Зеркальные докупки"]) {
-    data['Зеркальные докупки'] = createData(initialCurrentTab, {
-      ...options,
-      isBying: true,
-      on: isMirrorBying
-    });
-  }
+  data['Зеркальные докупки'] = createData(initialCurrentTab, {
+    ...options,
+    isBying: true,
+    on: isMirrorBying
+  });
 
   if (currentPreset.options["Прямые профитные докупки"]) {
     data['Прямые профитные докупки'] = profitableByingArray;
@@ -1112,9 +1110,11 @@ const SettingsGenerator = props => {
                 <div style={{ width: '100%' }} hidden={!isReversedBying}>
                   <SGRow
                     isBying={true}
+                    currentPreset={currentPreset}
+                    currentOption="Обратные докупки (ТОР)"
                     data={data["Обратные докупки (ТОР)"]}
                     options={currentPreset.options["Обратные докупки (ТОР)"]}
-                    contracts={currentPreset.type == "СМС + ТОР" ? contracts : contractsTotal - contracts}
+                    contracts={contractsTotal - contracts}
                     currentTool={currentTool}
                     onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
                   />
