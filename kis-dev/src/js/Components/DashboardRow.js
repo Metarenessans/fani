@@ -91,13 +91,15 @@ export default class DashboardRow extends React.Component {
     const container = React.createRef();
 
     
-    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal} = item;
-    
+    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal, monthPay} = item;
+
+    let monthPercent = 0.007
+
     // процент платежа в месяц
-    const monthPercent = round(payRate / 12, 3)
+    // const monthPercent = round(payRate / 12, 3)
 
     // месячный платёж
-    const monthPay = round( (depo - firstPay) * monthPercent , 2)
+    // const monthPay = round( (depo - firstPay) * monthPercent , 2)
 
     // упущенная прибыль
     const lostProfit = ((firstPay - (rentIncome - monthPay)) * profitPercent ) / 12
@@ -192,11 +194,12 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
               className="dashboard__input"
-              defaultValue={firstPay}
+              defaultValue={toolType == "Трейдинг" ? depo : firstPay}
               onBlur={value => onChange("firstPay", value)}
               format={formatNumber}
               unsigned="true"
               min={0}
+              max={depo}
             />
           </span>
 
@@ -240,7 +243,7 @@ export default class DashboardRow extends React.Component {
 
           <span className="dashboard-key">
             <Tooltip title={""}>
-              Ежемесячный доход
+              Пассивный доход в месяц
             </Tooltip>
           </span>
 

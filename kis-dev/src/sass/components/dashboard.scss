@@ -126,13 +126,17 @@
     }
 
     &--percent {
-      width: 9.2em;
+      width: 6.5em;
     }
+
+    &--month-pay {
+      width: 8em;
+    } 
 
     // config
     &--dialog {
       &-depo {
-        width: 13.5em;
+        width: 9.5em;
       }
       &-period {
         width: 20.5em;

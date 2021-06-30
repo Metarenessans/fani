@@ -1,8 +1,23 @@
 .dialog {
-  font-size: 0.7em;
+  font-size: 0.6em;
+  
+  &__title {
+    font-size: 1.8em;
+    margin-bottom: -0.25em;
+  }
+
+  .card {
+    padding-right: 2em;
+    padding-left:  2em;
+  }
 
   .ant-input {
     padding-left: 0.4em!important;
+    font-size: 1.3em;
+
+    &-suffix {
+      font-size: 1.3em;
+    }
   }
 
   .dashboard-key {
@@ -14,6 +29,19 @@
   &-suffix {
     top: 51.5%;
     right: 0.6em;
-    // font-size: 1em;
   }
+}
+
+
+// скрыл визуал от сейва
+.page__title {
+  display: none;
+
+  &-icon-wrap {
+    display: none;
+  }
+}
+
+.main-top__select {
+  display: none;
 }

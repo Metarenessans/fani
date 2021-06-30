@@ -61,10 +61,10 @@ const defaultToolData = {
   toolType: "Недвижимость",
   tool: {},
 
-  period:          10,
-  firstPay:   200_000,
-  rentIncome:  20_000,
-  monthOutcome:     0,
+  period:            10,
+  firstPay:   1_500_000,
+  rentIncome:    20_000,
+  monthOutcome:       0,
   
   incomeMonthly: 1_000_000,
   monthPay:              0,
@@ -77,6 +77,7 @@ const defaultToolData = {
   profitPercent:    .04,
   activeInvestVal:  .03,
   ofzVal:           .05,
+  monthPay:           0,
 };
 
 function onScroll() {
@@ -903,7 +904,7 @@ class App extends React.Component {
           >
             <div className="dashboard-row" >
               {(() => {
-                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal } = data[lineConfigIndex || 0];
+                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal, monthPay } = data[lineConfigIndex || 0];
 
                 const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
@@ -932,7 +933,7 @@ class App extends React.Component {
                       </span>
                     </div>
 
-                    <div className="dashboard-col dashboard-col--splitted">
+                    {/* <div className="dashboard-col dashboard-col--splitted">
                       <span className="dashboard-key">
                         <Tooltip title={""}>
                           Период
@@ -967,69 +968,38 @@ class App extends React.Component {
                           suffix="дн"
                         />
                       </span>
-                    </div>
+                    </div> */}
 
-                    <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                    <div className="dashboard-col dashboard-col--main dashboard-col--month-pay">
                       <span className="dashboard-key">
-                        {toolType == "Недвижимость" ? "Ставка по ипотеке" : "Ставка по кредиту"}
                         <span className="dashboard-key-inner">
+                          Месячный платёж
                         </span>
                       </span>
-
+                    
                       <span className="dashboard-val dashboard-col--rate">
                         <NumericInput
-                          key={payRate}
+                          key={monthPay}
                           className="dashboard__input"
-                          defaultValue={payRate * 100}
+                          defaultValue={monthPay}
                           onBlur={value => {
                             const dataCopy = [...data];
-                            dataCopy[lineConfigIndex].payRate = value / 100;
+                            dataCopy[lineConfigIndex].monthPay = value;
                             this.setState({ data: dataCopy, changed: true });
                           }}
                           unsigned="true"
                           format={formatNumber}
                           min={0}
-                          max={100}
-                          suffix={"%"}
                         />
                       </span>
                     </div>
                     
-                    <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                      <span className="dashboard-key">
-                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                          {/* <Tooltip title={""}> */}
-                            {toolType == "Недвижимость" ? "Возможная прибыль" : "Ставка ОФЗ"}
-                          {/* </Tooltip> */}
-                        </span>
-                      </span>
-
-                      <span className="dashboard-val dashboard-col--rate">
-                        <NumericInput
-                          key={Math.random()}
-                          className="dashboard__input"
-                          defaultValue={ requiredVal * 100 }
-                          onBlur={value => {
-                            const dataCopy = [...data];
-                            const prop = toolType == "Недвижимость" ? "profitPercent" : "ofzVal";
-                            dataCopy[lineConfigIndex][prop] = value / 100;
-                            this.setState({ data: dataCopy, changed: true });
-                          }}
-                          unsigned="true"
-                          format={formatNumber}
-                          min={0}
-                          max={100}
-                          suffix={"%"}
-                        />
-                      </span>
-                    </div>
-
-                    {(toolType !== "Недвижимость" &&
+                    {(toolType == "Недвижимость" &&
                       <div className="dashboard-col dashboard-col--main dashboard-col--percent">
                         <span className="dashboard-key">
                           <span className="dashboard-key-inner" style={{ width: "100%" }}>
                             {/* <Tooltip title={""}> */}
-                              Прибыль от актив. инвестиций
+                              Возможная прибыль
                             {/* </Tooltip> */}
                           </span>
                         </span>
@@ -1037,11 +1007,12 @@ class App extends React.Component {
                         <span className="dashboard-val dashboard-col--rate">
                           <NumericInput
                             key={Math.random()}
-                            className="dashboard__input" 
-                            defaultValue={activeInvestVal == 0.03? 0.03 : activeInvestVal * 100}
+                            className="dashboard__input"
+                            defaultValue={ requiredVal * 100 }
                             onBlur={value => {
                               const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].activeInvestVal = value / 100;
+                              const prop = "profitPercent";
+                              dataCopy[lineConfigIndex][prop] = value / 100;
                               this.setState({ data: dataCopy, changed: true });
                             }}
                             unsigned="true"
@@ -1052,6 +1023,67 @@ class App extends React.Component {
                           />
                         </span>
                       </div>
+                    )}
+
+                    {(toolType == "Трейдинг" &&
+                      <>
+                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                        <span className="dashboard-key">
+                          <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                            {/* <Tooltip title={""}> */}
+                              Ставка ОФЗ
+                            {/* </Tooltip> */}
+                          </span>
+                        </span>
+
+                        <span className="dashboard-val dashboard-col--rate">
+                          <NumericInput
+                            key={Math.random()}
+                            className="dashboard__input"
+                            defaultValue={ofzVal}
+                            onBlur={value => {
+                              const dataCopy = [...data];
+                              const prop = "ofzVal";
+                              dataCopy[lineConfigIndex][prop] = value / 100;
+                              this.setState({ data: dataCopy, changed: true });
+                            }}
+                            unsigned="true"
+                            format={formatNumber}
+                            min={0}
+                            max={100}
+                            suffix={"%"}
+                          />
+                        </span>
+                      </div>
+
+                        <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                          <span className="dashboard-key">
+                            <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                              {/* <Tooltip title={""}> */}
+                                Активные инвестиций
+                              {/* </Tooltip> */}
+                            </span>
+                          </span>
+
+                          <span className="dashboard-val dashboard-col--rate">
+                            <NumericInput
+                              key={Math.random()}
+                              className="dashboard__input" 
+                              defaultValue={activeInvestVal == 0.03? 0.03 : activeInvestVal * 100}
+                              onBlur={value => {
+                                const dataCopy = [...data];
+                                dataCopy[lineConfigIndex].activeInvestVal = value / 100;
+                                this.setState({ data: dataCopy, changed: true });
+                              }}
+                              unsigned="true"
+                              format={formatNumber}
+                              min={0}
+                              max={100}
+                              suffix={"%"}
+                            />
+                          </span>
+                        </div>
+                      </>
                     )}
                   </>
                 )
