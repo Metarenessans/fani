@@ -1,6 +1,6 @@
 import React, { createContext, useReducer } from "react";
 import axios from "axios";
-import { ajax } from "jquery";
+import qs from "qs";
 
 import AppReducer from "./AppReducer";
 
@@ -87,14 +87,12 @@ export const GlobalProvider = ({ children }) => {
       const res = await axios.get(
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
       );
-      if (res.data.data) {
+      if (!res.data.error) {
         console.log(res.data.data);
         dispatch({
           type: "GET_INTRADAY_SNAPSHOTS",
           payload: res.data.data,
         });
-      } else {
-        console.log(res.data);
       }
     } catch (err) {
       dispatch({
@@ -109,15 +107,13 @@ export const GlobalProvider = ({ children }) => {
       const res = await axios.get(
         `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
       );
-      if (res.data) {
-        console.log(res.data.data);
+      if (!res.data.error) {
         dispatch({
           type: "GET_INTRADAY_SNAPSHOT",
           payload: res.data.data,
         });
-      } else {
-        console.log(res.data);
       }
+      // else dispatch обработчик
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
@@ -128,21 +124,17 @@ export const GlobalProvider = ({ children }) => {
 
   async function addIntradaySnapshot(data) {
     try {
-      const res = await ajax({
-        url: "/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
-        method: "POST",
-        data,
-        success: (response) => {
-          return response;
-        },
-      });
-
-      console.log("response:", res);
-
-      dispatch({
-        type: "ADD_INTRADAY_SNAPSHOT",
-        payload: res,
-      });
+      const res = await axios.post(
+        "/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
+        qs.stringify(data)
+      );
+      console.log("addIntradaySnapshot response:", res.data);
+      if (!res.data.error) {
+        dispatch({
+          type: "ADD_INTRADAY_SNAPSHOT",
+          payload: res.data,
+        });
+      }
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
@@ -151,21 +143,17 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function updateIntradaySnapshot(id, snapshotName, snapshotData) {
+  async function updateIntradaySnapshot(data) {
     try {
       const res = await axios.post(
-        "https://fani144.ru/local/php_interface/s1/ajax/?method=updateIntradaySnapshot",
-        {
-          id: id,
-          name: snapshotName,
-          static: snapshotData,
-        }
+        "/local/php_interface/s1/ajax/?method=updateIntradaySnapshot",
+        qs.stringify(data)
       );
-      if (res.data) {
-        console.log(res.data);
+
+      if (!res.data.error) {
         dispatch({
           type: "UPDATE_INTRADAY_SNAPSHOT",
-          payload: res.data.data,
+          payload: data,
         });
       } else {
         console.log(res.data);
@@ -182,15 +170,14 @@ export const GlobalProvider = ({ children }) => {
     try {
       const res = await axios.post(
         "/local/php_interface/s1/ajax/?method=deleteIntradaySnapshot",
-        {
-          id,
-        }
+        qs.stringify({ id })
       );
-      if (res.data) {
-        console.log(res.data);
+
+      if (!res.data.error) {
+        console.log("Deleted snapshot", id);
         dispatch({
           type: "DELETE_INTRADAY_SNAPSHOT",
-          payload: res.data.data,
+          payload: id,
         });
       } else {
         console.log(res.data);
@@ -198,7 +185,7 @@ export const GlobalProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
-        payload: err.response,
+        payload: err.response, //res.data.message
       });
     }
   }

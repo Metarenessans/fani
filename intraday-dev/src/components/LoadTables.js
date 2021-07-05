@@ -4,8 +4,6 @@ import { LoadTable } from "./LoadTable";
 import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
-import $ from "jquery";
-
 export const LoadTables = () => {
   const {
     loadTables,
@@ -14,17 +12,30 @@ export const LoadTables = () => {
     getIntradaySnapshots,
     getIntradaySnapshot,
     addIntradaySnapshot,
+    updateIntradaySnapshot,
+    deleteIntradaySnapshot,
     loading,
   } = useContext(GlobalContext);
 
   const initSnap = async () => {
-    await addIntradaySnapshot({
-      name: "tool3",
-      static: JSON.stringify({ works: true, toolType: "shareUs" }),
-    });
-
     await getIntradaySnapshots();
-    await getIntradaySnapshot();
+
+    // await getIntradaySnapshot(7);
+
+    // await addIntradaySnapshot({
+    //   name: "toolZ",
+    //   static: JSON.stringify({ works: true, toolType: "shareUs" }),
+    // });
+
+    // await updateIntradaySnapshot({
+    //   id: 24,
+    //   name: "upd1",
+    //   static: JSON.stringify({ works: "yesss", toolType: "shareUs" }),
+    // });
+
+    // await deleteIntradaySnapshot(id);
+
+    // await getIntradaySnapshots();
   };
 
   useEffect(() => {
