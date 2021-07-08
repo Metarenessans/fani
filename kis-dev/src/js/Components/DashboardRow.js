@@ -102,7 +102,7 @@ export default class DashboardRow extends React.Component {
     // const monthPay = round( (depo - firstPay) * monthPercent , 2)
 
     // упущенная прибыль
-    const lostProfit = ((firstPay - (rentIncome - monthPay)) * profitPercent ) / 12
+    const lostProfit = ( ( firstPay - (rentIncome - monthPay) ) / 12 ) * profitPercent
 
     // баланс по итогу месяца
     const monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
@@ -130,7 +130,10 @@ export default class DashboardRow extends React.Component {
       )
     }
 
-    // возврат необходимого значения на основе (офз, активных инвестиций) и периода - "Трейдинг" и "Вклад"
+    /** расчёт итоговой суммы - "Трейдинг" и "Вклад"
+     * @activeInvestPeriod принимает в себя значение в днях
+     * @months             принимает 1 месяц / либо 12 месяцев
+    */
     const finalVal = (activeInvestPeriod, months) => {
       const { activeInvestVal, ofzVal, depo } = item
       
@@ -142,19 +145,23 @@ export default class DashboardRow extends React.Component {
         if (ofzVal > 0 && activeInvestVal > 0) {
           return (
             months == 1?
-              personalInvestProfitVal(activeInvestPeriod) :
-              personalInvestProfitVal(activeInvestPeriod) + ofzProfit * period
+              // значение месячного итога
+              personalInvestProfitVal(activeInvestPeriod) + (ofzProfit / 12) :
+              // значение итога за весь период
+              personalInvestProfitVal(activeInvestPeriod) + (ofzProfit * period)
           )
         }
 
+        // есть только офз
         else if (ofzVal > 0 && activeInvestVal == 0) {
           return (
             months == 1 ?
-              depo - allMonthOutCome :
-              depo + (ofzProfit * period)
+              (depo - allMonthOutCome) + (ofzProfit / 12) :
+              ( depo - ((allMonthOutCome * 12) * period) ) + (ofzProfit * period)
           )
         }
-  
+
+        // есть только активные инвестиции
         else if (ofzVal == 0 && activeInvestVal > 0) {
           return (
             personalInvestProfitVal(activeInvestPeriod)
@@ -251,7 +258,11 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               key={item}
               className="dashboard__input"
-              defaultValue={toolType !== "Недвижимость"? 0 : rentIncome}
+              defaultValue={
+                toolType == "Трейдинг" ?
+                  (ofzProfit / 12) :
+                  (toolType == "Вклад" ? 0 : rentIncome)
+              }
               disabled={toolType !== "Недвижимость"}
               onBlur={value => onChange("rentIncome", value)}
               format={formatNumber}

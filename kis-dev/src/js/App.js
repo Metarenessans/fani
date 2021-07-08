@@ -906,7 +906,7 @@ class App extends React.Component {
             <div className="dashboard-row" >
               {(() => {
                 let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal, monthPay, investPercent } = data[lineConfigIndex || 0];
-
+                
                 const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
                   <>
@@ -1030,7 +1030,7 @@ class App extends React.Component {
                         <span className="dashboard-key">
                           <span className="dashboard-key-inner" style={{ width: "100%" }}>
                             {/* <Tooltip title={""}> */}
-                              Возможная прибыль
+                              Упущенная прибыль
                             {/* </Tooltip> */}
                           </span>
                         </span>
@@ -1066,12 +1066,12 @@ class App extends React.Component {
                             {/* </Tooltip> */}
                           </span>
                         </span>
-
+                        
                         <span className="dashboard-val dashboard-col--rate">
                           <NumericInput
                             key={Math.random()}
                             className="dashboard__input"
-                            defaultValue={ofzVal}
+                            defaultValue={ofzVal * 100}
                             onBlur={value => {
                               const dataCopy = [...data];
                               const prop = "ofzVal";
