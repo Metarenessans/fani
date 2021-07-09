@@ -5,43 +5,12 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const LoadTables = () => {
-  const {
-    loadTables,
-    getTools,
-    getInvestorInfo,
-    getIntradaySnapshots,
-    getIntradaySnapshot,
-    addIntradaySnapshot,
-    updateIntradaySnapshot,
-    deleteIntradaySnapshot,
-    loading,
-  } = useContext(GlobalContext);
-
-  const initSnap = async () => {
-    await getIntradaySnapshots();
-
-    // await getIntradaySnapshot(7);
-
-    // await addIntradaySnapshot({
-    //   name: "toolZ",
-    //   static: JSON.stringify({ works: true, toolType: "shareUs" }),
-    // });
-
-    // await updateIntradaySnapshot({
-    //   id: 24,
-    //   name: "upd1",
-    //   static: JSON.stringify({ works: "yesss", toolType: "shareUs" }),
-    // });
-
-    // await deleteIntradaySnapshot(id);
-
-    // await getIntradaySnapshots();
-  };
+  const { loadTables, getTools, getInvestorInfo, loading } =
+    useContext(GlobalContext);
 
   useEffect(() => {
     getInvestorInfo();
     getTools();
-    initSnap();
     setInterval(getTools, 120000);
   }, []);
 

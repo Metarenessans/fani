@@ -7,7 +7,12 @@ import AppReducer from "./AppReducer";
 const initialState = {
   tools: [],
   customTools: [],
-  investorInfo: { deposit: 1500000, status: "KSUR", skill: "UNSKILLED" },
+  investorInfo: {
+    deposit: 1500000,
+    email: "user@mail.ru",
+    status: "KSUR",
+    skill: "UNSKILLED",
+  },
   adrMode: "day",
   iterationQty: 10,
   stopValue: 0.5,
@@ -15,14 +20,7 @@ const initialState = {
   yieldStep: 0.02,
   loadTables: [
     {
-      selectedTools: [
-        { code: "VLO", toolType: "shareUs" },
-        { code: "TTM1", toolType: "futures" },
-        { code: "AAPL", toolType: "shareUs" },
-        { code: "ABRD", toolType: "shareRu" },
-        { code: "MU", toolType: "shareUs" },
-        { code: "SBER", toolType: "shareRu" },
-      ],
+      selectedTools: [{ code: "SBER", toolType: "shareRu" }],
       loadValue: 1,
       steps: [...Array(8)],
       extraSteps: [],
@@ -88,7 +86,7 @@ export const GlobalProvider = ({ children }) => {
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
       );
       if (!res.data.error) {
-        console.log(res.data.data);
+        console.log("Shapshots:", res.data.data);
         dispatch({
           type: "GET_INTRADAY_SNAPSHOTS",
           payload: res.data.data,
