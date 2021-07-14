@@ -5,12 +5,23 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const LoadTables = () => {
-  const { loadTables, getTools, getInvestorInfo, loading } =
-    useContext(GlobalContext);
+  const {
+    saves,
+    loadTables,
+    getInvestorInfo,
+    getTools,
+    loading,
+    setIsLoading,
+  } = useContext(GlobalContext);
+
+  const loadData = async () => {
+    await setIsLoading(true);
+    await Promise.all([getInvestorInfo(), getTools()]);
+    await setIsLoading(false);
+  };
 
   useEffect(() => {
-    getInvestorInfo();
-    getTools();
+    loadData();
     setInterval(getTools, 120000);
   }, []);
 

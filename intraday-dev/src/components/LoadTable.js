@@ -152,7 +152,7 @@ export const LoadTable = ({ tableIdx }) => {
                   const mode = checked ? "LONG" : "SHORT";
                   setGuaranteeMode(tableIdx, mode);
                 }}
-                disabled={!investorInfo.status && true}
+                disabled={!investorInfo.status}
               />
             </Col>
             <Col xs={8} md={8}>

@@ -4,7 +4,11 @@ import qs from "qs";
 
 import AppReducer from "./AppReducer";
 
+import { Tools } from "../common/tools";
+
 const initialState = {
+  saves: [],
+  currentSaveIdx: 0,
   tools: [],
   customTools: [],
   investorInfo: {
@@ -28,7 +32,9 @@ const initialState = {
     },
   ],
   error: null,
-  loading: true,
+  loading: false,
+  snapshotIsSaved: true,
+  snapshotIsChanged: false,
 };
 
 export const GlobalContext = createContext(initialState);
@@ -37,6 +43,19 @@ export const GlobalProvider = ({ children }) => {
   const [state, dispatch] = useReducer(AppReducer, initialState);
 
   // Actions
+  async function setInitialState() {
+    try {
+      dispatch({
+        type: "SET_INITIAL_STATE",
+        payload: initialState,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
   async function getTools() {
     try {
       const futuresRequest = axios.get(
@@ -46,13 +65,23 @@ export const GlobalProvider = ({ children }) => {
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getTrademeterInfo"
       );
 
-      Promise.all([futuresRequest, sharesRequest]).then((responses) => {
-        const tools = [...responses[0].data.data, ...responses[1].data.data];
+      const tools = await Promise.all([futuresRequest, sharesRequest]).then(
+        (responses) => {
+          let tools = [...responses[0].data.data, ...responses[1].data.data];
 
-        dispatch({
-          type: "GET_TOOLS",
-          payload: { tools },
-        });
+          tools = Tools.parse(tools, {
+            investorInfo: state.investorInfo,
+          });
+
+          tools = Tools.sort(tools);
+
+          return tools;
+        }
+      );
+
+      dispatch({
+        type: "GET_TOOLS",
+        payload: tools,
       });
     } catch (err) {
       dispatch({
@@ -80,15 +109,14 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function getIntradaySnapshots() {
+  async function getSaves() {
     try {
       const res = await axios.get(
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
       );
       if (!res.data.error) {
-        console.log("Shapshots:", res.data.data);
         dispatch({
-          type: "GET_INTRADAY_SNAPSHOTS",
+          type: "GET_SAVES",
           payload: res.data.data,
         });
       }
@@ -100,27 +128,7 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function getIntradaySnapshot(id) {
-    try {
-      const res = await axios.get(
-        `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
-      );
-      if (!res.data.error) {
-        dispatch({
-          type: "GET_INTRADAY_SNAPSHOT",
-          payload: res.data.data,
-        });
-      }
-      // else dispatch обработчик
-    } catch (err) {
-      dispatch({
-        type: "FUTURE_ERROR",
-        payload: err.response,
-      });
-    }
-  }
-
-  async function addIntradaySnapshot(data) {
+  async function addSave(data) {
     try {
       const res = await axios.post(
         "/local/php_interface/s1/ajax/?method=addIntradaySnapshot",
@@ -128,9 +136,10 @@ export const GlobalProvider = ({ children }) => {
       );
       console.log("addIntradaySnapshot response:", res.data);
       if (!res.data.error) {
+        data.id = res.data.id;
         dispatch({
-          type: "ADD_INTRADAY_SNAPSHOT",
-          payload: res.data,
+          type: "ADD_SAVE",
+          payload: data,
         });
       }
     } catch (err) {
@@ -141,16 +150,17 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function updateIntradaySnapshot(data) {
+  async function updateSave(data) {
     try {
       const res = await axios.post(
         "/local/php_interface/s1/ajax/?method=updateIntradaySnapshot",
         qs.stringify(data)
       );
 
+      console.log("updateIntradaySnapshot response:", res.data);
       if (!res.data.error) {
         dispatch({
-          type: "UPDATE_INTRADAY_SNAPSHOT",
+          type: "UPDATE_SAVE",
           payload: data,
         });
       } else {
@@ -164,7 +174,7 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function deleteIntradaySnapshot(id) {
+  async function deleteSave(id) {
     try {
       const res = await axios.post(
         "/local/php_interface/s1/ajax/?method=deleteIntradaySnapshot",
@@ -172,18 +182,33 @@ export const GlobalProvider = ({ children }) => {
       );
 
       if (!res.data.error) {
-        console.log("Deleted snapshot", id);
+        console.log("Deleted snapshot:", id);
+
         dispatch({
-          type: "DELETE_INTRADAY_SNAPSHOT",
+          type: "DELETE_SAVE",
           payload: id,
         });
       } else {
-        console.log(res.data);
+        console.log(res.data.message);
       }
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
-        payload: err.response, //res.data.message
+        payload: err.response,
+      });
+    }
+  }
+
+  async function setCurrentSaveIdx(idx) {
+    try {
+      dispatch({
+        type: "SET_CURRENT_SAVE_IDX",
+        payload: idx,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
       });
     }
   }
@@ -204,7 +229,6 @@ export const GlobalProvider = ({ children }) => {
 
   async function deleteTool(tableIdx, rowIdx) {
     try {
-      //   await axios.delete(`/api/futures/${id}`)
       dispatch({
         type: "DELETE_TOOL",
         payload: { tableIdx, rowIdx },
@@ -342,12 +366,6 @@ export const GlobalProvider = ({ children }) => {
 
   async function addStepColumn(tableIdx) {
     try {
-      //   const res = await axios.post('/api/futures', future, config)
-
-      //   dispatch({
-      //     type: 'ADD_STEP_COLUMN',
-      //     payload: res.data.data
-      //   })
       dispatch({
         type: "ADD_STEP_COLUMN",
         payload: { tableIdx },
@@ -376,7 +394,6 @@ export const GlobalProvider = ({ children }) => {
 
   async function deleteExtraStep(tableIdx, columnIdx) {
     try {
-      //   await axios.delete(`/api/futures/step/${id}`)
       dispatch({
         type: "DELETE_EXTRA_STEP",
         payload: { tableIdx, columnIdx },
@@ -430,6 +447,20 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
+  async function setIsLoading(bool) {
+    try {
+      dispatch({
+        type: "SET_IS_LOADING",
+        payload: bool,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+
   return (
     <GlobalContext.Provider
       value={{
@@ -443,14 +474,20 @@ export const GlobalProvider = ({ children }) => {
         adrMode: state.adrMode,
         error: state.error,
         loading: state.loading,
+        saves: state.saves,
+        snapshotIsChanged: state.snapshotIsChanged,
+        snapshotIsSaved: state.snapshotIsSaved,
+        currentSaveIdx: state.currentSaveIdx,
 
+        setInitialState,
+        setIsLoading,
+        setCurrentSaveIdx,
         getTools,
         getInvestorInfo,
-        getIntradaySnapshots,
-        getIntradaySnapshot,
-        addIntradaySnapshot,
-        updateIntradaySnapshot,
-        deleteIntradaySnapshot,
+        getSaves,
+        addSave,
+        updateSave,
+        deleteSave,
         addTool,
         updateTool,
         deleteTool,

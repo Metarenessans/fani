@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from "react";
 import { GlobalContext } from "../context/GlobalState";
 
+import axios from "axios";
+
 import Config from "./config";
 import NumericInput from "./numeric-input";
 import { Dialog, dialogAPI } from "./dialog";
@@ -10,64 +12,73 @@ import CrossButton from "./cross-button";
 
 import { Row, Col, Radio, Select, Tooltip, Button, Input } from "antd";
 
-import { SettingFilled } from "@ant-design/icons";
-
-const { Option } = Select;
+import { SettingFilled, LoadingOutlined } from "@ant-design/icons";
 
 export const PriceMove = () => {
   const {
+    setInitialState,
+    loading,
+    currentSaveIdx,
+    setCurrentSaveIdx,
+    getSaves,
+    snapshotIsChanged,
+    snapshotIsSaved,
+    addSave,
+    updateSave,
+    deleteSave,
+    saves,
+    loadTables,
     adrMode,
     setAdrMode,
     tools,
     customTools,
     investorInfo,
     updateDeposit,
-    getIntradaySnapshots,
-    getIntradaySnapshot,
-    addIntradaySnapshot,
-    updateIntradaySnapshot,
-    deleteIntradaySnapshot,
   } = useContext(GlobalContext);
 
-  const [saves, setSaves] = useState([]);
-  const [currentID, setCurrentID] = useState(null);
-  const [currentSaveIndex, setCurrentSaveIndex] = useState(null);
+  useEffect(() => {
+    getSaves();
+  }, []);
+
+  useEffect(() => {
+    console.log("currentSaveIdx:", currentSaveIdx);
+  }, [currentSaveIdx]);
+
+  useEffect(() => {
+    console.log("loading:", loading);
+  }, [loading]);
+
+  useEffect(() => {
+    console.log("snapshotIsSaved:", snapshotIsSaved);
+  }, [snapshotIsSaved]);
+
+  useEffect(() => {
+    console.log("snapshotIsChanged:", snapshotIsChanged);
+  }, [snapshotIsChanged]);
+
+  const [snapshotData, setSnapshotData] = useState({ adrMode, loadTables });
   const [errorMessage, setErrorMessage] = useState(null);
 
-  const getTitle = () => {
+  const pageTitle = () => {
     let title = "ИП Аналитика";
 
-    if (currentID && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
+    if (!loading && saves[currentSaveIdx - 1]) {
+      title = saves[currentSaveIdx - 1].name;
     }
 
     return title;
   };
 
-  const loadSnapshot = async () => {
-    await getIntradaySnapshots();
-
-    // await getIntradaySnapshot(7);
-
-    // await addIntradaySnapshot({
-    //   name: "toolZ",
-    //   static: JSON.stringify({ works: true, toolType: "shareUs" }),
-    // });
-
-    // await updateIntradaySnapshot({
-    //   id: 24,
-    //   name: "upd1",
-    //   static: JSON.stringify({ works: "yesss", toolType: "shareUs" }),
-    // });
-
-    // await deleteIntradaySnapshot(id);
-
-    // await getIntradaySnapshots();
+  const getSave = async (id) => {
+    try {
+      const res = await axios.get(
+        `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
+      );
+      return res.data.data;
+    } catch (err) {
+      console.log(err);
+    }
   };
-
-  useEffect(() => {
-    getIntradaySnapshots();
-  }, []);
 
   return (
     <section className="price-move">
@@ -75,55 +86,44 @@ export const PriceMove = () => {
         <div className="container">
           <div className="main-top-wrap">
             {(() => {
-              // const { saves, currentSaveIndex } = this.state;
-              const currentSaveIndex = 0;
-
               return (
                 <label className="labeled-select main-top__select stack-exception">
                   <span className="labeled-select__label labeled-select__label--hidden">
                     Сохраненный калькулятор
                   </span>
+
                   <Select
-                    value={currentSaveIndex}
+                    disabled={loading}
+                    loading={loading}
+                    value={currentSaveIdx}
                     onSelect={(val) => {
-                      const { saves } = this.state;
-
-                      this.setState({ currentSaveIndex: val });
-
-                      if (val === 0) {
-                        this.reset().catch((err) => console.warn(err));
-                      } else {
-                        const id = saves[val - 1].id;
-                        this.fetchSaveById(id)
-                          .then((save) =>
-                            this.extractSave(Object.assign(save, { id }))
-                          )
-                          .catch((err) => this.showAlert(err));
-                      }
+                      setCurrentSaveIdx(val);
                     }}
                   >
-                    <Option key={0} value={0}>
-                      Не выбрано
-                    </Option>
+                    <Select.Option key={0} value={0}>
+                      {loading ? "Загрузка..." : "Не выбрано"}
+                    </Select.Option>
                     {saves.map((save, index) => (
-                      <Option key={index + 1} value={index + 1}>
+                      <Select.Option key={index + 1} value={index + 1}>
                         {save.name}
-                      </Option>
+                      </Select.Option>
                     ))}
                   </Select>
                 </label>
               );
             })()}
             <div className="page__title-wrap">
-              <h1 className="page__title">ИП Аналитика</h1>
-              {false && (
-                <div className="page__title-icon-wrap">
+              <h1 className="page__title">{pageTitle()}</h1>
+              <div className="page__title-icon-wrap">
+                {loading ? (
+                  <LoadingOutlined />
+                ) : currentSaveIdx !== 0 ? (
                   <CrossButton
                     className="main-top__remove"
                     onClick={(e) => dialogAPI.open("dialog4", e.target)}
                   />
-                </div>
-              )}
+                ) : null}
+              </div>
             </div>
             <Row>
               <Col md={24} xs={0}>
@@ -154,9 +154,9 @@ export const PriceMove = () => {
                   value={adrMode}
                   onChange={(mode) => setAdrMode(mode)}
                 >
-                  <Option value="day">Дневной</Option>
-                  <Option value="week">Недельный</Option>
-                  <Option value="month">Месячный</Option>
+                  <Select.Option value="day">Дневной</Select.Option>
+                  <Select.Option value="week">Недельный</Select.Option>
+                  <Select.Option value="month">Месячный</Select.Option>
                 </Select>
               </Col>
             </Row>
@@ -167,30 +167,36 @@ export const PriceMove = () => {
                   <Button
                     className="custom-btn custom-btn--secondary main-top__save"
                     onClick={(e) => {
-                      // const { saved, changed } = this.state;
-                      // if (saved && changed) {
-                      //   this.update(this.getTitle());
-                      //   this.setState({ changed: false });
-                      // } else {
-                      dialogAPI.open("dialog1", e.target);
-                      // }
+                      if (
+                        saves.length &&
+                        snapshotIsSaved &&
+                        snapshotIsChanged
+                      ) {
+                        let save = saves[currentSaveIdx - 1];
+                        updateSave({
+                          id: save.id,
+                          name: save.name,
+                          static: JSON.stringify(snapshotData),
+                        });
+                      } else {
+                        dialogAPI.open("dialog1", e.target);
+                      }
                     }}
                   >
-                    Сохранить
-                    {/* {this.state.saved && !this.state.changed */}
-                    {/* ? "Изменить" */}
-                    {/* : "Сохранить"} */}
+                    {saves.length !== 0 && snapshotIsSaved && !snapshotIsChanged
+                      ? "Изменить"
+                      : "Сохранить"}
                   </Button>
 
-                  {/* {this.state.saves.length > 0 ? ( */}
-                  <a
-                    className="custom-btn custom-btn--secondary main-top__save"
-                    href="#pure=true"
-                    target="_blank"
-                  >
-                    Добавить новый
-                  </a>
-                  {/* ) : null} */}
+                  {saves.length > 0 ? (
+                    <a
+                      className="custom-btn custom-btn--secondary main-top__save"
+                      href="#pure=true"
+                      target="_blank"
+                    >
+                      Добавить новый
+                    </a>
+                  ) : null}
                 </div>
 
                 <Tooltip
@@ -209,8 +215,10 @@ export const PriceMove = () => {
             </Row>
 
             {(() => {
-              let namesTaken = saves.slice().map((save) => save.name);
-              let name = currentID ? getTitle() : "Новое сохранение";
+              let namesTaken = saves.map((save) => save.name);
+              let currentName = currentSaveIdx
+                ? pageTitle()
+                : "Новое сохранение";
 
               function validate(str = "") {
                 str = str.trim();
@@ -225,10 +233,8 @@ export const PriceMove = () => {
                 } else if (test) {
                   errors.push(`Нельзя использовать символ "${test[0]}"!`);
                 }
-                if (!currentID) {
-                  if (namesTaken.indexOf(str) > -1) {
-                    errors.push(`Сохранение с таким именем уже существует!`);
-                  }
+                if (namesTaken.indexOf(str) > -1) {
+                  errors.push(`Сохранение с таким именем уже существует!`);
                 }
 
                 return errors;
@@ -321,68 +327,54 @@ export const PriceMove = () => {
                 }
               }
 
-              let onConfirm = () => {
-                let { id, data, currentDay, saves, currentSaveIndex } =
-                  this.state;
-
-                if (id) {
-                  this.update(name)
-                    .then(() => {
-                      saves[currentSaveIndex - 1].name = name;
-                      this.setState({
-                        saves,
-                        changed: false,
-                      });
-                    })
-                    .catch((err) => this.showMessageDialog(err));
-                } else {
-                  const onResolve = (id) => {
-                    let index = saves.push({ id, name });
-                    console.log(saves);
-
-                    this.setState({
-                      data,
-                      saves,
-                      saved: true,
-                      changed: false,
-                      currentSaveIndex: index,
-                    });
-                  };
-
-                  this.save(name)
-                    .then(onResolve)
-                    .catch((err) => this.showMessageDialog(err));
-                }
-              };
-
-              let inputJSX = (
-                <ValidatedInput
-                  label="Название сохранения"
-                  validate={validate}
-                  defaultValue={name}
-                  onChange={(val) => (name = val)}
-                  onBlur={() => {}}
-                />
-              );
-              let modalJSX = (
+              return (
                 <Dialog
                   id="dialog1"
                   className="save-modal"
                   title={"Сохранение"}
                   onConfirm={() => {
-                    if (validate(name).length) {
-                      console.error(validate(name)[0]);
+                    if (validate(currentName).length) {
+                      console.error(validate(currentName)[0]);
                     } else {
-                      onConfirm();
+                      // Ход цены
+                      // итераций
+                      // стоп
+                      // доходность
+                      // шаг доходности
+                      // направление (лонг/шорт)
+                      // загрузка(и)
+                      // инструмент(ы)
+                      // депозит из настроек
+                      // кастомные инструменты, если есть
+
+                      if (!snapshotIsSaved && snapshotIsChanged) {
+                        let save = saves[currentSaveIdx - 1];
+                        updateSave({
+                          id: save.id,
+                          name: currentName,
+                          static: JSON.stringify(snapshotData),
+                        });
+                      } else {
+                        addSave({
+                          name: currentName,
+                          static: JSON.stringify(snapshotData),
+                        });
+                      }
                       return true;
                     }
                   }}
                 >
-                  {inputJSX}
+                  <ValidatedInput
+                    label="Название сохранения"
+                    validate={validate}
+                    defaultValue={currentName}
+                    onChange={(val) => (currentName = val)}
+                    onBlur={() => {
+                      console.log("blur");
+                    }}
+                  />
                 </Dialog>
               );
-
-              return modalJSX;
             })()}
             {/* Save Popup */}
 
@@ -391,14 +383,11 @@ export const PriceMove = () => {
               title="Удаление трейдометра"
               confirmText={"Удалить"}
               onConfirm={() => {
-                // const { id } = this.state;
-                // this.delete(id)
-                //   .then(() => console.log("Deleted!"))
-                //   .catch((err) => console.warn(err));
+                deleteSave(saves[currentSaveIdx - 1].id);
                 return true;
               }}
             >
-              Вы уверены, что хотите удалить {getTitle()}?
+              Вы уверены, что хотите удалить {pageTitle()}?
             </Dialog>
             {/* Delete Popup */}
 
