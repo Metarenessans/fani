@@ -40,15 +40,16 @@ class Tool {
   }
 
   update(investorInfo) {
-    if (this.ref && Object.keys(this.ref).length > 0) {
-      let guarantee = this.ref.guarantee || this.ref.guaranteeValue;
+    const { ref } = this;
+    if (ref && Object.keys(ref).length > 0) {
+      let guarantee = ref.guarantee || ref.guaranteeValue;
 
       if (typeof guarantee == "object") {
-        let guaranteeExtracted = this.ref.guarantee["default"];
-        if (investorInfo.status) {
-          const type = investorInfo.type;
-          if (this.ref.guarantee[investorInfo.status] && this.ref.guarantee[investorInfo.status][type]) {
-            guaranteeExtracted = this.ref.guarantee[investorInfo.status][type];
+        let guaranteeExtracted = ref.guarantee["default"];
+        const { status, type } = investorInfo;
+        if (status && type) {
+          if (ref.guarantee[status] && ref.guarantee[status][type]) {
+            guaranteeExtracted = ref.guarantee[status][type];
           }
         }
 
@@ -58,7 +59,14 @@ class Tool {
         guarantee = parseNumber(guarantee);
       }
 
-      this.guarantee = round(guarantee, 1);
+      guarantee = round(guarantee, 2);
+
+      if (typeof guarantee == "number") {
+        this.guarantee = guarantee;
+      }
+      else {
+        throw new Error("ГО не число");
+      }
     }
 
     return this;
@@ -491,6 +499,40 @@ class Tools {
         adrDay:          3,
         adrWeek:         8.45,
         adrMonth:        12.18,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "АЛРОСА ПАО ао",
+        shortName:       "",
+        code:            "ALRS",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1280,
+        currentPrice:    128,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          2.75,
+        adrWeek:         5.47,
+        adrMonth:        10.59,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "ПАО Московская Биржа",
+        shortName:       "",
+        code:            "MOEX",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1715.9,
+        currentPrice:    171.59,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          3.11,
+        adrWeek:         7.67,
+        adrMonth:        17.64,
       }),
     ]
   }

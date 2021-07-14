@@ -59,7 +59,7 @@ const Header = ({
                         ? <LoadingOutlined />
                         : state.id
                           ? <CrossButton className="main-top__remove"
-                                        onClick={e => dialogAPI.open("dialog4", e.target)}
+                                         onClick={e => dialogAPI.open("dialog4", e.target)}
                             />
                           : null
                       }

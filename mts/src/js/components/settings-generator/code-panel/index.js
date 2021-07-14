@@ -36,13 +36,61 @@ function selectElementContent(node) {
 }
 
 export default function CodePanel(props) {
-  const { currentPreset, data, tool, contracts, risk, isRiskStatic } = props;
+  const {
+    currentPreset,
+    data,
+    tool,
+    contracts,
+    risk,
+    isRiskStatic,
+    ranull,
+    ranullMode,
+    ranullPlus,
+    ranullPlusMode
+  } = props;
 
   const [rollback, setRollback] = useState(tool.priceStep);
 
   useEffect(() => {
     setRollback(tool.priceStep);
   }, [tool.code]);
+
+  const renderLine = (title, param, value) => {
+    const codeElement = React.createRef();
+    const textContent = `GParam.${param} = ${value}`;
+
+    return (
+      <div 
+        className="code-panel-group" 
+        key={Math.random()}
+        style={{ marginTop: title == null ? " -1.5em" : "" }}
+      >
+        {title != null &&
+          <div className="code-panel-group-header">
+            {title && <h3>{ title }</h3>}
+            <button
+              className="code-panel-group__copy-btn"
+              onClick={e => {
+                selectElementContent(codeElement.current);
+
+                navigator.clipboard.writeText(textContent)
+                  .then(() => message.success("Скопировано!"))
+                  .catch(error => console.log('Произошла ошибка', error));
+              }}
+            >
+              копировать
+            </button>
+          </div>
+        }
+        <div className="code-panel-group-content">
+          <pre ref={codeElement} onClick={e => selectElementContent(e.target)} >
+            {textContent}
+          </pre>
+        </div>
+
+      </div>
+    )
+  };
 
   return (
     <Stack className="code-panel">
@@ -294,37 +342,24 @@ export default function CodePanel(props) {
         )
       })}
 
+      {renderLine("Риск", "depo_stop", `{${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`)}
+
       {(() => {
-        const codeElement = React.createRef();
-        const textContent = `GParam.depo_stop = {${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`;
+        let value = round(ranullMode ? ranull * tool.priceStep : ranull / 100, 2);
+        if (currentPreset.type == "Лимитник") {
+          value = round(ranull / 100, 2);
+        }
+        let content = ranullMode ? `${value},0` : `0,${value}`;
+        return renderLine("Безубыток", "ranull", "{" + content + "}");
+      })()}
 
-        return (
-          <div className="code-panel-group" key={Math.random()}>
-
-            <div className="code-panel-group-header">
-              <h3>Риск</h3>
-              <button
-                className="code-panel-group__copy-btn"
-                onClick={e => {
-                  selectElementContent(codeElement.current);
-
-                  navigator.clipboard.writeText(textContent)
-                    .then(() => message.success("Скопировано!"))
-                    .catch(error => console.log('Something went wrong', error));
-                }}
-              >
-                копировать
-              </button>
-            </div>
-            <div className="code-panel-group-content">
-              <pre onClick={e => selectElementContent(e.target)}
-                ref={codeElement}>
-                {textContent}
-              </pre>
-            </div>
-
-          </div>
-        )
+      {(() => {
+        let value = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
+        if (currentPreset.type == "Лимитник") {
+          value = round(ranullPlus / 100, 2);
+        }
+        let content = ranullPlusMode ? `${value},0` : `0,${value}`;
+        return renderLine(null, "ranullplus", "{" + content + "}");
       })()}
 
     </Stack>

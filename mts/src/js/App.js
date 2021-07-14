@@ -16,17 +16,20 @@ import {
   WarningOutlined
 } from "@ant-design/icons"
 
-import fetch          from "../../../common/api/fetch"
+import fetch           from "../../../common/api/fetch"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
-import fetchSavesFor  from "../../../common/api/fetch-saves"
-import fetchSaveById  from "../../../common/api/fetch/fetch-save-by-id"
-import params         from "../../../common/utils/params"
-import round          from "../../../common/utils/round"
-import formatNumber   from "../../../common/utils/format-number"
-import typeOf         from "../../../common/utils/type-of"
-import fractionLength from "../../../common/utils/fraction-length"
-import sortInputFirst from "../../../common/utils/sort-input-first"
-import isEqual        from '../../../common/utils/is-equal';
+import fetchSavesFor   from "../../../common/api/fetch-saves"
+import fetchSaveById   from "../../../common/api/fetch/fetch-save-by-id"
+import params          from "../../../common/utils/params"
+import round           from "../../../common/utils/round"
+import formatNumber    from "../../../common/utils/format-number"
+import typeOf          from "../../../common/utils/type-of"
+import fractionLength  from "../../../common/utils/fraction-length"
+import sortInputFirst  from "../../../common/utils/sort-input-first"
+import isEqual         from '../../../common/utils/is-equal';
+import fallbackBoolean from '../../../common/utils/fallback-boolean';
+
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import { Tools, Tool, template } from "../../../common/tools"
 
@@ -92,6 +95,8 @@ class App extends React.Component {
 
       toolsLoading:       false,
       isFocused:          false,
+
+      genaID: -1,
     };
 
     this.state = {
@@ -161,6 +166,8 @@ class App extends React.Component {
 
   setFetchingToolsTimeout() {
     new Promise(resolve => {
+      const ms = dev ? 10_000 : 1 * 60 * 1_000;
+      console.log(formatNumber(ms / 1_000) + "s timeout started");
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
@@ -179,7 +186,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, dev ? 10_000 : 1 * 60 * 1_000);
+      }, ms);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -190,15 +197,393 @@ class App extends React.Component {
 
   // Fetching everithing we need to start working
   fetchInitialData() {
-    this.fetchInvestorInfo();
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout())
       .finally(() => {
         this.fetchSaves()
           .catch(error => console.error(error))
-          .finally(() => this.fetchCompanyQuotes());
+          .finally(() => {
+            Promise.allSettled([
+              this.fetchInvestorInfo(),
+              this.fetchGENA()
+            ])
+              .finally(() => this.fetchCompanyQuotes())
+          });
       });
+  }
 
+  fetchGENA() {
+    const parseGENASave = save => {
+      save.ranull         = save.ranull == null ? 0 : save.ranull;
+      save.ranullMode     = fallbackBoolean(save.ranullMode, true)
+      save.ranullPlus     = save.ranullPlus == null ? 0 : save.ranullPlus;
+      save.ranullPlusMode = fallbackBoolean(save.ranullPlusMode, true);
+      return save;
+    };
+
+    return fetch("getGenaSnapshots")
+      .then(response => {
+        const { data } = response;
+        console.log("getGenaSnapshots:", data);
+        return this.setStateAsync({ genaSaves: data });
+      })
+      .then(() => {
+        return new Promise((resolve, reject) => {
+          const id = this.state.genaSaves[0]?.id;
+          if (id != null) {
+            fetch("getGenaSnapshot", "GET", { id })
+              .then(response => {
+                const { data } = response;
+                try {
+                  let genaSave = JSON.parse(data.static);
+                  genaSave = parseGENASave(genaSave);
+
+                  console.log("getGenaSnapshot", genaSave);
+                  this.setState({ genaID: id, genaSave }, () => resolve());
+                }
+                catch (e) {
+                  reject(e);
+                }
+              })
+              .catch(error => reject(error));
+          }
+          else {
+            resolve();
+          }
+        })
+      })
+      .catch(error => console.error(error))
+      .finally(() => {
+        if (dev) {
+          let genaSave = {
+            "isLong": true,
+            "comission": 1,
+            "risk": 300,
+            "depo": 250000,
+            "secondaryDepo": 750000,
+            "load": 44.96,
+            "currentTab": "Закрытие основного депозита",
+            "presets": [
+              {
+                "name": "Стандарт",
+                "type": "Стандарт",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "inPercent": false,
+                    "preferredStep": "",
+                    "length": "",
+                    "percent": "",
+                    "stepInPercent": "",
+                    "mode": "custom",
+                    "modes": [
+                      "custom"
+                    ],
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": "",
+                        "length": 10,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ]
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 285.2,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 285.2
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 285.2,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 285.2
+                  }
+                }
+              },
+              {
+                "name": "СМС + ТОР",
+                "type": "СМС + ТОР",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Закрытие плечевого депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "currentToolCode": "AFZ1"
+                }
+              },
+              {
+                "name": "Лимитник",
+                "type": "Лимитник",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 5.31
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "closeAll": false,
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 5.31
+                  }
+                }
+              },
+              {
+                "name": "Лимитник (SBER)",
+                "type": "Лимитник",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 2.44
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "closeAll": false,
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 2.44
+                  },
+                  "currentToolCode": "MMM"
+                }
+              },
+              {
+                "name": "test",
+                "type": "СМС + ТОР",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Закрытие плечевого депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "currentToolCode": "AFZ1"
+                }
+              }
+            ],
+            "currentPresetName": "test",
+            "isProfitableBying": false,
+            "isReversedProfitableBying": false,
+            "isMirrorBying": false,
+            "isReversedBying": true,
+            "ranull": 0,
+            "ranullMode": true,
+            "ranullPlus": 0,
+            "ranullPlusMode": true
+          };
+          genaSave = parseGENASave(genaSave);
+
+          console.log("getGenaSnapshot", genaSave);
+          return this.setStateAsync({ genaSave })
+        }
+      });
+  }
+
+  saveGENA(save) {
+    console.log('trying to save gena', save);
+    const { genaID } = this.state;
+
+    let request = "addGenaSnapshot";
+    if (genaID > -1) {
+      request = "updateGenaSnapshot";
+    }
+
+    const data = {
+      id: genaID,
+      name: "",
+      static: JSON.stringify(save)
+    };
+
+    return fetch(request, "POST", data)
+      .then(response => {
+        console.log(response);
+        if (response.id != null) {
+          return this.setStateAsync({
+            genaID:   response.id,
+            genaSave: save
+          });
+        }
+      })
+      .catch(error => console.error(error))
+      .finally(() => {
+        if (dev) {
+          return this.setStateAsync({ genaSave: save })
+        }
+      })
   }
 
   fetchSaves() {
@@ -222,11 +607,16 @@ class App extends React.Component {
                 .catch(error => reject(error));
             }
           }
+          else {
+            resolve();
+          }
         })
         .catch(reason => {
           if (dev) {
-            this.extractSave();
-            resolve();
+            setTimeout(() => {
+              this.extractSave();
+              resolve();
+            }, 2_000);
           }
           else {
             this.showAlert(`Не удалось получить сохранения! ${reason}`);
@@ -297,7 +687,7 @@ class App extends React.Component {
         const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
         const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
 
-        console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
+        // console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
 
         if (futuresCount == 0) {
           console.warn("В массиве нет фьючерсов!", tools);
@@ -337,21 +727,35 @@ class App extends React.Component {
     })
   }
 
-  syncToolsWithInvestorInfo(investorInfo = {}) {
-    const { tools } = this.state;
-    investorInfo = investorInfo || this.state.investorInfo;
-    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
-  }
-
   fetchInvestorInfo() {
-    fetch("getInvestorInfo")
-      .then(this.applyInvestorInfo)
-      .then(response => {
-        const { deposit } = response.data;
-        this.setState({ depo: deposit || 10_000 })
-      })
-      .then(() => this.syncToolsWithInvestorInfo())
-      .catch(error => console.error(error))
+    return new Promise((resolve, reject) => {
+      fetch("getInvestorInfo")
+        .then(this.applyInvestorInfo)
+        .then(response => {
+          const depo = response.data.deposit || 10_000;
+          return this.setStateAsync({ depo });
+        })
+        .then(syncToolsWithInvestorInfo.bind(this))
+        .then(() => resolve())
+        .catch(reason => reject(reason))
+        .finally(() => {
+          if (dev) {
+            this.setStateAsync({
+              investorInfo: {
+                email:   "justbratka@ya.ru",
+                deposit: 50_000,
+                status:  "KSUR",
+                skill:   "SKILLED",
+                type:    this.state.percentage >= 0 ? "LONG" : "SHORT"
+              }
+            })
+              .then(syncToolsWithInvestorInfo.bind(this));
+          }
+          else {
+            syncToolsWithInvestorInfo.bind(this);
+          }
+        })
+    })
   }
 
   updatePriceRange(tool) {
@@ -412,8 +816,6 @@ class App extends React.Component {
   }
 
   extractSave(save) {
-    console.log('Extracting save:', save);
-
     const onError = e => {
       this.showAlert(String(e));
       console.error(String(e));
@@ -437,10 +839,10 @@ class App extends React.Component {
         currentToolCode: "AAPL",
         current_date: "#",
         customTools: [],
-        days: 5,
-        depo: 1_000_000,
-        mode: 1,
-        percentage: -13.5,
+        days: 1,
+        depo: 1000000,
+        mode: 0,
+        percentage: -12.5,
         priceRange: [129.042, 132.006],
         profitRatio: 60,
         risk: 0.5,
@@ -453,6 +855,9 @@ class App extends React.Component {
     }
     else {
       try {
+        let lastUpdated = save.dateUpdate || save.dateCreate;
+        console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
+
         staticParsed = JSON.parse(save.static);
         console.log("Parsed static", staticParsed);
   
@@ -497,8 +902,41 @@ class App extends React.Component {
       }
     }
 
+    state.investorInfo = { ...this.state.investorInfo };
+    state.investorInfo.type = state.percentage >= 0 ? "LONG" : "SHORT";
+
     console.log('Parsing save finished!', state);
-    this.setState(state);
+    return this.setStateAsync(state)
+      .then(syncToolsWithInvestorInfo.bind(this))
+      .then(() => {
+        const priceRangeMinMax = priceRange => {
+          let range = [...priceRange].sort((l, r) => l - r);
+
+          const { days, scaleOffset } = this.state;
+          // Проверка на выход за диапазоны
+          const currentTool = this.getCurrentTool();
+          const price = currentTool.currentPrice;
+          let percent = currentTool.adrDay;
+          if (days == 5) {
+            percent = currentTool.adrWeek;
+          }
+          else if (days == 20) {
+            percent = currentTool.adrMonth;
+          }
+
+          const max = price + percent - scaleOffset;
+          const min = price - percent + scaleOffset;
+
+          if (priceRange[1] > max || priceRange[0] < min) {
+            range = [price, price];
+          }
+
+          return range;
+        };
+
+        const priceRange = priceRangeMinMax(state.priceRange);
+        return this.setStateAsync({ priceRange });
+      });
   }
 
   reset() {
@@ -541,6 +979,10 @@ class App extends React.Component {
   update(name = "") {
     const { id } = this.state;
     return new Promise((resolve, reject) => {
+      if (dev) {
+        resolve();
+      }
+
       if (!id) {
         reject("id must be present!");
       }
@@ -552,11 +994,11 @@ class App extends React.Component {
         static: JSON.stringify(json.static),
       };
       fetch("updateMtsSnapshot", "POST", data)
-        .then(res => {
-          console.log("Updated!", res);
+        .then(response => {
+          console.log("Updated!", response);
           resolve();
         })
-        .catch(err => console.log(err));
+        .catch(error => console.error(error));
     })
   }
 
@@ -679,7 +1121,9 @@ class App extends React.Component {
       scaleOffset,
       toolsLoading,
       movePercantage,
+      investorInfo,
       prevDays,
+      genaSave
     } = this.state;
 
     const tools = this.getTools();
@@ -688,7 +1132,7 @@ class App extends React.Component {
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     
     const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
@@ -745,13 +1189,14 @@ class App extends React.Component {
 
       if (risk != 0 && percentage != 0) {
         possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+        updateChartMinMax(priceRange, isLong, possibleRisk);
       }
 
-      return possibleRisk
+      return possibleRisk;
     }
 
     let possibleRisk = getPossibleRisk();
+
 
     return (
       <Provider value={this}>
@@ -896,13 +1341,7 @@ class App extends React.Component {
                             tooltipPlacement="left"
                             tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
                             onChange={priceRange => {
-                              console.log(
-                                priceRange,
-                                `offset: ${scaleOffset}`,
-                                `max: ${max - scaleOffset}`,
-                                `min: ${min + scaleOffset}`
-                              );
-                              this.setState({ priceRange });
+                              this.setState({ priceRange, changed: true });
                               updateChartMinMax(priceRange, isLong, possibleRisk);
                             }}
                           />
@@ -999,8 +1438,9 @@ class App extends React.Component {
                                 defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                                 onBlur={value => {
                                   const callback = () => {
-                                    let possibleRisk = getPossibleRisk();
+                                    const possibleRisk = getPossibleRisk();
                                     updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    this.setState({ changed: true });
                                   };
 
                                   // ЛОНГ: то есть точка входа - снизу (число меньше)
@@ -1040,9 +1480,10 @@ class App extends React.Component {
                                 round={"false"}
                                 defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
                                 onBlur={value => {
-                                  const { possibleRisk } = this.state
                                   const callback = () => {
+                                    const possibleRisk = getPossibleRisk();
                                     updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    this.setState({ changed: true });
                                   };
 
                                   // ЛОНГ: то есть точка выхода - сверху (число меньше)
@@ -1122,9 +1563,11 @@ class App extends React.Component {
                                 format={number => formatNumber(round(number, fraction))}
                                 round={"false"}
                                 onBlur={risk => {
-                                  this.setState({risk});
-                                  let possibleRisk = getPossibleRisk();
-                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                  this.setStateAsync({ risk, changed: true })
+                                    .then(() => {
+                                      let possibleRisk = getPossibleRisk();
+                                      updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    });
                                 }}
                               />
                             </div>
@@ -1206,7 +1649,7 @@ class App extends React.Component {
                       data={data}
                       days={days}
                       onRendered={() => {
-                        console.log("Chart has been rendered");
+                        // console.log("Chart has been rendered");
 
                         const { percentage, priceRange, scaleOffset, days } = this.state;
                         const isLong = percentage >= 0;
@@ -1241,7 +1684,6 @@ class App extends React.Component {
 
                           <CustomSlider
                             className="mts-slider2__input"
-                            // key={percentage}
                             style={{
                               "--primary-color": percentage >= 0 ? "var(--accent-color)" : "var(--danger-color)",
                               "--primary-color-lighter": percentage >= 0 ? "var(--accent-color-lighter)" : "var(--danger-color-lighter)",
@@ -1254,18 +1696,18 @@ class App extends React.Component {
                             precision={1}
                             tooltipVisible={false}
                             onChange={(range = []) => {
-                              let { tools, investorInfo } = this.state;
+                              let { investorInfo } = this.state;
                               const percentage = range[0] + range[1];
                               
                               investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
-                              tools = tools.map(tool => tool.update(investorInfo));
 
                               updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
-                              this.setState({
+                              this.setStateAsync({
                                 investorInfo,
                                 percentage, 
-                                tools,
+                                changed: true
                               })
+                                .then(syncToolsWithInvestorInfo.bind(this))
                             }}
                           />
 
@@ -1287,7 +1729,7 @@ class App extends React.Component {
                           <Radio.Group 
                             className="main-content-options__radio"
                             value={mode}
-                            onChange={e => this.setState({ mode: e.target.value })} 
+                            onChange={e => this.setState({ mode: e.target.value, changed: true })}
                           >
                             <Radio 
                               value={0} 
@@ -1351,7 +1793,7 @@ class App extends React.Component {
                               const max = round(price + percent, fraction);
                               const min = round(price - percent, fraction);
 
-                              this.setState({ days, prevDays: days });
+                              this.setState({ days, prevDays: days, changed: true });
                               updateChartScaleMinMax(min, max);
                               updateChartZoom(days);
                             }}
@@ -1691,22 +2133,179 @@ class App extends React.Component {
             pure={true}
           >
             <SettingsGenerator
-              depo={this.state.depo}
-              tools={this.getTools()}
+              depo={depo}
+              tools={tools}
               load={percentage}
               toolsLoading={toolsLoading}
-              investorInfo={this.state.investorInfo}
-              onClose={() => {
-                dialogAPI.close("settings-generator");
+              investorInfo={investorInfo}
+              genaSave={genaSave}
+              onClose={(save, e) => {
+
+                const genaSavePure = {...genaSave};
+                delete genaSavePure.key;
+
+                let changed = false;
+
+                if (genaSavePure == null) {
+                  changed = true;
+                }
+                else if (!isEqual(save, genaSavePure)) {
+                  var diff = function (obj1, obj2) {
+
+                    // Make sure an object to compare is provided
+                    if (!obj2 || Object.prototype.toString.call(obj2) !== '[object Object]') {
+                      return obj1;
+                    }
+
+                    //
+                    // Variables
+                    //
+
+                    var diffs = {};
+                    var key;
+
+
+                    //
+                    // Methods
+                    //
+
+                    /**
+                     * Check if two arrays are equal
+                     * @param  {Array}   arr1 The first array
+                     * @param  {Array}   arr2 The second array
+                     * @return {Boolean}      If true, both arrays are equal
+                     */
+                    var arraysMatch = function (arr1, arr2) {
+
+                      // Check if the arrays are the same length
+                      if (arr1.length !== arr2.length) return false;
+
+                      // Check if all items exist and are in the same order
+                      for (var i = 0; i < arr1.length; i++) {
+                        if (arr1[i] !== arr2[i]) return false;
+                      }
+
+                      // Otherwise, return true
+                      return true;
+
+                    };
+
+                    /**
+                     * Compare two items and push non-matches to object
+                     * @param  {*}      item1 The first item
+                     * @param  {*}      item2 The second item
+                     * @param  {String} key   The key in our object
+                     */
+                    var compare = function (item1, item2, key) {
+
+                      // Get the object type
+                      var type1 = Object.prototype.toString.call(item1);
+                      var type2 = Object.prototype.toString.call(item2);
+
+                      // If type2 is undefined it has been removed
+                      if (type2 === '[object Undefined]') {
+                        diffs[key] = null;
+                        return;
+                      }
+
+                      // If items are different types
+                      if (type1 !== type2) {
+                        diffs[key] = item2;
+                        return;
+                      }
+
+                      // If an object, compare recursively
+                      if (type1 === '[object Object]') {
+                        var objDiff = diff(item1, item2);
+                        if (Object.keys(objDiff).length > 0) {
+                          diffs[key] = objDiff;
+                        }
+                        return;
+                      }
+
+                      // If an array, compare
+                      if (type1 === '[object Array]') {
+                        if (!arraysMatch(item1, item2)) {
+                          diffs[key] = item2;
+                        }
+                        return;
+                      }
+
+                      // Else if it's a function, convert to a string and compare
+                      // Otherwise, just compare
+                      if (type1 === '[object Function]') {
+                        if (item1.toString() !== item2.toString()) {
+                          diffs[key] = item2;
+                        }
+                      } else {
+                        if (item1 !== item2) {
+                          diffs[key] = item2;
+                        }
+                      }
+
+                    };
+
+
+                    //
+                    // Compare our objects
+                    //
+
+                    // Loop through the first object
+                    for (key in obj1) {
+                      if (obj1.hasOwnProperty(key)) {
+                        compare(obj1[key], obj2[key], key);
+                      }
+                    }
+
+                    // Loop through the second object and find missing items
+                    for (key in obj2) {
+                      if (obj2.hasOwnProperty(key)) {
+                        if (!obj1[key] && obj1[key] !== obj2[key]) {
+                          diffs[key] = obj2[key];
+                        }
+                      }
+                    }
+
+                    // Return the object of differences
+                    return diffs;
+
+                  };
+
+                  changed = true;
+                }
+
+                if (changed) {
+                  dialogAPI.open("settings-generator-close-confirm", e.target);
+                }
+                else {
+                  dialogAPI.close("settings-generator");
+                }
               }}
               onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
               onToolSelectBlur={() => {
                 this.setStateAsync({ isToolsDropdownOpen: false })
                   .then(() => this.imitateFetchcingTools());
               }}
+              onSave={genaSave => this.saveGENA(genaSave)}
             />
           </Dialog>
           {/* ГЕНА */}
+
+          <Dialog
+            id="settings-generator-close-confirm"
+            title="Сообщение"
+            confirmText="ОК"
+            onConfirm={e => {
+              dialogAPI.close("settings-generator");
+              if (genaSave) {
+                this.setState({ genaSave: { ...genaSave, key: Math.random() } })
+              }
+              return true;
+            }}
+            cancelText="Отмена"
+          >
+            Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны
+          </Dialog>
 
         </div>
       </Provider>

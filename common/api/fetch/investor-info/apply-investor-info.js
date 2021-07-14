@@ -1,7 +1,11 @@
 export function applyInvestorInfo(response) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const { status, skill } = response.data;
-    const investorInfo = { status, skill };
-    return this.setStateAsync({ investorInfo }, () => resolve(response));
+    const investorInfo = {
+      ...this.state.investorInfo,
+      status,
+      skill
+    };
+    this.setState({ investorInfo }, () => resolve(response));
   })
 }
