@@ -1645,6 +1645,8 @@ class App extends Component {
 
     const tools = this.getTools();
 
+    console.log(data.slice(0, 3));
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -2711,7 +2713,7 @@ class App extends Component {
                             </div>
                             <div className="section4-r">
                               {
-                                formatNumber(Math.round(data[currentDay - 1].depoStartReal * (depoPersentageStart / 100)))
+                                formatNumber(Math.round(data[currentDay - 1].depoStart * (depoPersentageStart / 100)))
                                 +
                                 ` (${ round(depoPersentageStart, 3) }%)`
                               }

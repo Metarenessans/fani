@@ -54,36 +54,37 @@ expect.extend({
   },
 });
 
-test("Правильно считает первый день", () => {
+test("Правильно считает первый день в первом режиме", () => {
   // Длина массива равна длине и настроек
   expect(data.length).toEqual(settings.$length);
   // Начальный депозит первого дня равен начальному депозиту из статика
   expect(data[0].depoStart).toEqual(settings.$start);
   expect(data[0].depoEnd).toEqual(1_442_250);
   expect(data[0].goal).toEqual(442_250);
-  expect(data[0].contracts).toEqual(37);
+  expect(data[0].contracts).toEqual(32);
 });
 
-test("Правильно считает второй день", () => {
+test("Правильно считает второй день в первом режиме", () => {
   // Начальный депозит второго дня всегда больше начального депозита первого
+  expect(data[1].depoStart).toBeGreaterThanOrEqual(data[0].depoStart);
   expect(data[1].depoStart).toEqual(data[0].depoEnd);
   expect(data[1].depoEnd).toEqual(2_080_085);
   expect(data[1].goal).toEqual(637_835);
-  // expect(data[0].contracts).toEqual(37);
 });
 
-test("Целевой депозит последнего дня совпадает с планом с погрешностью в 0.1%", () => {
+test("Целевой депозит последнего дня совпадает с планом с погрешностью в 5%", () => {
   expect(data[data.length - 1].depoEnd)
     .toBeWithinRange(
-      depoEnd - (depoEnd / 1_000),
-      depoEnd + (depoEnd / 1_000)
+      depoEnd - (depoEnd * 0.05),
+      depoEnd + (depoEnd * 0.05)
     );
 })
 
-test("Кейс второй режим, 1млн по 1% за 3 дня", () => {
+test("Кейс второй режим, 3 дня, начиная с 1млн по 1%", () => {
+  const mode = 1;
   const depoStart = 1_000_000;
   const days = 3;
-  const { rate } = extRateReal(
+  const { rate, sum } = extRateReal(
     depoStart,
     null,
     0, 20,
@@ -97,7 +98,7 @@ test("Кейс второй режим, 1млн по 1% за 3 дня", () => {
   );
 
   const settings = {
-    $mode:            1,
+    $mode:            mode,
     $start:           depoStart,
     $percent:         10,
     $length:          days,
@@ -112,6 +113,7 @@ test("Кейс второй режим, 1млн по 1% за 3 дня", () => {
   const data = new Data();
   data.build(settings);
 
+  /* Первый день */
   // План был равен 1 010 000
   expect(data[0].depoEndPlan).toEqual(1_010_000);
 
@@ -123,20 +125,26 @@ test("Кейс второй режим, 1млн по 1% за 3 дня", () => {
   expect(data[0].depoEndReal).toEqual(1_010_000);
 
   expect(data[0].depoEndPlan).toEqual(1_020_000);
-  expect(data[0].getRealDepoEnd(1)).toEqual(1_020_000);
+  expect(data[0].getRealDepoEnd(mode)).toEqual(1_020_000);
   
+  /* Второй день */
   // На второй день целевой депозит должен быть равен 1 032 000
+  expect(data[1].depoStart).toEqual(1_020_000);
   expect(data[1].depoEndPlan).toEqual(1_030_200);
-  expect(data[1].getRealDepoEnd(1)).toEqual(1_030_200);
+  expect(data[1].getRealDepoEnd(mode)).toEqual(1_030_200);
   
   // Докидываем еще 10 тысяч во второй день
   data[1].payload = 10_000;
   data.build(settings);
 
-  // console.log(data[1]);
-
-  expect(data[1].depoEndReal      ).toEqual(1_020_000);
+  expect(data[1].depoEndReal).toEqual(1_020_000);
   
-  expect(data[1].depoEndPlan      ).toEqual(1_040_200);
-  expect(data[1].getRealDepoEnd(1)).toEqual(1_040_200);
+  expect(data[1].depoEndPlan).toEqual(1_040_200);
+  expect(data[1].getRealDepoEnd(mode)).toEqual(1_040_200);
+
+  expect(data[data.length - 1].depoEnd)
+    .toBeWithinRange(
+      sum - (sum * .05),
+      sum + (sum * .05)
+    );
 })
