@@ -3,24 +3,24 @@ import fractionLength from "./utils/fraction-length"
 import readyTools      from "./adr.json"
 import readyToolsNew   from "./adr-new.json"
 import readyToolsMarch from "./adr-march.json"
+import readyToolsApril from "./adr-april.json"
 
 const template = {
-  ref:             null,
+  ref:             {},
   fullName:        "",
   shortName:       "",
   code:            "",
-  stepPrice:       0,
-  priceStep:       0,
-  averageProgress: 0,
-  guarantee:       0,
-  currentPrice:    55,
-  volume:          0,
-  lotSize:         0,
-  dollarRate:      0,
-  adrDay:          0,
-  adrWeek:         0,
-  adrMonth:        0,
-
+  stepPrice:       1,
+  priceStep:       1,
+  averageProgress: 1,
+  guarantee:       1,
+  currentPrice:    1,
+  volume:          1,
+  lotSize:         1,
+  dollarRate:      1,
+  adrDay:          1,
+  adrWeek:         1,
+  adrMonth:        1,
   points: [
     [70,  70],
     [156, 55],
@@ -40,15 +40,16 @@ class Tool {
   }
 
   update(investorInfo) {
-    if (this.ref) {
-      let guarantee = this.ref.guarantee || this.ref.guaranteeValue;
+    const { ref } = this;
+    if (ref && Object.keys(ref).length > 0) {
+      let guarantee = ref.guarantee || ref.guaranteeValue;
 
       if (typeof guarantee == "object") {
-        let guaranteeExtracted = this.ref.guarantee["default"];
-        if (investorInfo.status) {
-          const type = investorInfo.type;
-          if (this.ref.guarantee[investorInfo.status] && this.ref.guarantee[investorInfo.status][type]) {
-            guaranteeExtracted = this.ref.guarantee[investorInfo.status][type];
+        let guaranteeExtracted = ref.guarantee["default"];
+        const { status, type } = investorInfo;
+        if (status && type) {
+          if (ref.guarantee[status] && ref.guarantee[status][type]) {
+            guaranteeExtracted = ref.guarantee[status][type];
           }
         }
 
@@ -58,8 +59,16 @@ class Tool {
         guarantee = parseNumber(guarantee);
       }
 
-      this.guarantee = round(guarantee, 1);
+      guarantee = round(guarantee, 2);
+
+      if (typeof guarantee == "number") {
+        this.guarantee = guarantee;
+      }
+      else {
+        throw new Error("ГО не число");
+      }
     }
+
     return this;
   }
 
@@ -95,7 +104,12 @@ class Tool {
     if (this.shortName) {
       return this.shortName;
     }
-    else return this.code;
+    else if (this.code) {
+      return this.code;
+    }
+    else {
+      return this.name;
+    }
   }
 
   toString(options = { long: true }) {
@@ -166,7 +180,12 @@ const parseTool = tool => {
 
   var found = false;
   
-  // Check if we already have pre-written tool
+  /**
+   *
+   *
+   * @param {*} readyTools
+   * @param {boolean} [strict=false] Если включен, то коды фьючерсов будут сравниваться не по первым двум символам, а на предмет полного соответствия
+   */
   const check = (readyTools, strict = false) => {
     for (let readyTool of readyTools) {
       const lastCompareIndex = strict
@@ -205,8 +224,9 @@ const parseTool = tool => {
   check(readyTools.filter(filterFn));
   check(readyToolsNew.filter(filterFn));
   check(readyToolsMarch.filter(filterFn), true);
+  check(readyToolsApril.filter(filterFn), true);
 
-  // We didn't find the tool in pre-written tools
+  // Если инструмент не сметчился ни с одним из заготовленным файлов
   if (!found) {
     const blackSwan = currentPrice * 0.2;
     adrDay = blackSwan / 10;
@@ -296,7 +316,7 @@ class Tools {
     }
 
     if (unmatchedTools.length) {
-      console.warn("Не сметчились", unmatchedTools);
+      // console.warn("Не сметчились", unmatchedTools.map(tool => tool + ""));
     }
 
     return parsedTools;
@@ -350,21 +370,21 @@ class Tools {
 
   static create(
     toolInfo = {
-      ref:             null,
+      ref:             {},
       fullName:        "Сбербанк России ПАО ао",
       shortName:       "",
       code:            "SBER",
       stepPrice:       0.1,
       priceStep:       0.01,
       averageProgress: 0,
-      guarantee:       2702.2,
-      currentPrice:    270.22,
+      guarantee:       3109,
+      currentPrice:    310.9,
       volume:          0,
       lotSize:         10,
       dollarRate:      1,
-      adrDay:          4.02,
-      adrWeek:         5,
-      adrMonth:        10.7,
+      adrDay:          5.38,
+      adrWeek:         14.58,
+      adrMonth:        26.89,
     },
     options = {}
   ) {
@@ -379,7 +399,7 @@ class Tools {
     return [
       this.create(),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "BR-3.21",
         shortName:       "",
         code:            "BRH1",
@@ -396,7 +416,7 @@ class Tools {
         adrMonth:        8.27,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Si-3.21",
         shortName:       "",
         code:            "SiH1",
@@ -413,7 +433,7 @@ class Tools {
         adrMonth:        5882,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "3D Systems Corp.",
         shortName:       "",
         code:            "DDD",
@@ -430,7 +450,7 @@ class Tools {
         adrMonth:        16.51,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Abbvie Inc",
         shortName:       "",
         code:            "ABBV",
@@ -447,7 +467,7 @@ class Tools {
         adrMonth:        11.9,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Abiomed Inc.",
         shortName:       "",
         code:            "ABMD",
@@ -464,7 +484,7 @@ class Tools {
         adrMonth:        60.91,
       }),
       this.create({
-        ref:             null,
+        ref:             {},
         fullName:        "Apple Inc",
         shortName:       "",
         code:            "AAPL",
@@ -479,6 +499,40 @@ class Tools {
         adrDay:          3,
         adrWeek:         8.45,
         adrMonth:        12.18,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "АЛРОСА ПАО ао",
+        shortName:       "",
+        code:            "ALRS",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1280,
+        currentPrice:    128,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          2.75,
+        adrWeek:         5.47,
+        adrMonth:        10.59,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "ПАО Московская Биржа",
+        shortName:       "",
+        code:            "MOEX",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1715.9,
+        currentPrice:    171.59,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          3.11,
+        adrWeek:         7.67,
+        adrMonth:        17.64,
       }),
     ]
   }
@@ -515,4 +569,4 @@ class Tools {
   }
 }
 
-export { Tools, template };
+export { Tools, Tool, template };
