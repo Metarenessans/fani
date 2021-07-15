@@ -1,12 +1,10 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { GlobalContext } from "../context/GlobalState";
-
-import axios from "axios";
 
 import Config from "./config";
 import NumericInput from "./numeric-input";
 import { Dialog, dialogAPI } from "./dialog";
-import { template } from "../common/tools";
+import { Tool, template } from "../common/tools";
 import formatNumber from "../common/utils/format-number";
 import CrossButton from "./cross-button";
 
@@ -16,23 +14,29 @@ import { SettingFilled, LoadingOutlined } from "@ant-design/icons";
 
 export const PriceMove = () => {
   const {
+    investorInfo,
+    loadTables,
+    iterationQty,
+    stopValue,
+    minYield,
+    yieldStep,
+    adrMode,
+    setAdrMode,
     setInitialState,
     loading,
+    setCustomTools,
+    saves,
     currentSaveIdx,
     setCurrentSaveIdx,
+    tools,
+    customTools,
     getSaves,
+    getSave,
     snapshotIsChanged,
     snapshotIsSaved,
     addSave,
     updateSave,
     deleteSave,
-    saves,
-    loadTables,
-    adrMode,
-    setAdrMode,
-    tools,
-    customTools,
-    investorInfo,
     updateDeposit,
   } = useContext(GlobalContext);
 
@@ -56,9 +60,6 @@ export const PriceMove = () => {
     console.log("snapshotIsChanged:", snapshotIsChanged);
   }, [snapshotIsChanged]);
 
-  const [snapshotData, setSnapshotData] = useState({ adrMode, loadTables });
-  const [errorMessage, setErrorMessage] = useState(null);
-
   const pageTitle = () => {
     let title = "ИП Аналитика";
 
@@ -69,15 +70,16 @@ export const PriceMove = () => {
     return title;
   };
 
-  const getSave = async (id) => {
-    try {
-      const res = await axios.get(
-        `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
-      );
-      return res.data.data;
-    } catch (err) {
-      console.log(err);
-    }
+  const formSnapshot = () => {
+    return {
+      investorInfo,
+      loadTables,
+      iterationQty,
+      stopValue,
+      minYield,
+      yieldStep,
+      adrMode,
+    };
   };
 
   return (
@@ -95,9 +97,15 @@ export const PriceMove = () => {
                   <Select
                     disabled={loading}
                     loading={loading}
-                    value={currentSaveIdx}
-                    onSelect={(val) => {
-                      setCurrentSaveIdx(val);
+                    value={loading ? 0 : currentSaveIdx}
+                    onSelect={(idx) => {
+                      if (idx === 0) {
+                        setInitialState();
+                      } else {
+                        setCurrentSaveIdx(idx);
+                        let id = saves[idx - 1].id;
+                        getSave(id);
+                      }
                     }}
                   >
                     <Select.Option key={0} value={0}>
@@ -167,25 +175,22 @@ export const PriceMove = () => {
                   <Button
                     className="custom-btn custom-btn--secondary main-top__save"
                     onClick={(e) => {
-                      if (
-                        saves.length &&
-                        snapshotIsSaved &&
-                        snapshotIsChanged
-                      ) {
+                      if (saves.length && snapshotIsChanged) {
                         let save = saves[currentSaveIdx - 1];
                         updateSave({
                           id: save.id,
                           name: save.name,
-                          static: JSON.stringify(snapshotData),
+                          static: JSON.stringify(formSnapshot()),
                         });
                       } else {
                         dialogAPI.open("dialog1", e.target);
                       }
                     }}
                   >
-                    {saves.length !== 0 && snapshotIsSaved && !snapshotIsChanged
-                      ? "Изменить"
-                      : "Сохранить"}
+                    {(!snapshotIsSaved && snapshotIsChanged) ||
+                    currentSaveIdx == 0
+                      ? "Сохранить"
+                      : "Изменить"}
                   </Button>
 
                   {saves.length > 0 ? (
@@ -336,28 +341,20 @@ export const PriceMove = () => {
                     if (validate(currentName).length) {
                       console.error(validate(currentName)[0]);
                     } else {
-                      // Ход цены
-                      // итераций
-                      // стоп
-                      // доходность
-                      // шаг доходности
-                      // направление (лонг/шорт)
-                      // загрузка(и)
-                      // инструмент(ы)
-                      // депозит из настроек
-                      // кастомные инструменты, если есть
-
-                      if (!snapshotIsSaved && snapshotIsChanged) {
+                      if (
+                        (!snapshotIsSaved && snapshotIsChanged) ||
+                        currentSaveIdx === 0
+                      ) {
+                        addSave({
+                          name: currentName,
+                          static: JSON.stringify(formSnapshot()),
+                        });
+                      } else {
                         let save = saves[currentSaveIdx - 1];
                         updateSave({
                           id: save.id,
                           name: currentName,
-                          static: JSON.stringify(snapshotData),
-                        });
-                      } else {
-                        addSave({
-                          name: currentName,
-                          static: JSON.stringify(snapshotData),
+                          static: JSON.stringify(formSnapshot()),
                         });
                       }
                       return true;
@@ -369,9 +366,7 @@ export const PriceMove = () => {
                     validate={validate}
                     defaultValue={currentName}
                     onChange={(val) => (currentName = val)}
-                    onBlur={() => {
-                      console.log("blur");
-                    }}
+                    onBlur={() => {}}
                   />
                 </Dialog>
               );
@@ -395,6 +390,7 @@ export const PriceMove = () => {
               id="config"
               title="Инструменты"
               template={template}
+              templateContructor={Tool}
               tools={tools}
               toolsInfo={[
                 { name: "Инструмент", prop: "name" },
@@ -410,9 +406,7 @@ export const PriceMove = () => {
                 { name: "ADR месяц", prop: "adrMonth" },
               ]}
               customTools={customTools}
-              onChange={(customTools) => {
-                // this.setState({ customTools })
-              }}
+              onChange={(customTools) => setCustomTools(customTools)}
               insertBeforeDialog={
                 <label className="input-group input-group--fluid ksd-config__depo">
                   <span className="input-group__label">Размер депозита:</span>
@@ -423,26 +417,12 @@ export const PriceMove = () => {
                     min={10000}
                     max={Infinity}
                     onBlur={(val) => {
-                      updateDeposit(val);
+                      if (val !== investorInfo.deposit) updateDeposit(val);
                     }}
                   />
                 </label>
               }
             />
-
-            {(() => {
-              return (
-                <Dialog
-                  id="dialog-msg"
-                  title="Сообщение"
-                  hideConfirm={true}
-                  cancelText="ОК"
-                >
-                  {errorMessage}
-                </Dialog>
-              );
-            })()}
-            {/* Error Popup */}
           </div>
         </div>
       </div>

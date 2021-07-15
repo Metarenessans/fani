@@ -78,7 +78,6 @@ export const GlobalProvider = ({ children }) => {
           return tools;
         }
       );
-
       dispatch({
         type: "GET_TOOLS",
         payload: tools,
@@ -117,6 +116,26 @@ export const GlobalProvider = ({ children }) => {
       if (!res.data.error) {
         dispatch({
           type: "GET_SAVES",
+          payload: res.data.data,
+        });
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
+  }
+
+  async function getSave(id) {
+    try {
+      const res = await axios.get(
+        `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
+      );
+
+      if (!res.data.error) {
+        dispatch({
+          type: "GET_SAVE",
           payload: res.data.data,
         });
       }
@@ -204,6 +223,20 @@ export const GlobalProvider = ({ children }) => {
       dispatch({
         type: "SET_CURRENT_SAVE_IDX",
         payload: idx,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+
+  async function setCustomTools(tools) {
+    try {
+      dispatch({
+        type: "SET_CUSTOM_TOOLS",
+        payload: tools,
       });
     } catch (err) {
       dispatch({
@@ -482,25 +515,27 @@ export const GlobalProvider = ({ children }) => {
         setInitialState,
         setIsLoading,
         setCurrentSaveIdx,
+        setCustomTools,
         getTools,
         getInvestorInfo,
         getSaves,
+        getSave,
         addSave,
         updateSave,
         deleteSave,
         addTool,
         updateTool,
         deleteTool,
+        updateSteps,
         setLoadValue,
         setIterationQty,
         setStopValue,
         setMinYield,
         setYieldStep,
-        updateSteps,
         setAdrMode,
         setGuaranteeMode,
-        addStepColumn,
         setExtraStep,
+        addStepColumn,
         deleteExtraStep,
         addLoadTable,
         deleteLoadTable,

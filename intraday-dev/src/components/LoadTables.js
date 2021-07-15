@@ -5,14 +5,8 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const LoadTables = () => {
-  const {
-    saves,
-    loadTables,
-    getInvestorInfo,
-    getTools,
-    loading,
-    setIsLoading,
-  } = useContext(GlobalContext);
+  const { loadTables, getInvestorInfo, getTools, loading, setIsLoading } =
+    useContext(GlobalContext);
 
   const loadData = async () => {
     await setIsLoading(true);
