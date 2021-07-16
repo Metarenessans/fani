@@ -1,6 +1,6 @@
-import React from 'react'
-import { Input, Tooltip } from 'antd/es'
-import './style.scss'
+import React from "react";
+import { Input, Tooltip } from "antd/es";
+import "./style.scss";
 
 let isIPhone = /iPhone/i.test(navigator.userAgent);
 
@@ -8,13 +8,19 @@ export default class NumericInput extends React.Component {
   constructor(props) {
     super(props);
 
-    this.onInvalid = this.props.onInvalid || function () { return "" };
+    this.onInvalid =
+      this.props.onInvalid ||
+      function () {
+        return "";
+      };
     this.className = this.props.className || "";
 
     this.state = {
-      value: this.format(this.props.defaultValue === "" ? "" : this.props.defaultValue),
+      value: this.format(
+        this.props.defaultValue === "" ? "" : this.props.defaultValue
+      ),
       errMsg: "",
-      positive: this.props.defaultValue >= 0
+      positive: this.props.defaultValue >= 0,
     };
 
     if (this.props.onRef) {
@@ -23,16 +29,16 @@ export default class NumericInput extends React.Component {
   }
 
   get format() {
-    return this.props.format || (val => val);
+    return this.props.format || ((val) => val);
   }
 
   get round() {
-    return this.props.round == "true"
+    return this.props.round == "true";
   }
 
   get unsigned() {
-    return this.props.unsigned == "true"
-  } 
+    return this.props.unsigned == "true";
+  }
 
   componentDidUpdate(prevProps) {
     const { defaultValue, test } = this.props;
@@ -40,11 +46,10 @@ export default class NumericInput extends React.Component {
 
     if ((isNaN(defaultValue) || defaultValue == null) && value != "0") {
       console.warn("defaultValue equals NaN!");
-      this.setState({ value: 0 })
+      this.setState({ value: 0 });
       return;
-    }
-    else if (defaultValue != prevProps.defaultValue) {
-      this.setState({ value: this.format(defaultValue) })
+    } else if (defaultValue != prevProps.defaultValue) {
+      this.setState({ value: this.format(defaultValue) });
     }
   }
 
@@ -58,8 +63,7 @@ export default class NumericInput extends React.Component {
 
     if (value == ".") {
       value = "0.";
-    }
-    else if (value == ",") {
+    } else if (value == ",") {
       value = "0,";
     }
 
@@ -72,7 +76,7 @@ export default class NumericInput extends React.Component {
     regexpCode = regexpCode + "[0-9]*";
 
     if (!this.round) {
-      regexpCode = regexpCode + `((\\.|\\,)[0-9]*)?`
+      regexpCode = regexpCode + `((\\.|\\,)[0-9]*)?`;
     }
 
     regexpCode = regexpCode + "$";
@@ -110,13 +114,13 @@ export default class NumericInput extends React.Component {
     }
 
     if (
-      !this.round                   &&
-      value.indexOf(".") < 0        &&
-      value.length > 1              &&
+      !this.round &&
+      value.indexOf(".") < 0 &&
+      value.length > 1 &&
       value[0] == "0"
     ) {
       var before = value.substring(0, 1);
-      var after  = value.substring(1, value.length);
+      var after = value.substring(1, value.length);
       value = before + "." + after;
     }
 
@@ -136,7 +140,7 @@ export default class NumericInput extends React.Component {
     value += "";
 
     var lastChar = value.charAt(value.length - 1);
-    if (lastChar == '.' || lastChar == ',') {
+    if (lastChar == "." || lastChar == ",") {
       value = value.slice(0, -1);
     }
 
@@ -168,10 +172,12 @@ export default class NumericInput extends React.Component {
   }
 
   onKeyDown(e) {
-    if ([
-      13, // Enter
-      27  // Escape
-    ].indexOf(e.keyCode) > -1) {
+    if (
+      [
+        13, // Enter
+        27, // Escape
+      ].indexOf(e.keyCode) > -1
+    ) {
       e.target.blur();
       e.stopPropagation();
     }
@@ -181,40 +187,34 @@ export default class NumericInput extends React.Component {
     const { positive, value, errMsg } = this.state;
     const { unsigned } = this.props;
 
-    const safeProps = {...this.props};
+    const safeProps = { ...this.props };
     delete safeProps.format;
 
     return (
-      <Tooltip
-        title={errMsg}
-        visible={errMsg.length > 0}
-      >
-        <div className={
-          []
+      <Tooltip title={errMsg} visible={errMsg.length > 0}>
+        <div
+          className={[]
             .concat(this.className)
             .concat("numeric-input-wrap")
             .join(" ")
-            .trim()
-        }>
-          
+            .trim()}
+        >
           <Input
             type="text"
-            inputMode={'decimal'}
+            inputMode={"decimal"}
             placeholder={0}
             maxLength={25}
             {...safeProps}
-            className={
-              []
-                .concat("numeric-input")
-                .concat(errMsg.length ? " error" : "")
-                .concat(isIPhone ? "iPhone" : "")
-                .join(" ")
-                .trim()
-            }
-            onKeyDown={e => this.onKeyDown(e)}
-            onChange={e => this.onChange(e)}
-            onFocus={e => this.onFocus(e)}
-            onBlur={e => this.onBlur(e)}
+            className={[]
+              .concat("numeric-input")
+              .concat(errMsg.length ? " error" : "")
+              .concat(isIPhone ? "iPhone" : "")
+              .join(" ")
+              .trim()}
+            onKeyDown={(e) => this.onKeyDown(e)}
+            onChange={(e) => this.onChange(e)}
+            onFocus={(e) => this.onFocus(e)}
+            onBlur={(e) => this.onBlur(e)}
             value={value}
           />
 
@@ -222,11 +222,11 @@ export default class NumericInput extends React.Component {
             <button
               // className={"iPhone-button"}
               onClick={(e) => {
-                const parsedValue = +(String(value).replace(/\s+/g, ""));
+                const parsedValue = +String(value).replace(/\s+/g, "");
                 if (parsedValue !== 0) {
                   this.setState({
                     value: this.format(-parsedValue),
-                    positive: !positive
+                    positive: !positive,
                   });
 
                   if (this.props.onBlur) {
@@ -234,13 +234,18 @@ export default class NumericInput extends React.Component {
                   }
                 }
               }}
-            > 
-              <svg className={positive ? "" : "negative"} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 447.243 447.243"><path d="M420.361 192.229a31.967 31.967 0 00-5.535-.41H99.305l6.88-3.2a63.998 63.998 0 0018.08-12.8l88.48-88.48c11.653-11.124 13.611-29.019 4.64-42.4-10.441-14.259-30.464-17.355-44.724-6.914a32.018 32.018 0 00-3.276 2.754l-160 160c-12.504 12.49-12.515 32.751-.025 45.255l.025.025 160 160c12.514 12.479 32.775 12.451 45.255-.063a32.084 32.084 0 002.745-3.137c8.971-13.381 7.013-31.276-4.64-42.4l-88.32-88.64a64.002 64.002 0 00-16-11.68l-9.6-4.32h314.24c16.347.607 30.689-10.812 33.76-26.88 2.829-17.445-9.019-33.88-26.464-36.71z"/></svg>
+            >
+              <svg
+                className={positive ? "" : "negative"}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 447.243 447.243"
+              >
+                <path d="M420.361 192.229a31.967 31.967 0 00-5.535-.41H99.305l6.88-3.2a63.998 63.998 0 0018.08-12.8l88.48-88.48c11.653-11.124 13.611-29.019 4.64-42.4-10.441-14.259-30.464-17.355-44.724-6.914a32.018 32.018 0 00-3.276 2.754l-160 160c-12.504 12.49-12.515 32.751-.025 45.255l.025.025 160 160c12.514 12.479 32.775 12.451 45.255-.063a32.084 32.084 0 002.745-3.137c8.971-13.381 7.013-31.276-4.64-42.4l-88.32-88.64a64.002 64.002 0 00-16-11.68l-9.6-4.32h314.24c16.347.607 30.689-10.812 33.76-26.88 2.829-17.445-9.019-33.88-26.464-36.71z" />
+              </svg>
             </button>
           )}
-
         </div>
       </Tooltip>
-    )
+    );
   }
 }
