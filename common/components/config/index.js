@@ -47,7 +47,7 @@ class Config extends React.Component {
 
   render() {
     let { alertText, changed, customTools, filter, showMax } = this.state;
-    let { id, title, template, tools, toolsInfo, onChange, insertBeforeDialog } = this.props;
+    let { id, title, template, tools, templateContructor, toolsInfo, onChange, insertBeforeDialog } = this.props;
     insertBeforeDialog = insertBeforeDialog || null;
 
     const alertId = String(id).concat("-alert");
@@ -74,6 +74,10 @@ class Config extends React.Component {
           confirmText="Добавить"
           onConfirm={() => {
             let tool = { ...template };
+            if (templateContructor) {
+              tool = new templateContructor();
+            }
+
             toolsInfo
               .map(info => info.prop)
               .map((prop, index) => {
@@ -244,6 +248,8 @@ class Config extends React.Component {
                                         <NumericInput
                                           key={value + Math.random()}
                                           defaultValue={value}
+                                          unsigned="true"
+                                          min={1}
                                           onBlur={val => onBlur(val, index, prop)}
                                         />
                                       )

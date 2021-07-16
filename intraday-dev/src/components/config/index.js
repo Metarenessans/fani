@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { Button, Input, Tooltip } from "antd/es";
+import { Input } from "antd/es";
 
 import isEqual from "../../utils/is-equal";
 
