@@ -131,6 +131,10 @@ export const LoadTable = ({ tableIdx }) => {
   const [loadsVisible, setLoadsVisible] = useState(false);
   const [loadValueLocal, setLoadValueLocal] = useState(table.loadValue);
 
+  useEffect(() => {
+    setLoadValueLocal(table.loadValue);
+  }, [table]);
+
   return (
     <div className="container load-table">
       <Row gutter={[20]}>
@@ -147,7 +151,7 @@ export const LoadTable = ({ tableIdx }) => {
               <Switch
                 checkedChildren="LONG"
                 unCheckedChildren="SHORT"
-                defaultChecked
+                checked={table.guaranteeMode === "LONG" && true}
                 onChange={(checked) => {
                   const mode = checked ? "LONG" : "SHORT";
                   setGuaranteeMode(tableIdx, mode);

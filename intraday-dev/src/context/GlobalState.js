@@ -114,9 +114,12 @@ export const GlobalProvider = ({ children }) => {
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
       );
       if (!res.data.error) {
+        console.log("getSaves:", res.data.data);
+        let saves = res.data.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+
         dispatch({
           type: "GET_SAVES",
-          payload: res.data.data,
+          payload: saves,
         });
       }
     } catch (err) {
@@ -392,7 +395,7 @@ export const GlobalProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
-        payload: err.response.data.error,
+        payload: err,
       });
     }
   }
@@ -511,6 +514,7 @@ export const GlobalProvider = ({ children }) => {
         snapshotIsChanged: state.snapshotIsChanged,
         snapshotIsSaved: state.snapshotIsSaved,
         currentSaveIdx: state.currentSaveIdx,
+        customTools: state.customTools,
 
         setInitialState,
         setIsLoading,

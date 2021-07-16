@@ -19,7 +19,7 @@ export const LoadTables = () => {
     setInterval(getTools, 120000);
   }, []);
 
-  const tables = loadTables.map((table, tableIdx) => (
+  let tables = loadTables.map((table, tableIdx) => (
     <LoadTable key={tableIdx} tableIdx={tableIdx} />
   ));
 

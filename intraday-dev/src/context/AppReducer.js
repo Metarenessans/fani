@@ -115,34 +115,6 @@ export default (state, action) => {
     return tables;
   };
 
-  const getSave = (data) => {
-    // Ход цены
-    // итераций
-    // стоп
-    // доходность
-    // шаг доходности
-    // направление (лонг/шорт)
-    // загрузка(и)
-    // инструмент(ы)
-    // депозит из настроек
-    // кастомные инструменты, если есть
-
-    const save = JSON.parse(data.static);
-    console.log(save);
-    // deposit
-    // loadTables
-    // setGuaranteeMode
-    // setExtraStep
-    return {
-      ...state,
-      iterationQty: save.iterationQty,
-      stopValue: save.stopValue,
-      minYield: save.minYield,
-      yieldStep: save.yieldStep,
-      adrMode: save.adrMode,
-    };
-  };
-
   switch (action.type) {
     case "SET_INITIAL_STATE":
       return {
@@ -168,19 +140,47 @@ export default (state, action) => {
       return {
         ...state,
         customTools: action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "GET_SAVES":
-      let sortedSaves = action.payload.sort(
-        (l, r) => r.dateUpdate - l.dateUpdate
-      );
-      const pure = params.get("pure") === "true";
+      let pure = params.get("pure") === "true";
+      let saves = action.payload;
+
       return {
         ...state,
-        saves: sortedSaves,
-        currentSaveIdx: sortedSaves.length && !pure ? 1 : 0,
+        saves,
+        currentSaveIdx: saves.length && !pure ? 1 : 0,
       };
     case "GET_SAVE":
-      return getSave(action.payload);
+      // направление (лонг/шорт)
+      // загрузка(и)
+      // инструмент(ы)
+      // депозит из настроек
+      // кастомные инструменты, если есть
+      const save = JSON.parse(action.payload.static);
+      console.log(save);
+      // deposit
+      // loadTables
+      // setGuaranteeMode
+      // setExtraStep
+
+      return {
+        ...state,
+        adrMode: save.adrMode,
+        iterationQty: save.iterationQty,
+        stopValue: save.stopValue,
+        minYield: save.minYield,
+        yieldStep: save.yieldStep,
+        loadTables: save.loadTables,
+        customTools: save.customTools,
+        investorInfo: {
+          ...state.investorInfo,
+          deposit: save.investorInfo.deposit,
+        },
+        snapshotIsSaved: true,
+        snapshotIsChanged: false,
+      };
     case "ADD_SAVE":
       return {
         ...state,

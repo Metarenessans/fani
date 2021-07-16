@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { Input } from "antd";
+import { Input } from "antd/es";
 
 import isEqual from "../../utils/is-equal";
+
 import croppString from "../../utils/cropp-string";
 
 import Stack from "../stack";
@@ -49,6 +50,7 @@ class Config extends React.Component {
       title,
       template,
       tools,
+      templateContructor,
       toolsInfo,
       onChange,
       insertBeforeDialog,
@@ -79,6 +81,10 @@ class Config extends React.Component {
           confirmText="Добавить"
           onConfirm={() => {
             let tool = { ...template };
+            if (templateContructor) {
+              tool = new templateContructor();
+            }
+
             toolsInfo
               .map((info) => info.prop)
               .map((prop, index) => {
@@ -112,9 +118,8 @@ class Config extends React.Component {
               },
               () => {
                 const currentDialog = dialogAPI.getCurrentDialog();
-                const tableWrap = currentDialog.querySelector(
-                  ".config-table-wrap"
-                );
+                const tableWrap =
+                  currentDialog.querySelector(".config-table-wrap");
                 tableWrap.scrollTop = 99999;
               }
             );
@@ -226,9 +231,8 @@ class Config extends React.Component {
                         ) {
                           const found = customTools[index][prop].match(/\d+$/g);
                           if (found) {
-                            const end = customTools[index][prop].match(
-                              /\d+$/g
-                            )[0];
+                            const end =
+                              customTools[index][prop].match(/\d+$/g)[0];
                             customTools[index][prop] = customTools[index][
                               prop
                             ].replace(end, Number(end) + 1);
@@ -273,6 +277,8 @@ class Config extends React.Component {
                                     <NumericInput
                                       key={value + Math.random()}
                                       defaultValue={value}
+                                      unsigned="true"
+                                      min={1}
                                       onBlur={(val) => onBlur(val, index, prop)}
                                     />
                                   );

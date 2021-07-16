@@ -22,14 +22,14 @@ export const PriceMove = () => {
     yieldStep,
     adrMode,
     setAdrMode,
+    tools,
+    customTools,
+    setCustomTools,
     setInitialState,
     loading,
-    setCustomTools,
     saves,
     currentSaveIdx,
     setCurrentSaveIdx,
-    tools,
-    customTools,
     getSaves,
     getSave,
     snapshotIsChanged,
@@ -40,17 +40,17 @@ export const PriceMove = () => {
     updateDeposit,
   } = useContext(GlobalContext);
 
+  const loadSaves = async () => {
+    await getSaves();
+
+    // if (saves.length) {
+    //   await getSave(saves[0].id);
+    // }
+  };
+
   useEffect(() => {
-    getSaves();
+    loadSaves();
   }, []);
-
-  useEffect(() => {
-    console.log("currentSaveIdx:", currentSaveIdx);
-  }, [currentSaveIdx]);
-
-  useEffect(() => {
-    console.log("loading:", loading);
-  }, [loading]);
 
   useEffect(() => {
     console.log("snapshotIsSaved:", snapshotIsSaved);
@@ -59,6 +59,11 @@ export const PriceMove = () => {
   useEffect(() => {
     console.log("snapshotIsChanged:", snapshotIsChanged);
   }, [snapshotIsChanged]);
+
+  useEffect(() => {
+    console.log("customTools useEffect");
+    setCustomTools(customTools);
+  }, [customTools]);
 
   const pageTitle = () => {
     let title = "ИП Аналитика";
@@ -73,12 +78,13 @@ export const PriceMove = () => {
   const formSnapshot = () => {
     return {
       investorInfo,
-      loadTables,
+      adrMode,
       iterationQty,
       stopValue,
       minYield,
       yieldStep,
-      adrMode,
+      loadTables,
+      customTools,
     };
   };
 

@@ -3,9 +3,8 @@ import { GlobalContext } from "../context/GlobalState";
 import { InputNumber } from "antd";
 
 export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
-  const { loadTables, setExtraStep, deleteExtraStep, loading } = useContext(
-    GlobalContext
-  );
+  const { loadTables, setExtraStep, deleteExtraStep, loading } =
+    useContext(GlobalContext);
   const [stepValue, setStepValue] = useState(step);
 
   const inputRef = useRef(null);
@@ -14,7 +13,7 @@ export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
 
   useEffect(async () => {
     setStepValue(step);
-  }, [table.extraSteps.length]);
+  }, [table.extraSteps]);
 
   const handleKeyboard = (key) => {
     const codes = ["Enter", "NumpadEnter", "Escape"];
