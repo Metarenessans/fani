@@ -1,18 +1,20 @@
-import React, { memo } from "react";
-import { Input } from "antd/es";
+import React, { memo } from 'react'
+import { Button, Input, Tooltip } from 'antd/es'
 
-import isEqual from "../../utils/is-equal";
+import isEqual from '../../utils/is-equal'
 
-import croppString from "../../utils/cropp-string";
+import croppString  from "../../utils/cropp-string"
 
-import Stack from "../stack";
-import CrossButton from "../cross-button";
-import NumericInput from "../numeric-input";
-import { Dialog, dialogAPI } from "../dialog";
+import Stack                 from "../stack"
+import CrossButton           from "../cross-button"
+import NumericInput          from "../numeric-input"
+import { Dialog, dialogAPI } from "../dialog"
+import { Tools }             from "../../tools"
 
-import "./style.scss";
+import "./style.scss"
 
 class Config extends React.Component {
+
   constructor(props) {
     super(props);
 
@@ -21,11 +23,11 @@ class Config extends React.Component {
     this.ref = React.createRef();
 
     this.state = {
-      showMax: 30,
+      showMax:  30,
       customTools,
-      changed: false,
+      changed:   false,
       alertText: "",
-      filter: "",
+      filter:    ""
     };
   }
 
@@ -35,31 +37,22 @@ class Config extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (!isEqual(prevProps.customTools, this.props.customTools)) {
-      this.setState({ customTools: this.props.customTools });
+      this.setState({ customTools: this.props.customTools })
     }
 
     if (!isEqual(prevProps.tools, this.props.tools)) {
-      this.setState({ tools: this.props.tools });
+      this.setState({ tools: this.props.tools })
     }
   }
 
   render() {
     let { alertText, changed, customTools, filter, showMax } = this.state;
-    let {
-      id,
-      title,
-      template,
-      tools,
-      templateContructor,
-      toolsInfo,
-      onChange,
-      insertBeforeDialog,
-    } = this.props;
+    let { id, title, template, tools, templateContructor, toolsInfo, onChange, insertBeforeDialog } = this.props;
     insertBeforeDialog = insertBeforeDialog || null;
 
     const alertId = String(id).concat("-alert");
     const uniqueProp = toolsInfo[0].prop;
-
+    
     const getAllTools = () => [].concat(tools).concat(customTools);
 
     const nameExists = (name, tools) => {
@@ -86,12 +79,13 @@ class Config extends React.Component {
             }
 
             toolsInfo
-              .map((info) => info.prop)
+              .map(info => info.prop)
               .map((prop, index) => {
                 if (prop === uniqueProp) {
                   const suffix = customTools.length + 1;
                   tool[prop] = `Инструмент ${suffix > 1 ? suffix : ""}`.trim();
-                } else {
+                }
+                else {
                   tool[prop] = template[prop];
                 }
               });
@@ -100,29 +94,23 @@ class Config extends React.Component {
               const found = tool[uniqueProp].match(/\d+$/g);
               if (found) {
                 const end = tool[uniqueProp].match(/\d+$/g)[0];
-                tool[uniqueProp] = tool[uniqueProp].replace(
-                  end,
-                  Number(end) + 1
-                );
-              } else {
+                tool[uniqueProp] = tool[uniqueProp].replace(end, Number(end) + 1);
+              }
+              else {
                 tool[uniqueProp] += " 2";
               }
             }
 
             customTools.push(tool);
-            this.setState(
-              {
-                customTools,
-                changed: true,
-                showMax: Infinity,
-              },
-              () => {
-                const currentDialog = dialogAPI.getCurrentDialog();
-                const tableWrap =
-                  currentDialog.querySelector(".config-table-wrap");
-                tableWrap.scrollTop = 99999;
-              }
-            );
+            this.setState({ 
+              customTools,
+              changed: true,
+              showMax: Infinity
+            }, () => {
+              const currentDialog = dialogAPI.getCurrentDialog();
+              const tableWrap = currentDialog.querySelector(".config-table-wrap");
+              tableWrap.scrollTop = 99999;
+            });
           }}
           cancelClass={changed ? "custom-btn--filled" : ""}
           cancelText="Сохранить"
@@ -133,12 +121,10 @@ class Config extends React.Component {
           }}
           onClose={() => {
             if (changed) {
-              this.setState({
-                alertText:
-                  "Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны",
-              });
+              this.setState({ alertText: "Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны" });
               dialogAPI.open(alertId);
-            } else {
+            }
+            else {
               return true;
             }
           }}
@@ -146,77 +132,62 @@ class Config extends React.Component {
         >
           <Stack className="config">
             {/* Самый идиотский костыль, который я когда-либо придумывал */}
-            {insertBeforeDialog}
+            { insertBeforeDialog }
 
             <Input
               className="config__search"
               placeholder="Фильтр по названию"
-              onChange={(e) => {
+              onChange={e => {
                 const filter = e.target.value;
                 this.setState({ filter });
               }}
             />
 
-            <div
+            <div 
               className="config-table-wrap"
-              onScroll={(e) => {
-                const scrollTopMax =
-                  e.target.querySelector("table").offsetHeight -
-                  e.target.offsetHeight * 1.5;
-                if (
-                  e.target.scrollTop > scrollTopMax &&
-                  showMax < getAllTools().length
-                ) {
+              onScroll={e => {
+                const scrollTopMax = e.target.querySelector("table").offsetHeight - e.target.offsetHeight * 1.5;
+                if (e.target.scrollTop > scrollTopMax && showMax < getAllTools().length) {
                   this.setState({ showMax: showMax + 40 });
                 }
-              }}
-            >
+              }}>
               <table className="table">
                 <thead className="table-header">
                   <tr className="table-tr">
-                    {toolsInfo
-                      .map((info) => info.name)
-                      .map((name, index) => (
-                        <th
-                          style={{ minWidth: index == 0 ? "14em" : "" }}
-                          className="config-th table-th"
-                        >
-                          {name}
-                        </th>
-                      ))}
-                    {customTools && customTools.length ? (
-                      <th className="config-th"></th>
-                    ) : null}
+                    {
+                      toolsInfo
+                        .map(info => info.name)
+                        .map((name, index) =>
+                          <th style={{ minWidth: index == 0 ? "14em" : "" }} className="config-th table-th">
+                            {name}
+                          </th>
+                        )
+                    }
+                    {customTools && customTools.length ? <th className="config-th"></th> : null}
                   </tr>
                 </thead>
                 <tbody className="table-body">
-                  {tools &&
-                    tools
-                      .filter(
-                        (tool) =>
-                          tool
-                            .toString()
-                            .toLowerCase()
-                            .indexOf(filter.toLowerCase()) > -1
-                      )
+                  {
+                    tools && tools
+                      .filter(tool => tool.toString().toLowerCase().indexOf(filter.toLowerCase()) > -1)
                       .slice(0, showMax)
-                      .map((tool, index) => (
+                      .map((tool, index) =>
                         <tr className="config-tr" key={index}>
-                          {toolsInfo
-                            .map((info) => info.prop)
-                            .map((prop, i) => (
-                              <td key={i} className="table-td">
-                                {prop == uniqueProp ? (
-                                  <span title={tool.toString()}>
-                                    {croppString(tool[prop], 27)}
-                                  </span>
-                                ) : (
-                                  tool[prop]
-                                )}
-                              </td>
-                            ))}
+                          {
+                            toolsInfo
+                              .map(info => info.prop)
+                              .map((prop, i) =>
+                                <td key={i} className="table-td">
+                                  {prop == uniqueProp
+                                    ? <span title={tool.toString()}>{croppString(tool[prop], 27)}</span>
+                                    : tool[prop]
+                                  }
+                                </td>
+                              )
+                          }
                         </tr>
-                      ))}
+                      )
+                  }
                   {(() => {
                     let onBlur = (val, index, prop) => {
                       // Do nothing if input stays unchanged
@@ -226,17 +197,13 @@ class Config extends React.Component {
 
                       customTools[index][prop] = val;
                       if (prop === uniqueProp) {
-                        while (
-                          nameExists(customTools[index][prop], getAllTools())
-                        ) {
+                        while (nameExists(customTools[index][prop], getAllTools())) {
                           const found = customTools[index][prop].match(/\d+$/g);
                           if (found) {
-                            const end =
-                              customTools[index][prop].match(/\d+$/g)[0];
-                            customTools[index][prop] = customTools[index][
-                              prop
-                            ].replace(end, Number(end) + 1);
-                          } else {
+                            const end = customTools[index][prop].match(/\d+$/g)[0];
+                            customTools[index][prop] = customTools[index][prop].replace(end, Number(end) + 1);
+                          }
+                          else {
                             customTools[index][prop] += " 2";
                           }
                         }
@@ -245,61 +212,66 @@ class Config extends React.Component {
                       this.setState({ customTools, changed: true });
                     };
 
-                    return (
-                      customTools &&
-                      customTools.slice(0, showMax).map((tool, index) => (
+                    return customTools && customTools
+                      .slice(0, showMax)
+                      .map((tool, index) =>
                         <tr className="config-tr" key={index}>
-                          {toolsInfo
-                            .map((info) => info.prop)
-                            .map((prop, i) => (
-                              <td key={i} className="table-td">
-                                {(() => {
-                                  const value = tool[prop];
-                                  return typeof value == "string" ? (
-                                    <Input
-                                      key={value + Math.random()}
-                                      defaultValue={value}
-                                      onKeyDown={(e) => {
-                                        if (
-                                          [
-                                            13, // Enter
-                                            27, // Escape
-                                          ].indexOf(e.keyCode) > -1
-                                        ) {
-                                          e.target.blur();
-                                        }
-                                      }}
-                                      onBlur={(e) =>
-                                        onBlur(e.target.value, index, prop)
-                                      }
-                                    />
-                                  ) : (
-                                    <NumericInput
-                                      key={value + Math.random()}
-                                      defaultValue={value}
-                                      unsigned="true"
-                                      min={1}
-                                      onBlur={(val) => onBlur(val, index, prop)}
-                                    />
-                                  );
-                                })()}
-                              </td>
-                            ))}
+                          {
+                            toolsInfo
+                              .map(info => info.prop)
+                              .map((prop, i) =>
+                                <td
+                                  key={i}
+                                  className="table-td"
+                                >
+                                  {(() => {
+                                    const value = tool[prop];
+                                    return (
+                                      typeof value == "string" ? (
+                                        <Input
+                                          key={value + Math.random()}
+                                          defaultValue={value}
+                                          onKeyDown={e => {
+                                            if (
+                                              [
+                                                13, // Enter
+                                                27  // Escape
+                                              ].indexOf(e.keyCode) > -1
+                                            ) {
+                                              e.target.blur();
+                                            }
+                                          }}
+                                          onBlur={e => onBlur(e.target.value, index, prop)}
+                                        />
+                                      )
+                                      : (
+                                        <NumericInput
+                                          key={value + Math.random()}
+                                          defaultValue={value}
+                                          unsigned="true"
+                                          min={1}
+                                          onBlur={val => onBlur(val, index, prop)}
+                                        />
+                                      )
+                                    )
+                                  })()}
+                                </td>
+                              )
+                          }
 
-                          <CrossButton
+                          <CrossButton 
                             className="config__delete"
-                            onClick={(e) => {
+                            onClick={e => {
                               customTools.splice(index, 1);
                               this.setState({ customTools, changed: true });
-                            }}
-                          />
+                            }} />
                         </tr>
-                      ))
-                    );
+                      )
                   })()}
                 </tbody>
               </table>
             </div>
+
           </Stack>
         </Dialog>
 
@@ -307,7 +279,7 @@ class Config extends React.Component {
           id={alertId}
           title="Сообщение"
           confirmText="ОК"
-          onConfirm={(e) => {
+          onConfirm={e => {
             dialogAPI.close(id);
             return true;
           }}
@@ -316,13 +288,10 @@ class Config extends React.Component {
           {alertText}
         </Dialog>
       </div>
-    );
+    )
   }
 }
 
 export default memo(Config, (prevProps, nextProps) => {
-  return (
-    isEqual(prevProps.tools, nextProps.tools) &&
-    isEqual(prevProps.customTools, nextProps.customTools)
-  );
+  return isEqual(prevProps.tools, nextProps.tools) && isEqual(prevProps.customTools, nextProps.customTools)
 });
