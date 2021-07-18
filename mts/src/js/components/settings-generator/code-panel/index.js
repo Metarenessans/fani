@@ -67,7 +67,7 @@ export default function CodePanel(props) {
       >
         {title != null &&
           <div className="code-panel-group-header">
-            {title && <h3>{ title }</h3>}
+            {title && <h3 data-should-output="true">{ title }</h3>}
             <button
               className="code-panel-group__copy-btn"
               onClick={e => {
@@ -83,7 +83,7 @@ export default function CodePanel(props) {
           </div>
         }
         <div className="code-panel-group-content">
-          <pre ref={codeElement} onClick={e => selectElementContent(e.target)} >
+          <pre ref={codeElement} onClick={e => selectElementContent(e.target)} data-should-output="true">
             {textContent}
           </pre>
         </div>
@@ -269,7 +269,7 @@ export default function CodePanel(props) {
                      style={{ marginBottom: "-2em" }}>
 
                   <div className="code-panel-group-header">
-                    <h3>{title}</h3>
+                    <h3 data-should-output="true">{title}</h3>
                     <button
                       className="code-panel-group__copy-btn"
                       onClick={e => {
@@ -284,8 +284,7 @@ export default function CodePanel(props) {
                   </button>
                   </div>
                   <div className="code-panel-group-content">
-                    <pre onClick={e => selectElementContent(e.target)}
-                      ref={codeElement}>
+                    <pre onClick={e => selectElementContent(e.target)} ref={codeElement} data-should-output="true">
                       {textContent}
                     </pre>
                   </div>
@@ -298,7 +297,7 @@ export default function CodePanel(props) {
 
               {!hideTitle &&
                 <div className="code-panel-group-header">
-                  <h3>{title}</h3>
+                  <h3 data-should-output="true">{title}</h3>
                   <button
                     className="code-panel-group__copy-btn"
                     onClick={e => {
@@ -332,7 +331,7 @@ export default function CodePanel(props) {
                 </div>
               }
               <div className="code-panel-group-content">
-                <pre onClick={e => selectElementContent(e.target)} ref={codeElement}>
+                <pre onClick={e => selectElementContent(e.target)} ref={codeElement} data-should-output="true">
                   {textContent}
                 </pre>
               </div>

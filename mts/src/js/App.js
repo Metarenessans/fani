@@ -7,27 +7,27 @@ import {
   Radio,
   Input,
   Pagination,
+  Dropdown,
+  Menu
 } from 'antd/es'
 const { Option } = Select;
 
 import {
   LoadingOutlined,
   SettingFilled,
-  WarningOutlined
 } from "@ant-design/icons"
 
 import fetch           from "../../../common/api/fetch"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
-import fetchSavesFor   from "../../../common/api/fetch-saves"
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSaveById   from "../../../common/api/fetch/fetch-save-by-id"
 import params          from "../../../common/utils/params"
 import round           from "../../../common/utils/round"
 import formatNumber    from "../../../common/utils/format-number"
-import typeOf          from "../../../common/utils/type-of"
 import fractionLength  from "../../../common/utils/fraction-length"
 import sortInputFirst  from "../../../common/utils/sort-input-first"
 import isEqual         from '../../../common/utils/is-equal';
 import fallbackBoolean from '../../../common/utils/fallback-boolean';
+import stepConverter   from './components/settings-generator/step-converter';
 
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
@@ -43,7 +43,6 @@ import {
 } from "./components/chart"
 
 import Stack                   from "../../../common/components/stack"
-import CrossButton             from "../../../common/components/cross-button"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
 
 import "../sass/style.sass";
@@ -53,6 +52,14 @@ import NumericInput            from "../../../common/components/numeric-input"
 import SettingsGenerator       from "./components/settings-generator"
 import Header                  from "./components/header"
 import CustomSlider            from "../../../common/components/custom-slider"
+
+const algorithms = [
+  { name: "Стандарт",  profitRatio: 60 },
+  { name: "СМС + ТОР", profitRatio: 60 },
+  { name: "Лимитник",  profitRatio: 90 }
+];
+
+let unsavedGena = null;
 
 class App extends React.Component {
 
@@ -92,6 +99,10 @@ class App extends React.Component {
       movePercantage:         0,
       profitRatio:           60,
       searchVal:             "",
+
+      presetSelection:       algorithms.map(algorithm => 0),
+      totalIncome:           0,
+      totalStep:             0,
 
       toolsLoading:       false,
       isFocused:          false,
@@ -254,7 +265,7 @@ class App extends React.Component {
       })
       .catch(error => console.error(error))
       .finally(() => {
-        if (dev) {
+        if (false && dev) {
           let genaSave = {
             "isLong": true,
             "comission": 1,
@@ -554,7 +565,6 @@ class App extends React.Component {
   }
 
   saveGENA(save) {
-    console.log('trying to save gena', save);
     const { genaID } = this.state;
 
     let request = "addGenaSnapshot";
@@ -763,6 +773,57 @@ class App extends React.Component {
       const currentPrice = tool.currentPrice;
       this.setState({ priceRange: [currentPrice, currentPrice] }, () => resolve());
     })
+  }
+
+  importDataFromGENA(genaSave) {
+    // ~~
+    const { mode, presetSelection } = this.state;
+
+    if (!genaSave) {
+      return Promise.resolve();
+    }
+    
+    if (algorithms[mode].name != genaSave.presets.find(preset => preset.name == genaSave.currentPresetName).type) {
+      return Promise.resolve();
+    }
+
+    const options = genaSave?.presets.filter(preset => preset.type == algorithms[mode].name) || [{ name: algorithm.name }];
+    const currentPreset = options[presetSelection[mode]];
+
+    let percentToSteps = currentPreset.type == "Лимитник"
+      ? stepConverter.complexFromPercentToSteps
+      : stepConverter.fromPercentsToStep;
+    
+    let totalStep = 0;
+
+    const primaryOption = currentPreset.options["Закрытие основного депозита"];
+    if (primaryOption && primaryOption.customData) {
+      totalStep += primaryOption.customData.reduce((acc, curr) => {
+        const value = curr.inPercent
+          ? percentToSteps(curr.preferredStep, currentTool, contracts)
+          : curr.preferredStep;
+        return acc + Number(value);
+      }, 0);
+    }
+
+    const secondaryOption = currentPreset.options["Закрытие плечевого депозита"];
+    if (secondaryOption && secondaryOption.customData) {
+      totalStep += secondaryOption.customData.reduce((acc, curr) => {
+        const value = curr.inPercent
+          ? percentToSteps(curr.preferredStep, currentTool, contracts)
+          : curr.preferredStep;
+        return acc + Number(value);
+      }, 0);
+    }
+
+    return this.setStateAsync({
+      depo:            genaSave.depo + genaSave.secondaryDepo,
+      percentage:      genaSave.load,
+      currentToolCode: currentPreset.options.currentToolCode,
+      risk:            genaSave.risk,
+      totalIncome:     genaSave.totalIncome,
+      totalStep,
+    });
   }
 
   showAlert(msg = "") {
@@ -1068,23 +1129,9 @@ class App extends React.Component {
     return sortInputFirst(this.state.searchVal, this.getOptions());
   }
 
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-    return Math.min(index, tools.length);
-  }
-
   getCurrentToolIndex() {
-    let { currentToolCode } = this.state;
-    let index = this.getToolIndexByCode(currentToolCode);
-    return index;
+    const { currentToolCode } = this.state;
+    return Tools.getToolIndexByCode(this.getTools(), currentToolCode);
   }
   
   getToolByCode(code) {
@@ -1115,6 +1162,7 @@ class App extends React.Component {
       page,
       risk,
       chance,
+      currentToolCode,
       percentage,
       priceRange,
       profitRatio,
@@ -1123,11 +1171,16 @@ class App extends React.Component {
       movePercantage,
       investorInfo,
       prevDays,
-      genaSave
+      genaSave,
+      presetSelection,
+      totalIncome,
+      totalStep
     } = this.state;
 
     const tools = this.getTools();
     const currentTool = this.getCurrentTool();
+    const fraction = fractionLength(currentTool.priceStep);
+
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     
@@ -1136,14 +1189,14 @@ class App extends React.Component {
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
-      currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600000,
-      depo <= 100000
+      currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600_000,
+      depo <= 100_000
     ];
     if (disabledModes[mode]) {
       mode = disabledModes.indexOf(false);
     }
 
-    const fraction = fractionLength(currentTool.priceStep);
+    
     const price = currentTool.currentPrice;
     let percent = currentTool.adrDay;
     if (days == 5) {
@@ -1159,8 +1212,8 @@ class App extends React.Component {
     const STEP_IN_EACH_DIRECTION = 20;
     const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
     
-    let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
-    income *= profitRatio / 100
+    // let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
+    let income = totalIncome * profitRatio / 100
     
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
@@ -1515,7 +1568,7 @@ class App extends React.Component {
                                 </Tooltip>
                               </span>
                               <span className="main-content-stats__val">
-                                {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
+                                {formatNumber(totalStep)}
                               </span>
                             </div>
                             
@@ -1605,7 +1658,6 @@ class App extends React.Component {
                                     </span>
                                     <span className="main-content-stats__val">
                                       {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
-                                      {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
                                     </span>
                                   </div>
 
@@ -1720,47 +1772,74 @@ class App extends React.Component {
 
                     <div className="main-content-options">
                       <div className="main-content-options__wrap">
+
                         <div className="main-content-options__row">
                           <span className="main-content-options__label">
                             <Tooltip title="Настройки торгового робота для расчёта результатов торговой стратегии">
                               Алгоритм МАНИ 144
                             </Tooltip>
                           </span>
-                          <Radio.Group 
-                            className="main-content-options__radio"
-                            value={mode}
-                            onChange={e => this.setState({ mode: e.target.value, changed: true })}
-                          >
-                            <Radio 
-                              value={0} 
-                              disabled={disabledModes[0]}
-                              onClick={ e => this.setState({ profitRatio: 60 }) }
-                            >
-                              стандарт
-                            </Radio>
-                            <Radio 
-                              value={1}
-                              disabled={disabledModes[1]}
-                              onClick={ e => this.setState({ profitRatio: 60 })}
-                            >
-                              смс<span style={{ fontFamily: "serif", fontWeight: 300 }}>+</span>тор
-                            </Radio>
-                            <Radio 
-                              value={2} 
-                              disabled={disabledModes[2]}
-                              onClick={ e => this.setState({ profitRatio: 90 })}
-                            >
-                              лимитник
-                            </Radio>
-                          </Radio.Group>
-                    
+
+                          <div className="main-content-options-group">
+
+                            {algorithms.map((algorithm, index) => (() => {
+                              // ~~
+                              let options = genaSave?.presets.filter(preset => preset.type == algorithm.name) || [{ name: algorithm.name }];
+
+                              return (
+                                <Select
+                                  className={mode == index ? "selected" : ""}
+                                  value={presetSelection[index]}
+                                  disabled={disabledModes[index]}
+                                  showArrow={options?.length > 1}
+                                  dropdownStyle={{
+                                    visibility:    options?.length > 1 ? "visible" : "hidden",
+                                    pointerEvents: options?.length > 1 ? "all"     : "none"
+                                  }}
+                                  onSelect={value => {
+                                    presetSelection[index] = value;
+
+                                    this.setStateAsync({
+                                      presetSelection,
+                                      mode: index,
+                                      profitRatio: algorithm.profitRatio,
+                                      changed: true
+                                    })
+                                      .then(() => this.importDataFromGENA(genaSave));
+                                  }}
+                                  onFocus={e => {
+                                    if (options?.length == 1) {
+                                      presetSelection[index] = 0;
+
+                                      this.setStateAsync({
+                                        presetSelection,
+                                        mode: index,
+                                        profitRatio: algorithm.profitRatio,
+                                        changed: true
+                                      })
+                                        .then(() => this.importDataFromGENA(genaSave));
+                                    }
+                                  }}
+                                >
+                                  {options.map((preset, index) =>
+                                    <Select.Option value={index} title={preset.name}>
+                                      {preset.name}
+                                    </Select.Option>
+                                  )}
+                                </Select>
+                              )
+                            })())}
+                            
+
+                          </div>
+
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
                             onClick={e => dialogAPI.open("settings-generator", e.target)}
                             // На проде ГЕНА дизейблится
                             disabled={dev ? false : !location.href.replace(/\/$/, "").endsWith("-dev")}
                           >
-                              <span className="visually-hidden">Открыть конфиг</span>
+                            <span className="visually-hidden">Открыть конфиг</span>
                             <Tooltip title=" Генератор настроек МАНИ 144">
                               <SettingFilled className="settings-button__icon" />
                             </Tooltip>
@@ -2138,10 +2217,23 @@ class App extends React.Component {
               load={percentage}
               toolsLoading={toolsLoading}
               investorInfo={investorInfo}
+              currentToolCode={currentToolCode}
+              contracts={contracts}
+              risk={risk}
+              algorithm={algorithms[mode].name}
               genaSave={genaSave}
+              onSave={genaSave => {
+                this.saveGENA(genaSave);
+                this.importDataFromGENA(genaSave);
+              }}
+              onUpdate={genaSave => {
+                this.setStateAsync({ genaSave }).then(() => this.importDataFromGENA(genaSave));
+              }}
               onClose={(save, e) => {
 
-                const genaSavePure = {...genaSave};
+                unsavedGena = {...save};
+
+                const genaSavePure = { ...genaSave };
                 delete genaSavePure.key;
 
                 let changed = false;
@@ -2281,24 +2373,37 @@ class App extends React.Component {
                   dialogAPI.close("settings-generator");
                 }
               }}
+              onDownload={(title, text) => {
+                const file = new Blob([text], { type: 'text/plain' });
+
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(file);
+                link.setAttribute('download', `${title}.txt`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              }}
               onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
               onToolSelectBlur={() => {
                 this.setStateAsync({ isToolsDropdownOpen: false })
                   .then(() => this.imitateFetchcingTools());
               }}
-              onSave={genaSave => this.saveGENA(genaSave)}
             />
           </Dialog>
           {/* ГЕНА */}
 
           <Dialog
             id="settings-generator-close-confirm"
-            title="Сообщение"
+            title="Предупреждение"
             confirmText="ОК"
             onConfirm={e => {
               dialogAPI.close("settings-generator");
-              if (genaSave) {
-                this.setState({ genaSave: { ...genaSave, key: Math.random() } })
+              if (unsavedGena) {
+                this.setStateAsync({ genaSave: { ...unsavedGena, key: Math.random() } })
+                  .then(() => this.importDataFromGENA(unsavedGena))
+                  .finally(() => {
+                    unsavedGena = null;
+                  });
               }
               return true;
             }}

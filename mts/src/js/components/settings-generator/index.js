@@ -34,6 +34,7 @@ import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 import createData    from './data'
 
 import round          from '../../../../../common/utils/round'
+import isEqual        from '../../../../../common/utils/is-equal'
 import formatNumber   from '../../../../../common/utils/format-number'
 import fractionLength from '../../../../../common/utils/fraction-length'
 import { keys } from 'lodash'
@@ -41,10 +42,22 @@ import stepConverter from './step-converter'
 
 const SettingsGenerator = props => {
 
-  const { onClose, onSave, genaSave, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
+  const { onClose, onUpdate, onSave, genaSave, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
+
+  const onDownload = props.onDownload || function(title, text) {
+    const file = new Blob([text], { type: 'text/plain' });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
+    link.setAttribute('download', `${title}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   const firstRender = useRef(true);
   const [shouldSave, setShouldSave] = useState(false);
+  const [shouldRegisterUpdate, setShouldRegisterUpdate] = useState(false);
 
   const investorInfo = props.investorInfo || {};
 
@@ -124,7 +137,7 @@ const SettingsGenerator = props => {
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Лимитник" : "Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState("Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -142,7 +155,7 @@ const SettingsGenerator = props => {
   const [comission, setComission] = useState(currentTool.dollarRate >= 1 ? 45 : 1);
   const [load, setLoad] = useState(dev ? 6.2 : props.load || 0);
 
-  const [investorDepo, setInvestorDepo] = useState(dev ? 50_000 : props?.depo || 1_000_000);
+  const [investorDepo, setInvestorDepo] = useState(props.depo || 1_000_000);
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -182,12 +195,34 @@ const SettingsGenerator = props => {
   const ItemOptions = props => {
     const locked = props.locked == true;
     const onDelete = props.onDelete;
+    const preset = props.preset;
 
     return (
       <ul className="preset-options">
         <li>
           <Tooltip title="Скачать файл">
-            <button className="round-btn" aria-label="Скачать">
+            <button 
+              className="round-btn" 
+              aria-label="Скачать"
+              onClick={e => {
+                const prevPresetName = currentPreset.name;
+
+                setCurrentPresetName(preset.name);
+                setTimeout(() => {
+                  const title = preset.name;
+                  const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
+                    .map(node => [...node.querySelectorAll("[data-should-output]")]
+                      .map(node => node.innerText)
+                      .join("\n")
+                    )
+                    .join("\n");
+
+                  onDownload(title, content);
+
+                  setCurrentPresetName(prevPresetName);
+                }, 0);
+              }}
+            >
               <DownloadIcon />
             </button>
           </Tooltip>
@@ -327,6 +362,8 @@ const SettingsGenerator = props => {
   const totalIncome = mainData.length
     ? mainData[mainData.length - 1]?.incomeWithComission
     : 0;
+  
+  const totalLoss = round((depo + secondaryDepo) * risk / 100, fraction);
 
   function updatePresetProperty(subtype, property, value) {
     const presetsCopy = [...presets];
@@ -348,6 +385,7 @@ const SettingsGenerator = props => {
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
+    setShouldRegisterUpdate(true);
   }
 
   function updateCurrentPresetTool(code) {
@@ -362,6 +400,7 @@ const SettingsGenerator = props => {
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
+    setShouldRegisterUpdate(true);
   }
 
   const getPackedSave = () => {
@@ -382,7 +421,12 @@ const SettingsGenerator = props => {
       ranull,
       ranullMode,
       ranullPlus,
-      ranullPlusMode
+      ranullPlusMode,
+
+      // bullshit bazinga
+      // ~~
+      totalIncome,
+      totalLoss,
     };
   };
 
@@ -393,12 +437,13 @@ const SettingsGenerator = props => {
 
     const handleCodeControlClick = e => {
 
-      const currentTab = prevCurrentTab.current;
+      const prevTab = prevCurrentTab.current;
+      console.log(prevTab, e.target.getAttribute("aria-selected"));
 
       if (e.target.getAttribute("aria-selected") == "true") {
         const tab = Array.prototype.find.call(
           document.querySelectorAll(`[role="tab"]`),
-          it => it.textContent == currentTab
+          it => it.textContent == prevTab
         );
 
         setTimeout(() => tab?.click(), 0);
@@ -416,6 +461,7 @@ const SettingsGenerator = props => {
   }, []);
 
   useEffect(() => {
+    console.log("gena save updated");
     if (genaSave) {
       const {
         isLong,
@@ -455,7 +501,7 @@ const SettingsGenerator = props => {
       setRanullPlus(ranullPlus);
       setRanullPlusMode(ranullPlusMode);
     }
-  }, [genaSave])
+  }, [genaSave]);
 
   useEffect(() => {
     prevCurrentTab.current = currentTab;
@@ -481,7 +527,29 @@ const SettingsGenerator = props => {
 
     setReversedBying(currentPreset.type == "СМС + ТОР");
 
+    setShouldRegisterUpdate(true);
+
   }, [currentPreset.type]);
+
+  useEffect(() => {
+    let base = investorDepo;
+    if (depoSum != investorDepo) {
+      base = depoSum;
+    }
+
+    // Плечевой депо есть только в режиме СМС + ТОР
+    if (currentPreset.type == "СМС + ТОР") {
+      setDepo(Math.floor(base * .25));
+      setSecondaryDepo(Math.floor(base * .75));
+    }
+    else {
+      setDepo(base);
+      setSecondaryDepo(0);
+    }
+
+    setShouldRegisterUpdate(true);
+
+  }, [investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -572,6 +640,7 @@ const SettingsGenerator = props => {
   
       presetsCopy[currentPresetIndex] = currentPresetCopy;
       setPresets(presetsCopy);
+      setShouldRegisterUpdate(true);
     }
 
     // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
@@ -589,11 +658,22 @@ const SettingsGenerator = props => {
   }, [props.tools]);
 
   useEffect(() => {
-    if (shouldSave && onSave) {
-      onSave(getPackedSave());
+    if (shouldSave) {
+      
+      onSave && onSave(getPackedSave());
       setShouldSave(false);
+
     }
   }, [shouldSave]);
+
+  useEffect(() => {
+    if (shouldRegisterUpdate) {
+
+      onUpdate && onUpdate(getPackedSave());
+  
+      setShouldRegisterUpdate(false);
+    }
+  }, [shouldRegisterUpdate]);
 
   return (
     <>
@@ -661,8 +741,11 @@ const SettingsGenerator = props => {
                     if (preset.name == currentPresetName) {
                       setCurrentPresetName(presetsCopy[0].name);
                     }
+
                     setShouldSave(true);
+                    setShouldRegisterUpdate(true);
                   }}
+                  preset={preset}
                 />
               </li>
             )}
@@ -708,9 +791,8 @@ const SettingsGenerator = props => {
               >
 
                 <h3
-                  key={Math.random()}
                   className="settings-generator-content-header__title"
-                  contentEditable
+                  contentEditable={currentPresetIndex > 2}
                   suppressContentEditableWarning={true}
                   onKeyDown={e => {
                     const key = e.key.toLowerCase();
@@ -726,7 +808,6 @@ const SettingsGenerator = props => {
                     currentPreset.name = name;
 
                     const namesArray = presetsCopy.map(preset => preset.name);
-
                     if ( namesArray.filter(n => n == name).length > 1 ) {
                       name = makeUnique( name, namesArray );
                     }
@@ -734,12 +815,27 @@ const SettingsGenerator = props => {
                     currentPreset.name = name;
                     setCurrentPresetName(name);
                     setPresets(presetsCopy);
+                    setShouldRegisterUpdate(true);
                   }}
                 >
                   {currentPresetName}
                 </h3>
-                <Tooltip title="Скачать файл">
-                  <button className="round-btn settings-generator-content-header__download" aria-label="Скачать">
+                <Tooltip title='Скачать файл'>
+                  <button 
+                    className="round-btn settings-generator-content-header__download"
+                    aria-label="Скачать"
+                    onClick={e => {
+                      const title = currentPreset.name;
+                      const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
+                        .map(node => [...node.querySelectorAll("[data-should-output]")]
+                          .map(node => node.innerText)
+                          .join("\n")
+                        )
+                        .join("\n");
+                      
+                      onDownload(title, content);
+                    }}
+                  >
                     <DownloadIcon />
                   </button>
                 </Tooltip>
@@ -750,7 +846,15 @@ const SettingsGenerator = props => {
                   <Tooltip title="Сохранить текущие настройки">
                     <Button 
                       className="custom-btn"
-                      onClick={e => dialogAPI.open("settings-generator-save-preset-popup", e.target)}
+                      // disabled={isEqual(getPackedSave(), genaSave || {})}
+                      onClick={e => {
+                        if (currentPresetIndex < 3) {
+                          dialogAPI.open("settings-generator-save-preset-popup", e.target);
+                        }
+                        else {
+                          setShouldSave(true);
+                        }
+                      }}
                     >
                       Сохранить
                     </Button>
@@ -831,6 +935,7 @@ const SettingsGenerator = props => {
                     unsigned="true"
                     onBlur={depo => {
                       setDepo(depo);
+                      setShouldRegisterUpdate(true);
                     }}
                   />
                 </label>
@@ -928,7 +1033,7 @@ const SettingsGenerator = props => {
                             Убыток (риск)
                           </Tooltip>
                         }
-                        value={round((depo + secondaryDepo) * risk / 100, fraction)}
+                        value={totalLoss}
                       />
                     </>
                   )
@@ -1365,7 +1470,7 @@ const SettingsGenerator = props => {
                           aria-controls="settings-generator-tab5"
                           id="settings-generator-tab5-control"
                           hidden={!isMirrorBying}
-                          onClick={e => setCurrentTab("Зеркальные докупки")}>
+                          onClick={e => setCurrentTab(e.target.innerText)}>
                     {currentPreset.type == "Лимитник"
                       ? "Перевыставление в точку входа"
                       : "Зеркальные докупки (СМС)"
@@ -1506,14 +1611,32 @@ const SettingsGenerator = props => {
         title="Добавить настройку по шаблону"
         confirmText="Добавить"
         onConfirm={e => {
+          let presetTypeToFind = newPresetName;
+          if (newPresetName == "МТС") {
+            presetTypeToFind = props.algorithm || presets[0].type;
+          }
+          
           const presetsCopy = [...presets];
-          const presetToCopy = presets.find(preset => preset.name == newPresetName);
+          const presetToCopy = presets.find(preset => preset.type == presetTypeToFind);
           const newPreset = { ...presetToCopy };
           newPreset.name = makeUnique(newPreset.name, presets.map(preset => preset.name));
+
+          if (newPresetName == "МТС") {
+            console.log('!!', props);
+            
+            newPreset.options.currentToolCode = props.currentToolCode;
+            setRisk(props.risk);
+            setLoad(Math.abs(props.load));
+            setIsLong(props.load >= 0);
+            setInvestorDepo(props.depo);
+          }
+
           presetsCopy.push(newPreset);
           setPresets(presetsCopy);
           setCurrentPresetName(newPreset.name);
+
           setShouldSave(true);
+          setShouldRegisterUpdate(true);
 
           return true;
         }}
@@ -1553,6 +1676,7 @@ const SettingsGenerator = props => {
           }
 
           setShouldSave(true);
+          setShouldRegisterUpdate(true);
 
           return true;
         }}
