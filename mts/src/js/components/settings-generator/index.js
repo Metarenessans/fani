@@ -77,15 +77,15 @@ const SettingsGenerator = props => {
           ...optionsTemplate,
           mode: "custom",
           modes: ["custom"],
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Прямые профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
@@ -461,7 +461,6 @@ const SettingsGenerator = props => {
   }, []);
 
   useEffect(() => {
-    console.log("gena save updated");
     if (genaSave) {
       const {
         isLong,
@@ -1339,18 +1338,20 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Прямые профитные докупки</span>
                 </label>
 
-                <div style={{ width: '100%' }} hidden={!isProfitableBying}>
-                  <SGRow
-                    isBying={true}
-                    preferredStepLabel="Прямой ход"
-                    data={data["Прямые профитные докупки"]}
-                    options={currentPreset.options["Прямые профитные докупки"]}
-                    onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
-                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
-                    contracts={contractsTotal - contracts}
-                    currentTool={currentTool}
-                  />
-                </div>
+                {isProfitableBying &&
+                  <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+                    <SGRow
+                      isBying={true}
+                      preferredStepLabel="Прямой ход"
+                      data={data["Прямые профитные докупки"]}
+                      options={currentPreset.options["Прямые профитные докупки"]}
+                      onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
+                      onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
+                      contracts={contractsTotal - contracts}
+                      currentTool={currentTool}
+                    />
+                  </div>
+                }
               </>
             }
 
@@ -1365,16 +1366,18 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Обратные профитные докупки</span>
                 </label>
 
-                <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
-                  <SGRow
-                    isBying={true}
-                    data={data["Обратные профитные докупки"]}
-                    options={currentPreset.options["Обратные профитные докупки"]}
-                    contracts={contractsTotal - contracts}
-                    currentTool={currentTool}
-                    onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
-                  />
-                </div>
+                {isReversedProfitableBying &&
+                  <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+                    <SGRow
+                      isBying={true}
+                      data={data["Обратные профитные докупки"]}
+                      options={currentPreset.options["Обратные профитные докупки"]}
+                      contracts={contractsTotal - contracts}
+                      currentTool={currentTool}
+                      onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
+                    />
+                  </div>
+                }
               </>
             }
 

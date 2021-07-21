@@ -107,6 +107,8 @@ class App extends React.Component {
       toolsLoading:       false,
       isFocused:          false,
 
+      kodTable: [],
+
       genaID: -1,
     };
 
@@ -144,19 +146,32 @@ class App extends React.Component {
     to   = Math.floor(+to   / 1000);
 
     const tool = this.getCurrentTool();
+    const { code } = tool;
     let method = "getCompanyQuotes";
 
     if (tool.dollarRate == 0) {
       method = "getPeriodFutures";
-      from = tool.firstTradeDate;
-      to   = tool.lastTradeDate;
+
+      let _f = from;
+      let _t = to;
+
+      if (tool.firstTradeDate) {
+        _f = tool.firstTradeDate;
+      }
+      if (tool.lastTradeDate) {
+        _t = tool.lastTradeDate;
+      }
+
+      if (_f < _t) {
+        from = _f;
+        to   = _t;
+      }
+      else {
+        console.warn(_f, _t);
+      }
     }
 
-    let body = {
-      code: tool.code,
-      from,
-      to,
-    };
+    let body = { code, from, to };
     
     if (tool.dollarRate != 0) {
       body = {
@@ -167,12 +182,13 @@ class App extends React.Component {
 
     fetch(method, "GET", body)
       .then(response => {
-        if (this.state.currentToolCode == tool.code) {
-          const data = response.data;
-          this.setState({ data, loadingChartData: false });
+        const { currentToolCode } = this.state;
+        if (currentToolCode == code) {
+          const { data } = response;
+          return this.setStateAsync({ data, loadingChartData: false });
         }
       })
-      .catch(error => console.error(error));
+      .catch(error => this.showAlert(`Не удалось получить график для ${code}: ${error}`));
   }
 
   setFetchingToolsTimeout() {
@@ -639,7 +655,7 @@ class App extends React.Component {
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storageReady) {
-        this.setStateAsync({ toolsLoading: true });
+        this.setState({ toolsLoading: true });
         const oldTool = this.getCurrentTool();
         const newTools = [...Tools.storage];
         setTimeout(() => {
@@ -776,7 +792,6 @@ class App extends React.Component {
   }
 
   importDataFromGENA(genaSave) {
-    // ~~
     const { mode, presetSelection } = this.state;
 
     if (!genaSave) {
@@ -826,12 +841,10 @@ class App extends React.Component {
     });
   }
 
-  showAlert(msg = "") {
-    console.log(`%c${msg}`, "background: #222; color: #bada55");
+  showAlert(errorMessage = "") {
+    console.log(`%c${errorMessage}`, "background: #222; color: #bada55");
     if (!dev) {
-      this.setState({ errorMessage: msg }, () => {
-        dialogAPI.open("dialog-msg");
-      });
+      this.setState({ errorMessage }, () => dialogAPI.open("dialog-msg"));
     }
   }
 
@@ -849,7 +862,8 @@ class App extends React.Component {
       risk,
       mode,
       days,
-      scaleOffset
+      scaleOffset,
+      kodTable
     } = this.state;
 
     const json = {
@@ -864,6 +878,7 @@ class App extends React.Component {
         scaleOffset,
         customTools,
         currentToolCode,
+        kodTable,
         current_date: "#"
       },
     };
@@ -939,6 +954,8 @@ class App extends React.Component {
         state.days = staticParsed.days || initialState.days;
   
         state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
+
+        state.kodTable = staticParsed.kodTable || initialState.kodTable;
         
         // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
         state.customTools = staticParsed.customTools || [];
@@ -1174,7 +1191,8 @@ class App extends React.Component {
       genaSave,
       presetSelection,
       totalIncome,
-      totalStep
+      totalStep,
+      kodTable
     } = this.state;
 
     const tools = this.getTools();
@@ -1210,7 +1228,8 @@ class App extends React.Component {
     const min = price - percent;
 
     const STEP_IN_EACH_DIRECTION = 20;
-    const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+    // const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+    const step = currentTool.priceStep;
     
     // let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
     let income = totalIncome * profitRatio / 100
@@ -1496,6 +1515,8 @@ class App extends React.Component {
                                     this.setState({ changed: true });
                                   };
 
+                                  value = round(value, fraction);
+
                                   // ЛОНГ: то есть точка входа - снизу (число меньше)
                                   if (isLong) {
                                     if (value > priceRange[1]) {
@@ -1538,6 +1559,8 @@ class App extends React.Component {
                                     updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                     this.setState({ changed: true });
                                   };
+
+                                  value = round(value, fraction);
 
                                   // ЛОНГ: то есть точка выхода - сверху (число меньше)
                                   if (isLong) {
@@ -1783,7 +1806,6 @@ class App extends React.Component {
                           <div className="main-content-options-group">
 
                             {algorithms.map((algorithm, index) => (() => {
-                              // ~~
                               let options = genaSave?.presets.filter(preset => preset.type == algorithm.name) || [{ name: algorithm.name }];
 
                               return (
@@ -1836,8 +1858,6 @@ class App extends React.Component {
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
                             onClick={e => dialogAPI.open("settings-generator", e.target)}
-                            // На проде ГЕНА дизейблится
-                            disabled={dev ? false : !location.href.replace(/\/$/, "").endsWith("-dev")}
                           >
                             <span className="visually-hidden">Открыть конфиг</span>
                             <Tooltip title=" Генератор настроек МАНИ 144">
@@ -1910,8 +1930,30 @@ class App extends React.Component {
                                 <tr key={index}>
                                   <td>{((page - 1) * period) + (index + 1)}</td>
                                   <td>{kod}</td>
-                                  <td><Input defaultValue="1"/></td>
-                                  <td><Input defaultValue="1"/></td>
+                                  <td>
+                                    <Input 
+                                      defaultValue={kodTable[index]?.fact || 0}
+                                      onBlur={e => {
+                                        if (!kodTable[index]) {
+                                          kodTable[index] = {};
+                                        }
+                                        kodTable[index].fact = e.target.value;
+                                        this.setState({ kodTable });
+                                      }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input
+                                      defaultValue={kodTable[index]?.income || 0}
+                                      onBlur={e => {
+                                        if (!kodTable[index]) {
+                                          kodTable[index] = {};
+                                        }
+                                        kodTable[index].income = e.target.value;
+                                        this.setState({ kodTable });
+                                      }}
+                                    />
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -2167,7 +2209,6 @@ class App extends React.Component {
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools })}
-
             insertBeforeDialog={
               <label className="input-group input-group--fluid mts-config__depo">
                 <span className="input-group__label">Размер депозита:</span>
@@ -2242,127 +2283,6 @@ class App extends React.Component {
                   changed = true;
                 }
                 else if (!isEqual(save, genaSavePure)) {
-                  var diff = function (obj1, obj2) {
-
-                    // Make sure an object to compare is provided
-                    if (!obj2 || Object.prototype.toString.call(obj2) !== '[object Object]') {
-                      return obj1;
-                    }
-
-                    //
-                    // Variables
-                    //
-
-                    var diffs = {};
-                    var key;
-
-
-                    //
-                    // Methods
-                    //
-
-                    /**
-                     * Check if two arrays are equal
-                     * @param  {Array}   arr1 The first array
-                     * @param  {Array}   arr2 The second array
-                     * @return {Boolean}      If true, both arrays are equal
-                     */
-                    var arraysMatch = function (arr1, arr2) {
-
-                      // Check if the arrays are the same length
-                      if (arr1.length !== arr2.length) return false;
-
-                      // Check if all items exist and are in the same order
-                      for (var i = 0; i < arr1.length; i++) {
-                        if (arr1[i] !== arr2[i]) return false;
-                      }
-
-                      // Otherwise, return true
-                      return true;
-
-                    };
-
-                    /**
-                     * Compare two items and push non-matches to object
-                     * @param  {*}      item1 The first item
-                     * @param  {*}      item2 The second item
-                     * @param  {String} key   The key in our object
-                     */
-                    var compare = function (item1, item2, key) {
-
-                      // Get the object type
-                      var type1 = Object.prototype.toString.call(item1);
-                      var type2 = Object.prototype.toString.call(item2);
-
-                      // If type2 is undefined it has been removed
-                      if (type2 === '[object Undefined]') {
-                        diffs[key] = null;
-                        return;
-                      }
-
-                      // If items are different types
-                      if (type1 !== type2) {
-                        diffs[key] = item2;
-                        return;
-                      }
-
-                      // If an object, compare recursively
-                      if (type1 === '[object Object]') {
-                        var objDiff = diff(item1, item2);
-                        if (Object.keys(objDiff).length > 0) {
-                          diffs[key] = objDiff;
-                        }
-                        return;
-                      }
-
-                      // If an array, compare
-                      if (type1 === '[object Array]') {
-                        if (!arraysMatch(item1, item2)) {
-                          diffs[key] = item2;
-                        }
-                        return;
-                      }
-
-                      // Else if it's a function, convert to a string and compare
-                      // Otherwise, just compare
-                      if (type1 === '[object Function]') {
-                        if (item1.toString() !== item2.toString()) {
-                          diffs[key] = item2;
-                        }
-                      } else {
-                        if (item1 !== item2) {
-                          diffs[key] = item2;
-                        }
-                      }
-
-                    };
-
-
-                    //
-                    // Compare our objects
-                    //
-
-                    // Loop through the first object
-                    for (key in obj1) {
-                      if (obj1.hasOwnProperty(key)) {
-                        compare(obj1[key], obj2[key], key);
-                      }
-                    }
-
-                    // Loop through the second object and find missing items
-                    for (key in obj2) {
-                      if (obj2.hasOwnProperty(key)) {
-                        if (!obj1[key] && obj1[key] !== obj2[key]) {
-                          diffs[key] = obj2[key];
-                        }
-                      }
-                    }
-
-                    // Return the object of differences
-                    return diffs;
-
-                  };
-
                   changed = true;
                 }
 

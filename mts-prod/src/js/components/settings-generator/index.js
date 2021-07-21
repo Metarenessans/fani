@@ -48,6 +48,7 @@ const SettingsGenerator = props => {
   const [currentToolCode, setCurrentToolCode] = useState("SBER");
   const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
   const currentTool = tools[currentToolIndex] || Tools.create();
+  const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
   
   const [searchVal, setSearchVal] = useState("");
@@ -132,7 +133,6 @@ const SettingsGenerator = props => {
   const currentPresetIndex = presets.indexOf(currentPreset);
 
   const [investorDepo, setInvestorDepo] = useState(props?.depo || 1_000_000);
-
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -140,7 +140,6 @@ const SettingsGenerator = props => {
         : Math.floor(investorDepo * .25)
       : 0
   );
-
   const [secondaryDepo, setSecondaryDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -148,6 +147,8 @@ const SettingsGenerator = props => {
         : Math.floor(investorDepo * .75)
       : 0
   );
+  const depoSum = depo + secondaryDepo;
+  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   // Прямые профитные докупки 
   const [isProfitableBying, setProfitableBying] = useState(false);
@@ -158,11 +159,7 @@ const SettingsGenerator = props => {
   // Обратные докупки (ТОР)
   // По дефолту включен в СМС + ТОР
   const [isReversedBying, setReversedBying] = useState(currentPreset.type == "СМС + ТОР");
-
   const [menuVisible, setMenuVisible] = useState(false);
-
-  const depoSum = depo + secondaryDepo;
-  const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -371,19 +368,24 @@ const SettingsGenerator = props => {
   }, [currentTab]);
 
   useEffect(() => {
+    let base = investorDepo;
+    if (depoSum != investorDepo) {
+      base = depoSum;
+    }
+
     // Плечевой депо есть только в режиме СМС + ТОР
     if (currentPreset.type == "СМС + ТОР") {
-      setDepo(Math.floor(investorDepo * .25));
-      setSecondaryDepo(Math.floor(investorDepo * .75));
+      setDepo(Math.floor(base * .25));
+      setSecondaryDepo(Math.floor(base * .75));
     }
     else {
-      setDepo(investorDepo);
+      setDepo(base);
       setSecondaryDepo(0);
     }
 
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
-  }, [currentPreset.type, investorDepo]);
+  }, [currentPreset.type]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -391,37 +393,92 @@ const SettingsGenerator = props => {
     const presetsCopy = [...presets];
 
     let currentPresetCopy = { ...currentPreset };
-    
-    keys(currentPreset.options).map(key => {
-      const { preferredStep, customData } = currentPreset.options[key];
 
-      const obj = {
-        preferredStep: preferredStep == "" ? preferredStep : currentTool.adrDay,
-        customData: customData?.map(row => {
-          row.preferredStep = row.preferredStep == "" ? row.preferredStep : currentTool.adrDay
-          return row;
-        })
-      };
+    // Обновляем ход только если новый инструмент отличается от предыдущего
+    // а не является устаревшей/новой версией текущего
+    if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
+      keys(currentPreset.options).map(key => {
+        const { preferredStep, inPercent, customData } = currentPreset.options[key];
 
-      currentPresetCopy = {
-        ...currentPresetCopy,
-        options: {
-          ...currentPresetCopy.options,
-          [key]: {
-            ...currentPresetCopy.options[key],
-            ...obj
+        let _prefStep = preferredStep;
+        if (inPercent) {
+          if (preferredStep != "") {
+            _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
           }
         }
-      };
+        else {
+          if (preferredStep != "") {
+            _prefStep = currentTool.adrDay;
+          }
+        }
+        
+        
+        if (inPercent) {
+          // Должно быть
+          let oldDefaultStep = preferredStep;
+          if (inPercent) {
+            if (preferredStep != "") {
+              oldDefaultStep = stepConverter.fromStepToPercents(prevTool.current.adrDay, prevTool.current);
+            }
+          }
+          else {
+            if (preferredStep != "") {
+              oldDefaultStep = prevTool.current.adrDay;
+            }
+          }
 
-    });
+          
+          if (preferredStep != oldDefaultStep) {
+            console.log("custom!", preferredStep, _prefStep, oldDefaultStep);
+            _prefStep = oldDefaultStep;
+          }
+        }
 
-    presetsCopy[currentPresetIndex] = currentPresetCopy;
-    setPresets(presetsCopy);
 
+        const obj = {
+          preferredStep: _prefStep,
+          customData: customData?.map(row => {
+            let _prefStep = row.preferredStep;
+            if (row.inPercent) {
+              if (preferredStep != "") {
+                _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
+              }
+            }
+            else {
+              if (preferredStep != "") {
+                _prefStep = currentTool.adrDay;
+              }
+            }
+
+            row.preferredStep = _prefStep
+            return row;
+          })
+        };
+  
+        currentPresetCopy = {
+          ...currentPresetCopy,
+          options: {
+            ...currentPresetCopy.options,
+            [key]: {
+              ...currentPresetCopy.options[key],
+              ...obj
+            }
+          }
+        };
+  
+      });
+  
+      presetsCopy[currentPresetIndex] = currentPresetCopy;
+      setPresets(presetsCopy);
+    }
+
+    // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
+    // для нового инструмента
     if (comission == 45 || comission == 1) {
       setComission(currentTool.dollarRate >= 1 ? 45 : 1);
     }
+
+    prevTool.current = currentTool;
 
   }, [currentTool.code]);
 
@@ -668,11 +725,8 @@ const SettingsGenerator = props => {
                         defaultValue={secondaryDepo}
                         format={formatNumber}
                         unsigned="true"
-                        min={10000}
-                        max={Infinity}
-                        onBlur={secondaryDepo => {
-                          setSecondaryDepo(secondaryDepo);
-                        }}
+                        min={0}
+                        onBlur={secondaryDepo => setSecondaryDepo(secondaryDepo)}
                       />
                     </label>
                 }
@@ -839,10 +893,10 @@ const SettingsGenerator = props => {
                   <NumericInput
                     className="input-group__input"
                     defaultValue={risk}
-                    format={val => formatNumber(round(val, fraction))}
+                    format={val => formatNumber(round(val, 2))}
                     unsigned="true"
                     onBlur={value => {
-                      if (value == round(risk, fraction)) {
+                      if (value == round(risk, 2)) {
                         value = risk;
                       }
                       setRisk(value)
@@ -935,7 +989,12 @@ const SettingsGenerator = props => {
                     checked={isMirrorBying}
                     onChange={val => setMirrorBying(val)}
                   />
-                  <span className="switch-group__label">Зеркальные докупки (СМС)</span>
+                  <span className="switch-group__label">
+                    {currentPreset.type == "Лимитник" 
+                      ? "Перевыставление в точку входа"
+                      : "Зеркальные докупки (СМС)"
+                    }
+                  </span>
                 </label>
               </div>
 
@@ -1042,7 +1101,12 @@ const SettingsGenerator = props => {
                     checked={isReversedBying}
                     onChange={checked => setReversedBying(checked)}
                   />
-                  <span className="switch-group__label">Обратные докупки (ТОР)</span>
+                  <span className="switch-group__label">
+                    {currentPreset.type == "Лимитник"
+                      ? "Докупки"
+                      : "Обратные докупки (ТОР)"
+                    }
+                  </span>
                 </label>
 
                 <div style={{ width: '100%' }} hidden={!isReversedBying}>
@@ -1050,7 +1114,7 @@ const SettingsGenerator = props => {
                     isBying={true}
                     data={data["Обратные докупки (ТОР)"]}
                     options={currentPreset.options["Обратные докупки (ТОР)"]}
-                    contracts={contractsTotal - contracts}
+                    contracts={currentPreset.type == "СМС + ТОР" ? contracts : contractsTotal - contracts}
                     currentTool={currentTool}
                     onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
                   />
@@ -1120,7 +1184,10 @@ const SettingsGenerator = props => {
                           id="settings-generator-tab5-control"
                           hidden={!isMirrorBying}
                           onClick={e => setCurrentTab("Зеркальные докупки")}>
-                    Зеркальные докупки
+                    {currentPreset.type == "Лимитник"
+                      ? "Перевыставление в точку входа"
+                      : "Зеркальные докупки (СМС)"
+                    }
                   </Button>
 
                   <Button className="custom-btn"
@@ -1131,7 +1198,10 @@ const SettingsGenerator = props => {
                           id="settings-generator-tab6-control"
                           hidden={!isReversedBying}
                           onClick={e => setCurrentTab("Обратные докупки (ТОР)")}>
-                    Обратные докупки (ТОР)
+                    {currentPreset.type == "Лимитник"
+                      ? "Докупки"
+                      : "Обратные докупки (ТОР)"
+                    }
                   </Button>
 
                   <Button className="settings-generator-table__show-code"

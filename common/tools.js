@@ -1,9 +1,26 @@
-import { merge, round, cloneDeep } from "lodash";
-import fractionLength from "./utils/fraction-length"
+import { round } from "lodash";
+import fractionLength  from "./utils/fraction-length"
 import readyTools      from "./adr.json"
 import readyToolsNew   from "./adr-new.json"
 import readyToolsMarch from "./adr-march.json"
 import readyToolsApril from "./adr-april.json"
+
+const filterJSONToolsFn = tool => {
+  if (tool.adrWeek == "" && tool.adrMonth == "") {
+    return false;
+  }
+  return true;
+};
+
+const correctJSONToolFn = tool => {
+  tool.code.replace(".US", "");
+  return tool;
+}
+
+const filteredReadyTools      = readyTools.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsNew   = readyToolsNew.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsMarch = readyToolsMarch.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsApril = readyToolsApril.filter(filterJSONToolsFn).map(correctJSONToolFn);
 
 const template = {
   ref:             {},
@@ -33,10 +50,10 @@ const template = {
 
 class Tool {
 
-  constructor(toCopy = {}) {
-    Object.keys(toCopy).forEach(key => {
-      this[key] = toCopy[key];
-    });
+  constructor(base = {}) {
+    for (let prop in base) {
+      this[prop] = base[prop];
+    }
   }
 
   update(investorInfo) {
@@ -139,6 +156,8 @@ const parseNumber = (value, fallback = 0) => {
 };
 
 const parseTool = tool => {
+  const ref = { ...tool };
+
   let averageProgress = parseNumber(tool.averageProgress);
   let currentPrice    = parseNumber(tool.price || tool.currentPrice);
   let stepPrice       = parseNumber(tool.stepPrice);
@@ -193,8 +212,8 @@ const parseTool = tool => {
         : (readyTool.isFutures && dollarRate == 0) 
           ? 2 
           : undefined;
-      const toolCode = tool.code.toLowerCase().slice(0, lastCompareIndex);
-      const readyToolCode = readyTool.code.replace(".US", "").toLowerCase().slice(0, lastCompareIndex);
+      const toolCode = tool.code.slice(0, lastCompareIndex);
+      const readyToolCode = readyTool.code.slice(0, lastCompareIndex);
 
       if (toolCode == readyToolCode) {
 
@@ -214,17 +233,10 @@ const parseTool = tool => {
     }
   };
 
-  const filterFn = tool => {
-    if (tool.adrWeek == "" && tool.adrMonth == "") {
-      return false;
-    }
-    return true;
-  };
-
-  check(readyTools.filter(filterFn));
-  check(readyToolsNew.filter(filterFn));
-  check(readyToolsMarch.filter(filterFn), true);
-  check(readyToolsApril.filter(filterFn), true);
+  !found && check(filteredReadyToolsApril, true);
+  !found && check(filteredReadyToolsMarch, true);
+  !found && check(filteredReadyToolsNew);
+  !found && check(filteredReadyTools);
 
   // Если инструмент не сметчился ни с одним из заготовленным файлов
   if (!found) {
@@ -248,8 +260,10 @@ const parseTool = tool => {
     adrMonth = +(adrMonth).toFixed(fraction);
   }
 
-  return {
-    ref:       tool,
+  const obj = {
+    ...template,
+
+    ref,
     code:      tool.code,
     fullName:  tool.fullName  || tool.name,
     shortName: tool.shortName,
@@ -270,6 +284,12 @@ const parseTool = tool => {
 
     matched: found
   };
+
+  if (obj.code != obj.ref.code) {
+    console.error(obj);
+  }
+
+  return obj;
 };
 
 const shouldBeSkipped = tool => {
@@ -307,16 +327,28 @@ class Tools {
         continue;
       }
 
-      let tool = new Tool(merge(cloneDeep(template), parseTool(rowData, options)));
+      // let tool = new Tool(merge(cloneDeep(template), parseTool(rowData, options)));
+      let tool = new Tool(parseTool(rowData, options));
       if (!tool.matched) {
         unmatchedTools.push(tool);
       }
       tool = tool.update(investorInfo);
+
+      if (tool.code != tool.ref.code) {
+        console.warn("Something's wrong with tool's code:", tool);
+      }
+
       parsedTools.push(tool);
     }
 
     if (unmatchedTools.length) {
       // console.warn("Не сметчились", unmatchedTools.map(tool => tool + ""));
+    }
+
+    for (let tool of parsedTools) {
+      if (tool.code != tool.ref.code) {
+        console.warn("Something's wrong with tool's code:", tool);
+      }
     }
 
     return parsedTools;
@@ -327,8 +359,8 @@ class Tools {
 
     // Alphabetical sort
     let sorted = tools.sort((a, b) => {
-      const l = String(a.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
-      const r = String(b.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
+      const l = String(a.toString()).replace(/[\"\(\)\.]+/g, "").trim();
+      const r = String(b.toString()).replace(/[\"\(\)\.]+/g, "").trim();
 
       let res = 0;
       for (let i = 0; i < Math.min(l.length,r.length); i++) {
@@ -364,6 +396,12 @@ class Tools {
         return (Math.trunc(numberA) - Math.trunc(numberB)) || (fraction(numberA) - fraction(numberB));
       }
     });
+
+    // for (let tool of sorted) {
+    //   if (tool.code != tool.ref.code) {
+    //     console.warn("Something's wrong with tool's code:", tool);
+    //   }
+    // }
 
     return sorted;
   }

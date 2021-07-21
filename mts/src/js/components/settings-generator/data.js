@@ -449,6 +449,8 @@ const createData = (type, options, meta) => {
     comissionsSum += row.comission;
 
     row.incomeWithComission = row.incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
+
+    return row;
   }
 
   // Массив профитных докупок сливается с основным массивом
@@ -529,12 +531,18 @@ const createData = (type, options, meta) => {
   // Отрабатывает свитч "100%""
   if (closeAll) {
     const { length } = data;
-    const lastItem = data[length - 1];
-    const _contracts = length > 1 
-      ? data[length - 2].contractsLoaded
-      : contracts;
-    lastItem.contractsLoaded = 0;
-    updateContracts(_contracts, data, length - 1);
+    let lastItem = data[length - 1];
+
+    if (lastItem.contractsLoaded > 0) {
+      const _contracts = length > 1 
+        ? data[length - 2].contractsLoaded
+        : contracts;
+  
+      lastItem.contractsLoaded = 0;
+      lastItem = updateContracts(_contracts, data, length - 1);
+      lastItem.percent = round(lastItem.contracts / contracts * 100, 2);
+    }
+
   }
 
   data.isBying = isBying;
