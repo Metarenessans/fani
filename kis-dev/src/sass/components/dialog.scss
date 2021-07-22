@@ -22,6 +22,10 @@
 
   .dashboard-key {
     height: 2.2rem;
+    
+    &--contribution-rate {
+      height: 1.2rem;
+    }
   }
 }
 .ant-input {

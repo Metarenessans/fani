@@ -640,7 +640,6 @@ class App extends React.Component {
                   {(() => {
                     return (
                       data.map((item, index) =>
-                        // ▲
                         <DashboardRow
                           tooltipPlacement={this.state.tooltipPlacement}
                           key={index}
@@ -910,96 +909,61 @@ class App extends React.Component {
                 const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
                   <>
-                    <div className="dashboard-col dashboard-col--dialog-depo">
-                      <span className="dashboard-key">
-                        <span className="dashboard-key-inner" style={{ width: "100%" }}>
-                          {toolType == "Недвижимость" ? "Стоимость" : "Сумма"}
-                        </span>
-                      </span>
-
-                      <span className="dashboard-val dashboard-val--wrap">
-                        <NumericInput
-                          key={Math.random()}
-                          className="dashboard__input"
-                          defaultValue={depo}
-                          onBlur={value => {
-                            const dataCopy = [...data];
-                            dataCopy[lineConfigIndex].depo = value;
-                            this.setState({ data: dataCopy, changed: true });
-                          }}
-                          unsigned="true"
-                          format={formatNumber}
-                          min={0}
-                        />
-                      </span>
-                    </div>
-
-                    {/* <div className="dashboard-col dashboard-col--splitted">
-                      <span className="dashboard-key">
-                        <Tooltip title={""}>
-                          Период
-                        </Tooltip>
-                      </span>
-                      <span className="dashboard-val dashboard-col--dialog-period">
-                        <NumericInput
-                          className="dashboard__input dialog-period"
-                          defaultValue={payPeriod}
-                          onBlur={value => {
-                            const dataCopy = [...data];
-                            dataCopy[lineConfigIndex].payPeriod = value;
-                            this.setState({ data: dataCopy, changed: true });
-                          }}
-                          unsigned={"true"}
-                          format={formatNumber}
-                          min={0}
-                          suffix={num2str(payPeriod, ["год", "года", "лет"])}
-                        />
-
-                        <NumericInput
-                          className="dashboard__input"
-                          defaultValue={payPeriod * (toolType == "Трейдинг" ? 248 : 365)}
-                          onBlur={value => {
-                            const dataCopy = [...data];
-                            dataCopy[lineConfigIndex].payPeriod = round(value / (toolType == "Трейдинг" ? 248 : 365), 2);
-                            this.setState({ data: dataCopy, changed: true });
-                          }}
-                          unsigned="true"
-                          format={formatNumber}
-                          min={0}
-                          suffix="дн"
-                        />
-                      </span>
-                    </div> */}
-                    
                     {(toolType !== "Вклад" && 
-                      <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                        <span className="dashboard-key">
-                          <span className="dashboard-key-inner">
-                            Месячный платёж
+                      <>
+                        <div className="dashboard-col dashboard-col--dialog-depo">
+                          <span className="dashboard-key">
+                            <span className="dashboard-key-inner" style={{ width: "100%" }}>
+                              {toolType == "Недвижимость" ? "Стоимость" : "Сумма"}
+                            </span>
                           </span>
-                        </span>
-                      
-                        <span className="dashboard-val dashboard-col--rate">
-                          <NumericInput
-                            key={monthPay}
-                            className="dashboard__input"
-                            defaultValue={monthPay}
-                            onBlur={value => {
-                              const dataCopy = [...data];
-                              dataCopy[lineConfigIndex].monthPay = value;
-                              this.setState({ data: dataCopy, changed: true });
-                            }}
-                            unsigned="true"
-                            format={formatNumber}
-                            min={0}
-                          />
-                        </span>
-                      </div>
+
+                          <span className="dashboard-val dashboard-val--wrap">
+                            <NumericInput
+                              key={Math.random()}
+                              className="dashboard__input"
+                              defaultValue={depo}
+                              onBlur={value => {
+                                const dataCopy = [...data];
+                                dataCopy[lineConfigIndex].depo = value;
+                                this.setState({ data: dataCopy, changed: true });
+                              }}
+                              unsigned="true"
+                              format={formatNumber}
+                              min={0}
+                            />
+                          </span>
+                        </div>
+
+                        <div className="dashboard-col dashboard-col--main dashboard-col--percent">
+                          <span className="dashboard-key">
+                            <span className="dashboard-key-inner">
+                              Месячный платёж
+                            </span>
+                          </span>
+                        
+                          <span className="dashboard-val dashboard-col--rate">
+                            <NumericInput
+                              key={monthPay}
+                              className="dashboard__input"
+                              defaultValue={monthPay}
+                              onBlur={value => {
+                                const dataCopy = [...data];
+                                dataCopy[lineConfigIndex].monthPay = value;
+                                this.setState({ data: dataCopy, changed: true });
+                              }}
+                              unsigned="true"
+                              format={formatNumber}
+                              min={0}
+                            />
+                          </span>
+                        </div>
+                      </>
                     )}
                     
                     {(toolType == "Вклад" && 
                       <div className="dashboard-col dashboard-col--main dashboard-col--percent">
-                        <span className="dashboard-key">
+                      <span className="dashboard-key dashboard-key--contribution-rate">
                           <span className="dashboard-key-inner">
                             Ставка по вкладу
                           </span>
@@ -1008,7 +972,7 @@ class App extends React.Component {
                         <span className="dashboard-val dashboard-col--rate">
                           <NumericInput
                             key={investPercent}
-                            className="dashboard__input"
+                          className="dashboard__input dashboard__input--contribution"
                             defaultValue={investPercent * 100}
                             onBlur={value => {
                               const dataCopy = [...data];

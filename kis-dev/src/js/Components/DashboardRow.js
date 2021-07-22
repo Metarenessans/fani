@@ -19,6 +19,7 @@ import round          from "../../../../common/utils/round"
 import num2str from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
 import extRateReal    from "../utils/rate";
+import kisDepositMonth from "../utils/contribution-calc"
 
 
 import { Dialog, dialogAPI } from "../../../../common/components/dialog"
@@ -91,15 +92,9 @@ export default class DashboardRow extends React.Component {
     const container = React.createRef();
 
     
-    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal, monthPay} = item;
+    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal, monthPay, investPercent} = item;
 
     let monthPercent = 0.007
-
-    // процент платежа в месяц
-    // const monthPercent = round(payRate / 12, 3)
-
-    // месячный платёж
-    // const monthPay = round( (depo - firstPay) * monthPercent , 2)
 
     // упущенная прибыль
     const lostProfit = ( ( firstPay - (rentIncome - monthPay) ) / 12 ) * profitPercent
@@ -130,11 +125,12 @@ export default class DashboardRow extends React.Component {
       )
     }
 
-    /** расчёт итоговой суммы - "Трейдинг" и "Вклад"
+    /** инструмент -"Трейдинг"
+     * возвращает итоговую сумму
      * @activeInvestPeriod принимает в себя значение в днях
      * @months             принимает 1 месяц / либо 12 месяцев
     */
-    const finalVal = (activeInvestPeriod, months) => {
+    const tradeFinalVal = (activeInvestPeriod, months) => {
       const { activeInvestVal, ofzVal, depo } = item
       
       if (ofzVal == 0 && activeInvestVal == 0) {
@@ -169,6 +165,13 @@ export default class DashboardRow extends React.Component {
         }
       }
     }
+
+    /** инструмент -"Вклад"
+     * @total         	      общая сумма на конец периода
+       @firstMonthTotalResult	общая сумма на конец первого месяца
+       @averageMonthIncome    среднемесячные проценты по вкладу за период
+    */
+    const contributionFinalVal = kisDepositMonth(investPercent, firstPay, period * 260, allMonthOutCome, monthAppend)
 
     return (
       <div className="dashboard-row" ref={container}>
@@ -261,7 +264,7 @@ export default class DashboardRow extends React.Component {
               defaultValue={
                 toolType == "Трейдинг" ?
                   (ofzProfit / 12) :
-                  (toolType == "Вклад" ? 0 : rentIncome)
+                  (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome, 2) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}
               onBlur={value => onChange("rentIncome", value)}
@@ -333,7 +336,10 @@ export default class DashboardRow extends React.Component {
           </span>
 
           <span className="dashboard-val dashboard-col--main">
-            {formatNumber(round(toolType !== "Недвижимость" ? finalVal(260 / 12, 1) : monthEndSum, 2) ) }
+            {formatNumber(round(toolType !== "Недвижимость" ?
+              (toolType == "Вклад" ? contributionFinalVal.firstMonthTotalResult : tradeFinalVal(260 / 12, 1) ) :
+              monthEndSum
+            , 2) ) }
           </span>
  
         </div>
@@ -353,7 +359,7 @@ export default class DashboardRow extends React.Component {
               {
                 formatNumber(
                   round( toolType !== "Недвижимость"?
-                    finalVal(260 * period, 12) :
+                    (toolType == "Вклад" ? contributionFinalVal.total : tradeFinalVal(260 * period, 12)) :
                     monthEndSum * (period * 12)
                   , 2)
                 )

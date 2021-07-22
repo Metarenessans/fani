@@ -141,7 +141,7 @@
       &-period {
         width: 20.5em;
       }
-      &-rate {
+      &--rate {
         width: 9.5em;
       }
     }
@@ -356,7 +356,10 @@
     &--custom {
       width: 50%;
     }
-    // width: 7em;
+    
+    &--contribution {
+      width: 5rem;
+    }
   }
 
   &__select {
