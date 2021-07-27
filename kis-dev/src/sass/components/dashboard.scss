@@ -10,6 +10,11 @@
     &-selection {
       &--single {
         font-size: 1em;
+        
+        // фиксирование размера селекта инструмента
+        @include sm {
+          min-width: 8em;
+        }
       }
       &__rendered {
           // width: 4em;
@@ -45,14 +50,18 @@
     margin-bottom: 1.5em;
     padding-right: 1.5em;
     display: flex;
-    align-items: center;
+    // align-items: center;
+    align-items: stretch;
     
     @include sm {
+      padding-right: 0;
       flex-wrap: wrap;
-      margin-bottom: 2em;
+      margin-bottom: 3em;
+      box-shadow: 0 0 1.75em rgba(0, 0, 0 , 0.1)
     }
 
     @include xs {
+      padding-right: 0;
       background-color: #f4f7fb;
       padding: 1.25em 0;
     }
@@ -85,13 +94,16 @@
       }
 
       @include sm() {
-        top: .52em;
+        top:   initial;
+        right: initial;
+        bottom:  0.7em;
+        left:    0.2em;
       }
 
       @include xs() {
         background-color: var(--danger-color-transparent) !important;
         right: -0.5em;
-        top:   -0.5em;
+        bottom: 1.15em;
       }
     }
   }
@@ -105,24 +117,66 @@
 
     font-size: 1.6em;
     line-height: 1.2;
-    
+
+    &--narrow {
+      @include sm {
+        margin: auto;
+        margin-top: -1em;
+        padding: .35em 0 0 0;
+
+        .dashboard-key {
+          height: 1em;
+        }
+
+      }
+
+      @include xs {
+        align-items: center!important;
+        justify-content: center!important;
+      }
+    }
+
     &--main {
       width: 8.5em;
+      
+      @include sm {
+        align-items: center;
+        width: 100%;
+      }
     }
 
     &--splitted {
       width: 20em;
+         
+      @include sm {
+        width: 8.6em;
+        align-items: center;
+      }
     }
 
     &--wide {
       width: 11.5em;
       flex-shrink: 0;
+         
+      @include sm {
+        align-items: center;
+        width: 100%;
+      }
     }
 
     &--config {
       position: relative;
       width: 6.1em!important;
       flex-shrink: 0;
+
+      @include sm {
+        width: initial;
+      }
+
+      @include xs {
+        justify-content: center!important;
+        width: initial;
+      }
     }
 
     &--percent {
@@ -178,21 +232,26 @@
     }
 
     @include sm {
-      flex-basis: (100% / 5);
+      flex-basis: (100% / 4);
       flex-shrink: 0;
-      width: (100% / 5);
+      width: (100% / 4);
 
-      &:nth-child(5) ~ div {
-        background-color: #f7fbff !important;
+      &:nth-child(4) ~ div {
+        background-color: #f7fbff;
         padding: .35em 0;
 
         #{$root}-key {
           color: #777;
+          padding-bottom: 0;
         }
         
         #{$root}-val {
           background-color: inherit;
           min-height: .5em;
+        }
+
+        @include xs {
+          background-color: initial;
         }
       }
     }
@@ -215,11 +274,11 @@
           background-color: inherit;
           min-height: 4em
         }
+        
       }
 
       &:nth-child(2n) {
         align-items: flex-end;
-        padding-right: 1em !important;
 
         #{$root}-key {
           position: relative;
@@ -229,6 +288,10 @@
         #{$root}-val {
           justify-content: flex-end;
           padding-right: .3em !important;
+        }
+
+        @include xs {
+          align-items: flex-end!important;
         }
       }
     }
@@ -247,6 +310,11 @@
 
     font-weight: bold;
 
+    // тут я устал
+    &--month {
+      text-align: start!important;
+    }
+
     &-inner {
       position: relative;
     }
@@ -261,12 +329,20 @@
 
       width: 5.2em;
     }
+
     @include xs {
-      width: initial;
       display: block;
+      height: 2.1rem;
+      width: initial;
+
       margin-bottom: 0;
       padding: 0 .35em;
       color: #777;
+      text-align: end;
+
+      &:nth-child(2n) {
+        text-align: end;
+      }
     }
 
     &__sort-toggle {
@@ -320,7 +396,9 @@
     justify-content: center;
     min-height: 3em;
     padding: 0.35em .5em;
+    margin: auto;
     background-color: #f4f7fb;
+
 
     text-align: center;
     white-space: nowrap;
@@ -332,7 +410,7 @@
     
     @include xs {
       padding: 0.35em .35em;
-      justify-content: flex-start;
+      justify-content: end;
     }
 
     &--wrap {
@@ -342,6 +420,10 @@
     
     &--tool {
       width: 10.9em;
+
+      @include sm {
+        width: 100%;
+      }
     }
     
     &--first-pay {
@@ -377,4 +459,5 @@
   &--config {
     background-color: none;
   }
+
 }

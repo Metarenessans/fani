@@ -1,14 +1,55 @@
 .dialog {
   font-size: 0.6em;
   
+  &__close {
+    @include xs {
+      font-size: 4em;
+    }
+  }
   &__title {
     font-size: 1.8em;
     margin-bottom: -0.25em;
+
+    @include xs {
+      font-size: 2.1em;
+
+      padding-top: 1em;
+      margin-bottom: 0.25em;
+    }
+
+  }
+
+  &__inner {
+    @include sm {
+      max-width: 85vw!important;
+      font-size: 1.6em;
+    }
+    
   }
 
   .card {
     padding-right: 2em;
     padding-left:  2em;
+    
+    .dashboard-col {
+      @include xs {
+        flex-basis:    100%;
+        align-items: center!important;
+      }
+    }
+
+    .dashboard-val {
+      width: 100%;
+      
+      @include xs {
+        width: 80%;
+      }
+    }
+
+    @include sm {
+      padding-right: 8em;
+      padding-left:  8em;
+    }
   }
 
   .ant-input {
@@ -25,6 +66,15 @@
     
     &--contribution-rate {
       height: 1.2rem;
+    }
+
+    
+    @include sm {
+      height: 1.9rem;
+    }
+
+    @include xs {
+      height: 1rem;
     }
   }
 }

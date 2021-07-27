@@ -329,7 +329,7 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col dashboard-col--main">
 
-          <span className="dashboard-key">
+          <span className="dashboard-key dashboard-key--month">
             <Tooltip title={""}>
               Баланс по итогам месяца
             </Tooltip>
