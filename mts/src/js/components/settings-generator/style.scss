@@ -140,9 +140,8 @@ $m: .4475;
     font-size: 1.6em;
     font-weight: 400;
 
+    flex-basis: 11.5em;
     flex-shrink: 0;
-    max-width: 32.4em * $m;
-    width: 100%;
 
     @include sm {
       position: absolute;
@@ -778,6 +777,13 @@ $m: .4475;
 
         &:first-child {
           margin-bottom: .5em;
+
+          @include xs {
+            .input-group {
+              width: 50%;
+              max-width: unset;
+            }
+          }
         }
       }
 

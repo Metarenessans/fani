@@ -1,16 +1,27 @@
-export default // CHANGELOG
+export default
+  // CHANGELOG
   // 3.2 - realdata, dayoffirstpayload, dayoffirstpayload   do   ZERO based !
   // 3.21 - change to ||
   // 3.22 - change to baseRate
   // 3.4 - adding averageProf
+  // 4.0 - adding bond profit
+  // 4.1 - simple bond
 
-  function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13, getAverage: false }) {
+  function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13, getAverage: false, bond: undefined }) {
 
   //////////////////////// 
-  //  Version 3.4 beta  //
+  //  Version 4.1 beta  //
   ////////////////////////
 
   // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
+  // bond = { 
+  // 		price,   	 				// цена ОФЗ 
+  //    couponRate,				// ставка выплаты по купону в день, например, 0.01. Если установлена, то "coupon", "frequency", "startDateCoupon" не используются
+  // 		coupon,  	 				// величина выплаты по купону 
+  // 		frequency, 				// периодичность выплаты по купону в днях 
+  // 		startDateCoupon, 	// в этой версии не используется. Зарезервировано для другой версии // первый день с которого идет первая выплата по купону, если поставить 0, то "startDateCoupon" автоматически устанавливается равен "frequency"
+  // 		date 							// в этой версии не используется. Зарезервировано для другой версии // дата выпуска ОФЗ
+  // } 
   // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}
 
   // точность в процентах от итоговой суммы
@@ -34,13 +45,65 @@ export default // CHANGELOG
   const rateInc = 100000;
   var negativeGrow = (present >= future);
 
+  var cash = present; //добавляем кэш на будущее для исп в паре с бондами 
+
+  const bonds2 = {
+    cash: 0,
+    bondsTotal: 0,
+    get total() {
+      return this.cash + this.bondsTotal;
+    },
+
+    init(opts, cash) {
+      this.opts = opts;
+      if (this.opts.couponRate === undefined) this.opts.couponRate = (this.opts.coupon / this.opts.frequency) / this.opts.price;
+      this.cash = cash;
+      this.bondsTotal = 0;
+      this.uB(cash);
+    },
+
+    uB(s) {
+      if (isNaN(s)) { return s; }
+      var d = s - this.total;
+
+      //console.log('s', s, 'd', d,'CR',this.opts.couponRate); // t
+
+      this.cash += this.bondsTotal * (1 + this.opts.couponRate) + d;
+
+      //console.log('cash', this.cash); // t
+
+      if (this.cash < 0) {
+        this.cash = 0;
+        this.bondsTotal = 0;
+      }
+      else {
+        if (this.cash >= this.opts.price) {
+          let t = this.cash % this.opts.price;
+          this.bondsTotal = this.cash - t;
+          this.cash = t;
+        }
+      }
+      if (isNaN(s)) { console.log(this.total); }
+      return this.total;
+    }
+
+  }
+
   ///////////////////////////////////////////
   function ff(rate, periods, present, payment, paymentper, payload, payloadper, p1 = 1, p2 = 1, realdata = []) {
     //    var p1 = dayoffirstpayment;
     //    var p2 = dayoffirstpayload;
+
     var res = present;
+
+    if (options.bond !== undefined) {
+      bonds2.init(options.bond, present);
+      //	console.log( present, bonds2.total, bonds2.cash, bonds2.bondsTotal );
+    }
+
     rate += 1;
     for (var x = 1; x <= periods; x++) {
+
       if (realdata[x + RD_modifier] !== undefined) {
         res = res * (1 + realdata[x + RD_modifier].scale);
         res += realdata[x + RD_modifier].payload - realdata[x + RD_modifier].payment;
@@ -51,11 +114,23 @@ export default // CHANGELOG
         if (!--p2) { p2 = payloadper; res += payload; }
         if (!--p1) { p1 = paymentper; res -= payment; }
       }
+
+      if (options.bond !== undefined) {
+        //console.log( 'bef', res );
+        res = bonds2.uB(res);
+        //console.log( 'aft', res );
+      }
+
     }
     return res;
   }
   function ff3(rate, periods, present, payment, paymentper, payload, payloadper, p1 = 1, p2 = 1, realdata = []) {
     var res = present;
+
+    if (options.bond !== undefined) {
+      bonds2.init(options.bond, present);
+    }
+
     rate += 1;
     for (var x = 1; x <= periods; x++) {
       res = res * rate;
@@ -67,13 +142,24 @@ export default // CHANGELOG
         if (!--p2) { p2 = payloadper; res += payload; }
         if (!--p1) { p1 = paymentper; res -= payment; }
       }
+
+      if (options.bond !== undefined) {
+        res = bonds2.uB(res);
+      }
+
     }
     return res;
   }
   function ffFull(rate, periods, present, payment, paymentper, payload, payloadper, p1 = 1, p2 = 1, realdata = []) {
     //    var p1 = dayoffirstpayment;
     //    var p2 = dayoffirstpayload;
+
     var res = present;
+
+    if (options.bond !== undefined) {
+      bonds2.init(options.bond, present);
+    }
+
     var ndflSum = 0;
     var purePayment = 0;
     rate += 1;
@@ -95,8 +181,13 @@ export default // CHANGELOG
         }
       }
 
+      if (options.bond !== undefined) {
+        res = bonds2.uB(res);
+      }
+
       if (options.customRate === undefined) { if (res >= future && factDay == -1) factDay = x; }
       else if (x > lastRDDay && res >= future && factDay == -1) factDay = x;
+
     }
     x--;
     var extraDays = 0;
@@ -119,6 +210,11 @@ export default // CHANGELOG
         res -= payment;
         purePayment += payment;
       }
+
+      if (options.bond !== undefined) {
+        res = bonds2.uB(res);
+      }
+
     }
 
     ndflSum = purePayment * NDFL;

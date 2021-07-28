@@ -337,7 +337,7 @@ const createData = (type, options, meta) => {
 
       // Кол-во закрытых/докупленных контрактов
       let _contracts = contracts * percent / 100;
-      if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
+      if ((["СМС + ТОР", "Лимитник"].indexOf(currentPreset.type) > -1) && type == "Обратные докупки (ТОР)" && subIndex > 0) {
         _contracts = contractsLeft * percent / 100;
       }
 

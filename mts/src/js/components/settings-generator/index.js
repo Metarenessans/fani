@@ -137,7 +137,7 @@ const SettingsGenerator = props => {
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState("Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Лимитник" : "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -766,7 +766,7 @@ const SettingsGenerator = props => {
               onClick={e => setMenuVisible(!menuVisible)}
             />
 
-            <h3 className="settings-generator__title">Генератор настроек МАНИ 144</h3>
+            <h3 className="settings-generator__title">Генератор настроек МААНИ 144</h3>
             
             <Tooltip title="Закрыть генератор настроек">
               <CrossButton 
@@ -1049,41 +1049,44 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
-                <div className="settings-generator-content__row-col-custom settings-generator-slider__label-wrap">
-
-                  <label className="settings-generator-slider__label input-group">
-                    <span className="input-group__label">
-                      <Tooltip title="Объём депозита в процентах на вход в сделку">
-                        Загрузка
-                      </Tooltip>
-                    </span>
-                    <span className="settings-generator-slider__value">
-                      <NumericInput
-                        className="input-group__input"
-                        defaultValue={load}
-                        format={value => formatNumber(round(value, fraction))}
-                        unsigned="true"
-                        onBlur={value => setLoad(value)}
-                        suffix="%"
-                      />
-                    </span>
-                  </label>
-                  <Tooltip title="Направление позиции">
-                    <Switch
-                      className="settings-generator-slider__switch-long-short"
-                      checkedChildren="LONG"
-                      unCheckedChildren="SHORT"
-                      checked={isLong}
-                      onChange={isLong => {
-                        setIsLong(isLong);
-                        const updatedTools = [...tools];
-                        updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
-                        setTools(updatedTools);
-                      }}
+                <label className="settings-generator-slider__label input-group">
+                  <span className="input-group__label">
+                    <Tooltip title="Объём депозита в процентах на вход в сделку">
+                      Загрузка
+                    </Tooltip>
+                  </span>
+                  <span className="settings-generator-slider__value">
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={load}
+                      format={value => formatNumber(round(value, fraction))}
+                      unsigned="true"
+                      onBlur={value => setLoad(value)}
+                      suffix="%"
                     />
-                  </Tooltip>
+                  </span>
+                </label>
 
-                </div>
+                {/* 
+                  Лев, [24.07.21 21:34]
+                  Короче по второму: убираем свитч лонш шорт и считаем по дефолтному го
+                */}
+                {false &&
+                <Tooltip title="Направление позиции">
+                  <Switch
+                    className="settings-generator-slider__switch-long-short"
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    checked={isLong}
+                    onChange={isLong => {
+                      setIsLong(isLong);
+                      const updatedTools = [...tools];
+                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                      setTools(updatedTools);
+                    }}
+                  />
+                </Tooltip>
+                }
 
                 <div className="settings-generator-slider__wrap">
 
@@ -1266,7 +1269,8 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Сброс массива закрытия</span>
                 </label>                
 
-                {currentPreset.type != "Стандарт" &&
+                {/* В Стандарте нет зеркальных докупок */}
+                {["Стандарт"].indexOf(currentPreset.type) == -1 &&
                   <label className="switch-group settings-generator-content__row-header-mirror-switch">
                     <Switch
                       checked={isMirrorBying}
@@ -1472,7 +1476,7 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab5"
                           id="settings-generator-tab5-control"
-                          hidden={!isMirrorBying}
+                          hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
                           onClick={e => setCurrentTab(e.target.innerText)}>
                     {currentPreset.type == "Лимитник"
                       ? "Перевыставление в точку входа"

@@ -7,8 +7,6 @@ import {
   Radio,
   Input,
   Pagination,
-  Dropdown,
-  Menu
 } from 'antd/es'
 const { Option } = Select;
 
@@ -38,8 +36,6 @@ import {
   updateChartMinMax,
   updateChartScaleMinMax,
   updateChartZoom,
-  minChartValue,
-  maxChartValue,
 } from "./components/chart"
 
 import Stack                   from "../../../common/components/stack"
@@ -76,7 +72,7 @@ class App extends React.Component {
         type:   "LONG",
       },
 
-      depo: 1000000,
+      depo: 1_000_000,
       mode: 0,
       chance: 50,
       page: 1,
@@ -124,6 +120,7 @@ class App extends React.Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Mts");
+    this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
   }
 
   componentDidMount() {
@@ -656,8 +653,15 @@ class App extends React.Component {
     return new Promise((resolve, reject) => {
       if (Tools.storageReady) {
         this.setState({ toolsLoading: true });
+
+        let newTools = [...Tools.storage];
         const oldTool = this.getCurrentTool();
-        const newTools = [...Tools.storage];
+        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
+        if (oldToolIndex == -1) {
+          console.warn(`No ${oldTool.code} in new tools list`, newTools);
+          newTools.push(oldTool);
+        }
+
         setTimeout(() => {
           this.setState({
             tools: newTools,
@@ -696,7 +700,7 @@ class App extends React.Component {
               if (response.data?.length == 0) {
                 console.warn("В ответе с сервера нет " + (request == "getFutures" ? "фючерсов" : "акций"));
               }
-              return Tools.parse(response.data, { investorInfo })
+              return Tools.parse(response.data, { investorInfo, useDefault: true })
             })
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
@@ -729,13 +733,14 @@ class App extends React.Component {
   }
 
   fetchTools(shouldUpdatePriceRange = true) {
+    const { investorInfo } = this.state;
     return new Promise(resolve => {
       const requests = [];
       this.setState({ toolsLoading: true })
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .then(() => {
@@ -761,7 +766,7 @@ class App extends React.Component {
           const depo = response.data.deposit || 10_000;
           return this.setStateAsync({ depo });
         })
-        .then(syncToolsWithInvestorInfo.bind(this))
+        .then(this.syncToolsWithInvestorInfo)
         .then(() => resolve())
         .catch(reason => reject(reason))
         .finally(() => {
@@ -775,10 +780,10 @@ class App extends React.Component {
                 type:    this.state.percentage >= 0 ? "LONG" : "SHORT"
               }
             })
-              .then(syncToolsWithInvestorInfo.bind(this));
+              .then(this.syncToolsWithInvestorInfo);
           }
           else {
-            syncToolsWithInvestorInfo.bind(this);
+            this.syncToolsWithInvestorInfo();
           }
         })
     })
@@ -985,7 +990,7 @@ class App extends React.Component {
 
     console.log('Parsing save finished!', state);
     return this.setStateAsync(state)
-      .then(syncToolsWithInvestorInfo.bind(this))
+      .then(this.syncToolsWithInvestorInfo)
       .then(() => {
         const priceRangeMinMax = priceRange => {
           let range = [...priceRange].sort((l, r) => l - r);
@@ -1782,7 +1787,7 @@ class App extends React.Component {
                                 percentage, 
                                 changed: true
                               })
-                                .then(syncToolsWithInvestorInfo.bind(this))
+                                .then(this.syncToolsWithInvestorInfo)
                             }}
                           />
 
@@ -1799,7 +1804,7 @@ class App extends React.Component {
                         <div className="main-content-options__row">
                           <span className="main-content-options__label">
                             <Tooltip title="Настройки торгового робота для расчёта результатов торговой стратегии">
-                              Алгоритм МАНИ 144
+                              Алгоритм МААНИ 144
                             </Tooltip>
                           </span>
 
@@ -1860,7 +1865,7 @@ class App extends React.Component {
                             onClick={e => dialogAPI.open("settings-generator", e.target)}
                           >
                             <span className="visually-hidden">Открыть конфиг</span>
-                            <Tooltip title=" Генератор настроек МАНИ 144">
+                            <Tooltip title=" Генератор настроек МААНИ 144">
                               <SettingFilled className="settings-button__icon" />
                             </Tooltip>
                           </button>

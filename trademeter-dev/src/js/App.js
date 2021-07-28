@@ -31,6 +31,7 @@ import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import extRateReal         from "./utils/rate"
 import isEqual             from "./utils/is-equal"
@@ -291,6 +292,7 @@ class App extends Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
+    this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
     if (dev) {
       this.fetchSaveById = () => {
         console.log('executing custom fetchSaveById');
@@ -355,7 +357,7 @@ class App extends Component {
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
       .then(response => {
-        const data = response.data;
+        const { data } = response;
         if (data) {
           const passiveIncomeTools = data
             .map(tool => {
@@ -424,12 +426,6 @@ class App extends Component {
     }, 1500);
   }
 
-  syncToolsWithInvestorInfo(investorInfo = {}) {
-    const { tools } = this.state;
-    investorInfo = investorInfo || this.state.investorInfo;
-    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
-  }
-
   fetchInvestorInfo() {
     fetchInvestorInfo()
       .then(this.applyInvestorInfo)  
@@ -448,7 +444,7 @@ class App extends Component {
 
         return this.setStateAsync({ depoStart, depoEnd });
       })
-      .then(() => this.syncToolsWithInvestorInfo())
+      .then(this.syncToolsWithInvestorInfo)
       .then(this.recalc)
       .catch(error => console.error(error))
   }
@@ -480,14 +476,23 @@ class App extends Component {
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storage?.length) {
-        this.setStateAsync({ toolsLoading: true });
+        let newTools = [...Tools.storage];
         const oldTool = this.getCurrentTool();
-        const newTools = Tools.storage;
+        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
+        if (oldToolIndex == -1) {
+          console.warn(`No ${oldTool.code} in new tools list`, newTools);
+          newTools.push(oldTool);
+        }
+
         setTimeout(() => {
           this.setState({
             tools: newTools,
             toolsLoading: false,
-          }, () => resolve());
+          }, () => {
+            Tools.storage = [];
+            Tools.storageReady = false;
+            resolve()
+          });
         }, 2_000);
       }
       else {
@@ -504,7 +509,7 @@ class App extends Component {
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
               Tools.storage = [...tools];
@@ -525,7 +530,7 @@ class App extends Component {
         requests.push(
           fetch(request)
             .then(this.applyTools)
-            .then(() => this.syncToolsWithInvestorInfo())
+            .then(this.syncToolsWithInvestorInfo)
             .then(() => this.updateDepoPersentageStart())
             .catch(error => console.error(error))
         )
@@ -1321,6 +1326,8 @@ class App extends Component {
       incomePersantageCustom,
     } = this.state;
 
+    // const bond = this.getCurrentPassiveIncomeTool();
+
     if (!options.length) {
       options.length = dataLength;
     }
@@ -1500,7 +1507,7 @@ class App extends Component {
    * Возращает текущий инструмент пассивного дохода 
    */
   getCurrentPassiveIncomeTool() {
-    const {currentPassiveIncomeToolIndex, mode} = this.state
+    const { currentPassiveIncomeToolIndex, mode } = this.state
     return this.getPassiveIncomeTools()[currentPassiveIncomeToolIndex[mode]];
   }
 
@@ -1554,7 +1561,6 @@ class App extends Component {
         ? data[day - 1].scale 
         : fallbackRate;
 
-    // let value = Math.round( depoStart * (scale / 100) );
     let value = depoStart * (scale / 100);
 
     if (data[day - 1].customIncome != null ) {
@@ -1592,6 +1598,7 @@ class App extends Component {
       saved,
       dataLength,
       depoEndFormat,
+      investorInfo,
     } = this.state;
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
@@ -1644,8 +1651,8 @@ class App extends Component {
     const placeholder = "—";
 
     const tools = this.getTools();
-
-    console.log(data.slice(0, 3));
+    const currentTool = this.getCurrentTool();
+    console.log(currentTool.code, currentTool.guarantee, currentTool.ref.guarantee);
 
     return (
       <Provider value={this}>
@@ -2044,24 +2051,23 @@ class App extends Component {
                           onChange={index => {
                             let { mode, currentPassiveIncomeToolIndex } = this.state;
                             currentPassiveIncomeToolIndex[mode] = index;
-                            this.setState({
+                            this.setStateAsync({
                               currentPassiveIncomeToolIndex,
                               pitError: "",
                               changed: true
-                            }, () => {
-                              const {
-                                mode,
-                                passiveIncomeMonthly
-                              } = this.state;
-
-                              if (index < 0) {
-                                passiveIncomeMonthly[mode] = 0;
-                                this.setState({ passiveIncomeMonthly });
-                                return;
-                              }
-
-                              this.updatePassiveIncomeMonthly();
                             })
+                              .then(() => {
+                                const { mode, passiveIncomeMonthly } = this.state;
+
+                                if (index < 0) {
+                                  passiveIncomeMonthly[mode] = 0;
+                                  return this.setStateAsync({ passiveIncomeMonthly });
+                                }
+
+                                return this.updatePassiveIncomeMonthly();
+                              })
+                              // ~~
+                              .then(() => this.recalc())
                           }}
                           showSearch
                           optionFilterProp="children"
@@ -2470,7 +2476,7 @@ class App extends Component {
 
                         {(() => {
                           const { mode, depoStart, depoPersentageStart } = this.state;
-                          let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
+                          let step = currentTool.guarantee / data[currentDay - 1].depoStart * 100;
                           if (step > 100) {
                             console.warn('step > 100');
                             for (let i = 0; i < tools.length; i++) {
@@ -2623,14 +2629,13 @@ class App extends Component {
                   <Col className="card card--column section3-col2">
                     {
                       (() => {
-                        let tool = this.getCurrentTool();
                         let pointsForIteration = this.getPointsForIteration();
 
                         return (
                           <Riskometer
                             key={pointsForIteration}
                             value={pointsForIteration}
-                            tool={tool}
+                            tool={currentTool}
                           />
                         )
                       })()
@@ -2638,7 +2643,6 @@ class App extends Component {
 
                     {(() => {
                       let pointsForIteration = this.getPointsForIteration();
-                      let currentTool = this.getCurrentTool();
 
                       return (
                         <Row 
@@ -2794,23 +2798,26 @@ class App extends Component {
                                 onChange={directUnloading => this.setState({ directUnloading }, () => this.recalc(false))}
                               />
                             </label>
-                            <Tooltip title={"Направление позиции"}>
-                              <Switch
-                                className="section4__switch-long-short"
-                                checked={isLong}
-                                checkedChildren="LONG"
-                                unCheckedChildren="SHORT"
-                                onChange={isLong => {
-                                  const investorInfo = { ...this.state.investorInfo };
-                                  investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                                  this.setStateAsync({ isLong, investorInfo })
-                                    .then(() => this.syncToolsWithInvestorInfo())
-                                    .then(() => this.updateDepoPersentageStart())
-                                    .then(() => this.recalc(false))
-                                }}
-                              />
-                            </Tooltip>
+                            {false &&
+                              <Tooltip title={"Направление позиции"}>
+                                <Switch
+                                  className="section4__switch-long-short"
+                                  checked={isLong}
+                                  checkedChildren="LONG"
+                                  unCheckedChildren="SHORT"
+                                  onChange={isLong => {
+                                    const investorInfo = { ...this.state.investorInfo };
+                                    investorInfo.type = isLong ? "LONG" : "SHORT";
+
+                                    this.setStateAsync({ isLong, investorInfo })
+                                      .then(this.syncToolsWithInvestorInfo)
+                                      .then(() => this.updateDepoPersentageStart())
+                                      .then(() => this.recalc(false))
+                                  }}
+                                />
+                              </Tooltip>
+                            }
                           </header>
                           <div className="section4-content card">
                             <div className="section4-row">

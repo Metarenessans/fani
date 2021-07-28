@@ -56,7 +56,10 @@ class Tool {
     }
   }
 
-  update(investorInfo) {
+  update(investorInfo, options) {
+    options = options || {};
+    const useDefault = options.useDefault || false;
+
     const { ref } = this;
     if (ref && Object.keys(ref).length > 0) {
       let guarantee = ref.guarantee || ref.guaranteeValue;
@@ -64,7 +67,7 @@ class Tool {
       if (typeof guarantee == "object") {
         let guaranteeExtracted = ref.guarantee["default"];
         const { status, type } = investorInfo;
-        if (status && type) {
+        if (!useDefault && status && type) {
           if (ref.guarantee[status] && ref.guarantee[status][type]) {
             guaranteeExtracted = ref.guarantee[status][type];
           }
@@ -78,11 +81,17 @@ class Tool {
 
       guarantee = round(guarantee, 2);
 
+      if (isNaN(guarantee)) {
+        guarantee = 0;
+        console.warn("ГО неправильно обновилось", ref.code, ref.guarantee, investorInfo);
+      }
+      
       if (typeof guarantee == "number") {
         this.guarantee = guarantee;
       }
       else {
-        throw new Error("ГО не число");
+        this.guarantee = -1;
+        console.warn("ГО неправильно обновилось", ref.code, ref.guarantee, investorInfo);
       }
     }
 
@@ -200,9 +209,7 @@ const parseTool = tool => {
   var found = false;
   
   /**
-   *
-   *
-   * @param {*} readyTools
+   * @param {array} readyTools
    * @param {boolean} [strict=false] Если включен, то коды фьючерсов будут сравниваться не по первым двум символам, а на предмет полного соответствия
    */
   const check = (readyTools, strict = false) => {
@@ -332,7 +339,7 @@ class Tools {
       if (!tool.matched) {
         unmatchedTools.push(tool);
       }
-      tool = tool.update(investorInfo);
+      tool = tool.update(investorInfo, options);
 
       if (tool.code != tool.ref.code) {
         console.warn("Something's wrong with tool's code:", tool);

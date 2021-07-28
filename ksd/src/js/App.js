@@ -2,13 +2,9 @@ import React from 'react'
 const { Provider, Consumer } = React.createContext();
 import ReactDOM from 'react-dom'
 import {
-  Row,
-  Col,
-  Select,
   Button,
   Tooltip,
   Radio,
-  Typography,
   Spin,
   Input,
   Switch,
@@ -17,11 +13,7 @@ import {
 import {
   PlusOutlined,
   SettingFilled,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  QuestionCircleFilled,
   LoadingOutlined,
-  WarningOutlined,
 } from '@ant-design/icons'
 
 import "../../../common/api/fetch";
@@ -30,9 +22,6 @@ import params              from "../../../common/utils/params"
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
 import typeOf              from "../../../common/utils/type-of"
-import promiseWhile        from "../../../common/utils/promise-while"
-import fractionLength      from "../../../common/utils/fraction-length"
-import readyTools          from "../../../common/adr.json"
 import { Tools, Tool, template } from "../../../common/tools"
 
 import Header                from "./components/header"
@@ -50,6 +39,8 @@ import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
+
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import "../sass/style.sass"
 
@@ -143,6 +134,7 @@ class App extends React.Component {
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
     this.fetchSaveById     = fetchSaveById.bind(this, "ksd");
+    this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
   }
 
   componentDidMount() {
@@ -213,11 +205,7 @@ class App extends React.Component {
         let { deposit } = response.data;
         return this.setStateAsync({ depo: deposit || 10000 });
       })
-      .then(() => {
-        let { tools, investorInfo } = this.state;
-        tools = tools.map(tool => tool.update( investorInfo ));
-        return this.setStateAsync({ tools });
-      })
+      .then(this.syncToolsWithInvestorInfo)
       .catch(error => console.error(error))
   }
   
@@ -248,15 +236,17 @@ class App extends React.Component {
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storage?.length) {
-        console.warn('fake fetching');
-        this.setStateAsync({ toolsLoading: true });
-        const newTools = Tools.storage;
+        this.setState({ toolsLoading: true });
+
+        let newTools = [...Tools.storage];
+
         setTimeout(() => {
           this.setState({
             tools: newTools,
             toolsLoading: false,
           }, () => {
             Tools.storage = [];
+            Tools.storageReady = false;
             resolve()
           });
         }, 2_000);
@@ -275,7 +265,7 @@ class App extends React.Component {
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
               Tools.storage = [...tools];
@@ -290,12 +280,13 @@ class App extends React.Component {
 
   fetchTools() {
     return new Promise(resolve => {
+      const { investorInfo } = this.state;
       const requests = [];
       this.setState({ toolsLoading: true })
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
@@ -441,7 +432,7 @@ class App extends React.Component {
       onError(e);
     }
 
-    this.setState(state);
+    return this.setStateAsync(state).then(this.syncToolsWithInvestorInfo);
   }
 
   reset() {
@@ -647,23 +638,24 @@ class App extends React.Component {
               <div className="container">
 
                 <div className="main-content__switch-long-short-wrapper">
-                  <Tooltip title={"Направление позиции"}>
-                    <Switch
-                      className="main-content__switch-long-short"
-                      key={isLong + ""}
-                      checkedChildren="LONG"
-                      unCheckedChildren="SHORT"
-                      defaultChecked={isLong}
-                      onChange={isLong => {
-                        const { tools } = this.state;
-                        const investorInfo = { ...this.state.investorInfo };
-                        investorInfo.type = isLong ? "LONG" : "SHORT";
+                  {false &&
+                    <Tooltip title={"Направление позиции"}>
+                      <Switch
+                        className="main-content__switch-long-short"
+                        key={isLong + ""}
+                        checkedChildren="LONG"
+                        unCheckedChildren="SHORT"
+                        defaultChecked={isLong}
+                        onChange={isLong => {
+                          const investorInfo = { ...this.state.investorInfo };
+                          investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                        this.setStateAsync({ investorInfo })
-                          .then(() => this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) }))
-                      }}
-                    />
-                  </Tooltip>
+                          this.setStateAsync({ investorInfo })
+                            .then(this.syncToolsWithInvestorInfo)
+                        }}
+                      />
+                    </Tooltip>
+                  }
                 </div>
 
                 <div className="dashboard">

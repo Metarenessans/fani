@@ -11,12 +11,11 @@ import {
   LoadingOutlined,
 } from '@ant-design/icons'
 
-import { Tools, template } from "../../../../common/tools"
+import { Tools } from "../../../../common/tools"
 
 import NumericInput from "../../../../common/components/numeric-input"
 import CustomSelect from "../../../../common/components/custom-select"
 import Value        from "../../../../common/components/value"
-import Info         from "./info"
 
 import formatNumber from "../../../../common/utils/format-number"
 import round        from "../../../../common/utils/round"
@@ -79,39 +78,15 @@ export default class Item extends React.Component {
   }
 
   getCurrentTool() {
-    const { tools, data } = this.props;
-
-    const selectedToolName = data.selectedToolName;
-
-    let selectedToolIndex = 0;
-    if (selectedToolName != null) {
-      for (let i = 0; i < tools.length; i++) {
-        let tool = tools[i];
-        if (tool.getSortProperty() === selectedToolName) {
-          selectedToolIndex = i;
-          break;
-        }
-      }
-    }
-
-    return { ...tools[selectedToolIndex] } || { ...template };
+    const { data } = this.props;
+    const { selectedToolName } = data;
+    return this.getToolByName(selectedToolName);
   }
 
   getToolByName(name) {
-    const { tools, data } = this.props;
-
-    let selectedToolIndex = 0;
-    if (name != null) {
-      for (let i = 0; i < tools.length; i++) {
-        let tool = tools[i];
-        if (tool.getSortProperty() === name) {
-          selectedToolIndex = i;
-          break;
-        }
-      }
-    }
-
-    return { ...tools[selectedToolIndex] } || { ...template };
+    const { tools } = this.props;
+    const index = Tools.getToolIndexByCode(tools, name);
+    return tools[index] || Tools.create();
   }
 
   getCurrentToolIndex() {
@@ -154,11 +129,10 @@ export default class Item extends React.Component {
       onChange,
       depo,
       data,
-      investorInfo,
+      tools,
       onBlur,
       onFocus,
       toolsLoading,
-      value
     } = this.props;
 
     const drawdown           = this.state.drawdown;
@@ -167,11 +141,18 @@ export default class Item extends React.Component {
     const additionalLoading  = data.additionalLoading;
     const directUnloading    = data.directUnloading;
     const isLong             = data.isLong;
-
+    
+    let investorInfo = {...this.props.investorInfo};
+    investorInfo.type = isLong ? "LONG" : "SHORT";
+    
     let currentTool = this.getCurrentTool();
-    currentTool.update != null && currentTool.update(investorInfo);
+    if (currentTool.update) {
+      currentTool.update(investorInfo, { useDefault: true });
+    }
 
-    let currentToolIndex = this.getCurrentToolIndex();
+    console.log(currentTool.code, currentTool.guarantee, currentTool.ref.guarantee);
+
+    const currentToolIndex = Tools.getToolIndexByCode(tools, data.selectedToolName);
 
     let selectedToolName = data.selectedToolName;
     if (selectedToolName == null && this.props.tools.length) {
@@ -243,7 +224,7 @@ export default class Item extends React.Component {
               <Select
                 onBlur={onBlur}
                 onFocus={onFocus}
-                value={toolsLoading && this.props.tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                value={toolsLoading && this.props.tools.length == 0 ? 0 : currentToolIndex}
                 loading={toolsLoading}
                 disabled={this.props.tools.length == 0 || toolsLoading}
                 onChange={index => {
@@ -289,6 +270,7 @@ export default class Item extends React.Component {
                 key={drawdown}
                 defaultValue={drawdown}
                 round
+                unsigned="true"
                 min={1}
                 onBlur={drawdown => {
                   onChange("drawdown", drawdown);
@@ -312,10 +294,10 @@ export default class Item extends React.Component {
                 key={contracts}
                 defaultValue={contracts}
                 round
+                unsigned="true"
                 min={1}
                 onBlur={val => {
                   onChange("contracts", val);
-                  // this.setState({ contracts: val }, this.recalc)
                 }}
                 format={formatNumber}
               />
@@ -375,7 +357,7 @@ export default class Item extends React.Component {
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + `%`}>
                     {(() => {
-                      var value = (drawdown + this.getCurrentTool().guarantee * contracts) / depo * 100;
+                      var value = (drawdown + currentTool.guarantee * contracts) / depo * 100;
                       return round(value, 1);
                     })()}
                   </Value>
@@ -409,7 +391,7 @@ export default class Item extends React.Component {
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + " руб."}>
                     {(() => {
-                      var value = depo - (drawdown + contracts * this.getCurrentTool().guarantee);
+                      const value = depo - (drawdown + contracts * currentTool.guarantee);
                       return round(value, 1);
                     })()}
                   </Value>
@@ -542,6 +524,7 @@ export default class Item extends React.Component {
                           <NumericInput
                             className="input-group__input"
                             min={currentTool.priceStep}
+                            unsigned="true"
                             defaultValue={stepExpected}
                             key={Math.random()}
                             onChange={(e, val, jsx) => {
@@ -551,7 +534,6 @@ export default class Item extends React.Component {
                               }
                               jsx.setState({ errMsg });
                             }}
-
                             onBlur={val => {
                               if (val == 0) {
                                 val = 0.1;
@@ -695,8 +677,8 @@ export default class Item extends React.Component {
                           <NumericInput
                             className="input-group__input"
                             min={currentTool.priceStep}
+                            unsigned="true"
                             defaultValue={stepExpected2 != null ? stepExpected2 : stepExpected}
-                            // key={stepExpected2 != null ? stepExpected2 : stepExpected}
                             key={Math.random()}
                             onChange={(e, val, jsx) => {
                               let errMsg = "";
@@ -705,7 +687,6 @@ export default class Item extends React.Component {
                               }
                               jsx.setState({ errMsg });
                             }}
-
                             onBlur={val => {
                               if (val == 0) {
                                 val = 0.1;
