@@ -1,6 +1,16 @@
 .dialog {
   font-size: 0.6em;
 
+  &-footer {
+    @include sm {
+      font-size: 1.2em;
+    }
+
+    @include xs {
+      font-size: 1.8em;
+    }
+  }
+
   &__content {
     .dashboard-row {
       box-shadow: none;

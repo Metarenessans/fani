@@ -439,6 +439,10 @@
       @include xlg {
         width: 11em;
       }
+
+      @include sm {
+        width: 11.6em;
+      }
     }
     
     &--first-pay {
