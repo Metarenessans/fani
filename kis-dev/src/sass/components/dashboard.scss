@@ -10,14 +10,11 @@
     &-selection {
       &--single {
         font-size: 1em;
-        
+
         // фиксирование размера селекта инструмента
         @include sm {
           min-width: 8em;
         }
-      }
-      &__rendered {
-          // width: 4em;
       }
     }
   }
@@ -312,7 +309,11 @@
 
     // тут я устал
     &--month {
-      text-align: start!important;
+      text-align: center;
+
+      @include xs {
+        text-align: start!important;
+      }
     }
 
     &-inner {
@@ -382,10 +383,6 @@
       &.reversed {
         transform: rotate(270deg);
         top: -.1em;
-      }
-
-      &-wrap {
-        
       }
     }
   }
