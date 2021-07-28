@@ -632,78 +632,78 @@ class App extends React.Component {
               }}
             >
             </Header>
+            <div className="hdOptimize" >
+              <div className="main-content">
 
-            <div className="main-content">
+                <div className="container">
+                  <div className="dashboard">
+                    {(() => {
+                      return (
+                        data.map((item, index) =>
+                          <DashboardRow
+                            tooltipPlacement={this.state.tooltipPlacement}
+                            key={index}
+                            item={item}
+                            index={index}
+                            sortProp={sortProp}
+                            sortDESC={sortDESC}
+                            mode={this.state.mode}
+                            depo={this.state.depo}
+                            toolsLoading={this.state.toolsLoading}
+                            toolsStorage={this.state.toolsStorage}
+                            percentage={item.percentage}
+                            selectedToolName={item.selectedToolName}
+                            planIncome={item.planIncome}
+                            tools={this.getTools()}
+                            options={this.getOptions()}
 
-              <div className="container">
-                <div className="dashboard">
-                  {(() => {
-                    return (
-                      data.map((item, index) =>
-                        <DashboardRow
-                          tooltipPlacement={this.state.tooltipPlacement}
-                          key={index}
-                          item={item}
-                          index={index}
-                          sortProp={sortProp}
-                          sortDESC={sortDESC}
-                          mode={this.state.mode}
-                          depo={this.state.depo}
-                          toolsLoading={this.state.toolsLoading}
-                          toolsStorage={this.state.toolsStorage}
-                          percentage={item.percentage}
-                          selectedToolName={item.selectedToolName}
-                          planIncome={item.planIncome}
-                          tools={this.getTools()}
-                          options={this.getOptions()}
-
-                          onSort={(sortProp, sortDESC) => {
-                            if (sortProp !== this.state.sortProp) {
-                              sortDESC = true;
-                            }
-                            this.setState({ sortProp, sortDESC })
-                          }}
-                          onUpdate={state => {
-                            data[index] = { ...data[index], ...state, updatedOnce: true };
-                            this.setState({ data });
-                          }}
-                          onChange={(prop, val) => {
-                            data[index][prop] = val;
-                            this.setState({ data, changed: true });
-                          }}
-                          onDelete={index => {
-                            data.splice(index, 1)
-                            this.setState({ data, changed: true });
-                            // решение кейса undefined при удалении строки
-                            this.setState({ lineConfigIndex: 0 });
-                          }}
-                          onConfigOpen={() => {
-                            this.setState({ lineConfigIndex: index });
-                          }}
-                        />
+                            onSort={(sortProp, sortDESC) => {
+                              if (sortProp !== this.state.sortProp) {
+                                sortDESC = true;
+                              }
+                              this.setState({ sortProp, sortDESC })
+                            }}
+                            onUpdate={state => {
+                              data[index] = { ...data[index], ...state, updatedOnce: true };
+                              this.setState({ data });
+                            }}
+                            onChange={(prop, val) => {
+                              data[index][prop] = val;
+                              this.setState({ data, changed: true });
+                            }}
+                            onDelete={index => {
+                              data.splice(index, 1)
+                              this.setState({ data, changed: true });
+                              // решение кейса undefined при удалении строки
+                              this.setState({ lineConfigIndex: 0 });
+                            }}
+                            onConfigOpen={() => {
+                              this.setState({ lineConfigIndex: index });
+                            }}
+                          />
+                        )
                       )
-                    )
-                  })()}
+                    })()}
+                  </div>
+
+                  <footer className="main__footer">
+
+                    <Button className="custom-btn main__save"
+                      key={Math.random()}
+                      onClick={() => {
+                        const { data } = this.state;
+                        data.push({ ...defaultToolData });
+                        this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
+                      }}>
+                      <PlusOutlined aria-label="Добавить" />
+                      инструмент
+                    </Button>
+                  </footer>
+                  
+
                 </div>
-
-                <footer className="main__footer">
-
-                  <Button className="custom-btn main__save"
-                    key={Math.random()}
-                    onClick={() => {
-                      const { data } = this.state;
-                      data.push({ ...defaultToolData });
-                      this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
-                    }}>
-                    <PlusOutlined aria-label="Добавить" />
-                    инструмент
-                  </Button>
-                </footer>
-                
-
+                {/* /.container */}
               </div>
-              {/* /.container */}
-
             </div>
 
           </main>

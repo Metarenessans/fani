@@ -1,3 +1,8 @@
+.hdOptimize {
+  @include xlg {
+    font-size: 0.94em;
+  }
+}
 .dashboard {
   font-size: .9em;
   $root: &;
@@ -91,16 +96,15 @@
       }
 
       @include sm() {
-        top:   initial;
-        right: initial;
-        bottom:  0.7em;
-        left:    0.2em;
+        right: -1em;
       }
 
       @include xs() {
         background-color: var(--danger-color-transparent) !important;
-        right: -0.5em;
-        bottom: 1.15em;
+
+        left: initial;
+        right: -.5em;
+        top: -.5em;
       }
     }
   }
@@ -157,6 +161,10 @@
          
       @include sm {
         align-items: center;
+        width: 100%;
+      }
+
+      @include xlg {
         width: 100%;
       }
     }
@@ -346,6 +354,10 @@
       }
     }
 
+    @include sm {
+      display: block;
+    }
+
     &__sort-toggle {
       z-index: 4;
       position: absolute;
@@ -422,9 +434,21 @@
         width: 100%;
       }
     }
+
+    &--period {
+      @include xlg {
+        width: 11em;
+      }
+    }
     
     &--first-pay {
       width: 100%
+    }
+
+    &--config {
+      @include xlg {
+        width: 100%!important;
+      }
     }
 
   }

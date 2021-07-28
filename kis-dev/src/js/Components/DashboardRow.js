@@ -222,7 +222,7 @@ export default class DashboardRow extends React.Component {
               Период
             </Tooltip>
           </span>
-          <span className="dashboard-val dashboard-col--wide">
+          <span className="dashboard-val dashboard-col--wide dashboard-val--period">
             <NumericInput
               className="dashboard__input"
               defaultValue={period}

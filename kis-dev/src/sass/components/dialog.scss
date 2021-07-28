@@ -1,5 +1,11 @@
 .dialog {
   font-size: 0.6em;
+
+  &__content {
+    .dashboard-row {
+      box-shadow: none;
+    }
+  }
   
   &__close {
     @include xs {
@@ -20,6 +26,8 @@
   }
 
   &__inner {
+    box-shadow: initial;
+
     @include sm {
       max-width: 85vw!important;
       font-size: 1.6em;
