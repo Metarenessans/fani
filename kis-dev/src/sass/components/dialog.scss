@@ -1,9 +1,15 @@
 .dialog {
-  font-size: 0.6em;
-
+  
   &-footer {
+    font-size: 1.3em;
+
+    &-wrap {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
     @include sm {
-      font-size: 1.2em;
+      font-size: 1.4em;
     }
 
     @include xs {
@@ -36,6 +42,8 @@
   }
 
   &__inner {
+    font-size: 1em!important;
+
     box-shadow: initial;
 
     @include sm {
@@ -49,24 +57,45 @@
     padding-right: 2em;
     padding-left:  2em;
     
-    .dashboard-col {
-      @include xs {
-        flex-basis:    100%;
-        align-items: center!important;
+    .dashboard {
+      &-col {
+        @include xs {
+          flex-basis:    100%;
+          align-items: center!important;
+        }
       }
+
+      &-row {
+        padding-right: 0;
+      }
+  
+      &-val {
+        width: 100%;
+        
+        @include xs {
+          width: 80%;
+        }
+      }
+
+      &-key {
+        height: 2.7rem;
+
+        @include sm {
+          height: 2.5rem;
+        }
+      }
+
     }
 
-    .dashboard-val {
-      width: 100%;
-      
-      @include xs {
-        width: 80%;
-      }
-    }
-
+    
     @include sm {
-      padding-right: 8em;
-      padding-left:  8em;
+      padding-right: 4em;
+      padding-left:  4em;
+    }
+    
+    @include xs {
+      padding-right: 4em;
+      padding-left:  4em;
     }
   }
 
