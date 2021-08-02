@@ -341,7 +341,13 @@ export default function CodePanel(props) {
         )
       })}
 
-      {renderLine("Риск", "depo_stop", `{${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`)}
+      {(() => {
+        let condition = isRiskStatic;
+        if (data["Обратные докупки (ТОР)"]?.on) {
+          condition = false;
+        }
+        return renderLine("Риск", "depo_stop", `{${!condition ? round(risk, 3) : 0},${condition ? round(risk, 3) : 0}}`)
+      })()}
 
       {(() => {
         let value = round(ranullMode ? ranull * tool.priceStep : ranull / 100, 2);

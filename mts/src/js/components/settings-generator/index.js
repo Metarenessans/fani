@@ -65,7 +65,7 @@ const SettingsGenerator = props => {
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
   const prevCurrentTab = useRef();
 
-  const defaultToolCode = dev ? "MOEX" : "SBER";
+  const defaultToolCode = dev ? "SBER" : "SBER";
   const [presets, setPresets] = useState([
     {
       name: "Стандарт",
@@ -137,7 +137,7 @@ const SettingsGenerator = props => {
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Лимитник" : "Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -152,8 +152,8 @@ const SettingsGenerator = props => {
   const [isLong, setIsLong] = useState(true);
   const [risk, setRisk] = useState(100);
   const [isRiskStatic, setIsRiskStatic] = useState(true);
-  const [comission, setComission] = useState(currentTool.dollarRate >= 1 ? 45 : 1);
-  const [load, setLoad] = useState(dev ? 6.2 : props.load || 0);
+  const [comission, setComission] = useState(currentTool.dollarRate == 0 ? 1 : 45);
+  const [load, setLoad] = useState(dev ? 50 : props.load || 0);
 
   const [investorDepo, setInvestorDepo] = useState(props.depo || 1_000_000);
   const [depo, setDepo] = useState(
@@ -400,7 +400,6 @@ const SettingsGenerator = props => {
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
-    setShouldRegisterUpdate(true);
   }
 
   const getPackedSave = () => {
@@ -422,9 +421,6 @@ const SettingsGenerator = props => {
       ranullMode,
       ranullPlus,
       ranullPlusMode,
-
-      // bullshit bazinga
-      // ~~
       totalIncome,
       totalLoss,
     };
@@ -645,10 +641,12 @@ const SettingsGenerator = props => {
     // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
     // для нового инструмента
     if (comission == 45 || comission == 1) {
-      setComission(currentTool.dollarRate >= 1 ? 45 : 1);
+      setComission(currentTool.dollarRate == 0 ? 1 : 45);
     }
 
     prevTool.current = currentTool;
+
+    setShouldRegisterUpdate(true);
 
   }, [currentTool.code]);
 
@@ -845,7 +843,6 @@ const SettingsGenerator = props => {
                   <Tooltip title="Сохранить текущие настройки">
                     <Button 
                       className="custom-btn"
-                      // disabled={isEqual(getPackedSave(), genaSave || {})}
                       onClick={e => {
                         if (currentPresetIndex < 3) {
                           dialogAPI.open("settings-generator-save-preset-popup", e.target);
@@ -919,9 +916,7 @@ const SettingsGenerator = props => {
                     defaultValue={comission}
                     format={formatNumber}
                     unsigned="true"
-                    onBlur={val => {
-                      setComission(val);
-                    }}
+                    onBlur={value => setComission(value)}
                   />
                 </label>
 
@@ -1174,6 +1169,7 @@ const SettingsGenerator = props => {
                     </div>
                     <NumericInput
                       className="input-group__input"
+                      disabled={isReversedBying}
                       defaultValue={risk}
                       format={val => formatNumber(round(val, 2))}
                       unsigned="true"
@@ -1191,20 +1187,25 @@ const SettingsGenerator = props => {
                     <span className="input-group__label visually-hidden">Риск (стоп)</span>
                     <NumericInput
                       className="input-group__input"
+                      disabled={isReversedBying}
                       defaultValue={
                         (depoSum * risk / 100)
                         /
                         currentTool.stepPrice
+                        *
+                        currentTool.priceStep
                         /
                         (contracts || 1)
                       }
-                      format={val => formatNumber(Math.floor(val))}
+                      format={value => formatNumber(Math.floor(value))}
                       unsigned="true"
                       onBlur={riskInSteps => {
                         setRisk(
                           riskInSteps
                           *
                           currentTool.stepPrice
+                          /
+                          currentTool.priceStep
                           *
                           (contracts || 1)
                           /
@@ -1213,7 +1214,7 @@ const SettingsGenerator = props => {
                           100
                         );
                       }}
-                      suffix="п"
+                      suffix="$/₽"
                     />
                   </label>
 
@@ -1221,6 +1222,7 @@ const SettingsGenerator = props => {
                     <span className="input-group__label visually-hidden">Риск (стоп)</span>
                     <NumericInput
                       className="input-group__input"
+                      disabled={isReversedBying}
                       defaultValue={depoSum * risk / 100}
                       format={value => formatNumber(round(value, fraction))}
                       unsigned="true"
