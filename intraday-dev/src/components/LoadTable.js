@@ -7,7 +7,7 @@ import { ExtraStepInput } from "./ExtraStepInput";
 
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 
-import { Row, Col, Button, Switch } from "antd";
+import { Row, Col, Button } from "antd";
 import { InputNumber } from "antd4";
 
 export const LoadTable = ({ tableIdx }) => {
@@ -23,7 +23,6 @@ export const LoadTable = ({ tableIdx }) => {
     minYield,
     yieldStep,
     adrMode,
-    setGuaranteeMode,
     updateSteps,
     addStepColumn,
   } = useContext(GlobalContext);
@@ -65,25 +64,7 @@ export const LoadTable = ({ tableIdx }) => {
         tool.code === selectedTool.code &&
         tool.ref.toolType === selectedTool.toolType
       ) {
-        let guarantee;
-        if (tool.ref.toolType !== "futures") {
-          if (investorInfo.status === "KSUR" && tool.ref.guarantee.KSUR) {
-            guarantee =
-              table.guaranteeMode === "LONG"
-                ? +tool.ref.guarantee.KSUR.LONG
-                : +tool.ref.guarantee.KSUR.SHORT;
-          } else if (
-            investorInfo.status === "KPUR" &&
-            tool.ref.guarantee.KPUR
-          ) {
-            guarantee =
-              table.guaranteeMode === "LONG"
-                ? +tool.ref.guarantee.KPUR.LONG
-                : +tool.ref.guarantee.KPUR.SHORT;
-          } else guarantee = +tool.ref.guarantee.default;
-        } else {
-          guarantee = +tool.guarantee;
-        }
+        const guarantee = +tool.guarantee;
 
         const contracts = Math.floor(
           (investorInfo.deposit * table.loadValue) / 100 / guarantee
@@ -143,23 +124,11 @@ export const LoadTable = ({ tableIdx }) => {
           lg={12}
           className={`tools ${toolsVisible ? "xsVisible" : ""}`}
         >
-          <Row gutter={[20]} className="load-header">
-            <Col center="xs" xs={24} md={6}>
+          <Row gutter={[20]} align="top" className="load-header">
+            <Col center="xs" xs={8}>
               <p className="load-header_title">Загрузка</p>
             </Col>
-            <Col xs={8} md={6} className="load-header_switch">
-              <Switch
-                checkedChildren="LONG"
-                unCheckedChildren="SHORT"
-                checked={table.guaranteeMode === "LONG" && true}
-                onChange={(checked) => {
-                  const mode = checked ? "LONG" : "SHORT";
-                  setGuaranteeMode(tableIdx, mode);
-                }}
-                disabled={!investorInfo.status}
-              />
-            </Col>
-            <Col xs={8} md={8}>
+            <Col xs={8}>
               <InputNumber
                 ref={inputRef}
                 size="large"
@@ -189,7 +158,7 @@ export const LoadTable = ({ tableIdx }) => {
                 onBlur={() => setLoadValue(tableIdx, loadValueLocal)}
               />
             </Col>
-            <Col xs={8} md={4}>
+            <Col xs={8}>
               <p className="load-value">{numWithSpaces(load.toFixed())}</p>
             </Col>
           </Row>

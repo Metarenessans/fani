@@ -27,7 +27,8 @@ export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
       deleteExtraStep(tableIdx, columnIdx);
       inputRef.current.focus();
     } else {
-      setExtraStep(tableIdx, columnIdx, stepValue);
+      if (stepValue !== table.extraSteps[columnIdx])
+        setExtraStep(tableIdx, columnIdx, stepValue);
     }
   };
 

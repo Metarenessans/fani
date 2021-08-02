@@ -56,21 +56,28 @@ export const NanniBot = () => {
 
   const setMessagePrinted = async () => {
     const log = [...messageLog];
-    log.map((message) => (message.printed = true));
+    log.map((message, idx) => {
+      if (idx !== log.length - 1) message.printed = true;
+      return message;
+    });
 
     setMessageLog(log);
   };
 
   const whatChosen = (choiceIdx, messageIdx) => {
+    let whatChosen = "";
     if ("chosen" in messageLog[messageIdx]) {
       if (choiceIdx === messageLog[messageIdx].chosen) {
-        if (messageIdx === 0) return "chosen first";
-        else return "chosen nth";
+        choiceIdx === 0
+          ? (whatChosen = "chosen first")
+          : (whatChosen = "chosen nth");
       } else {
-        if (messageIdx === 0) return "hidden fade-to-top";
-        else return "hidden fade-out-right";
+        choiceIdx === 0
+          ? (whatChosen = "hidden fade-out-right")
+          : (whatChosen = "hidden fade-to-top");
       }
-    } else return "";
+    }
+    return whatChosen;
   };
 
   const conclusionChosen = (messageIdx) => {

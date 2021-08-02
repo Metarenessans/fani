@@ -29,7 +29,6 @@
     margin-bottom: 0;
   }
   &.active {
-    animation-duration: 300ms;
     width: 30em;
     max-height: 45em;
     height: 75%;
@@ -249,6 +248,7 @@
     line-height: 20px;
   }
   .choices {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -282,6 +282,13 @@
     flex-direction: column;
     align-items: flex-end;
   }
+  .choice.hidden {
+    opacity: 0;
+    margin-bottom: 0;
+  }
+  .hidden.printed {
+    height: 0;
+  }
   .choice button {
     background: linear-gradient(90.54deg, #fbfbfb 0%, #ffffff 100%);
     border: 1px solid #2a8bf2;
@@ -314,21 +321,15 @@
     animation: fadeOutRight 0.3s;
     -webkit-animation: fadeOutRight 0.3s;
     animation-fill-mode: forwards;
-    animation-delay: 0.3s;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: transform, opacity;
   }
   @keyframes fadeOutRight {
     0% {
-      opacity: 1;
       transform: translateX(0);
+      opacity: 1;
     }
     100% {
-      opacity: 0;
-      height: 0;
-      margin: 0;
       transform: translateX(100%);
+      opacity: 0;
     }
   }
   .chosen {
@@ -336,16 +337,13 @@
     visibility: visible;
   }
   .chosen.nth {
+    position: absolute;
     animation: moveTop 0.3s;
     -webkit-animation: moveTop 0.3s;
     animation-fill-mode: forwards;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: transform;
   }
   @keyframes moveTop {
     0% {
-      position: absolute;
       transform: translateY(100%);
     }
     100% {
@@ -356,9 +354,6 @@
     animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
     -webkit-animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
     animation-fill-mode: forwards;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: transform, opacity;
   }
   @keyframes fadeTop {
     0% {
@@ -379,9 +374,7 @@
     animation-name: none;
     -webkit-animation-name: none;
     visibility: visible;
-  }
-  .printed.hidden {
-    display: none;
+    position: relative;
   }
 }
 
@@ -396,8 +389,8 @@
       height: 98%;
       top: 50%;
       left: 50%;
+      transition: transform 0.3s ease-out;
       transform: translate3d(-50%, -50%, 0);
-      -webkit-transform: translate3d(-50%, -50%, 0);
       will-change: transform;
     }
     .nanni-btn {

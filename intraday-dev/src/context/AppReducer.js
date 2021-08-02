@@ -108,18 +108,31 @@ export default (state, action) => {
     return tables;
   };
 
-  const setGuaranteeMode = ({ tableIdx, guaranteeMode }) => {
-    const tables = [...state.loadTables];
-    tables[tableIdx].guaranteeMode = guaranteeMode;
-
-    return tables;
-  };
-
   switch (action.type) {
     case "SET_INITIAL_STATE":
       return {
         ...state,
-        // action.payload,
+        currentSaveIdx: 0,
+        customTools: [],
+        investorInfo: {
+          deposit: 1500000,
+          status: "KSUR",
+          skill: "UNSKILLED",
+        },
+        adrMode: "day",
+        iterationQty: 10,
+        stopValue: 0.5,
+        minYield: 0.5,
+        yieldStep: 0.02,
+        loadTables: [
+          {
+            selectedTools: [{ code: "SBER", toolType: "shareRu" }],
+            loadValue: 1,
+            steps: [0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64],
+            extraSteps: [],
+            guaranteeMode: "LONG",
+          },
+        ],
       };
     case "GET_TOOLS":
       return {
@@ -145,25 +158,14 @@ export default (state, action) => {
       };
     case "GET_SAVES":
       let pure = params.get("pure") === "true";
-      let saves = action.payload;
 
       return {
         ...state,
-        saves,
-        currentSaveIdx: saves.length && !pure ? 1 : 0,
+        saves: action.payload,
+        currentSaveIdx: action.payload.length && !pure ? 1 : 0,
       };
     case "GET_SAVE":
-      // направление (лонг/шорт)
-      // загрузка(и)
-      // инструмент(ы)
-      // депозит из настроек
-      // кастомные инструменты, если есть
-      const save = JSON.parse(action.payload.static);
-      console.log(save);
-      // deposit
-      // loadTables
-      // setGuaranteeMode
-      // setExtraStep
+      let save = action.payload;
 
       return {
         ...state,
@@ -189,7 +191,7 @@ export default (state, action) => {
       };
     case "UPDATE_SAVE":
       console.log(action.payload);
-      const updatedSaves = [...state.saves].map((save) => {
+      let updatedSaves = [...state.saves].map((save) => {
         if (save.id == action.payload.id) {
           save.name = action.payload.name;
           save.static = action.payload.static;
@@ -207,18 +209,6 @@ export default (state, action) => {
         (save) => save.id !== action.payload
       );
 
-      // if (state.saves.length > 0) {
-      //   let idx = saves[currentSaveIndex - 1].id;
-
-      // this.setState({ loading: true });
-      // this.fetchSaveById(id)
-      //   .then((response) => this.extractSave(response.data))
-      //   .catch((error) => console.error(error));
-      // } else {
-      //   this.reset().catch((err) => this.showMessageDialog(err));
-
-      //   saved = changed = false;
-      // }
       return {
         ...state,
         saves: filteredSaves,
@@ -291,13 +281,6 @@ export default (state, action) => {
       return {
         ...state,
         adrMode: action.payload,
-        snapshotIsChanged: true,
-        snapshotIsSaved: false,
-      };
-    case "SET_GUARANTEE_MODE":
-      return {
-        ...state,
-        loadTables: setGuaranteeMode(action.payload),
         snapshotIsChanged: true,
         snapshotIsSaved: false,
       };

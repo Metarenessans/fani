@@ -435,6 +435,9 @@ body {
     width: 20em;
     color: #fff !important;
   }
+  .main-top__select .ant-select-selection-selected-value {
+    line-height: 1.85;
+  }
   .labeled-select__label {
     display: block;
     margin-bottom: 0.75em;
@@ -642,6 +645,10 @@ body {
   .dialog__title {
     margin-bottom: 0.25em;
   }
+  .main-top__new {
+    background: #fff;
+    color: #4859b4;
+  }
 }
 
 /*======================SECTION .data-inputs======================*/
@@ -711,9 +718,6 @@ body {
   }
   .load-header .form-control {
     text-align: center;
-  }
-  .load-value {
-    text-align: right;
   }
   .add-step-column-btn {
     position: absolute;
@@ -1157,6 +1161,14 @@ body {
   .loads .stepsRow .step:last-child {
     margin-right: 0;
   }
+  .price-move .main-top__select {
+    position: relative;
+    right: auto;
+    top: auto;
+    width: auto;
+    margin-bottom: 2em;
+    display: flex;
+  }
 }
 
 @media (max-width: 767px) {
@@ -1195,6 +1207,34 @@ body {
     .config.stack {
       width: 100%;
     }
+    .main-top__select {
+      position: relative;
+      right: auto;
+      top: auto;
+      width: auto;
+      margin-bottom: 2em;
+      display: flex;
+    }
+    .main-top__footer > * {
+      width: 100%;
+    }
+    .main-top__footer > * + * {
+      margin-left: 0;
+      margin-top: 1em;
+    }
+    .main-top__footer_wrap {
+      display: flex;
+      flex-direction: column;
+      font-size: 2.25vw;
+    }
+    .main-top__footer {
+      order: 2;
+      width: 100%;
+    }
+    .settings-button {
+      order: 1;
+      font-size: 1.5em;
+    }
   }
   #root .container {
     padding: 0 10px;
@@ -1205,14 +1245,8 @@ body {
   .load-table {
     .load-header {
       height: auto;
-      padding: 10px 0;
-      text-align: center;
-      display: block;
+      padding: 5px 0;
       margin-bottom: 15px;
-    }
-    .load-header .load-header_title {
-      text-align: center;
-      margin-bottom: 5px;
     }
     .ant-input-number-lg {
       height: 35px;

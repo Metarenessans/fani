@@ -38,32 +38,32 @@ export const PriceMove = () => {
     updateSave,
     deleteSave,
     updateDeposit,
+    getTools,
+    getInvestorInfo,
+    setIsLoading,
   } = useContext(GlobalContext);
 
-  const loadSaves = async () => {
+  const loadData = async () => {
+    await setIsLoading(true);
+    await Promise.all([getInvestorInfo(), getTools()]);
     await getSaves();
-
-    // if (saves.length) {
-    //   await getSave(saves[0].id);
-    // }
+    await setIsLoading(false);
   };
 
   useEffect(() => {
-    loadSaves();
+    loadData();
+    setInterval(getTools, 120000);
   }, []);
 
   useEffect(() => {
-    console.log("snapshotIsSaved:", snapshotIsSaved);
-  }, [snapshotIsSaved]);
-
-  useEffect(() => {
-    console.log("snapshotIsChanged:", snapshotIsChanged);
-  }, [snapshotIsChanged]);
-
-  useEffect(() => {
-    console.log("customTools useEffect");
-    setCustomTools(customTools);
-  }, [customTools]);
+    if (currentSaveIdx === 0) {
+      setInitialState();
+    } else {
+      setCurrentSaveIdx(currentSaveIdx);
+      let id = saves[currentSaveIdx - 1].id;
+      getSave(id);
+    }
+  }, [saves.length, currentSaveIdx]);
 
   const pageTitle = () => {
     let title = "ИП Аналитика";
@@ -177,51 +177,63 @@ export const PriceMove = () => {
 
             <Row>
               <Col xs={24}>
-                <div className="main-top__footer">
-                  <Button
-                    className="custom-btn custom-btn--secondary main-top__save"
-                    onClick={(e) => {
-                      if (saves.length && snapshotIsChanged) {
-                        let save = saves[currentSaveIdx - 1];
-                        updateSave({
-                          id: save.id,
-                          name: save.name,
-                          static: JSON.stringify(formSnapshot()),
-                        });
-                      } else {
-                        dialogAPI.open("dialog1", e.target);
-                      }
-                    }}
-                  >
-                    {(!snapshotIsSaved && snapshotIsChanged) ||
-                    currentSaveIdx == 0
-                      ? "Сохранить"
-                      : "Изменить"}
-                  </Button>
-
-                  {saves.length > 0 ? (
-                    <a
-                      className="custom-btn custom-btn--secondary main-top__save"
-                      href="#pure=true"
-                      target="_blank"
+                <div className="main-top__footer_wrap">
+                  <div className="main-top__footer">
+                    <Button
+                      className={`custom-btn custom-btn--secondary main-top__save ${
+                        saves.length &&
+                        snapshotIsChanged &&
+                        currentSaveIdx !== 0
+                          ? "main-top__new"
+                          : ""
+                      }`}
+                      onClick={(e) => {
+                        if (
+                          saves.length &&
+                          snapshotIsChanged &&
+                          currentSaveIdx !== 0
+                        ) {
+                          let save = saves[currentSaveIdx - 1];
+                          updateSave({
+                            id: save.id,
+                            name: save.name,
+                            static: JSON.stringify(formSnapshot()),
+                          });
+                        } else {
+                          dialogAPI.open("dialog1", e.target);
+                        }
+                      }}
                     >
-                      Добавить новый
-                    </a>
-                  ) : null}
-                </div>
+                      {(!snapshotIsSaved && snapshotIsChanged) ||
+                      currentSaveIdx == 0
+                        ? "Сохранить"
+                        : "Изменить"}
+                    </Button>
 
-                <Tooltip
-                  title="Настройки"
-                  overlayStyle={{ fontSize: "1.25em" }}
-                >
-                  <button
-                    className="settings-button js-open-modal main-top__settings"
-                    onClick={(e) => dialogAPI.open("config", e.target)}
+                    {saves.length > 0 ? (
+                      <a
+                        className="custom-btn custom-btn--secondary main-top__save"
+                        href="#pure=true"
+                        target="_blank"
+                      >
+                        Добавить новый
+                      </a>
+                    ) : null}
+                  </div>
+
+                  <Tooltip
+                    title="Настройки"
+                    overlayStyle={{ fontSize: "1.25em" }}
                   >
-                    <span className="visually-hidden">Открыть конфиг</span>
-                    <SettingFilled className="settings-button__icon" />
-                  </button>
-                </Tooltip>
+                    <button
+                      className="settings-button js-open-modal main-top__settings"
+                      onClick={(e) => dialogAPI.open("config", e.target)}
+                    >
+                      <span className="visually-hidden">Открыть конфиг</span>
+                      <SettingFilled className="settings-button__icon" />
+                    </button>
+                  </Tooltip>
+                </div>
               </Col>
             </Row>
 
@@ -399,7 +411,7 @@ export const PriceMove = () => {
               templateContructor={Tool}
               tools={tools}
               toolsInfo={[
-                { name: "Инструмент", prop: "name" },
+                { name: "Инструмент", prop: "fullName" },
                 { name: "Код", prop: "code" },
                 { name: "Цена шага", prop: "stepPrice" },
                 { name: "Шаг цены", prop: "priceStep" },

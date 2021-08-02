@@ -47,7 +47,6 @@ export const GlobalProvider = ({ children }) => {
     try {
       dispatch({
         type: "SET_INITIAL_STATE",
-        payload: initialState,
       });
     } catch (err) {
       dispatch({
@@ -78,6 +77,7 @@ export const GlobalProvider = ({ children }) => {
           return tools;
         }
       );
+
       dispatch({
         type: "GET_TOOLS",
         payload: tools,
@@ -114,12 +114,13 @@ export const GlobalProvider = ({ children }) => {
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshots"
       );
       if (!res.data.error) {
-        console.log("getSaves:", res.data.data);
-        let saves = res.data.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+        let sortedSaves = res.data.data.sort(
+          (a, b) => b.dateUpdate - a.dateUpdate
+        );
 
         dispatch({
           type: "GET_SAVES",
-          payload: saves,
+          payload: sortedSaves,
         });
       }
     } catch (err) {
@@ -135,12 +136,33 @@ export const GlobalProvider = ({ children }) => {
       const res = await axios.get(
         `https://fani144.ru/local/php_interface/s1/ajax/?method=getIntradaySnapshot&id=${id}`
       );
-
       if (!res.data.error) {
-        dispatch({
-          type: "GET_SAVE",
-          payload: res.data.data,
+        let expectedKeys = [
+          "adrMode",
+          "iterationQty",
+          "stopValue",
+          "minYield",
+          "yieldStep",
+          "loadTables",
+          "customTools",
+          "investorInfo",
+        ];
+        let save = JSON.parse(res.data.data.static);
+        let keys = Object.keys(save);
+        let isMatch = true;
+
+        keys.map((key) => {
+          if (!expectedKeys.includes(key)) isMatch = false;
         });
+
+        if (isMatch) {
+          dispatch({
+            type: "GET_SAVE",
+            payload: save,
+          });
+        } else {
+          deleteSave(res.data.data.id);
+        }
       }
     } catch (err) {
       dispatch({
@@ -386,20 +408,6 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
-  async function setGuaranteeMode(tableIdx, guaranteeMode) {
-    try {
-      dispatch({
-        type: "SET_GUARANTEE_MODE",
-        payload: { tableIdx, guaranteeMode },
-      });
-    } catch (err) {
-      dispatch({
-        type: "FUTURE_ERROR",
-        payload: err,
-      });
-    }
-  }
-
   async function addStepColumn(tableIdx) {
     try {
       dispatch({
@@ -537,7 +545,6 @@ export const GlobalProvider = ({ children }) => {
         setMinYield,
         setYieldStep,
         setAdrMode,
-        setGuaranteeMode,
         setExtraStep,
         addStepColumn,
         deleteExtraStep,
