@@ -3,6 +3,7 @@ import roundUp         from "../../../../../common/utils/round-up"
 import fractionLength  from '../../../../../common/utils/fraction-length'
 import croppNumber     from '../../../../../common/utils/cropp-number'
 import fallbackBoolean from '../../../../../common/utils/fallback-boolean'
+import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
 
 import stepConverter from './step-converter'
 
@@ -48,6 +49,12 @@ const createData = (type, options, meta) => {
   }
 
   const fraction = fractionLength(currentTool.priceStep);
+
+  const updateStep = step => {
+    return fraction > 0
+      ? round(step, fraction)
+      : magnetToClosest(step, currentTool.priceStep);
+  }
 
   const isSMS_TOR = false;
     // currentPreset.type == "СМС + ТОР" &&
@@ -254,8 +261,6 @@ const createData = (type, options, meta) => {
         points = currentTool.adrDay * (multiplier / 100);
       }
 
-      points = round(points, fraction);
-
       if (mode == 'custom') {
         let preferredStepInMoney = currentOptions.preferredStep;
         const { inPercent } = currentOptions;
@@ -291,17 +296,6 @@ const createData = (type, options, meta) => {
         }
       }
 
-      if (currentPreset.type == "СМС + ТОР" && type == "Закрытие основного депозита") {
-        // points = round(
-        //   round(preferredStep * stepInPercent / 100, fraction) * (index + 1),
-        //   fraction
-        // );
-      }
-
-      // if (currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") {
-      //   points = round(preferredStep * (index + 1), fraction);
-      // }
-
       if (isSMS_TOR) {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
@@ -311,6 +305,8 @@ const createData = (type, options, meta) => {
       //     ? round((mainData[0].points / 2) * (index + 1), fraction)
       //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
       // }
+
+      points = updateStep(points);
 
       if (isNaN(points)) {
         points = 0;
@@ -337,7 +333,8 @@ const createData = (type, options, meta) => {
 
       // Кол-во закрытых/докупленных контрактов
       let _contracts = contracts * percent / 100;
-      if ((["СМС + ТОР", "Лимитник"].indexOf(currentPreset.type) > -1) && type == "Обратные докупки (ТОР)" && subIndex > 0) {
+      // Обратные докупки в СМС или Лимитник
+      if (type == "Обратные докупки (ТОР)" && (["СМС + ТОР", "Лимитник"].indexOf(currentPreset.type) > -1) && subIndex > 0) {
         _contracts = contractsLeft * percent / 100;
       }
 
@@ -370,7 +367,20 @@ const createData = (type, options, meta) => {
         shouldBreak = true;
       }
 
-      let _comission = _contracts * comission;
+      let contractsForCalcs = _contracts;
+      if (!closeAll && ["Закрытие основного депозита", "Закрытие плечевого депозита"].indexOf(type) != -1) {
+        contractsForCalcs = _contracts + contractsLoaded;
+      }
+
+      if (type == "Обратные докупки (ТОР)") {
+        contractsForCalcs = _contracts + options.contracts;
+      }
+
+      if (type == "Прямые профитные докупки") {
+        contractsForCalcs = contractsLoaded;
+      }
+
+      let _comission = contractsForCalcs * comission;
       // Если выбрана акция 
       if (currentTool.dollarRate >= 1) {
         _comission = comission;
@@ -379,10 +389,8 @@ const createData = (type, options, meta) => {
           _comission *= 2;
         }
       }
-      // NOTE: больше не прибавляем комиссию из предыдущей строки
-      // _comission += data[subIndex - 1]?.comission || 0;
 
-      let incomeWithoutComission = _contracts * points / currentTool.priceStep * currentTool.stepPrice;
+      let incomeWithoutComission = contractsForCalcs * (points / currentTool.priceStep) * currentTool.stepPrice;
       // Прибавляем доход/убыток из предыдущей строки
       incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
       

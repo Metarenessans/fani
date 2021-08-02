@@ -5,6 +5,8 @@ import readyToolsNew   from "./adr-new.json"
 import readyToolsMarch from "./adr-march.json"
 import readyToolsApril from "./adr-april.json"
 
+import magnetToClosest from "./utils/magnet-to-closest"
+
 const filterJSONToolsFn = tool => {
   if (tool.adrWeek == "" && tool.adrMonth == "") {
     return false;
@@ -256,15 +258,16 @@ const parseTool = tool => {
   }
 
   // Оставляем такое же кол-во знаков после запятой, что и в шаге цены
-  let fraction = fractionLength(priceStep);
-  if (adrDay) {
-    adrDay   = +(adrDay).toFixed(fraction);
+  const fraction = fractionLength(priceStep);
+  if (fraction) {
+    adrDay = round(adrDay, fraction);
+    adrWeek = round(adrWeek, fraction);
+    adrMonth = round(adrMonth, fraction);
   }
-  if (adrWeek) {
-    adrWeek  = +(adrWeek).toFixed(fraction);
-  }
-  if (adrMonth) {
-    adrMonth = +(adrMonth).toFixed(fraction);
+  else {
+    adrDay = magnetToClosest(adrDay, priceStep);
+    adrWeek = magnetToClosest(adrWeek, priceStep);
+    adrMonth = magnetToClosest(adrMonth, priceStep);
   }
 
   const obj = {
@@ -561,6 +564,23 @@ class Tools {
         adrDay:          2.75,
         adrWeek:         5.47,
         adrMonth:        10.59,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "RTS-9.21",
+        shortName:       "",
+        code:            "RIU1",
+        stepPrice:       14.6193,
+        priceStep:       10,
+        averageProgress: 0,
+        guarantee:       31929.03,
+        currentPrice:    162260,
+        volume:          1,
+        lotSize:         1,
+        dollarRate:      0,
+        adrDay:          3050,
+        adrWeek:         5501,
+        adrMonth:        13711,
       }),
       this.create({
         ref:             {},
