@@ -1,16 +1,6 @@
-import { Tools } from "../common/tools";
+import params from "../common/utils/params";
 
 export default (state, action) => {
-  const getTools = ({ tools }) => {
-    tools = Tools.parse(tools, {
-      investorInfo: state.investorInfo,
-    });
-
-    tools = Tools.sort(tools);
-
-    return { ...state, loading: false, tools };
-  };
-
   const addTool = ({ tableIdx }) => {
     const updatedTable = [...state.loadTables][tableIdx];
     const newTool = JSON.parse(JSON.stringify(updatedTable.selectedTools[0]));
@@ -19,7 +9,12 @@ export default (state, action) => {
     const updatedLoadTables = state.loadTables.map((table, idx) =>
       idx !== tableIdx ? table : updatedTable
     );
-    return { ...state, loadTables: updatedLoadTables };
+    return {
+      ...state,
+      loadTables: updatedLoadTables,
+      snapshotIsChanged: true,
+      snapshotIsSaved: false,
+    };
   };
 
   const updateTool = ({ tableIdx, rowIdx, code, toolType }) => {
@@ -55,15 +50,19 @@ export default (state, action) => {
       idx !== tableIdx ? table : updatedTable
     );
 
-    return { ...state, loadTables: updatedLoadTables };
+    return {
+      ...state,
+      loadTables: updatedLoadTables,
+      snapshotIsChanged: true,
+      snapshotIsSaved: false,
+    };
   };
 
   const addStepColumn = ({ tableIdx }) => {
     const updatedTable = [...state.loadTables][tableIdx];
     const lastStep = +updatedTable.steps[updatedTable.steps.length - 1];
-    const lastExtraStep = +updatedTable.extraSteps[
-      updatedTable.extraSteps.length - 1
-    ];
+    const lastExtraStep =
+      +updatedTable.extraSteps[updatedTable.extraSteps.length - 1];
     let newStep = 0;
 
     if (lastExtraStep) {
@@ -76,7 +75,12 @@ export default (state, action) => {
     const updatedLoadTables = state.loadTables.map((table, idx) =>
       idx !== tableIdx ? table : updatedTable
     );
-    return { ...state, loadTables: updatedLoadTables };
+    return {
+      ...state,
+      loadTables: updatedLoadTables,
+      snapshotIsChanged: true,
+      snapshotIsSaved: false,
+    };
   };
 
   const deleteExtraStep = ({ tableIdx, columnIdx }) => {
@@ -89,7 +93,12 @@ export default (state, action) => {
       idx !== tableIdx ? table : updatedTable
     );
 
-    return { ...state, loadTables: updatedLoadTables };
+    return {
+      ...state,
+      loadTables: updatedLoadTables,
+      snapshotIsChanged: true,
+      snapshotIsSaved: false,
+    };
   };
 
   const setExtraStep = ({ tableIdx, columnIdx, value }) => {
@@ -99,20 +108,116 @@ export default (state, action) => {
     return tables;
   };
 
-  const setGuaranteeMode = ({ tableIdx, guaranteeMode }) => {
-    const tables = [...state.loadTables];
-    tables[tableIdx].guaranteeMode = guaranteeMode;
-
-    return tables;
-  };
-
   switch (action.type) {
+    case "SET_INITIAL_STATE":
+      return {
+        ...state,
+        currentSaveIdx: 0,
+        customTools: [],
+        investorInfo: {
+          deposit: 1500000,
+          status: "KSUR",
+          skill: "UNSKILLED",
+        },
+        adrMode: "day",
+        iterationQty: 10,
+        stopValue: 0.5,
+        minYield: 0.5,
+        yieldStep: 0.02,
+        loadTables: [
+          {
+            selectedTools: [{ code: "SBER", toolType: "shareRu" }],
+            loadValue: 1,
+            steps: [0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64],
+            extraSteps: [],
+            guaranteeMode: "LONG",
+          },
+        ],
+      };
     case "GET_TOOLS":
-      return getTools(action.payload);
+      return {
+        ...state,
+        tools: action.payload,
+      };
     case "GET_INVESTOR_INFO":
       return {
         ...state,
         investorInfo: action.payload,
+      };
+    case "SET_CURRENT_SAVE_IDX":
+      return {
+        ...state,
+        currentSaveIdx: action.payload,
+      };
+    case "SET_CUSTOM_TOOLS":
+      return {
+        ...state,
+        customTools: action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
+      };
+    case "GET_SAVES":
+      let pure = params.get("pure") === "true";
+
+      return {
+        ...state,
+        saves: action.payload,
+        currentSaveIdx: action.payload.length && !pure ? 1 : 0,
+      };
+    case "GET_SAVE":
+      let save = action.payload;
+
+      return {
+        ...state,
+        adrMode: save.adrMode,
+        iterationQty: save.iterationQty,
+        stopValue: save.stopValue,
+        minYield: save.minYield,
+        yieldStep: save.yieldStep,
+        loadTables: save.loadTables,
+        customTools: save.customTools,
+        investorInfo: {
+          ...state.investorInfo,
+          deposit: save.investorInfo.deposit,
+        },
+        snapshotIsSaved: true,
+        snapshotIsChanged: false,
+      };
+    case "ADD_SAVE":
+      return {
+        ...state,
+        saves: [action.payload, ...state.saves],
+        currentSaveIdx: 1,
+      };
+    case "UPDATE_SAVE":
+      console.log(action.payload);
+      let updatedSaves = [...state.saves].map((save) => {
+        if (save.id == action.payload.id) {
+          save.name = action.payload.name;
+          save.static = action.payload.static;
+        }
+        return save;
+      });
+      return {
+        ...state,
+        saves: updatedSaves,
+        snapshotIsSaved: true,
+        snapshotIsChanged: false,
+      };
+    case "DELETE_SAVE":
+      let filteredSaves = [...state.saves].filter(
+        (save) => save.id !== action.payload
+      );
+
+      return {
+        ...state,
+        saves: filteredSaves,
+        currentSaveIdx: filteredSaves.length ? 1 : 0,
+      };
+    case "SET_IS_LOADING":
+      return {
+        ...state,
+        loading: action.payload,
       };
     case "ADD_TOOL":
       return addTool(action.payload);
@@ -120,6 +225,8 @@ export default (state, action) => {
       return {
         ...state,
         loadTables: updateTool(action.payload),
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "DELETE_TOOL":
       return deleteTool(action.payload);
@@ -127,26 +234,36 @@ export default (state, action) => {
       return {
         ...state,
         loadTables: updateLoadValue(action.payload),
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "SET_ITERATION_QTY":
       return {
         ...state,
         iterationQty: action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "SET_STOP_VALUE":
       return {
         ...state,
         stopValue: +action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "SET_MIN_YIELD":
       return {
         ...state,
         minYield: +action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "SET_YIELD_STEP":
       return {
         ...state,
         yieldStep: +action.payload,
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "UPDATE_STEPS":
       return {
@@ -157,16 +274,15 @@ export default (state, action) => {
       return {
         ...state,
         loadTables: setExtraStep(action.payload),
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "SET_ADR_MODE":
       return {
         ...state,
         adrMode: action.payload,
-      };
-    case "SET_GUARANTEE_MODE":
-      return {
-        ...state,
-        loadTables: setGuaranteeMode(action.payload),
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "ADD_STEP_COLUMN":
       return addStepColumn(action.payload);
@@ -179,6 +295,8 @@ export default (state, action) => {
           ...state.loadTables,
           JSON.parse(JSON.stringify(state.loadTables[0])),
         ],
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "DELETE_LOAD_TABLE":
       return {
@@ -186,11 +304,15 @@ export default (state, action) => {
         loadTables: state.loadTables.filter(
           (table, idx) => idx !== action.payload
         ),
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "UPDATE_DEPOSIT":
       return {
         ...state,
         investorInfo: { ...state.investorInfo, deposit: action.payload },
+        snapshotIsChanged: true,
+        snapshotIsSaved: false,
       };
     case "FUTURE_ERROR":
       return {

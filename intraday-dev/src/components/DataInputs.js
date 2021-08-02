@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { GlobalContext } from "../context/GlobalState";
 import { Col, Row } from "antd";
 import { InputNumber } from "antd4";
@@ -24,6 +24,22 @@ export const DataInputs = () => {
   const [stopValueLocal, setStopValueLocal] = useState(stopValue);
   const [minYieldLocal, setMinYieldLocal] = useState(minYield);
   const [yieldStepLocal, setYieldStepLocal] = useState(yieldStep);
+
+  useEffect(() => {
+    setIterationQtyLocal(iterationQty);
+  }, [iterationQty]);
+
+  useEffect(() => {
+    setStopValueLocal(stopValue);
+  }, [stopValue]);
+
+  useEffect(() => {
+    setMinYieldLocal(minYield);
+  }, [minYield]);
+
+  useEffect(() => {
+    setYieldStepLocal(yieldStep);
+  }, [yieldStep]);
 
   const parser = (value) => {
     if (typeof value === "string" && !value.length) {

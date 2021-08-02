@@ -5,21 +5,9 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const LoadTables = () => {
-  const { loadTables, getTools, getInvestorInfo, loading } = useContext(
-    GlobalContext
-  );
+  const { loadTables, loading } = useContext(GlobalContext);
 
-  const getData = () => {
-    getInvestorInfo();
-    getTools();
-  };
-
-  useEffect(() => {
-    getData();
-    setInterval(getData, 120000);
-  }, []);
-
-  const tables = loadTables.map((table, tableIdx) => (
+  let tables = loadTables.map((table, tableIdx) => (
     <LoadTable key={tableIdx} tableIdx={tableIdx} />
   ));
 
