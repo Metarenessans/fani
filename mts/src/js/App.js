@@ -180,10 +180,10 @@ class App extends React.Component {
     fetch(method, "GET", body)
       .then(response => {
         const { currentToolCode } = this.state;
-        if (currentToolCode == code) {
-          const { data } = response;
-          return this.setStateAsync({ data, loadingChartData: false });
-        }
+        const { data } = response;
+        
+        console.log('Got answer from' + method + " for " + code + ":", currentToolCode);
+        return this.setStateAsync({ data, loadingChartData: false });
       })
       .catch(error => this.showAlert(`Не удалось получить график для ${code}: ${error}`));
   }
@@ -635,17 +635,20 @@ class App extends React.Component {
           }
         })
         .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
           if (dev) {
-            setTimeout(() => {
-              this.extractSave();
-              resolve();
-            }, 2_000);
+            const save = {
+              "id": 14,
+              "name": "Новое сохранение 11",
+              "dateCreate": 1626631308,
+              "static": "{\"depo\":1500000,\"priceRange\":[68.66,69.24],\"percentage\":10,\"profitRatio\":60,\"risk\":100,\"mode\":0,\"days\":5,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"BRQ1\",\"kodTable\":[{\"fact\":\"2\",\"income\":\"3\"},{\"fact\":\"5\",\"income\":\"5\"},{\"fact\":\"1\",\"income\":\"1\"}],\"current_date\":\"#\"}"
+            };
+            this.extractSave(save);
           }
-          else {
-            this.showAlert(`Не удалось получить сохранения! ${reason}`);
-            reject(reason);
-          }
-        });
+        })
     });
   }
 
@@ -915,74 +918,53 @@ class App extends React.Component {
     let state = {};
     let failed = false;
 
-    if (dev) {
-      state = {
-        currentToolCode: "AAPL",
-        current_date: "#",
-        customTools: [],
-        days: 1,
-        depo: 1000000,
-        mode: 0,
-        percentage: -12.5,
-        priceRange: [129.042, 132.006],
-        profitRatio: 60,
-        risk: 0.5,
-        scaleOffset: -2.6,
-      };
+    try {
+      let lastUpdated = save.dateUpdate || save.dateCreate;
+      console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
 
-      state.id = 0;
+      staticParsed = JSON.parse(save.static);
+      console.log("Parsed static", staticParsed);
+
+      const initialState = { ...this.initialState };
+
+      state.depo = staticParsed.depo || initialState.depo;
+
+      state.priceRange = staticParsed.priceRange || initialState.priceRange;
+
+      state.percentage = staticParsed.percentage || initialState.percentage;
+
+      state.profitRatio = staticParsed.profitRatio || initialState.profitRatio;
+
+      state.risk = staticParsed.risk || initialState.risk;
+
+      state.mode = staticParsed.mode || initialState.mode;
+
+      state.days = staticParsed.days || initialState.days;
+
+      state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
+
+      state.kodTable = staticParsed.kodTable || initialState.kodTable;
+      
+      // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
+      state.customTools = staticParsed.customTools || [];
+      state.customTools = state.customTools
+        .map(tool => Tools.create(tool, { investorInfo }));
+
+      state.currentToolCode = staticParsed.currentToolCode ||initialState.currentToolCode;
+
+      state.id = save.id;
       state.saved = true;
       state.loading = false;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
-    else {
-      try {
-        let lastUpdated = save.dateUpdate || save.dateCreate;
-        console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
+    catch (e) {
+      failed = true;
+      state = {
+        id: save?.id || 0,
+        saved: true
+      };
 
-        staticParsed = JSON.parse(save.static);
-        console.log("Parsed static", staticParsed);
-  
-        const initialState = { ...this.initialState };
-  
-        state.depo = staticParsed.depo || initialState.depo;
-  
-        state.priceRange = staticParsed.priceRange || initialState.priceRange;
-  
-        state.percentage = staticParsed.percentage || initialState.percentage;
-  
-        state.profitRatio = staticParsed.profitRatio || initialState.profitRatio;
-  
-        state.risk = staticParsed.risk || initialState.risk;
-  
-        state.mode = staticParsed.mode || initialState.mode;
-  
-        state.days = staticParsed.days || initialState.days;
-  
-        state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
-
-        state.kodTable = staticParsed.kodTable || initialState.kodTable;
-        
-        // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
-        state.customTools = staticParsed.customTools || [];
-        state.customTools = state.customTools
-          .map(tool => Tools.create(tool, { investorInfo }));
-  
-        state.currentToolCode = staticParsed.currentToolCode ||initialState.currentToolCode;
-  
-        state.id = save.id;
-        state.saved = true;
-        state.loading = false;
-        state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
-      }
-      catch (e) {
-        failed = true;
-        state = {
-          id: save.id,
-          saved: true
-        };
-  
-        onError(e);
-      }
+      onError(e);
     }
 
     state.investorInfo = { ...this.state.investorInfo };
@@ -1128,11 +1110,6 @@ class App extends React.Component {
     });
   }
 
-  getCurrentTool() {
-    const { tools, currentToolCode } = this.state;
-    return tools.find(tool => tool.code == currentToolCode) || Tools.create();
-  }
-
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools)
@@ -1155,10 +1132,13 @@ class App extends React.Component {
     const { currentToolCode } = this.state;
     return Tools.getToolIndexByCode(this.getTools(), currentToolCode);
   }
+
+  getCurrentTool() {
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.create();
+  }
   
   getToolByCode(code) {
-    const { tools } = this.state;
-    return tools.find(tool => tool.code == code) || Tools.create();
+    return Tools.getToolIndexByCode(this.getTools(), code);
   }
 
   /**
