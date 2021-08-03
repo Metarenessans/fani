@@ -36,7 +36,7 @@ const template = {
   currentPrice:    1,
   volume:          1,
   lotSize:         1,
-  dollarRate:      1,
+  dollarRate:      0,
   adrDay:          1,
   adrWeek:         1,
   adrMonth:        1,
@@ -369,12 +369,17 @@ class Tools {
 
     // Alphabetical sort
     let sorted = tools.sort((a, b) => {
-      const l = String(a.toString()).replace(/[\"\(\)\.]+/g, "").trim();
-      const r = String(b.toString()).replace(/[\"\(\)\.]+/g, "").trim();
+      const l = String(a.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
+      const r = String(b.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
 
       let res = 0;
-      for (let i = 0; i < Math.min(l.length,r.length); i++) {
+      for (let i = 0; i < Math.min(l.length, r.length); i++) {
+        if (l[i] == "-" || r[i] == "-") {
+          return -1;
+        }
+
         res = c(l[i]) - c(r[i]);
+
         if (res != 0) {
           break;
         }
@@ -465,20 +470,20 @@ class Tools {
       }),
       this.create({
         ref:             {},
-        fullName:        "Si-3.21",
+        fullName:        "Si-9.21",
         shortName:       "",
-        code:            "SiH1",
+        code:            "SiU1",
         stepPrice:       1,
         priceStep:       1,
         averageProgress: 0,
-        guarantee:       4783.9,
-        currentPrice:    73525,
+        guarantee:       4875.84,
+        currentPrice:    73429,
         volume:          0,
         lotSize:         1000,
         dollarRate:      0,
-        adrDay:          831,
-        adrWeek:         2198,
-        adrMonth:        5882,
+        adrDay:          918,
+        adrWeek:         1887,
+        adrMonth:        4362,
       }),
       this.create({
         ref:             {},
@@ -606,28 +611,47 @@ class Tools {
     if (!search || !tools.length) {
       return 0;
     }
-    
-    let index = tools.indexOf( 
-      tools.find( tool => 
-        tool.getSortProperty() == search || 
+
+    const alike = [];
+
+    let index = -1;
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+
+      if (
+        tool.toString()        == search ||
+        tool.getSortProperty() == search ||
         tool.code              == search
-      ) 
-    );
-    if (index > -1) {
-      return index;
+      ) {
+        return i;
+      }
+
+      // Текущий инструмент - фьючерс
+      if (tool.dollarRate == 0) {
+        if (tool.code.slice(0, 2).toLowerCase() == search.slice(0, 2).toLowerCase()) {
+          alike.push(tool);
+        }
+      }
+
+      // Если в id есть месяц и год, то можно начать искать ближайший
+      const regexp = /\d{1,2}\.\d{1,2}/;
+      const found = regexp.exec(search);
+      if (found) {
+        // Находим все инструменты с одинаковым кодом
+        let alike = [...tools].filter(tool =>
+          tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
+        );
+
+        const sorted = this.sort(alike.map(t => t.getSortProperty()).concat(search));
+        index = tools.indexOf(alike[0]) + sorted.indexOf(sorted.find(n => n == search));
+      }
     }
 
-    // Если в id есть месяц и год, то можно начать искать ближайший
-    const regexp = /\d{1,2}\.\d{1,2}/;
-    const found = regexp.exec(search);
-    if ( found ) {
-      // Находим все инструменты с одинаковым кодом
-      let alike = [ ...tools ].filter(tool => 
-        tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
-      );
-
-      const sorted = this.sort( alike.map(t => t.getSortProperty()).concat(search) );
-      index = tools.indexOf( alike[0] ) + sorted.indexOf( sorted.find( n => n == search ) );
+    if (index == -1 && alike.length) {
+      const toolsSorted = this.sort(alike);
+      const s = toolsSorted[0].toString();
+      return this.getToolIndexByCode(tools, s);
     }
 
     return Math.max(index, 0);

@@ -121,6 +121,9 @@ test("properly finds tool index by code", () => {
     "BR-1.21",
     "BR-3.21",
     "BR-6.21",
+    "BRU1",
+    "BRV1",
+    "BRX1",
   ];
   const tools = codes.map(code => Tools.create({ code }));
 
@@ -157,6 +160,18 @@ test("properly finds tool index by code", () => {
     Tools.getToolIndexByCode( tools, "BR-6.21" )
   );
   result.toEqual(8);
+  result.not.toEqual(-1);
+  
+  result = expect( Tools.getToolIndexByCode(tools, "BRQ1") );
+  result.toEqual(codes.indexOf("BRU1"));
+  result.not.toEqual(-1);
+
+  result = expect( Tools.getToolIndexByCode(tools, "BRU1") );
+  result.toEqual(codes.indexOf("BRU1"));
+  result.not.toEqual(-1);
+
+  result = expect( Tools.getToolIndexByCode(tools, "BRX1") );
+  result.toEqual(codes.indexOf("BRX1"));
   result.not.toEqual(-1);
 
 });
