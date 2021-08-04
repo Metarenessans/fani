@@ -897,7 +897,8 @@ class App extends React.Component {
           <Dialog
             id="dashboard-config"
             title={data[lineConfigIndex || 0].toolType}
-            confirmText={"Удалить"}
+            // confirmText={"Удалить"}
+            confirmText={"Сохранить"}
             onConfirm={() => {
               return true;
             }}

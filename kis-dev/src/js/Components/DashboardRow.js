@@ -121,7 +121,7 @@ export default class DashboardRow extends React.Component {
     // итог от активных инвестиций в зависимости от входящего периода
     const personalInvestProfitVal = period => {
       return (
-        extRateReal(depo, null, allMonthOutCome, 30, monthAppend, 30, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
+        extRateReal(depo, null, allMonthOutCome, 21, monthAppend, 21, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
       )
     }
 
@@ -263,11 +263,11 @@ export default class DashboardRow extends React.Component {
               className="dashboard__input"
               defaultValue={
                 toolType == "Трейдинг" ?
-                  (ofzProfit / 12) :
+                  round( (ofzProfit / 12), 2) :
                   (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome, 2) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}
-              onBlur={value => onChange("rentIncome", value)}
+              onBlur={value => onChange( "rentIncome", round(value, 2) )}
               format={formatNumber}
               unsigned="true"
               min={0}
