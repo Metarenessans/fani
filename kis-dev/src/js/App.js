@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom'
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import Config from "../../../common/components/config"
 import CustomSelect from "../../../common/components/custom-select"
+import afterDecimalNumbers from "./utils/after-decimal-numbers"
 
 import {
   Row,
@@ -1060,21 +1061,21 @@ class App extends React.Component {
                               {/* </Tooltip> */}
                             </span>
                           </span>
-
+                          
                           <span className="dashboard-val dashboard-col--rate">
                             <NumericInput
                               key={Math.random()}
                               className="dashboard__input" 
-                              defaultValue={activeInvestVal == 0.03? 0.03 : activeInvestVal * 100}
+                              defaultValue={activeInvestVal}
                               onBlur={value => {
                                 const dataCopy = [...data];
-                                dataCopy[lineConfigIndex].activeInvestVal = value / 100;
+                                dataCopy[lineConfigIndex].activeInvestVal = value;
                                 this.setState({ data: dataCopy, changed: true });
                               }}
                               unsigned="true"
                               format={formatNumber}
                               min={0}
-                              max={100}
+                              max={1}
                               suffix={"%"}
                             />
                           </span>

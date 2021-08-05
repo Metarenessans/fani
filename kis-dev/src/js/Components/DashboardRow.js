@@ -97,13 +97,13 @@ export default class DashboardRow extends React.Component {
     let monthPercent = 0.007
 
     // упущенная прибыль
-    const lostProfit = ( ( firstPay - (rentIncome - monthPay) ) / 12 ) * profitPercent
+    const lostProfit = -round((firstPay - (rentIncome - monthPay)) / 12 * profitPercent)
+
+    // ежемесячный баланс
+    let monthBalance = rentIncome - monthPay
 
     // баланс по итогу месяца
-    const monthEndSum = round((rentIncome - monthPay - lostProfit) - monthOutcome + monthAppend, 2)
-    
-    //годовая прибыль от ОФЗ
-    const ofzProfit = depo * ofzVal
+    const monthEndSum = round((lostProfit + monthBalance) + (-monthOutcome) + monthAppend)
 
     // аннуитетный месячный платёж
     const annuitetMonthPay =
@@ -125,13 +125,40 @@ export default class DashboardRow extends React.Component {
       )
     }
 
+    // const lostProfitEndVal = period => {
+    //   return (
+    //     extRateReal(depo - firstPay, null, allMonthOutCome, 30, monthAppend, 30, period * 12, 1, 1, 0, {}, { customRate: 0.04 }).sum 
+    //   )
+    // }
+
+    // console.log(lostProfitEndVal());
+
+
+    /** ОФЗ
+     * возвращает итоговую сумму
+     * @period      период   (количество итераций)
+     * @outcome     boolean, все выводы
+     * @append      boolean, все пополнения
+     * @clearProfit boolean, чистая прибыль от офз
+    */
+    const resultOfz = (period, outcome, append, clearProfit) => {
+      return (
+        (extRateReal(depo, null, 
+          outcome ? allMonthOutCome : 0, outcome ? 21 : 0,
+          append  ? monthAppend     : 0, append  ? 21 : 0,
+          period, 1, 1, 0, {}, 
+          { customRate: ofzVal }
+        ).sum) - (clearProfit ? depo : 0)
+      )
+    }
+
     /** инструмент -"Трейдинг"
      * возвращает итоговую сумму
      * @activeInvestPeriod принимает в себя значение в днях
      * @months             принимает 1 месяц / либо 12 месяцев
     */
     const tradeFinalVal = (activeInvestPeriod, months) => {
-      const { activeInvestVal, ofzVal, depo } = item
+      const { activeInvestVal, ofzVal } = item
       
       if (ofzVal == 0 && activeInvestVal == 0) {
         return 0
@@ -140,27 +167,33 @@ export default class DashboardRow extends React.Component {
       else {
         if (ofzVal > 0 && activeInvestVal > 0) {
           return (
-            months == 1?
-              // значение месячного итога
-              personalInvestProfitVal(activeInvestPeriod) + (ofzProfit / 12) :
-              // значение итога за весь период
-              personalInvestProfitVal(activeInvestPeriod) + (ofzProfit * period)
+            round(
+              months == 1 ?
+                // значение месячного итога
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true) :
+                // значение итога за весь период
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true)
+            )
           )
         }
 
         // есть только офз
         else if (ofzVal > 0 && activeInvestVal == 0) {
           return (
-            months == 1 ?
-              (depo - allMonthOutCome) + (ofzProfit / 12) :
-              ( depo - ((allMonthOutCome * 12) * period) ) + (ofzProfit * period)
+            round(
+              months == 1 ?
+                resultOfz(1, false, false, false) :
+                resultOfz(period, false, false, false)
+            )
           )
         }
 
         // есть только активные инвестиции
         else if (ofzVal == 0 && activeInvestVal > 0) {
           return (
-            personalInvestProfitVal(activeInvestPeriod)
+            round (
+              personalInvestProfitVal(activeInvestPeriod)
+            )
           )
         }
       }
@@ -263,7 +296,7 @@ export default class DashboardRow extends React.Component {
               className="dashboard__input"
               defaultValue={
                 toolType == "Трейдинг" ?
-                  round( (ofzProfit / 12), 2) :
+                  round( resultOfz(1, false, false, true) ) :
                   (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome, 2) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}
@@ -338,8 +371,8 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val dashboard-col--main">
             {formatNumber(round(toolType !== "Недвижимость" ?
               (toolType == "Вклад" ? contributionFinalVal.firstMonthTotalResult : tradeFinalVal(260 / 12, 1) ) :
-              monthEndSum
-            , 2) ) }
+              monthEndSum) 
+            ) }
           </span>
  
         </div>
@@ -358,10 +391,11 @@ export default class DashboardRow extends React.Component {
             <span className="dashboard__input">
               {
                 formatNumber(
-                  round( toolType !== "Недвижимость"?
-                    (toolType == "Вклад" ? contributionFinalVal.total : tradeFinalVal(260 * period, 12)) :
-                    monthEndSum * (period * 12)
-                  , 2)
+                  round(
+                    toolType !== "Недвижимость"?
+                      (toolType == "Вклад" ? contributionFinalVal.total : tradeFinalVal(260 * period, 12)) :
+                      monthEndSum * (period * 12)
+                  )
                 )
               }
             </span>
