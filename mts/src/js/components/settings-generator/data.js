@@ -9,6 +9,15 @@ import stepConverter from './step-converter'
 
 const createData = (type, options, meta) => {
 
+  const TYPE_CLOSING_MAIN      = "Закрытие основного депозита";
+  const TYPE_CLOSING_SECONDARY = "Закрытие плечевого депозита";
+  const TYPE_TOR               = "Обратные докупки (ТОР)";
+
+  const IS_CLOSING_MAIN      = type == TYPE_CLOSING_MAIN;
+  const IS_CLOSING_SECONDARY = type == TYPE_CLOSING_SECONDARY;
+  const IS_CLOSING_ARR = [TYPE_CLOSING_MAIN, TYPE_CLOSING_SECONDARY].indexOf(type) != -1;
+  const IS_TOR = type == TYPE_TOR;
+
   const optionsCopy = {...options};
 
   let {
@@ -33,7 +42,7 @@ const createData = (type, options, meta) => {
   if (contractsSecondary > 0) {
     contracts -= contractsSecondary;
   }
-  if (type == "Закрытие плечевого депозита") {
+  if (IS_CLOSING_SECONDARY) {
     contracts = contractsSecondary;
   }
   
@@ -57,13 +66,11 @@ const createData = (type, options, meta) => {
   }
 
   const isSMS_TOR = false;
-    // currentPreset.type == "СМС + ТОР" &&
-    // ["Обратные докупки (ТОР)", "Прямые профитные докупки"].indexOf(type) > -1;
 
-  const stepsToPercentConverter = currentPreset.type == "Лимитник" && type == "Закрытие основного депозита"
+  const stepsToPercentConverter = currentPreset.type == "Лимитник" && IS_CLOSING_MAIN
     ? stepConverter.complexFromStepsToPercent
     : stepConverter.fromStepToPercents;
-  const percentToStepsConverter = currentPreset.type == "Лимитник" && type == "Закрытие основного депозита"
+  const percentToStepsConverter = currentPreset.type == "Лимитник" && IS_CLOSING_MAIN
     ? stepConverter.complexFromPercentToSteps
     : stepConverter.fromPercentsToStep;
 
@@ -89,6 +96,77 @@ const createData = (type, options, meta) => {
   if (!on || contracts == 0) {
     return data;
   }
+
+  const updateContracts = (c, data, index) => {
+    const row = data[index];
+
+    if (c != null) {
+      row.contracts = c;
+    }
+
+    let contractsForCalcs = row.contracts;
+    if (IS_CLOSING_ARR) {
+      contractsForCalcs = row.contracts + row.contractsLoaded;
+    }
+
+    if (IS_TOR) {
+      contractsForCalcs = options.contracts;
+    }
+
+    if (type == "Прямые профитные докупки") {
+      contractsForCalcs = row.contractsLoaded;
+    }
+
+    let _comission = contractsForCalcs * comission;
+    // Если выбрана акция 
+    if (currentTool.dollarRate >= 1) {
+      _comission = comission;
+
+      if (index == 0) {
+        _comission *= 2;
+      }
+    }
+
+    let basicPureIncome = row.contracts * (row.points / currentTool.priceStep * currentTool.stepPrice);
+
+    let incomeWithoutComission = contractsForCalcs * (row.points / currentTool.priceStep * currentTool.stepPrice);
+
+    if ((IS_CLOSING_ARR || IS_TOR) && index > 0) {
+      const prevRows = data.slice(0, index);
+      for (let prevRow of prevRows) {
+        incomeWithoutComission += prevRow.basicPureIncome;
+      }
+    }
+
+    /* Прибыль / убыток */
+
+    let prevComission = data[index - 1]?.incomeWithoutComission || 0;
+    // NOTE: В закрытии осноного и плечевого депозита убытки не суммируются, там используется другой алгоритм
+    if (IS_CLOSING_ARR || IS_TOR) {
+      prevComission = 0;
+    }
+    // Прибавляем доход/убыток из предыдущей строки
+    incomeWithoutComission += prevComission;
+
+    /* Комиссия */
+    
+    let comissionsSum = data
+      .slice(0, index)
+      .map(row => row.comission)
+      .reduce((prev, curr) => prev + curr, 0);
+    comissionsSum += _comission;
+    
+    /* Прибыль / убыток с учетом комиссии */
+
+    let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
+
+    row.comission              = _comission;
+    row.basicPureIncome        = basicPureIncome;
+    row.incomeWithoutComission = incomeWithoutComission;
+    row.incomeWithComission    = incomeWithComission;
+
+    return row;
+  };
 
   if (isSMS_TOR) {
     // Инпут "% докупки" пустой
@@ -315,7 +393,7 @@ const createData = (type, options, meta) => {
       // Если ход больше желаемого хода - массив заканчивается
       if (
         !(currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") &&
-        !(currentPreset.type == "СМС + ТОР" && type == "Закрытие плечевого депозита") &&
+        !(currentPreset.type == "СМС + ТОР" && IS_CLOSING_SECONDARY) &&
         !(isSMS_TOR) &&
         (mode != 'fibonacci' && mode != 'custom') &&
         points > (preferredStep || currentTool.adrDay)
@@ -367,40 +445,63 @@ const createData = (type, options, meta) => {
         shouldBreak = true;
       }
 
-      let contractsForCalcs = _contracts;
-      if (!closeAll && ["Закрытие основного депозита", "Закрытие плечевого депозита"].indexOf(type) != -1) {
-        contractsForCalcs = _contracts + contractsLoaded;
-      }
+      if (false) {
 
-      if (type == "Обратные докупки (ТОР)") {
-        contractsForCalcs = _contracts + options.contracts;
-      }
-
-      if (type == "Прямые профитные докупки") {
-        contractsForCalcs = contractsLoaded;
-      }
-
-      let _comission = contractsForCalcs * comission;
-      // Если выбрана акция 
-      if (currentTool.dollarRate >= 1) {
-        _comission = comission;
-
-        if (subIndex == 0) {
-          _comission *= 2;
+        let contractsForCalcs = _contracts;
+        if (IS_CLOSING_ARR) {
+          contractsForCalcs = _contracts + contractsLoaded;
         }
+  
+        if (IS_TOR) {
+          contractsForCalcs = options.contracts;
+        }
+  
+        if (type == "Прямые профитные докупки") {
+          contractsForCalcs = contractsLoaded;
+        }
+  
+        let _comission = contractsForCalcs * comission;
+        // Если выбрана акция 
+        if (currentTool.dollarRate >= 1) {
+          _comission = comission;
+  
+          if (subIndex == 0) {
+            _comission *= 2;
+          }
+        }
+  
+        let basicPureIncome = _contracts * (points / currentTool.priceStep * currentTool.stepPrice);
+  
+        let incomeWithoutComission = contractsForCalcs * (points / currentTool.priceStep * currentTool.stepPrice);
+        if ((IS_CLOSING_ARR || IS_TOR) && subIndex > 0) {
+          const prevRows = data.slice(0, subIndex);
+          for (let row of prevRows) {
+            incomeWithoutComission += row.basicPureIncome;
+          }
+        }
+  
+        /* Прибыль / убыток */
+  
+        let prevComission = data[subIndex - 1]?.incomeWithoutComission || 0;
+        // NOTE: В закрытии осноного и плечевого депозита убытки не суммируются, там используется другой алгоритм
+        if (IS_CLOSING_ARR || IS_TOR) {
+          prevComission = 0;
+        }
+        // Прибавляем доход/убыток из предыдущей строки
+        incomeWithoutComission += prevComission;
+  
+        /* Комиссия */
+        
+        let comissionsSum = data
+          .slice(0, subIndex)
+          .map(row => row.comission)
+          .reduce((prev, curr) => prev + curr, 0);
+        comissionsSum += _comission;
+        
+        /* Прибыль / убыток с учетом комиссии */
+  
+        let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
       }
-
-      let incomeWithoutComission = contractsForCalcs * (points / currentTool.priceStep) * currentTool.stepPrice;
-      // Прибавляем доход/убыток из предыдущей строки
-      incomeWithoutComission += data[subIndex - 1]?.incomeWithoutComission || 0;
-      
-      let comissionsSum = data
-        .slice(0, subIndex)
-        .map(row => row.comission)
-        .reduce((prev, curr) => prev + curr, 0);
-      comissionsSum += _comission;
-      
-      let incomeWithComission = incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
 
       data[subIndex] = {
         inPercent,
@@ -408,9 +509,10 @@ const createData = (type, options, meta) => {
         points,
         contracts: _contracts,
         contractsLoaded,
-        incomeWithoutComission,
-        comission: _comission,
-        incomeWithComission,
+        // basicPureIncome,
+        // incomeWithoutComission,
+        // comission: _comission,
+        // incomeWithComission,
       };
 
       if (mode == 'custom') {
@@ -420,6 +522,8 @@ const createData = (type, options, meta) => {
         };
       }
 
+      data[subIndex] = updateContracts(null, data, subIndex);
+
       if (shouldBreak) {
         break;
       }
@@ -428,37 +532,6 @@ const createData = (type, options, meta) => {
     if (shouldBreak) {
       break;
     }
-  }
-
-  const updateContracts = (c, data, index) => {
-    const row = data[index];
-
-    row.contracts = c;
-
-    // Пересчитываем комиссию
-    row.comission = row.contracts * comission;
-    // Если выбрана акция 
-    if (currentTool.dollarRate >= 1) {
-      row.comission = comission;
-
-      if (index == 0) {
-        row.comission *= 2;
-      }
-    }
-
-    row.incomeWithoutComission = row.contracts * row.points / currentTool.priceStep * currentTool.stepPrice;
-    // Прибавляем доход/убыток из предыдущей строки
-    row.incomeWithoutComission += data[index - 1]?.incomeWithoutComission || 0;
-
-    let comissionsSum = data
-      .slice(0, index)
-      .map(row => row.comission)
-      .reduce((prev, curr) => prev + curr, 0);
-    comissionsSum += row.comission;
-
-    row.incomeWithComission = row.incomeWithoutComission + (comissionsSum * (isBying ? 1 : -1));
-
-    return row;
   }
 
   // Массив профитных докупок сливается с основным массивом
