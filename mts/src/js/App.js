@@ -179,10 +179,7 @@ class App extends React.Component {
 
     fetch(method, "GET", body)
       .then(response => {
-        const { currentToolCode } = this.state;
         const { data } = response;
-        
-        console.log('Got answer from' + method + " for " + code + ":", currentToolCode);
         return this.setStateAsync({ data, loadingChartData: false });
       })
       .catch(error => this.showAlert(`Не удалось получить график для ${code}: ${error}`));
