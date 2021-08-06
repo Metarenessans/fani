@@ -1706,8 +1706,6 @@ class App extends React.Component {
                       data={data}
                       days={days}
                       onRendered={() => {
-                        // console.log("Chart has been rendered");
-
                         const { percentage, priceRange, scaleOffset, days } = this.state;
                         const isLong = percentage >= 0;
                         const possibleRisk = getPossibleRisk();

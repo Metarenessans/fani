@@ -72,13 +72,6 @@ class Chart extends Component {
     // create a data table
     dataTable = anychart.data.table();
     dataTable.addData(dataParsed);
-    // dataTable.addData([
-    //   ['2016-04-01', 18.23],
-    //   ['2016-04-02', 19.50],
-    //   ['2016-04-03', 19.13],
-    //   ['2016-04-06', 18.54],
-    //   ['2016-04-07', 18.76]
-    // ]);
 
     // map the data
     mapping = dataTable.mapAs({ value: 1 });
@@ -89,10 +82,6 @@ class Chart extends Component {
     // create a plot and a line series
     series = chart.plot(0).line(mapping);
     series.name("Price");
-    // chart.plot(0).legend().titleFormat(
-    //   "<span style='color:#455a64;font-weight:600'>" +
-    //   "DATE: {%value}{dateTimeFormat: dd MMM yyyy}</span>"
-    // );
 
     // get a plot scale
     yScale = chart.plot(0).yScale();
@@ -101,7 +90,6 @@ class Chart extends Component {
     minChartValue = min;
     yScale.maximum(max);
     maxChartValue = max;
-
 
     // access the annotations() object of the plot to work with annotations
     var controller = chart.plot(0).annotations();
@@ -139,16 +127,12 @@ class Chart extends Component {
       return;
     }
 
-    // console.log('did mount');
-
     anychart.onDocumentReady(() => {
       this.update();
     });
   }
   
   componentWillUnmount() {
-    // console.log("unmounting");
-
     const chartHTML = document.getElementById("chart");
     if (chartHTML) {
       chartHTML.innerHTML = "";
