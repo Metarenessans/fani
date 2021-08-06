@@ -346,7 +346,17 @@ export default function CodePanel(props) {
         if (data["Обратные докупки (ТОР)"]?.on) {
           condition = false;
         }
-        return renderLine("Риск", "depo_stop", `{${!condition ? round(risk, 3) : 0},${condition ? round(risk, 3) : 0}}`)
+
+        if (currentPreset.type == "Лимитник") {
+          return renderLine("Риск", "depo_stop", `{${!condition ? risk : 0},${condition ? risk : 0}}`)
+        }
+
+        return (
+          <>
+            {renderLine("Риск",  "rastop", condition ? risk : 0)}
+            {renderLine(null, "depo_stop", condition ? 0 : risk)}
+          </>
+        )
       })()}
 
       {(() => {
