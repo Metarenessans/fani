@@ -1203,6 +1203,7 @@ const SettingsGenerator = props => {
                         /
                         (contracts || 1)
                       }
+                      min={currentTool.priceStep}
                       format={value => formatNumber(filterStep(value))}
                       unsigned="true"
                       onBlur={riskInSteps => {
