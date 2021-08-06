@@ -1,13 +1,21 @@
-const path = require("path");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+/** @type {import("webpack").Configuration} */
+
 const webpack = require("webpack");
+
+const path = require("path");
+const sass = require("sass");
+const postcss = require("postcss");
+/* Plugins */
+const CopyPlugin = require("copy-webpack-plugin");
+
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
 
   const entry = "./src/js/index.js";
   const output = "index";
-  const devtool = prod ? "source-map" : "eval-sourcemap";
+  const devtool = prod ? "source-map" : "eval-source-map";
   const publicPath = "public";
 
   // Rules
@@ -19,27 +27,23 @@ module.exports = (env, options) => {
     {
       loader: "postcss-loader",
       options: {
-        plugins: [
-          require("postcss-custom-properties")(),
-          require("autoprefixer")({
-            overrideBrowserslist: ["ie >= 8", "last 4 version"]
-          }),
-          require("postcss-csso"),
-        ],
+        postcssOptions: {
+          plugins: [
+            require("postcss-custom-properties")({ preserve: true }),
+            require("autoprefixer")(),
+            // require("cssnano")()
+          ],
+        },
         sourceMap: true
       }
     },
     "resolve-url-loader",
-    // Compiles Sass to CSS
+    // Compiles SASS to CSS
     {
       loader: "sass-loader",
       options: {
-        prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
         webpackImporter: false,
-        sassOptions: {
-          // publicPath: "./",
-          // outputStyle: "expanded",
-        },
+        sassOptions: { outputStyle: "expanded" },
       },
     }
   ];
@@ -47,7 +51,7 @@ module.exports = (env, options) => {
   const fontRule = {
     test: /\.(woff|woff2|eot|ttf|otf)$/,
     loader: "file-loader",
-    query: {
+    options: {
       name: "[path][name].[ext]"
     }
   };
@@ -55,68 +59,36 @@ module.exports = (env, options) => {
   const imageRule = {
     test: /\.(png|jpe?g|gif|webp)$/,
     loader: "file-loader",
-    query: {
+    options: {
       name: "[path][name].[ext]"
     }
   };
 
   const plugins = [
     new webpack.DefinePlugin({ dev: !prod }),
-    new ExtractTextPlugin("css/style.css"),
+    new MiniCssExtractPlugin({ filename: "css/style.css" }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: "src/index.html",
+          to: path.resolve(__dirname, publicPath)
+        }
+      ],
+    }),
   ];
-
-  const old = {
-    entry,
-    output: {
-      path: path.resolve(__dirname, publicPath),
-      filename: `${output}.js`,
-      publicPath
-    },
-    module: {
-      rules: [
-        {
-          test: /\.js$/,
-          exclude: "/node_modules/",
-          use: {
-            loader: "babel-loader",
-            options: {
-              presets: [
-                "@babel/preset-env",
-                "@babel/preset-react"
-              ]
-            }
-          }
-        },
-        {
-          test: /\.s[ac]ss$/i,
-          use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
-            : ["style-loader"].concat(cssPipeline)
-        },
-        fontRule,
-        imageRule,
-      ]
-    },
-    plugins
-  };
 
   const modern = {
     entry,
     devtool,
     output: {
       path: path.resolve(__dirname, publicPath),
-      filename: `${output}-es6.js`,
+      filename: `js/${output}-es6.js`,
       publicPath
     },
     devServer: {
-      contentBase: path.join(__dirname, ""),
-      overlay: true,
-      hot: true,
+      port: 3000,
+      contentBase: path.join(__dirname, publicPath),
+      writeToDisk: true,
       //host: '192.168.0.129'
     },
     module: {
@@ -136,12 +108,7 @@ module.exports = (env, options) => {
         {
           test: /\.s[ac]ss$/i,
           use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
+            ? [MiniCssExtractPlugin.loader,].concat(cssPipeline)
             : ["style-loader"].concat(cssPipeline)
         },
         fontRule,
@@ -151,5 +118,23 @@ module.exports = (env, options) => {
     plugins
   };
 
-  return [prod && old, modern].filter(value => !!value)
+  if (prod) {
+    const old = { ...modern };
+
+    old.output.filename = `js/${output}.js`;
+
+    old.module.rules = old.module.rules.map(rule => {
+      if (String(rule.test) == "/\\.js$/") {
+        rule.use.options?.presets?.push("@babel/preset-env");
+      }
+      return rule;
+    });
+
+    delete old.devtool;
+    delete old.devServer;
+
+    return [modern, old];
+  }
+
+  return modern;
 };
