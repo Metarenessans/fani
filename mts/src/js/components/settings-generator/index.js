@@ -33,10 +33,10 @@ import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import createData    from './data'
 
-import round          from '../../../../../common/utils/round'
-import isEqual        from '../../../../../common/utils/is-equal'
-import formatNumber   from '../../../../../common/utils/format-number'
-import fractionLength from '../../../../../common/utils/fraction-length'
+import round           from '../../../../../common/utils/round'
+import formatNumber    from '../../../../../common/utils/format-number'
+import fractionLength  from '../../../../../common/utils/fraction-length'
+import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
 import { keys } from 'lodash'
 import stepConverter from './step-converter'
 
@@ -65,7 +65,7 @@ const SettingsGenerator = props => {
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
   const prevCurrentTab = useRef();
 
-  const defaultToolCode = dev ? "SBER" : "SBER";
+  const defaultToolCode = dev ? "SiU1" : "SBER";
   const [presets, setPresets] = useState([
     {
       name: "Стандарт",
@@ -97,24 +97,24 @@ const SettingsGenerator = props => {
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Закрытие плечевого депозита": {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Прямые профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
@@ -126,18 +126,18 @@ const SettingsGenerator = props => {
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
           closeAll: false,
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Стандарт" : "Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Лимитник" : "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -148,6 +148,12 @@ const SettingsGenerator = props => {
   const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
 
+  const filterStep = step => {
+    return fraction > 0
+      ? round(step, fraction)
+      : magnetToClosest(step, currentTool.priceStep);
+  };
+
   const [searchVal, setSearchVal] = useState("");
   const [isLong, setIsLong] = useState(true);
   const [risk, setRisk] = useState(100);
@@ -155,7 +161,7 @@ const SettingsGenerator = props => {
   const [comission, setComission] = useState(currentTool.dollarRate == 0 ? 1 : 45);
   const [load, setLoad] = useState(dev ? 50 : props.load || 0);
 
-  const [investorDepo, setInvestorDepo] = useState(props.depo || 1_000_000);
+  const [investorDepo, setInvestorDepo] = useState(dev ? 20_000_000 : props.depo || 1_000_000);
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -520,7 +526,7 @@ const SettingsGenerator = props => {
 
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
-    setReversedBying(currentPreset.type == "СМС + ТОР");
+    setReversedBying(dev || currentPreset.type == "СМС + ТОР");
 
     setShouldRegisterUpdate(true);
 
@@ -1179,7 +1185,7 @@ const SettingsGenerator = props => {
                         }
                         setRisk(value)
                       }}
-                      suffix="%"
+                      suffix={<Tooltip title="Процент от депозита">%</Tooltip>}
                     />
                   </div>
 
@@ -1197,12 +1203,8 @@ const SettingsGenerator = props => {
                         /
                         (contracts || 1)
                       }
-<<<<<<< HEAD
                       min={currentTool.priceStep}
                       format={value => formatNumber(filterStep(value))}
-=======
-                      format={value => formatNumber(Math.floor(value))}
->>>>>>> parent of ced4dba3 (webpack update)
                       unsigned="true"
                       onBlur={riskInSteps => {
                         setRisk(
@@ -1219,7 +1221,7 @@ const SettingsGenerator = props => {
                           100
                         );
                       }}
-                      suffix="$/₽"
+                      suffix={<Tooltip title="Ход цены от точки входа">$/₽</Tooltip>}
                     />
                   </label>
 
@@ -1235,6 +1237,7 @@ const SettingsGenerator = props => {
                         setRisk(riskInMoney / depoSum * 100);
                       }}
                       suffix="₽"
+                      suffix={<Tooltip title="Сумма риска в рублях">₽</Tooltip>}
                     />
                   </label>
 
