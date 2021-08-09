@@ -252,13 +252,13 @@ export const NanniBot = () => {
         onClick={() => botInit()}
         className="nanni-btn"
       >
-        <img className="bot-icon" src={`../../../public/img/nanni.png`}/>
+        <img className="bot-icon" src={`public/img/nanni.png`}/>
         Talk to NANNI Bot
       </Button>
       <div className="nanni-chat">
         <div className="chat-header">
           <div className={`new-messages ${haveUnread ? "unread" : ""}`}>
-            <img className="bot-icon" src={`../../../public/img/nanni.png`} />
+            <img className="bot-icon" src={`public/img/nanni.png`}/>
           </div>
           <div className="info">
             <div className="name">NANNI Bot</div>
@@ -309,7 +309,7 @@ export const NanniBot = () => {
                   } ${message.hasOwnProperty("printed") ? "printed" : ""}`}
                 >
                   <div className="icon">
-                    <img className="bot-icon" src={`../../../public/img/nanni.png`}/>
+                    <img className="bot-icon" src={`public/img/nanni.png`}/>
                   </div>
                   <div className="content">
                     <div className="question-header">
