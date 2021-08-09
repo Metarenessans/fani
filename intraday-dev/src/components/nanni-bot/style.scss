@@ -1,16 +1,16 @@
 @font-face {
   font-family: "SF Pro Display";
-  src: url("../../fonts/SFProDisplay-Bold.ttf");
+  src: url("../../../public/fonts/SFProDisplay-Bold.ttf");
   font-weight: 600;
 }
 @font-face {
   font-family: "SF Pro Display";
-  src: url("../../fonts/SFProDisplay-Regular.ttf");
+  src: url("../../../public/fonts/SFProDisplay-Regular.ttf");
   font-weight: 400;
 }
 @font-face {
   font-family: "SF Pro Display";
-  src: url("../../fonts/SFProDisplay-Medium.ttf");
+  src: url("../../../public/fonts/SFProDisplay-Medium.ttf");
   font-weight: 500;
 }
 
@@ -22,7 +22,7 @@
   width: 250px;
   height: 55px;
   font-family: "SF Pro Display";
-  transition: all 0.3s ease-out;
+  transition: all 0.8s ease-out;
   -webkit-transition: all 0.3s ease-out;
 
   p {
@@ -48,9 +48,10 @@
     border: 1px solid lightgray;
     background-color: #fafbff;
     color: #2b303c;
-    font-size: 19px;
+    font-size:  19px;
     font-weight: 600;
   }
+
   .nanni-btn:hover,
   .nanni-btn:focus {
     background-color: #fafbff;
@@ -112,8 +113,8 @@
   }
   .chat-header .close-session {
     font-size: 0.85em;
-    border: none;
-    box-shadow: none;
+    border:      none;
+    box-shadow:  none;
     line-height: 1.25;
   }
   .chat-header .botTyping {
@@ -190,10 +191,10 @@
     }
   }
   .fade-in-left {
-    animation: fadeInLeft 0.5s;
-    -webkit-animation: fadeInLeft 0.5s;
+    animation: fadeInLeft 1.3s;
+    -webkit-animation: fadeInLeft 1.3s;
     animation-fill-mode: forwards;
-    animation-delay: 0.4s;
+    animation-delay: 0s;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: transform, opacity;
@@ -364,6 +365,7 @@
       opacity: 0;
       transform: translateY(-100%);
     }
+    
   }
   @keyframes removeHeight {
     100% {
@@ -378,10 +380,15 @@
   }
 }
 
+.bot-icon {
+  max-height: 2.9em;
+}
+
 @media (max-width: 767px) {
   .nanni {
     width: 20em;
     height: 4em;
+
     &.active {
       max-width: initial;
       max-height: initial;
@@ -396,9 +403,14 @@
     .nanni-btn {
       font-size: 20px;
     }
-    .nanni-btn img {
-      width: 45px;
-    }
+    // .nanni-btn img {
+    //   max-width : 45px;
+    //   max-height: 45px;
+    // }
+    // .bot-icon {
+    //   max-width : 45px;
+    //   max-height: 45px;
+    // }
     .chat-header .name {
       font-size: 1.4em;
     }

@@ -1,26 +1,47 @@
 @import "~antd/dist/antd.css";
-@import "../../common/sass/header-fix";
+// ~~~
+// @import "../../common/sass/header-fix";
 
 @font-face {
   font-family: "Circe";
-  src: url("fonts/Circe-Light.woff");
+  src: url("../public/fonts/Circe-Light.woff");
   font-weight: 300;
 }
 @font-face {
   font-family: "Circe";
-  src: url("fonts/Circe-Regular.ttf");
+  src: url("../public/fonts/Circe-Regular.ttf");
   font-weight: normal;
 }
 @font-face {
   font-family: "Circe";
-  src: url("fonts/Circe-Bold.ttf");
+  src: url("../public/fonts/Circe-Bold.ttf");
   font-weight: bold;
 }
 @font-face {
   font-family: "Ralington";
-  src: url("fonts/Ralington.otf");
+  src: url("../public/fonts/Ralington.otf");
   font-weight: normal;
 }
+// @font-face {
+//   font-family: "Circe";
+//   src: url("../public/fonts/Circe-Light.woff");
+//   font-weight: 300;
+// }
+// @font-face {
+//   font-family: "Circe";
+//   src: url("../public/fonts/Circe/Circe-Regular.ttf");
+//   font-weight: normal;
+// }
+// @font-face {
+//   font-family: "Circe";
+//   src: url("../public/fonts/Circe/Circe-Bold.ttf");
+//   font-weight: bold;
+// }
+// @font-face {
+//   font-family: "Ralington";
+//   src: url("../public/fonts/Ralington.otf");
+//   font-weight: normal;
+// }
 
 $blue: #4859b4;
 $light-blue: #f4f7fb;

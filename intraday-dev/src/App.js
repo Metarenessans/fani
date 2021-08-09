@@ -1,3 +1,6 @@
+import React from "react"
+import ReactDOM from "react-dom"
+
 import { PriceMove } from "./components/PriceMove";
 import { DataInputs } from "./components/DataInputs";
 import { LoadTables } from "./components/LoadTables";

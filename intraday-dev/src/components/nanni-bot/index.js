@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "antd";
 
-import NanniLogo from "../../image/nanni.svg";
+// import NanniLogo from "../../image/nanni.png";
+
 import { CloseOutlined } from "@ant-design/icons";
 import "./style.scss";
 
@@ -251,13 +252,13 @@ export const NanniBot = () => {
         onClick={() => botInit()}
         className="nanni-btn"
       >
-        <img src={NanniLogo} />
+        <img className="bot-icon" src={`../../../public/img/nanni.png`}/>
         Talk to NANNI Bot
       </Button>
       <div className="nanni-chat">
         <div className="chat-header">
           <div className={`new-messages ${haveUnread ? "unread" : ""}`}>
-            <img src={NanniLogo} />
+            <img className="bot-icon" src={`../../../public/img/nanni.png`} />
           </div>
           <div className="info">
             <div className="name">NANNI Bot</div>
@@ -308,7 +309,7 @@ export const NanniBot = () => {
                   } ${message.hasOwnProperty("printed") ? "printed" : ""}`}
                 >
                   <div className="icon">
-                    <img src={NanniLogo} />
+                    <img className="bot-icon" src={`../../../public/img/nanni.png`}/>
                   </div>
                   <div className="content">
                     <div className="question-header">
