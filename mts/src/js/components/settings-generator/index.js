@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import {
-  Button, Input, Select, Switch, Tooltip
-} from 'antd/es'
+import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
-import {
-  LoadingOutlined,
-} from "@ant-design/icons"
+import { LoadingOutlined } from "@ant-design/icons"
 
 import "wicg-inert"
 
@@ -24,21 +20,21 @@ import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
 import Table            from "./table"
 import SaveModal        from '../save-modal'
-import { Tool, Tools }  from '../../../../../common/tools'
+import { Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
 import sortInputFirst   from "../../../../../common/utils/sort-input-first"
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
-import createData    from './data'
-
 import round           from '../../../../../common/utils/round'
 import formatNumber    from '../../../../../common/utils/format-number'
 import fractionLength  from '../../../../../common/utils/fraction-length'
 import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
-import { keys } from 'lodash'
+
 import stepConverter from './step-converter'
+
+import createData from './data'
 
 const SettingsGenerator = props => {
 
@@ -137,7 +133,7 @@ const SettingsGenerator = props => {
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "Лимитник" : "Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
@@ -562,7 +558,7 @@ const SettingsGenerator = props => {
     // Обновляем ход только если новый инструмент отличается от предыдущего
     // а не является устаревшей/новой версией текущего
     if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
-      keys(currentPreset.options).map(key => {
+      Object.keys(currentPreset.options).map(key => {
 
         // Выполняем проверку только на объектах
         if (typeof currentPreset.options[key] != "object") {

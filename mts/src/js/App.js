@@ -31,12 +31,8 @@ import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-inv
 
 import { Tools, Tool, template } from "../../../common/tools"
 
-import {
-  Chart,
-  updateChartMinMax,
-  updateChartScaleMinMax,
-  updateChartZoom,
-} from "./components/chart"
+let chartModule;
+let Chart;
 
 import Stack                   from "../../../common/components/stack"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
@@ -126,6 +122,11 @@ class App extends React.Component {
   componentDidMount() {
     this.bindEvents();
     this.fetchInitialData();
+
+    import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+      chartModule = module;
+      Chart = module.Chart;
+    });
   }
 
   setStateAsync(state = {}) {
@@ -637,13 +638,17 @@ class App extends React.Component {
         })
         .finally(() => {
           if (dev) {
-            const save = {
+            const saves = [{
               "id": 14,
               "name": "Новое сохранение 11",
               "dateCreate": 1626631308,
+            }];
+            const save = {
+              ...saves[0],
               "static": "{\"depo\":1500000,\"priceRange\":[68.66,69.24],\"percentage\":10,\"profitRatio\":60,\"risk\":100,\"mode\":0,\"days\":5,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"BRQ1\",\"kodTable\":[{\"fact\":\"2\",\"income\":\"3\"},{\"fact\":\"5\",\"income\":\"5\"},{\"fact\":\"1\",\"income\":\"1\"}],\"current_date\":\"#\"}"
             };
-            this.extractSave(save);
+
+            this.setStateAsync({ saves }).then(() => this.extractSave(save))
           }
         })
     });
@@ -1138,22 +1143,29 @@ class App extends React.Component {
     return Tools.getToolIndexByCode(this.getTools(), code);
   }
 
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Моделирование Торговой Стратегии")
-   */
-  getTitle() {
+  getTitleJSX() {
     const { saves, currentSaveIndex } = this.state;
-    let title = "Моделирование Торговой Стратегии";
-
-    if (saves.length && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
+    let titleJSX = <span>Моделирование Торговой&nbsp;Стратегии</span>;
+    if (saves && saves[currentSaveIndex - 1]) {
+      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
     }
 
-    return title;
+    return titleJSX;
+  }
+
+  /**
+   * Возвращает название текущего сейва (по дефолту возвращает строку "Моделирование Торговой Стратегии") */
+  getTitle() {
+    return this.getTitleJSX().props.children;
   }
 
   render() {
     let {
+      currentSaveIndex,
+      loading,
+      saves,
+      changed,
+      saved,
       data,
       days,
       depo,
@@ -1184,7 +1196,6 @@ class App extends React.Component {
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     
-    const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
     const disabledModes = [
@@ -1196,7 +1207,6 @@ class App extends React.Component {
       mode = disabledModes.indexOf(false);
     }
 
-    
     const price = currentTool.currentPrice;
     let percent = currentTool.adrDay;
     if (days == 5) {
@@ -1209,11 +1219,8 @@ class App extends React.Component {
     const max = price + percent;
     const min = price - percent;
 
-    const STEP_IN_EACH_DIRECTION = 20;
-    // const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
     const step = currentTool.priceStep;
     
-    // let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
     let income = totalIncome * profitRatio / 100
     
     const ratio = income / depo * 100;
@@ -1243,14 +1250,13 @@ class App extends React.Component {
 
       if (risk != 0 && percentage != 0) {
         possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(priceRange, isLong, possibleRisk);
+        chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
       }
 
       return possibleRisk;
     }
 
     let possibleRisk = getPossibleRisk();
-
 
     return (
       <Provider value={this}>
@@ -1259,7 +1265,12 @@ class App extends React.Component {
           <main className="main">
 
             <Header
-              title={this.getTitle()}
+              title={this.getTitleJSX()}
+              loading={loading}
+              saves={saves}
+              currentSaveIndex={currentSaveIndex}
+              changed={changed}
+              saved={saved}
               onSaveChange={currentSaveIndex => {
                 const { saves } = this.state;
 
@@ -1280,7 +1291,6 @@ class App extends React.Component {
               }}
               onSave={e => {
                 const { saved, changed } = this.state;
-
                 if (saved && changed) {
                   this.update(this.getTitle());
                   this.setState({ changed: false });
@@ -1292,11 +1302,11 @@ class App extends React.Component {
             >
               <Tooltip title="Настройки">
                 <button
-                  className="settings-button js-open-modal main-top__settings"
+                  className="settings-button js-open-modal page-header__settings"
                   onClick={e => dialogAPI.open("config", e.target)}
                 >
-                  <span className="visually-hidden">Открыть конфиг</span>
-                  <SettingFilled className="settings-button__icon" />
+                  <span className="visually-hidden">Открыть настройки инструментов</span>
+                  <SettingFilled className="settings-button__icon" aria-hidden="true" />
                 </button>
               </Tooltip>
             </Header>
@@ -1396,14 +1406,14 @@ class App extends React.Component {
                             tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
                             onChange={priceRange => {
                               this.setState({ priceRange, changed: true });
-                              updateChartMinMax(priceRange, isLong, possibleRisk);
+                              chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
                             }}
                           />
 
                           <Button
                             className="scale-button scale-button--default"
                             onClick={ e => {
-                              updateChartScaleMinMax(min, max);
+                              chartModule?.updateChartScaleMinMax(min, max);
                               this.setState({
                                 scaleOffset: 0,
                                 changedMinRange: min,
@@ -1434,7 +1444,7 @@ class App extends React.Component {
                                   movePercantage: movePercantage + sliderStepPercent,
                                   days: this.initialState.days
                                 });
-                                updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                                chartModule?.updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
                               }
                             }}
                             aria-label="Увеличить масштаб графика"
@@ -1464,7 +1474,7 @@ class App extends React.Component {
                                   movePercantage: movePercantage + sliderStepPercent,
                                   days: 0
                                 });
-                                updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                                chartModule?.updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
                               }
                             }}
                             aria-label="Уменьшить масштаб графика"
@@ -1493,7 +1503,7 @@ class App extends React.Component {
                                 onBlur={value => {
                                   const callback = () => {
                                     const possibleRisk = getPossibleRisk();
-                                    updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                     this.setState({ changed: true });
                                   };
 
@@ -1538,7 +1548,7 @@ class App extends React.Component {
                                 onBlur={value => {
                                   const callback = () => {
                                     const possibleRisk = getPossibleRisk();
-                                    updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                     this.setState({ changed: true });
                                   };
 
@@ -1624,7 +1634,7 @@ class App extends React.Component {
                                   this.setStateAsync({ risk, changed: true })
                                     .then(() => {
                                       let possibleRisk = getPossibleRisk();
-                                      updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                      chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
                                     });
                                 }}
                               />
@@ -1695,25 +1705,27 @@ class App extends React.Component {
                   })()}
 
                   <Stack className="main-content__right">
-                    <Chart
-                      className="mts__chart"
-                      key={currentTool.toString() + this.state.loadingChartData}
-                      min={min}
-                      max={max}
-                      priceRange={priceRange}
-                      loading={this.state.loadingChartData}
-                      tool={currentTool}
-                      data={data}
-                      days={days}
-                      onRendered={() => {
-                        const { percentage, priceRange, scaleOffset, days } = this.state;
-                        const isLong = percentage >= 0;
-                        const possibleRisk = getPossibleRisk();
-                        updateChartMinMax(priceRange, isLong, possibleRisk);
-                        updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);
-                        updateChartZoom(days);
-                      }}
-                    />
+                    {Chart &&
+                      <Chart
+                        className="mts__chart"
+                        key={currentTool.toString() + this.state.loadingChartData}
+                        min={min}
+                        max={max}
+                        priceRange={priceRange}
+                        loading={this.state.loadingChartData}
+                        tool={currentTool}
+                        data={data}
+                        days={days}
+                        onRendered={() => {
+                          const { percentage, priceRange, scaleOffset, days } = this.state;
+                          const isLong = percentage >= 0;
+                          const possibleRisk = getPossibleRisk();
+                          chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+                          chartModule?.updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);
+                          chartModule?.updateChartZoom(days);
+                        }}
+                      />
+                    }
 
                     {(() => {
                       return (
@@ -1756,7 +1768,7 @@ class App extends React.Component {
                               
                               investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
 
-                              updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
+                              chartModule?.updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
                               this.setStateAsync({
                                 investorInfo,
                                 percentage, 
@@ -1873,8 +1885,8 @@ class App extends React.Component {
                               const min = round(price - percent, fraction);
 
                               this.setState({ days, prevDays: days, changed: true });
-                              updateChartScaleMinMax(min, max);
-                              updateChartZoom(days);
+                              chartModule?.updateChartScaleMinMax(min, max);
+                              chartModule?.updateChartZoom(days);
                             }}
                           >
                             <Radio value={1}>день</Radio>
@@ -2100,7 +2112,6 @@ class App extends React.Component {
               else {
                 const onResolve = (id) => {
                   let index = saves.push({ id, name });
-                  console.log(saves);
 
                   this.setState({
                     data,
@@ -2154,7 +2165,7 @@ class App extends React.Component {
 
           <Dialog
             id="dialog4"
-            title="Удаление трейдометра"
+            title="Удаление сохранения"
             confirmText={"Удалить"}
             onConfirm={() => {
               const { id } = this.state;

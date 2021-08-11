@@ -1,9 +1,11 @@
-import React, { Component } from 'react'
-import "anychart"
+import React, { Component } from "react"
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-core.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-stock.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-annotations.min.js");
 
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from "@ant-design/icons";
 
-import "./style.scss"
+import "./style.scss";
 
 let chart;
 let mapping;
@@ -17,13 +19,6 @@ let yScale;
 
 let minChartValue;
 let maxChartValue;
-
-const padZero = (number, len) => {
-  if (len - String(number).length < 0) {
-    return number;
-  }
-  return "0".repeat(len - String(number).length) + number; 
-};
 
 const updateChartMinMax = (priceRange, isLong = true, possibleRisk) => {
   if (lineMin) {
@@ -153,4 +148,11 @@ class Chart extends Component {
   }
 }
 
-export { Chart, updateChartMinMax, updateChartScaleMinMax, updateChartZoom, minChartValue, maxChartValue }
+export {
+  Chart,
+  updateChartMinMax,
+  updateChartScaleMinMax,
+  updateChartZoom,
+  minChartValue,
+  maxChartValue
+}
