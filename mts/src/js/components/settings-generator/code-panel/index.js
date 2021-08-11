@@ -201,7 +201,7 @@ export default function CodePanel(props) {
         }
 
         // В Лимитнике и СМС + ТОР в массиве закрытия добавляем еще пару фигурных скобок
-        if ((currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && !arr.isBying) {
+        if ((currentPreset.type == "Лимитник") && !arr.isBying) {
           parsedData = `{${parsedData}}`;
         }
 
