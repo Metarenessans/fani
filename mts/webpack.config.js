@@ -3,138 +3,109 @@
 const webpack = require("webpack");
 
 const path = require("path");
-const sass = require("sass");
-const postcss = require("postcss");
 /* Plugins */
-const CopyPlugin = require("copy-webpack-plugin");
-
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
+  const publicPath = "public/";
 
-  const entry = "./src/js/index.js";
-  const output = "index";
-  const devtool = prod ? "source-map" : "eval-source-map";
-  const publicPath = "public";
-
-  // Rules
-
-  const cssPipeline = [
-    // Translates CSS into CommonJS
-    "css-loader?url=false",
-    // PostCSS
-    {
-      loader: "postcss-loader",
-      options: {
-        postcssOptions: {
-          plugins: [
-            require("postcss-custom-properties")({ preserve: true }),
-            require("autoprefixer")(),
-            // require("cssnano")()
-          ],
-        },
-        sourceMap: true
-      }
-    },
-    "resolve-url-loader",
-    // Compiles SASS to CSS
-    {
-      loader: "sass-loader",
-      options: {
-        webpackImporter: false,
-        sassOptions: { outputStyle: "expanded" },
-      },
-    }
-  ];
-
-  const fontRule = {
-    test: /\.(woff|woff2|eot|ttf|otf)$/,
-    loader: "file-loader",
-    options: {
-      name: "[path][name].[ext]"
-    }
-  };
-
-  const imageRule = {
-    test: /\.(png|jpe?g|gif|webp)$/,
-    loader: "file-loader",
-    options: {
-      name: "[path][name].[ext]"
-    }
-  };
-
-  const plugins = [
-    new webpack.DefinePlugin({ dev: !prod }),
-    new MiniCssExtractPlugin({ filename: "css/style.css" }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: "src/index.html",
-          to: path.resolve(__dirname, publicPath)
-        }
-      ],
-    }),
-  ];
-
-  const modern = {
-    entry,
-    devtool,
+  return {
+    entry: "./src/js/index.js",
+    devtool: prod ? "source-map" : "eval-source-map",
     output: {
       path: path.resolve(__dirname, publicPath),
-      filename: `js/${output}-es6.js`,
-      publicPath
+      filename: `js/index.js`,
+      chunkFilename: 'js/[name].js'
     },
     devServer: {
-      port: 3000,
-      contentBase: path.join(__dirname, publicPath),
+      port: 1337,
+      contentBase: path.join(__dirname, "public"),
       writeToDisk: true,
-      //host: '192.168.0.129'
+      open: true
+      // host: '192.168.0.129'
     },
     module: {
       rules: [
+        // JS
         {
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
             options: {
-              presets: [
-                "@babel/preset-react"
-              ]
+              rootMode: "upward",
             }
           }
         },
+        // CSS
         {
           test: /\.s[ac]ss$/i,
-          use: prod
-            ? [MiniCssExtractPlugin.loader,].concat(cssPipeline)
-            : ["style-loader"].concat(cssPipeline)
+          use: [
+            prod ? MiniCssExtractPlugin.loader : "style-loader",
+            // Translates CSS into CommonJS
+            "css-loader?url=false",
+            // PostCSS
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    require("postcss-custom-properties")({ preserve: true }),
+                    require("autoprefixer")(),
+                    prod && require("cssnano")()
+                  ],
+                },
+                sourceMap: true
+              }
+            },
+            "resolve-url-loader",
+            // Compiles SASS to CSS
+            {
+              loader: "sass-loader",
+              options: {
+                webpackImporter: false,
+                sassOptions: { outputStyle: "expanded" },
+              },
+            }
+          ]
         },
-        fontRule,
-        imageRule,
+        // Fonts
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        },
+        // Graphics
+        {
+          test: /\.(png|jpe?g|gif|webp)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        }
       ]
     },
-    plugins
-  };
-
-  if (prod) {
-    const old = { ...modern };
-
-    old.output.filename = `js/${output}.js`;
-
-    old.module.rules = old.module.rules.map(rule => {
-      if (String(rule.test) == "/\\.js$/") {
-        rule.use.options?.presets?.push("@babel/preset-env");
-      }
-      return rule;
-    });
-
-    delete old.devtool;
-    delete old.devServer;
-
-    return [modern, old];
+    plugins: [
+      new webpack.DefinePlugin({ dev: !prod }),
+      new MiniCssExtractPlugin({
+        filename: "css/style.css",
+        chunkFilename: "css/[name].css"
+      })
+    ],
+    optimization: {
+      minimize: prod,
+      minimizer: [new TerserPlugin({
+        terserOptions: {
+          format: {
+            comments: false
+          },
+        },
+        extractComments: false
+      })]
+    },
   }
-
-  return modern;
 };
