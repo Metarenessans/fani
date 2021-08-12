@@ -33,6 +33,7 @@ export const LoadTable = ({ tableIdx }) => {
     updateSteps(tableIdx, updatedSteps(table.steps.length));
   }, [minYield, yieldStep]);
 
+
   const tableRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -43,7 +44,7 @@ export const LoadTable = ({ tableIdx }) => {
     }
 
     return steps;
-  };
+  }; 
 
   const load = (investorInfo.deposit * table.loadValue) / 100;
 

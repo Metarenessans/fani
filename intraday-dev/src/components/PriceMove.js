@@ -43,11 +43,17 @@ export const PriceMove = () => {
     setIsLoading,
   } = useContext(GlobalContext);
 
+  const scrollTop = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0
+  }
+
   const loadData = async () => {
     await setIsLoading(true);
     await Promise.all([getInvestorInfo(), getTools()]);
     await getSaves();
     await setIsLoading(false);
+    scrollTop();
   };
 
   useEffect(() => {

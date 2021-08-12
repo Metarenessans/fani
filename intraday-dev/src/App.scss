@@ -1,5 +1,5 @@
 @import "~antd/dist/antd.css";
-// ~~~
+
 // @import "../../common/sass/header-fix";
 
 @font-face {
@@ -20,6 +20,11 @@
 @font-face {
   font-family: "Ralington";
   src: url("../public/fonts/Ralington.otf");
+  font-weight: normal;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("../public/fonts/Roboto-Regular.woff2");
   font-weight: normal;
 }
 // @font-face {
@@ -54,10 +59,31 @@ $c-30-40: #e8c1b1;
 $c-40-50: #e8a8a8;
 $c-50-plus: #d78585;
 
+.header {
+  font-size: 16px;
+
+  &-profile__photo {
+    box-sizing: initial;
+  }
+}
+
 body {
   font-family: "Circe", sans-serif;
   font-weight: 400;
 }
+
+.main-top-wrap {
+  & .ant-select-selection {
+    border: 0px solid #d9d9d9!important;
+    border-top-width: 0px!important;
+  }
+
+  & .ant-select-selection-selected-value {
+    line-height: 2.05!important;
+  }
+}
+
+
 #root {
   display: flex;
   flex-direction: column;
@@ -484,7 +510,7 @@ body {
   .ant-select-focused .ant-select-selection,
   .ant-select-selection:active,
   .ant-select-selection:focus {
-    border-right-width: 1px !important;
+    border-right-width: 0px !important;
     outline: 0;
   }
   .labeled-select .ant-select-selection:focus {
@@ -701,6 +727,9 @@ body {
 }
 
 .load-table {
+  font-family: "Roboto";
+  font-weight: 700;
+  
   .ant-input-number {
     width: 100%;
   }
@@ -885,6 +914,9 @@ body {
   }
   .col.tool {
     width: 32%;
+  // ~~
+    font-family: "Roboto";
+    font-weight: bold;
   }
   .go {
     color: #999;
@@ -992,6 +1024,8 @@ body {
     text-overflow: ellipsis;
   }
   .step-value-percent {
+    font-weight: 700!important;
+    letter-spacing: .04em;
     color: #fff;
   }
   .tool {
@@ -1001,7 +1035,7 @@ body {
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    font-size: 16px;
+    font-size: 14px;
     font-family: "Roboto";
     font-weight: bold;
     border-right: 1px solid #fff;
@@ -1016,6 +1050,9 @@ body {
   }
   .tool-code {
     display: none;
+
+    font-weight: bold;
+    font-family: "Roboto";
   }
   .c-0 {
     background-color: darkgray;
@@ -1351,7 +1388,14 @@ body {
       height: 25px;
     }
   }
+
+  .loads .tools {
+    letter-spacing: 0.04em;
+    -webkit-font-feature-settings: 'tnum'!important;
+    font-feature-settings: 'tnum'!important;
+  }
   .tools {
+
     .thead {
       display: none;
     }
