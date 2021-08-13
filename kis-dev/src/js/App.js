@@ -123,7 +123,7 @@ class App extends React.Component {
 
       isLong: true,
 
-      data: [{ ...defaultToolData }],
+      data: [{ ...defaultToolData }, { ...defaultToolData, toolType: "Вклад" }, { ...defaultToolData, toolType: "Трейдинг", }],
 
       lineConfigIndex: 0,
 
