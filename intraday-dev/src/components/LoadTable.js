@@ -25,6 +25,7 @@ export const LoadTable = ({ tableIdx }) => {
     adrMode,
     updateSteps,
     addStepColumn,
+    loading
   } = useContext(GlobalContext);
 
   const table = loadTables[tableIdx];
@@ -32,6 +33,15 @@ export const LoadTable = ({ tableIdx }) => {
   useEffect(() => {
     updateSteps(tableIdx, updatedSteps(table.steps.length));
   }, [minYield, yieldStep]);
+
+  const scrollTop = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0
+  }
+
+  useEffect(() => {
+    scrollTop();
+  }, [loading])
 
 
   const tableRef = useRef(null);
