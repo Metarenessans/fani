@@ -1,18 +1,59 @@
+
+
+
 @font-face {
-  font-family: "SF Pro Display";
-  src: url("../../../public/fonts/SFProDisplay-Bold.ttf");
-  font-weight: 600;
-}
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("../../../public/fonts/SFProDisplay-Regular.ttf");
+  font-family: 'SF Pro Display';
+  src:
+    local('SF Pro Display'),
+    local('SFProDisplay-Regular'),
+    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Regular.woff2') format('woff2'),
+    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Regular.woff') format('woff');
   font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
+
+// @font-face {
+//   font-family: "SF Pro Display";
+//   src: url("../../../public/fonts/SFProDisplay-Regular.ttf");
+//   font-weight: 400;
+// }
+
 @font-face {
-  font-family: "SF Pro Display";
-  src: url("../../../public/fonts/SFProDisplay-Medium.ttf");
-  font-weight: 500;
+  font-family: 'SF Pro Display';
+  src:
+    local('SF Pro Display'),
+    local('SFProDisplay-Bold'),
+    url($fonts + 'SF Pro Display/Bold/SFProDisplay-Bold.woff2') format('woff2'),
+    url($fonts + 'SF Pro Display/Bold/SFProDisplay-Bold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
 }
+
+// @font-face {
+//   font-family: "SF Pro Display";
+//   src: url("../../../public/fonts/SFProDisplay-Bold.ttf");
+//   font-weight: 600;
+// }
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src:
+    local('SF Pro Display'),
+    local('SFProDisplay-Medium'),
+    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Medium.woff2') format('woff2'),
+    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+// @font-face {
+//   font-family: "SF Pro Display";
+//   src: url("../../../public/fonts/SFProDisplay-Medium.ttf");
+//   font-weight: 500;
+// }
 
 .nanni {
   position: fixed;
