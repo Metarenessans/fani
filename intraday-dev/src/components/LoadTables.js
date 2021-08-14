@@ -7,6 +7,15 @@ import { LoadingOutlined } from "@ant-design/icons";
 export const LoadTables = () => {
   const { loadTables, loading } = useContext(GlobalContext);
 
+  const scrollTop = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0
+  }
+
+  useEffect(() => {
+    scrollTop();
+  }, [loading])
+
   let tables = loadTables.map((table, tableIdx) => (
     <LoadTable key={tableIdx} tableIdx={tableIdx} />
   ));
