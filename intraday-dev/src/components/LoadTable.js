@@ -296,8 +296,9 @@ export const LoadTable = ({ tableIdx }) => {
             <Button
               className="func-button add-load-table-btn"
               onClick={() => {
-                addLoadTable();
-                setTimeout(() => scrollBottom(), 0)
+                addLoadTable()
+                  .then(() => scrollBottom())
+                // setTimeout(() => scrollBottom(), 0)
               }}
             >
               <PlusOutlined aria-label="Добавить загрузку" />
