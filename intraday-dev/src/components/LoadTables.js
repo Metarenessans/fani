@@ -9,7 +9,7 @@ export const LoadTables = () => {
 
   const scrollTop = () => {
     document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0
+    document.documentElement.scrollTop = 0;
   }
 
   useEffect(() => {

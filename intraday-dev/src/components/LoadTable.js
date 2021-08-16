@@ -30,19 +30,14 @@ export const LoadTable = ({ tableIdx }) => {
 
   const table = loadTables[tableIdx];
 
-  useEffect(() => {
-    updateSteps(tableIdx, updatedSteps(table.steps.length));
-  }, [minYield, yieldStep]);
-
-  const scrollTop = () => {
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0
+  const scrollBottom = () => {
+    document.body.scrollTop = 99999;
+    document.documentElement.scrollTop = 99999;
   }
 
   useEffect(() => {
-    scrollTop();
-  }, [loading])
-
+    updateSteps(tableIdx, updatedSteps(table.steps.length));
+  }, [minYield, yieldStep]);
 
   const tableRef = useRef(null);
   const inputRef = useRef(null);
@@ -300,14 +295,17 @@ export const LoadTable = ({ tableIdx }) => {
           {tableIdx == loadTables.length - 1 ? (
             <Button
               className="func-button add-load-table-btn"
-              onClick={(e) => addLoadTable()}
+              onClick={() => {
+                addLoadTable();
+                setTimeout(() => scrollBottom(), 0)
+              }}
             >
               <PlusOutlined aria-label="Добавить загрузку" />
               Добавить загрузку
             </Button>
           ) : (
             <div style={{ width: 255 }}></div>
-          )}
+            )}
         </Col>
 
         <Col xs={24} md={8}>
