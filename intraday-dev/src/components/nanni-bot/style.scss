@@ -42,8 +42,7 @@
   width: 250px;
   height: 55px;
   font-family: "SF Pro Display";
-  transition: all 0.8s ease-out;
-  -webkit-transition: all 0.3s ease-out;
+  transition: height 0.3s ease-out, width 0.3s ease-out;
 
   p {
     margin-bottom: 0;
@@ -143,9 +142,7 @@
   }
   .chat-header .dot {
     animation: shimmy 0.75s infinite;
-    -webkit-animation: shimmy 0.75s infinite;
     transform: translateZ(0);
-    -webkit-transform: translateZ(0);
     will-change: transform;
   }
   .chat-header .dot1 {
@@ -212,11 +209,9 @@
   }
   .fade-in-left {
     animation: fadeInLeft 1.3s;
-    -webkit-animation: fadeInLeft 1.3s;
     animation-fill-mode: forwards;
     animation-delay: 0s;
     transform: translateZ(0);
-    -webkit-transform: translateZ(0);
     will-change: transform, opacity;
   }
   .question .content {
@@ -277,12 +272,10 @@
   }
   .fade-in-right {
     animation: fadeInRight 0.5s 0.5s;
-    -webkit-animation: fadeInRight 0.5s 0.5s;
     animation-fill-mode: forwards;
     animation-delay: 0.4s;
     visibility: hidden;
     transform: translateZ(0);
-    -webkit-transform: translateZ(0);
     will-change: transform, opacity;
   }
   @keyframes fadeInRight {
@@ -297,6 +290,9 @@
     }
   }
   .choice {
+    height: 3.5em;
+    justify-content: center;
+
     margin-bottom: 10px;
     width: 100%;
     display: flex;
@@ -324,7 +320,6 @@
     color: #2b303c;
     cursor: pointer;
     transition: 0.5s;
-    -webkit-transition: 0.5s;
   }
   .choice:last-child {
     margin-bottom: 0;
@@ -339,9 +334,11 @@
     margin: 0;
   }
   .fade-out-right {
-    animation: fadeOutRight 0.3s;
-    -webkit-animation: fadeOutRight 0.3s;
+    // ~~
+    // animation: removeHeight 0s, fadeOutRight 0.5s;
+    animation: fadeOutRight 0.5s, removeHeight 0.3s;
     animation-fill-mode: forwards;
+    visibility: visible;
   }
   @keyframes fadeOutRight {
     0% {
@@ -358,10 +355,11 @@
     visibility: visible;
   }
   .chosen.nth {
-    position: absolute;
-    animation: moveTop 0.3s;
-    -webkit-animation: moveTop 0.3s;
-    animation-fill-mode: forwards;
+    // ~~
+    // position: absolute;
+    animation: moveTop 0.6s;
+    // animation-fill-mode: forwards;
+    animation-fill-mode: normal;
   }
   @keyframes moveTop {
     0% {
@@ -372,9 +370,9 @@
     }
   }
   .fade-to-top {
-    animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
-    -webkit-animation: fadeTop 0.3s, removeHeight 0.1s 0.3s;
+    animation: fadeTop 0.3s, removeHeight 0.3s;
     animation-fill-mode: forwards;
+    visibility: visible;
   }
   @keyframes fadeTop {
     0% {
@@ -391,10 +389,10 @@
     100% {
       height: 0;
     }
+
   }
   .printed {
     animation-name: none;
-    -webkit-animation-name: none;
     visibility: visible;
     position: relative;
   }

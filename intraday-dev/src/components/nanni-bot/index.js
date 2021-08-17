@@ -74,8 +74,8 @@ export const NanniBot = () => {
           : (whatChosen = "chosen nth");
       } else {
         choiceIdx === 0
-          ? (whatChosen = "hidden fade-out-right")
-          : (whatChosen = "hidden fade-to-top");
+          ? (whatChosen = "fade-out-right")
+          : (whatChosen = "fade-to-top");
       }
     }
     return whatChosen;

@@ -298,7 +298,6 @@ export const LoadTable = ({ tableIdx }) => {
               onClick={() => {
                 addLoadTable()
                   .then(() => scrollBottom())
-                // setTimeout(() => scrollBottom(), 0)
               }}
             >
               <PlusOutlined aria-label="Добавить загрузку" />
