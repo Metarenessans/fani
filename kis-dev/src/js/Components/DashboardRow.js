@@ -334,7 +334,7 @@ export default class DashboardRow extends React.Component {
               className="dashboard__input"
               defaultValue={
                 toolType == "Трейдинг" ?
-                  round( resultOfz(1, false, false, true) ) :
+                  round( resultOfz(1, false, false, true) / 12 ) :
                   (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome, 2) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}

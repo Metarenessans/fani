@@ -27,8 +27,8 @@
   src:
     local('SF Pro Display'),
     local('SFProDisplay-Medium'),
-    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Medium.woff2') format('woff2'),
-    url($fonts + 'SF Pro Display/Regular/SFProDisplay-Medium.woff') format('woff');
+    url($fonts + 'SF Pro Display/Medium/SFProDisplay-Medium.woff2') format('woff2'),
+    url($fonts + 'SF Pro Display/Medium/SFProDisplay-Medium.woff') format('woff');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
