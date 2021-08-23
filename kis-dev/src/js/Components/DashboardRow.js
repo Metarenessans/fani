@@ -105,18 +105,8 @@ export default class DashboardRow extends React.Component {
     // баланс по итогу месяца
     const monthEndSum = round((lostProfit + monthBalance) + (-monthOutcome) + monthAppend)
 
-    // аннуитетный месячный платёж
-    const annuitetMonthPay =
-      round(
-        (monthPercent * (1 + monthPercent) ** (period * 12))
-        /
-        ((1 + monthPercent) ** (period * 12) - 1)
-        *
-        (depo - firstPay)
-      ,2)
-
     // сумма всех выводов в месяц
-    const allMonthOutCome = (toolType !== "Вклад" ? monthPay : annuitetMonthPay) + monthOutcome
+    const allMonthOutCome = monthPay + monthOutcome
 
     // итог от активных инвестиций в зависимости от входящего периода
     const personalInvestProfitVal = period => {
@@ -161,7 +151,7 @@ export default class DashboardRow extends React.Component {
             round(
               months == 1 ?
                 // значение месячного итога
-                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true) :
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true) / 12 :
                 // значение итога за весь период
                 personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true)
             )
@@ -173,7 +163,7 @@ export default class DashboardRow extends React.Component {
           return (
             round(
               months == 1 ?
-                resultOfz(1, false, false, false) :
+                resultOfz(1, false, false, false) / 12 :
                 resultOfz(period, false, false, false)
             )
           )
@@ -197,6 +187,7 @@ export default class DashboardRow extends React.Component {
     */
     const contributionFinalVal = kisDepositMonth(investPercent, firstPay, period * 260, allMonthOutCome, monthAppend)
 
+    
     /** Недвижимость
      * возвращает итоговую сумму в зависимости от периода
      * @period      период   (количество месяцев)
@@ -335,7 +326,7 @@ export default class DashboardRow extends React.Component {
               defaultValue={
                 toolType == "Трейдинг" ?
                   round( resultOfz(1, false, false, true) / 12 ) :
-                  (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome, 2) : rentIncome)
+                  (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}
               onBlur={value => onChange( "rentIncome", round(value, 2) )}
