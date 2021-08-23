@@ -163,7 +163,7 @@ export default class DashboardRow extends React.Component {
           return (
             round(
               months == 1 ?
-                resultOfz(1, false, false, false) / 12 :
+                depo + (resultOfz(1, false, false, true) / 12) :
                 resultOfz(period, false, false, false)
             )
           )
