@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Button } from "antd";
+import { GlobalContext } from "../../context/GlobalState";
+
 
 // import NanniLogo from "../../image/nanni.png";
 
@@ -244,9 +246,12 @@ export const NanniBot = () => {
     document.body.style.position = "";
   };
 
+  const { loading } = useContext(GlobalContext);
+
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>
       <Button
+        disabled={loading}
         type="primary"
         shape="round"
         onClick={() => botInit()}
