@@ -222,14 +222,15 @@ export const PriceMove = () => {
                   </div>
 
                   <Tooltip
-                    title="Настройки"
+                    disabled={loading}
+                    title={loading ? "" : "Настройки"}
                     overlayStyle={{ fontSize: "1.25em" }}
                   >
                     <button
-                      className="settings-button js-open-modal main-top__settings"
+                      className={["settings-button js-open-modal main-top__settings"].concat(loading ? "settings-button-disabled" : "").join(" ").trim()}
                       onClick={(e) => dialogAPI.open("config", e.target)}
                     >
-                      <span className="visually-hidden">Открыть конфиг</span>
+                      {/* <span className="visually-hidden">Открыть конфиг</span> */}
                       <SettingFilled className="settings-button__icon" />
                     </button>
                   </Tooltip>
@@ -435,7 +436,7 @@ export const PriceMove = () => {
                     min={10000}
                     max={Infinity}
                     onBlur={(val) => {
-                      if (val !== investorInfo.deposit) updateDeposit(val);
+                      updateDeposit(val);
                     }}
                   />
                 </label>

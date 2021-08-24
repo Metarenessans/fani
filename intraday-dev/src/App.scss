@@ -801,6 +801,16 @@ body {
     transition: transform 0.2s ease, -webkit-transform 0.2s ease;
     will-change: transform;
     cursor: pointer;
+
+    &-disabled {
+      // background-color: lighten($blue, 20%);
+      // border-radius: 10%;
+      &:hover {
+        cursor: not-allowed;
+        transition: none!important;
+        transform: rotate(-0deg) scale(1)!important;
+      }
+    }
   }
   .main-top__settings .settings-button__icon {
     color: #fff;
@@ -815,6 +825,22 @@ body {
     -webkit-box-shadow: none;
     box-shadow: none;
   }
+
+  // .settings-button-disabled:focus,
+  // .settings-button-disabled:hover {
+  //   font-size: 1.5em;
+  //   width: 2.25em;
+  //   height: 2.1em;
+  //   background: 0 0;
+    
+  //   padding: 0;
+  //   border: 0;
+  //   outline: 0;
+
+  //   transition: none;
+  //   transform: rotate(-0deg) scale(1)!important;
+  // }
+
   .custom-btn--secondary:focus,
   .custom-btn--secondary:hover {
     border: 1px solid #fff;

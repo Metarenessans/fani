@@ -1,6 +1,6 @@
 <?
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
-$APPLICATION->SetTitle("КИС");
+$APPLICATION->SetTitle("ИП Портфель");
 ?>
   <!-- Include CSS -->
   <link rel="stylesheet" href="public/css/style.css">

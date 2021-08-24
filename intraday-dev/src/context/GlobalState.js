@@ -95,11 +95,27 @@ export const GlobalProvider = ({ children }) => {
       const res = await axios.get(
         "https://fani144.ru/local/php_interface/s1/ajax/?method=getInvestorInfo"
       );
-      if (res.data.data)
+      console.log(res);
+      if (res.data.data) {
         dispatch({
           type: "GET_INVESTOR_INFO",
           payload: res.data.data,
-        });
+        })
+      }
+      else {
+        if (dev) {
+          const investorInfo = { 
+            "email": "zero.neitrino@gmail.com",
+            "deposit": 3000000,
+            "status": "KSUR",
+            "skill": "UNSKILLED"
+          };
+          dispatch({
+            type: "GET_INVESTOR_INFO",
+            payload: investorInfo,
+          });
+        }
+      }
     } catch (err) {
       dispatch({
         type: "FUTURE_ERROR",
