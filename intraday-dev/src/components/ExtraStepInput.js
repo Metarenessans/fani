@@ -3,15 +3,14 @@ import { GlobalContext } from "../context/GlobalState";
 import { InputNumber } from "antd";
 
 export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
-  const { loadTables, setExtraStep, deleteExtraStep, loading } =
-    useContext(GlobalContext);
+  const { loadTables, setExtraStep, deleteExtraStep, loading } = useContext(GlobalContext);
   const [stepValue, setStepValue] = useState(step);
 
   const inputRef = useRef(null);
 
   const table = loadTables[tableIdx];
 
-  useEffect(async () => {
+  useEffect(() => {
     setStepValue(step);
   }, [table.extraSteps]);
 

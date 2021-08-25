@@ -176,10 +176,10 @@ export default (state, action) => {
         yieldStep: save.yieldStep,
         loadTables: save.loadTables,
         customTools: save.customTools,
-        investorInfo: {
-          ...state.investorInfo,
-          deposit: save.investorInfo.deposit,
-        },
+        // investorInfo: {
+        //   ...state.investorInfo,
+        //   deposit: save.investorInfo.deposit,
+        // },
         snapshotIsSaved: true,
         snapshotIsChanged: false,
       };

@@ -335,7 +335,6 @@
     margin: 0;
   }
   .fade-out-right {
-    // ~~
     // animation: removeHeight 0s, fadeOutRight 0.5s;
     animation: fadeOutRight 0.5s, removeHeight 0.3s;
     animation-fill-mode: forwards;
@@ -356,7 +355,6 @@
     visibility: visible;
   }
   .chosen.nth {
-    // ~~
     // position: absolute;
     animation: moveTop 0.6s;
     // animation-fill-mode: forwards;

@@ -48,6 +48,8 @@ export const PriceMove = () => {
     await Promise.all([getInvestorInfo(), getTools()]);
     await getSaves();
     await setIsLoading(false);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
   };
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export const PriceMove = () => {
     setInterval(getTools, 120000);
   }, []);
 
+  // Вызывается всего раз при получении списка сейвов (getSaves)
   useEffect(() => {
     if (currentSaveIdx === 0) {
       setInitialState();
@@ -63,7 +66,7 @@ export const PriceMove = () => {
       let id = saves[currentSaveIdx - 1].id;
       getSave(id);
     }
-  }, [saves.length, currentSaveIdx]);
+  }, [loading]);
 
   const pageTitle = () => {
     let title = "ИП Аналитика";
@@ -110,7 +113,11 @@ export const PriceMove = () => {
                       } else {
                         setCurrentSaveIdx(idx);
                         let id = saves[idx - 1].id;
-                        getSave(id);
+                        getSave(id)
+                          .then(() => {
+                            document.body.scrollTop = 0;
+                            document.documentElement.scrollTop = 0;
+                          });
                       }
                     }}
                   >
