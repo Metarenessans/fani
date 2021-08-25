@@ -902,6 +902,9 @@ body {
 }
 
 .load-table {
+  // font-family: "Roboto";
+  // font-weight: 700;
+  
   .ant-input-number {
     width: 100%;
   }
@@ -913,6 +916,8 @@ body {
     width: 100%;
   }
   .thead {
+    // font-size: 14px!important;
+    // font-family: "Circe"!important;
     font-weight: bold;
     padding: 0;
   }
@@ -1553,6 +1558,11 @@ body {
       height: 25px;
     }
   }
+  // .loads .tools {
+  //   letter-spacing: 0.04em;
+  //   -webkit-font-feature-settings: 'tnum'!important;
+  //   font-feature-settings: 'tnum'!important;
+  // }
   .tools {
 
     .thead {

@@ -39,6 +39,15 @@ export const LoadTable = ({ tableIdx }) => {
     updateSteps(tableIdx, updatedSteps(table.steps.length));
   }, [minYield, yieldStep]);
 
+  const scrollTop = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+
+  useEffect(() => {
+    scrollTop();
+  }, [loading])
+
   const tableRef = useRef(null);
   const inputRef = useRef(null);
 
