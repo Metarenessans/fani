@@ -9,8 +9,13 @@ function round(value, decimals = 0) {
 
 /** Недвижимость
  * возвращает итоговую сумму в зависимости от периода
- * @period      количество месяцев
- * 
+ * @period        количество месяцев
+ * @rentIncome    прибыль от сдачи в аренду
+ * @monthAppend   месячное пополнение средс
+ * @monthPay      платёж по кредиту
+ * @monthOutcome  месячные вывод средств
+ * @profitPercent процент возможной прибыли () 
+ * @firstPay      первоначальный взнос
 */
 export default function realtyEndProfit(period, rentIncome, monthAppend, monthPay, monthOutcome, profitPercent, firstPay) {
   const arr = []
