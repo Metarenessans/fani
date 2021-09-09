@@ -12,6 +12,23 @@
   "plugins": [
     "@babel/plugin-proposal-class-properties",
     "@babel/plugin-proposal-optional-chaining",
-    "@babel/plugin-proposal-numeric-separator"
+    "@babel/plugin-proposal-numeric-separator",
+    [
+      "transform-imports",
+      {
+        "antd": {
+          "transform": "antd/es/${member}",
+          "preventFullImport": true
+        },
+        "@ant-design/icons": {
+          "transform": "@ant-design/icons/${member}",
+          "preventFullImport": true
+        },
+        "lodash": {
+          "transform": "lodash/${member}",
+          "preventFullImport": true
+        }
+      }
+    ]
   ]
 }

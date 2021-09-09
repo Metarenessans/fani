@@ -2499,7 +2499,12 @@ html {
   background-color: #fff;
 }
 .ant-select-arrow {
-  display: inline-block;
+  display: flex;
+  width: 1em;
+  height: 1em;
+  justify-content: center;
+  align-items: center;
+
   color: inherit;
   font-style: normal;
   line-height: 0;
@@ -2507,8 +2512,6 @@ html {
   text-transform: none;
   vertical-align: -0.125em;
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   position: absolute;
   top: 50%;
   right: 1em;
@@ -2517,9 +2520,7 @@ html {
   // font-size: 12px;
   font-size: .7em;
   line-height: 1;
-  -webkit-transform-origin: 50% 50%;
-      -ms-transform-origin: 50% 50%;
-          transform-origin: 50% 50%;
+  transform-origin: 50% 50%;
 }
 .ant-select-arrow > * {
   line-height: 1;
