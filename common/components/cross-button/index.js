@@ -1,18 +1,20 @@
-import React from 'react';
+import React from 'react'
 import { Tooltip } from 'antd/es'
+
+import clsx from 'clsx'
 
 import './style.scss'
 
 export default function CrossButton(props) {
-  const label = props.label;
+  const title = props["aria-label"] || props.title;
   const onClick = props.onClick || (() => {});
 
   return (
-    <Tooltip title={label}>
+    <Tooltip title={title}>
       <button
         {...props}
-        className={['cross-button'].concat(props.className).join(' ')}
-        aria-label={label}
+        className={clsx('cross-button', props.className)}
+        aria-label={title}
         onClick={e => onClick(e)}
       >
         <span role="img" aria-label="plus" className="anticon anticon-plus">
