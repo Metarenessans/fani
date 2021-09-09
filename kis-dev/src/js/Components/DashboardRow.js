@@ -19,6 +19,7 @@ import round          from "../../../../common/utils/round"
 import num2str from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
 import extRateReal    from "../utils/rate";
+import realtyEndProfit from "../utils/realtyEndProfit";
 import kisDepositMonth from "../utils/contribution-calc"
 
 
@@ -93,17 +94,6 @@ export default class DashboardRow extends React.Component {
 
     
     const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal, monthPay, investPercent} = item;
-
-    let monthPercent = 0.007
-
-    // упущенная прибыль
-    const lostProfit = -round((firstPay - (rentIncome - monthPay)) / 12 * profitPercent)
-
-    // ежемесячный баланс
-    let monthBalance = rentIncome - monthPay
-
-    // баланс по итогу месяца
-    const monthEndSum = round((lostProfit + monthBalance) + (-monthOutcome) + monthAppend)
 
     // сумма всех выводов в месяц
     const allMonthOutCome = monthPay + monthOutcome
@@ -190,49 +180,10 @@ export default class DashboardRow extends React.Component {
     
     /** Недвижимость
      * возвращает итоговую сумму в зависимости от периода
-     * @period      период   (количество месяцев)
+     * @period      количество месяцев
     */
-    function realtyEndProfit(period) {
-      const arr = []
-
-      for (let i = 0; i < period; i++) {
-        // ежемесячный баланс
-        let monthBalance = (rentIncome + monthAppend) - (monthPay + monthOutcome)
-
-        // упущенная прибыль
-        let lostProfit = (firstPay - ((rentIncome + monthAppend) - (monthPay + monthOutcome)) ) / 12 * profitPercent
-
-        // итог
-        let endSum = monthBalance - lostProfit
-
-        if (i == 1) {
-          let currentBalance = (firstPay - (arr[i - 1].monthBalance + rentIncome - monthPay)) / 12 * profitPercent
-
-          monthBalance = arr[i - 1].monthBalance + (rentIncome + monthAppend) - (monthPay + monthOutcome);
-          lostProfit = currentBalance;
-          endSum = monthBalance + -lostProfit;
-        }
-
-        if (i == 2) {
-          monthBalance = arr[i - 1].monthBalance + (rentIncome + monthAppend) - (monthPay + monthOutcome);
-          lostProfit   = arr[i - 1].lostProfit + (firstPay - monthBalance) / 12 * profitPercent;
-          endSum       = monthBalance + -lostProfit;
-        }
-
-        if (i > 2) {
-          monthBalance = arr[i - 1].monthBalance + (rentIncome + monthAppend) - (monthPay + monthOutcome);
-          lostProfit   = arr[i - 1].lostProfit + (firstPay - monthBalance) / 12 * profitPercent;
-          endSum       = monthBalance + -lostProfit;
-        }
-
-        arr[i] = {
-          monthBalance : round(monthBalance),
-          lostProfit   : round(lostProfit),
-          endSum       : round(endSum)
-        }
-      }
-
-      return arr[arr.length - 1].endSum
+    function realtyProfit(period) {
+      return realtyEndProfit(period, rentIncome, monthAppend, monthPay, monthOutcome, profitPercent, firstPay)
     }
 
     return (
@@ -400,7 +351,7 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val dashboard-col--main">
             {formatNumber(round(toolType !== "Недвижимость" ?
               (toolType == "Вклад" ? contributionFinalVal.firstMonthTotalResult : tradeFinalVal(260 / 12, 1) ) :
-              realtyEndProfit(1))
+              realtyProfit(1))
             ) }
           </span>
  
@@ -423,7 +374,7 @@ export default class DashboardRow extends React.Component {
                   round(
                     toolType !== "Недвижимость"?
                       (toolType == "Вклад" ? contributionFinalVal.total : tradeFinalVal(260 * period, 12)) :
-                      realtyEndProfit(period * 12)
+                      realtyProfit(period * 12)
                   )
                 )
               }
