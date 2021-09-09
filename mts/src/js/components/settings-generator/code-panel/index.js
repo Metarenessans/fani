@@ -198,6 +198,9 @@ export default function CodePanel(props) {
           if (suffix) {
             parsedData = `{${parsedData},{${suffix}}}`;
           }
+          else if (currentPreset.type == "СМС + ТОР") {
+            parsedData = "{" + parsedData + "}";
+          }
         }
 
         // В Лимитнике и СМС + ТОР в массиве закрытия добавляем еще пару фигурных скобок
@@ -370,11 +373,13 @@ export default function CodePanel(props) {
 
       {(() => {
         let value = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
+        let content = value;
         if (currentPreset.type == "Лимитник") {
           value = round(ranullPlus / 100, 2);
+          content = ranullPlusMode ? `${value},0` : `0,${value}`;
+          content = "{" + content + "}";
         }
-        let content = ranullPlusMode ? `${value},0` : `0,${value}`;
-        return renderLine(null, "ranullplus", "{" + content + "}");
+        return renderLine(null, "ranullplus", content);
       })()}
 
     </Stack>

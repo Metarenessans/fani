@@ -97,20 +97,18 @@ const Header = ({
                 {(saved && !changed) ? "Изменить" : "Сохранить"}
               </Button>
 
-              {saves.length > 0 && (
-                <a
-                  className={clsx(
-                    "custom-btn",
-                    "custom-btn--secondary",
-                    "page-header__save"
-                  )}
-                  href="#pure=true"
-                  target="_blank"
-                  aria-label="Создать новое сохранение"
-                >
-                  Добавить новый
-                </a>
-              )}
+              <a
+                className={clsx(
+                  "custom-btn",
+                  "custom-btn--secondary",
+                  "page-header__save"
+                )}
+                href="#pure=true"
+                target="_blank"
+                aria-label="Создать новое сохранение"
+              >
+                Добавить новый
+              </a>
             </div>
 
           </Stack>

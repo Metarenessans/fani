@@ -183,13 +183,16 @@ class App extends React.Component {
         const { data } = response;
         return this.setStateAsync({ data, loadingChartData: false });
       })
-      .catch(error => this.showAlert(`Не удалось получить график для ${code}: ${error}`));
+      .catch(reason => {
+        console.warn(`Не удалось получить график для ${code}: ${reason}`);
+        // this.showAlert(`Не удалось получить график для ${code}: ${reason}`);
+        return this.fetchCompanyQuotes();
+      });
   }
 
   setFetchingToolsTimeout() {
+    const ms = dev ? 10_000 : 1 * 60 * 1_000;
     new Promise(resolve => {
-      const ms = dev ? 10_000 : 1 * 60 * 1_000;
-      console.log(formatNumber(ms / 1_000) + "s timeout started");
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
@@ -209,7 +212,6 @@ class App extends React.Component {
         }
         else resolve();
       }, ms);
-
     }).then(() => this.setFetchingToolsTimeout())
   }
 
@@ -221,16 +223,14 @@ class App extends React.Component {
   fetchInitialData() {
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout())
+      .then(() => this.fetchSaves())
+      .catch(error => console.error(error))
       .finally(() => {
-        this.fetchSaves()
-          .catch(error => console.error(error))
-          .finally(() => {
-            Promise.allSettled([
-              this.fetchInvestorInfo(),
-              this.fetchGENA()
-            ])
-              .finally(() => this.fetchCompanyQuotes())
-          });
+        Promise.allSettled([
+          this.fetchInvestorInfo(),
+          this.fetchGENA()
+        ])
+          .finally(() => this.fetchCompanyQuotes())
       });
   }
 
@@ -276,25 +276,26 @@ class App extends React.Component {
       })
       .catch(error => console.error(error))
       .finally(() => {
-        if (false && dev) {
+        if (dev) {
           let genaSave = {
             "isLong": true,
             "comission": 1,
-            "risk": 300,
-            "depo": 250000,
-            "secondaryDepo": 750000,
-            "load": 44.96,
+            "risk": 0.5,
+            "depo": 3000000,
+            "secondaryDepo": 0,
+            "load": 3,
             "currentTab": "Закрытие основного депозита",
             "presets": [
               {
                 "name": "Стандарт",
                 "type": "Стандарт",
                 "options": {
+                  "currentToolCode": "BRU1",
                   "Закрытие основного депозита": {
                     "closeAll": false,
                     "inPercent": false,
                     "preferredStep": "",
-                    "length": "",
+                    "length": 1,
                     "percent": "",
                     "stepInPercent": "",
                     "mode": "custom",
@@ -305,7 +306,7 @@ class App extends React.Component {
                       {
                         "inPercent": false,
                         "preferredStep": "",
-                        "length": 10,
+                        "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
@@ -316,26 +317,26 @@ class App extends React.Component {
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 285.2,
+                        "preferredStep": 1.43,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 285.2
+                    "preferredStep": 1.43
                   },
                   "Обратные профитные докупки": {
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 285.2,
+                        "preferredStep": 1.43,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 285.2
+                    "preferredStep": 1.43
                   }
                 }
               },
@@ -343,19 +344,20 @@ class App extends React.Component {
                 "name": "СМС + ТОР",
                 "type": "СМС + ТОР",
                 "options": {
+                  "currentToolCode": "BRU1",
                   "Закрытие основного депозита": {
                     "closeAll": false,
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 220,
+                        "preferredStep": 1.52,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 220
+                    "preferredStep": 1.52
                   },
                   "Закрытие плечевого депозита": {
                     "closeAll": false,
@@ -363,73 +365,73 @@ class App extends React.Component {
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 220,
+                        "preferredStep": 1.52,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 220
+                    "preferredStep": 1.52
                   },
                   "Обратные докупки (ТОР)": {
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 220,
+                        "preferredStep": 1.52,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 220
+                    "preferredStep": 1.52
                   },
                   "Прямые профитные докупки": {
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 220,
+                        "preferredStep": 1.52,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 220
+                    "preferredStep": 1.52
                   },
                   "Обратные профитные докупки": {
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 220,
+                        "preferredStep": 1.52,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 220
-                  },
-                  "currentToolCode": "AFZ1"
+                    "preferredStep": 1.52
+                  }
                 }
               },
               {
                 "name": "Лимитник",
                 "type": "Лимитник",
                 "options": {
+                  "currentToolCode": "GDH2",
                   "Закрытие основного депозита": {
                     "closeAll": false,
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 2.44,
+                        "preferredStep": null,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 5.31
+                    "preferredStep": 1.52
                   },
                   "Обратные докупки (ТОР)": {
                     "mode": "custom",
@@ -437,33 +439,34 @@ class App extends React.Component {
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 2.44,
+                        "preferredStep": null,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 5.31
+                    "preferredStep": 1.52
                   }
                 }
               },
               {
-                "name": "Лимитник (SBER)",
+                "name": "Лимитник 2",
                 "type": "Лимитник",
                 "options": {
+                  "currentToolCode": "GDH2",
                   "Закрытие основного депозита": {
                     "closeAll": false,
                     "mode": "custom",
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 2.44,
+                        "preferredStep": null,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 2.44
+                    "preferredStep": 1.52
                   },
                   "Обратные докупки (ТОР)": {
                     "mode": "custom",
@@ -471,101 +474,28 @@ class App extends React.Component {
                     "customData": [
                       {
                         "inPercent": false,
-                        "preferredStep": 2.44,
+                        "preferredStep": null,
                         "length": 1,
                         "percent": "",
                         "stepInPercent": ""
                       }
                     ],
-                    "preferredStep": 2.44
-                  },
-                  "currentToolCode": "MMM"
-                }
-              },
-              {
-                "name": "test",
-                "type": "СМС + ТОР",
-                "options": {
-                  "Закрытие основного депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 220,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 220
-                  },
-                  "Закрытие плечевого депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 220,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 220
-                  },
-                  "Обратные докупки (ТОР)": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 220,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 220
-                  },
-                  "Прямые профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 220,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 220
-                  },
-                  "Обратные профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 220,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 220
-                  },
-                  "currentToolCode": "AFZ1"
+                    "preferredStep": 1.52
+                  }
                 }
               }
             ],
-            "currentPresetName": "test",
+            "currentPresetName": "Лимитник 2",
             "isProfitableBying": false,
             "isReversedProfitableBying": false,
             "isMirrorBying": false,
-            "isReversedBying": true,
-            "ranull": 0,
+            "isReversedBying": false,
+            "ranull": 10,
             "ranullMode": true,
-            "ranullPlus": 0,
-            "ranullPlusMode": true
+            "ranullPlus": 3,
+            "ranullPlusMode": true,
+            "totalIncome": 884.8624,
+            "totalLoss": 15000
           };
           genaSave = parseGENASave(genaSave);
 
@@ -622,15 +552,14 @@ class App extends React.Component {
               const { id } = save;
 
               this.setState({ loading: true });
-              this.fetchSaveById(id)
+              return this.fetchSaveById(id)
                 .then(response => this.extractSave(response.data))
                 .then(() => resolve())
                 .catch(error => reject(error));
             }
           }
-          else {
-            resolve();
-          }
+          
+          resolve();
         })
         .catch(reason => {
           this.showAlert(`Не удалось получить сохранения! ${reason}`);
@@ -645,7 +574,7 @@ class App extends React.Component {
             }];
             const save = {
               ...saves[0],
-              "static": "{\"depo\":1500000,\"priceRange\":[68.66,69.24],\"percentage\":10,\"profitRatio\":60,\"risk\":100,\"mode\":0,\"days\":5,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"BRQ1\",\"kodTable\":[{\"fact\":\"2\",\"income\":\"3\"},{\"fact\":\"5\",\"income\":\"5\"},{\"fact\":\"1\",\"income\":\"1\"}],\"current_date\":\"#\"}"
+              "static": "{\"depo\":3100000,\"priceRange\":[1799.9,1799.9],\"percentage\":3,\"profitRatio\":90,\"risk\":0.5,\"mode\":2,\"days\":1,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"GDH2\",\"kodTable\":[],\"current_date\":\"#\"}"
             };
 
             this.setStateAsync({ saves }).then(() => this.extractSave(save))
@@ -757,9 +686,9 @@ class App extends React.Component {
         )
       }
 
-    Promise.all(requests)
-      .then(() => this.setStateAsync({ toolsLoading: false }))
-      .then(() => resolve())
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsLoading: false }))
+        .then(() => resolve())
     })
   }
 
@@ -1010,7 +939,9 @@ class App extends React.Component {
     return new Promise(resolve => {
       const state = JSON.parse(JSON.stringify(this.initialState));
       this.setStateAsync(state)
-        .then(() => this.updatePriceRange(this.getCurrentTool()));
+        .then(() => this.updatePriceRange(this.getCurrentTool()))
+        .then(() => this.fetchCompanyQuotes())
+        .then(() => resolve());
     })
   }
 
@@ -1159,6 +1090,52 @@ class App extends React.Component {
     return this.getTitleJSX().props.children;
   }
 
+  getDisabledMods() {
+    const { depo } = this.state;
+
+    let disabledModes = [false, false, false];
+
+    const tool = this.getCurrentTool();
+    if (!tool.volume) {
+      console.warn(`У ${tool.code} нет объема`, tool);
+      return disabledModes;
+    }
+
+    let depoOverflow = tool?.volumeAverage > 0 && (depo > tool.volumeAverage);
+
+    // Фьючерсы
+    if (tool.dollarRate == 0) {
+      disabledModes = [
+        tool.volume < 1e9                    || depoOverflow,
+        tool.volume < 1e9 || depo <= 600_000 || depoOverflow,
+                             depo <= 100_000 || depoOverflow
+      ]
+    }
+    // Россия
+    else if (tool.dollarRate == 1) {
+      disabledModes = [
+        tool.volume < 200_000 || depo < 1_000_000 || depoOverflow,
+        tool.volume < 200_000 || depo < 3_000_000 || depoOverflow,
+                                 depo < 1_000_000 || depoOverflow
+      ]
+    }
+    // Америка
+    else {
+      disabledModes = [
+        depo < 3_000_000,
+        depo <= 10_000_000,
+        depo < 3_000_000
+      ]
+    }
+
+    if (disabledModes.every(mode => mode == true)) {
+      console.error("All modes are disabled!", depo, tool);
+      return disabledModes.map(mode => false);
+    }
+
+    return disabledModes;
+  }
+
   render() {
     let {
       currentSaveIndex,
@@ -1198,11 +1175,14 @@ class App extends React.Component {
     
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
+    // TODO: вставить позже
+    // const disabledModes = this.getDisabledMods();
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
       currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600_000,
       depo <= 100_000
     ];
+    // Если текущий режим заблокирован, откатываемся к доступному
     if (disabledModes[mode]) {
       mode = disabledModes.indexOf(false);
     }
@@ -1286,6 +1266,10 @@ class App extends React.Component {
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
                     .then(response => this.extractSave(response.data))
+                    .then(() => {
+                      console.log("fetchCompanyQuotes request should be here");
+                      return this.fetchCompanyQuotes()
+                    })
                     .catch(error => this.showAlert(error));
                 }
               }}

@@ -22,7 +22,6 @@ module.exports = (env, options) => {
     devServer: {
       port: 1337,
       contentBase: path.join(__dirname, "public"),
-      writeToDisk: true,
       open: true
       // host: '192.168.0.129'
     },

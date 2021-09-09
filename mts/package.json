@@ -4,8 +4,8 @@
   "scripts": {
     "dev": "webpack serve --mode development",
     "test": "jest --runInBand --detectOpenHandles",
-    "watch": "webpack --watch --progress --mode production",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "deploy": "wsl ./deploy.sh"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
