@@ -3,6 +3,7 @@ import { Input, Tooltip } from 'antd/es'
 import clsx from 'clsx';
 import './style.scss'
 
+// TODO: Сделать так, чтобы условие было динамическим
 const isMobile = innerWidth <= 768;
 
 export default class NumericInput extends React.Component {
