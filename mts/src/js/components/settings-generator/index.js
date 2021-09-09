@@ -436,7 +436,6 @@ const SettingsGenerator = props => {
     const handleCodeControlClick = e => {
 
       const prevTab = prevCurrentTab.current;
-      console.log(prevTab, e.target.getAttribute("aria-selected"));
 
       if (e.target.getAttribute("aria-selected") == "true") {
         const tab = Array.prototype.find.call(
@@ -596,7 +595,6 @@ const SettingsGenerator = props => {
 
           
           if (preferredStep != oldDefaultStep) {
-            console.log("custom!", preferredStep, _prefStep, oldDefaultStep);
             _prefStep = oldDefaultStep;
           }
         }
@@ -1635,8 +1633,6 @@ const SettingsGenerator = props => {
           newPreset.name = makeUnique(newPreset.name, presets.map(preset => preset.name));
 
           if (newPresetName == "МТС") {
-            console.log('!!', props);
-            
             newPreset.options.currentToolCode = props.currentToolCode;
             setRisk(props.risk);
             setLoad(Math.abs(props.load));
