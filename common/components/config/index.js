@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
-import { Button, Input, Tooltip } from 'antd/es'
+import { Input } from 'antd/es'
 
-import isEqual from '../../utils/is-equal'
+import { isEqual } from "lodash"
 
 import croppString  from "../../utils/cropp-string"
 
@@ -9,7 +9,6 @@ import Stack                 from "../stack"
 import CrossButton           from "../cross-button"
 import NumericInput          from "../numeric-input"
 import { Dialog, dialogAPI } from "../dialog"
-import { Tools }             from "../../tools"
 
 import "./style.scss"
 

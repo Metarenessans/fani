@@ -20,6 +20,7 @@ import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import "../sass/style.sass"
 
@@ -40,7 +41,7 @@ constructor(props) {
       loading: false,
 
       // Депозит
-      depo: 2000000,
+      depo: 1_000_000,
 
       items: [{
         id: 1,
@@ -65,7 +66,7 @@ constructor(props) {
         // ===================
 
         // Свободные деньги
-        freeMoney: 0,
+        freeMoney:     0,
         // Прошло пунктов против
         pointsAgainst: 0,
         // 
@@ -74,9 +75,9 @@ constructor(props) {
 
       customTools: [],
 
-      saved:              false,
+      saved: false,
 
-      currentSaveIndex:   0,
+      currentSaveIndex: 0,
 
       toolsLoading: true,
 
@@ -155,13 +156,9 @@ constructor(props) {
 
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
-      .then(response => {
-        const { deposit, status, skill } = response.data;
-        return new Promise(resolve => {
-          this.setState({ investorInfo: { status, skill } }, () => resolve(deposit));
-        });
-      })
+      .then(this.applyInvestorInfo)
       .then(depo => this.setState({ depo: depo || 10000 }))
+      .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
 
@@ -193,8 +190,8 @@ constructor(props) {
     return new Promise((resolve, reject) => {
       if (Tools.storage?.length) {
         this.setStateAsync({ toolsLoading: true });
-        // const oldTool = this.getCurrentTool();
         const newTools = Tools.storage;
+
         setTimeout(() => {
           this.setState({
             tools: newTools,
@@ -211,12 +208,12 @@ constructor(props) {
   prefetchTools() {
     return new Promise(resolve => {
       Tools.storage = [];
-      const { investorInfo } = this.state;
       const requests = [];
       for (let request of ["getFutures", "getTrademeterInfo"]) {
+        const { investorInfo } = this.state;
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
               Tools.storage = [...tools];
@@ -235,10 +232,12 @@ constructor(props) {
       const requests = [];
       this.setState({ toolsLoading: true });
       for (let request of ["getFutures", "getTrademeterInfo"]) {
+        const { investorInfo } = this.state;
         fetch(request)
-          .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+          .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
           .then(tools => Tools.sort(this.state.tools.concat(tools)))
           .then(tools => this.setStateAsync({ tools }))
+          .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
           .then(() => {
             if (first) {
               first = false;
@@ -523,12 +522,8 @@ constructor(props) {
                       data={obj}
                       depo={this.state.depo}
                       onChange={(prop, val, jsx) => {
-                        if (index == 0) {
-                          const { tools, investorInfo } = this.state;
-                          this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
-                        }
-
                         const { items } = this.state;
+
                         if (prop == "selectedToolName") {
                           items[index].stepExpected = jsx.getToolByName(val).priceStep * 100;
                           this.setStateAsync({ isToolsDropdownOpen: false })

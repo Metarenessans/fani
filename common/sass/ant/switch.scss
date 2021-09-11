@@ -27,12 +27,8 @@
   border: .1em solid transparent;
   border-radius: 100px;
   cursor: pointer;
-  -webkit-transition: all 0.36s;
-  transition: all 0.36s;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none;
+  // transition: all 0.36s;
+  user-select: none;
 }
 .ant-switch-inner {
   display: block;
@@ -44,8 +40,6 @@
 }
 .ant-switch-loading-icon,
 .ant-switch::after {
-  
-
   position: absolute;
   top:  calc( var(--space) - .1em );
   left: calc( var(--space) - .1em );
@@ -54,8 +48,7 @@
   background-color: #fff;
   border-radius: 1em;
   cursor: pointer;
-  -webkit-transition: all 0.36s cubic-bezier(0.78, 0.14, 0.15, 0.86);
-  transition: all 0.36s cubic-bezier(0.78, 0.14, 0.15, 0.86);
+  // transition: all 0.36s cubic-bezier(0.78, 0.14, 0.15, 0.86);
   content: ' ';
 }
 .ant-switch::after {

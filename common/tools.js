@@ -1,9 +1,28 @@
-import { merge, round, cloneDeep } from "lodash";
-import fractionLength from "./utils/fraction-length"
+import { round } from "lodash";
+import fractionLength  from "./utils/fraction-length"
 import readyTools      from "./adr.json"
 import readyToolsNew   from "./adr-new.json"
 import readyToolsMarch from "./adr-march.json"
 import readyToolsApril from "./adr-april.json"
+
+import magnetToClosest from "./utils/magnet-to-closest"
+
+const filterJSONToolsFn = tool => {
+  if (tool.adrWeek == "" && tool.adrMonth == "") {
+    return false;
+  }
+  return true;
+};
+
+const correctJSONToolFn = tool => {
+  tool.code.replace(".US", "");
+  return tool;
+}
+
+const filteredReadyTools      = readyTools.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsNew   = readyToolsNew.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsMarch = readyToolsMarch.filter(filterJSONToolsFn).map(correctJSONToolFn);
+const filteredReadyToolsApril = readyToolsApril.filter(filterJSONToolsFn).map(correctJSONToolFn);
 
 const template = {
   ref:             {},
@@ -17,7 +36,7 @@ const template = {
   currentPrice:    1,
   volume:          1,
   lotSize:         1,
-  dollarRate:      1,
+  dollarRate:      0,
   adrDay:          1,
   adrWeek:         1,
   adrMonth:        1,
@@ -33,22 +52,26 @@ const template = {
 
 class Tool {
 
-  constructor(toCopy = {}) {
-    Object.keys(toCopy).forEach(key => {
-      this[key] = toCopy[key];
-    });
+  constructor(base = {}) {
+    for (let prop in base) {
+      this[prop] = base[prop];
+    }
   }
 
-  update(investorInfo) {
-    if (this.ref && Object.keys(this.ref).length > 0) {
-      let guarantee = this.ref.guarantee || this.ref.guaranteeValue;
+  update(investorInfo, options) {
+    options = options || {};
+    const useDefault = options.useDefault || false;
+
+    const { ref } = this;
+    if (ref && Object.keys(ref).length > 0) {
+      let guarantee = ref.guarantee || ref.guaranteeValue;
 
       if (typeof guarantee == "object") {
-        let guaranteeExtracted = this.ref.guarantee["default"];
-        if (investorInfo.status) {
-          const type = investorInfo.type;
-          if (this.ref.guarantee[investorInfo.status] && this.ref.guarantee[investorInfo.status][type]) {
-            guaranteeExtracted = this.ref.guarantee[investorInfo.status][type];
+        let guaranteeExtracted = ref.guarantee["default"];
+        const { status, type } = investorInfo;
+        if (!useDefault && status && type) {
+          if (ref.guarantee[status] && ref.guarantee[status][type]) {
+            guaranteeExtracted = ref.guarantee[status][type];
           }
         }
 
@@ -58,7 +81,20 @@ class Tool {
         guarantee = parseNumber(guarantee);
       }
 
-      this.guarantee = round(guarantee, 1);
+      guarantee = round(guarantee, 2);
+
+      if (isNaN(guarantee)) {
+        guarantee = 0;
+        console.warn("ГО неправильно обновилось", ref.code, ref.guarantee, investorInfo);
+      }
+      
+      if (typeof guarantee == "number") {
+        this.guarantee = guarantee;
+      }
+      else {
+        this.guarantee = -1;
+        console.warn("ГО неправильно обновилось", ref.code, ref.guarantee, investorInfo);
+      }
     }
 
     return this;
@@ -131,6 +167,8 @@ const parseNumber = (value, fallback = 0) => {
 };
 
 const parseTool = tool => {
+  const ref = { ...tool };
+
   let averageProgress = parseNumber(tool.averageProgress);
   let currentPrice    = parseNumber(tool.price || tool.currentPrice);
   let stepPrice       = parseNumber(tool.stepPrice);
@@ -173,9 +211,7 @@ const parseTool = tool => {
   var found = false;
   
   /**
-   *
-   *
-   * @param {*} readyTools
+   * @param {array} readyTools
    * @param {boolean} [strict=false] Если включен, то коды фьючерсов будут сравниваться не по первым двум символам, а на предмет полного соответствия
    */
   const check = (readyTools, strict = false) => {
@@ -185,8 +221,8 @@ const parseTool = tool => {
         : (readyTool.isFutures && dollarRate == 0) 
           ? 2 
           : undefined;
-      const toolCode = tool.code.toLowerCase().slice(0, lastCompareIndex);
-      const readyToolCode = readyTool.code.replace(".US", "").toLowerCase().slice(0, lastCompareIndex);
+      const toolCode = tool.code.slice(0, lastCompareIndex);
+      const readyToolCode = readyTool.code.slice(0, lastCompareIndex);
 
       if (toolCode == readyToolCode) {
 
@@ -206,17 +242,10 @@ const parseTool = tool => {
     }
   };
 
-  const filterFn = tool => {
-    if (tool.adrWeek == "" && tool.adrMonth == "") {
-      return false;
-    }
-    return true;
-  };
-
-  check(readyTools.filter(filterFn));
-  check(readyToolsNew.filter(filterFn));
-  check(readyToolsMarch.filter(filterFn), true);
-  check(readyToolsApril.filter(filterFn), true);
+  !found && check(filteredReadyToolsApril, true);
+  !found && check(filteredReadyToolsMarch, true);
+  !found && check(filteredReadyToolsNew);
+  !found && check(filteredReadyTools);
 
   // Если инструмент не сметчился ни с одним из заготовленным файлов
   if (!found) {
@@ -229,19 +258,22 @@ const parseTool = tool => {
   }
 
   // Оставляем такое же кол-во знаков после запятой, что и в шаге цены
-  let fraction = fractionLength(priceStep);
-  if (adrDay) {
-    adrDay   = +(adrDay).toFixed(fraction);
+  const fraction = fractionLength(priceStep);
+  if (fraction) {
+    adrDay = round(adrDay, fraction);
+    adrWeek = round(adrWeek, fraction);
+    adrMonth = round(adrMonth, fraction);
   }
-  if (adrWeek) {
-    adrWeek  = +(adrWeek).toFixed(fraction);
-  }
-  if (adrMonth) {
-    adrMonth = +(adrMonth).toFixed(fraction);
+  else {
+    adrDay = magnetToClosest(adrDay, priceStep);
+    adrWeek = magnetToClosest(adrWeek, priceStep);
+    adrMonth = magnetToClosest(adrMonth, priceStep);
   }
 
-  return {
-    ref:       tool,
+  const obj = {
+    ...template,
+
+    ref,
     code:      tool.code,
     fullName:  tool.fullName  || tool.name,
     shortName: tool.shortName,
@@ -262,6 +294,12 @@ const parseTool = tool => {
 
     matched: found
   };
+
+  if (obj.code != obj.ref.code) {
+    console.error(obj);
+  }
+
+  return obj;
 };
 
 const shouldBeSkipped = tool => {
@@ -299,16 +337,28 @@ class Tools {
         continue;
       }
 
-      let tool = new Tool(merge(cloneDeep(template), parseTool(rowData, options)));
+      // let tool = new Tool(merge(cloneDeep(template), parseTool(rowData, options)));
+      let tool = new Tool(parseTool(rowData, options));
       if (!tool.matched) {
         unmatchedTools.push(tool);
       }
-      tool = tool.update(investorInfo);
+      tool = tool.update(investorInfo, options);
+
+      if (tool.code != tool.ref.code) {
+        console.warn("Something's wrong with tool's code:", tool);
+      }
+
       parsedTools.push(tool);
     }
 
     if (unmatchedTools.length) {
       // console.warn("Не сметчились", unmatchedTools.map(tool => tool + ""));
+    }
+
+    for (let tool of parsedTools) {
+      if (tool.code != tool.ref.code) {
+        console.warn("Something's wrong with tool's code:", tool);
+      }
     }
 
     return parsedTools;
@@ -323,8 +373,13 @@ class Tools {
       const r = String(b.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
 
       let res = 0;
-      for (let i = 0; i < Math.min(l.length,r.length); i++) {
+      for (let i = 0; i < Math.min(l.length, r.length); i++) {
+        if (l[i] == "-" || r[i] == "-") {
+          return -1;
+        }
+
         res = c(l[i]) - c(r[i]);
+
         if (res != 0) {
           break;
         }
@@ -356,6 +411,12 @@ class Tools {
         return (Math.trunc(numberA) - Math.trunc(numberB)) || (fraction(numberA) - fraction(numberB));
       }
     });
+
+    // for (let tool of sorted) {
+    //   if (tool.code != tool.ref.code) {
+    //     console.warn("Something's wrong with tool's code:", tool);
+    //   }
+    // }
 
     return sorted;
   }
@@ -409,20 +470,20 @@ class Tools {
       }),
       this.create({
         ref:             {},
-        fullName:        "Si-3.21",
+        fullName:        "Si-9.21",
         shortName:       "",
-        code:            "SiH1",
+        code:            "SiU1",
         stepPrice:       1,
         priceStep:       1,
         averageProgress: 0,
-        guarantee:       4783.9,
-        currentPrice:    73525,
+        guarantee:       4875.84,
+        currentPrice:    73429,
         volume:          0,
         lotSize:         1000,
         dollarRate:      0,
-        adrDay:          831,
-        adrWeek:         2198,
-        adrMonth:        5882,
+        adrDay:          918,
+        adrWeek:         1887,
+        adrMonth:        4362,
       }),
       this.create({
         ref:             {},
@@ -492,6 +553,57 @@ class Tools {
         adrWeek:         8.45,
         adrMonth:        12.18,
       }),
+      this.create({
+        ref:             {},
+        fullName:        "АЛРОСА ПАО ао",
+        shortName:       "",
+        code:            "ALRS",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1280,
+        currentPrice:    128,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          2.75,
+        adrWeek:         5.47,
+        adrMonth:        10.59,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "RTS-9.21",
+        shortName:       "",
+        code:            "RIU1",
+        stepPrice:       14.6193,
+        priceStep:       10,
+        averageProgress: 0,
+        guarantee:       31929.03,
+        currentPrice:    162260,
+        volume:          1,
+        lotSize:         1,
+        dollarRate:      0,
+        adrDay:          3050,
+        adrWeek:         5501,
+        adrMonth:        13711,
+      }),
+      this.create({
+        ref:             {},
+        fullName:        "ПАО Московская Биржа",
+        shortName:       "",
+        code:            "MOEX",
+        stepPrice:       0.1,
+        priceStep:       0.01,
+        averageProgress: 0,
+        guarantee:       1715.9,
+        currentPrice:    171.59,
+        volume:          1,
+        lotSize:         10,
+        dollarRate:      1,
+        adrDay:          3.11,
+        adrWeek:         7.67,
+        adrMonth:        17.64,
+      }),
     ]
   }
 
@@ -499,28 +611,47 @@ class Tools {
     if (!search || !tools.length) {
       return 0;
     }
-    
-    let index = tools.indexOf( 
-      tools.find( tool => 
-        tool.getSortProperty() == search || 
+
+    const alike = [];
+
+    let index = -1;
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+
+      if (
+        tool.toString()        == search ||
+        tool.getSortProperty() == search ||
         tool.code              == search
-      ) 
-    );
-    if (index > -1) {
-      return index;
+      ) {
+        return i;
+      }
+
+      // Текущий инструмент - фьючерс
+      if (tool.dollarRate == 0) {
+        if (tool.code.slice(0, 2).toLowerCase() == search.slice(0, 2).toLowerCase()) {
+          alike.push(tool);
+        }
+      }
+
+      // Если в id есть месяц и год, то можно начать искать ближайший
+      const regexp = /\d{1,2}\.\d{1,2}/;
+      const found = regexp.exec(search);
+      if (found) {
+        // Находим все инструменты с одинаковым кодом
+        let alike = [...tools].filter(tool =>
+          tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
+        );
+
+        const sorted = this.sort(alike.map(t => t.getSortProperty()).concat(search));
+        index = tools.indexOf(alike[0]) + sorted.indexOf(sorted.find(n => n == search));
+      }
     }
 
-    // Если в id есть месяц и год, то можно начать искать ближайший
-    const regexp = /\d{1,2}\.\d{1,2}/;
-    const found = regexp.exec(search);
-    if ( found ) {
-      // Находим все инструменты с одинаковым кодом
-      let alike = [ ...tools ].filter(tool => 
-        tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
-      );
-
-      const sorted = this.sort( alike.map(t => t.getSortProperty()).concat(search) );
-      index = tools.indexOf( alike[0] ) + sorted.indexOf( sorted.find( n => n == search ) );
+    if (index == -1 && alike.length) {
+      const toolsSorted = this.sort(alike);
+      const s = toolsSorted[0].toString();
+      return this.getToolIndexByCode(tools, s);
     }
 
     return Math.max(index, 0);

@@ -1,9 +1,11 @@
-import React, { Component } from 'react'
-import "anychart"
+import React, { Component } from "react"
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-core.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-stock.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-annotations.min.js");
 
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from "@ant-design/icons";
 
-import "./style.scss"
+import "./style.scss";
 
 let chart;
 let mapping;
@@ -17,13 +19,6 @@ let yScale;
 
 let minChartValue;
 let maxChartValue;
-
-const padZero = (number, len) => {
-  if (len - String(number).length < 0) {
-    return number;
-  }
-  return "0".repeat(len - String(number).length) + number; 
-};
 
 const updateChartMinMax = (priceRange, isLong = true, possibleRisk) => {
   if (lineMin) {
@@ -72,13 +67,6 @@ class Chart extends Component {
     // create a data table
     dataTable = anychart.data.table();
     dataTable.addData(dataParsed);
-    // dataTable.addData([
-    //   ['2016-04-01', 18.23],
-    //   ['2016-04-02', 19.50],
-    //   ['2016-04-03', 19.13],
-    //   ['2016-04-06', 18.54],
-    //   ['2016-04-07', 18.76]
-    // ]);
 
     // map the data
     mapping = dataTable.mapAs({ value: 1 });
@@ -89,10 +77,6 @@ class Chart extends Component {
     // create a plot and a line series
     series = chart.plot(0).line(mapping);
     series.name("Price");
-    // chart.plot(0).legend().titleFormat(
-    //   "<span style='color:#455a64;font-weight:600'>" +
-    //   "DATE: {%value}{dateTimeFormat: dd MMM yyyy}</span>"
-    // );
 
     // get a plot scale
     yScale = chart.plot(0).yScale();
@@ -101,7 +85,6 @@ class Chart extends Component {
     minChartValue = min;
     yScale.maximum(max);
     maxChartValue = max;
-
 
     // access the annotations() object of the plot to work with annotations
     var controller = chart.plot(0).annotations();
@@ -139,16 +122,12 @@ class Chart extends Component {
       return;
     }
 
-    // console.log('did mount');
-
     anychart.onDocumentReady(() => {
       this.update();
     });
   }
   
   componentWillUnmount() {
-    // console.log("unmounting");
-
     const chartHTML = document.getElementById("chart");
     if (chartHTML) {
       chartHTML.innerHTML = "";
@@ -169,4 +148,11 @@ class Chart extends Component {
   }
 }
 
-export { Chart, updateChartMinMax, updateChartScaleMinMax, updateChartZoom, minChartValue, maxChartValue }
+export {
+  Chart,
+  updateChartMinMax,
+  updateChartScaleMinMax,
+  updateChartZoom,
+  minChartValue,
+  maxChartValue
+}

@@ -1,11 +1,10 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import React from "react"
 
-import './style.scss'
+import "./style.scss"
 
 export default function Stack(props) {
   return (
-    <div {...props} className={['stack'].concat(props.className).join(' ')}>
+    <div {...props} className={["stack"].concat(props.className).join(" ")}>
       {props.children}
     </div>
   )

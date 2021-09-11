@@ -4,14 +4,13 @@ import { Radio, Button } from 'antd/es'
 import NumericInput from '../../../../../../common/components/numeric-input'
 import CrossButton  from '../../../../../../common/components/cross-button'
 
-import formatNumber   from '../../../../../../common/utils/format-number'
-import fractionLength from '../../../../../../common/utils/fraction-length'
-import round          from '../../../../../../common/utils/round'
+import formatNumber    from '../../../../../../common/utils/format-number'
+import fractionLength  from '../../../../../../common/utils/fraction-length'
+import round           from '../../../../../../common/utils/round'
+import magnetToClosest from '../../../../../../common/utils/magnet-to-closest'
 
 import stepConverter   from '../step-converter'
 import optionsTemplate from "../options-template"
-
-// import "./style.scss"
 
 const names = {
   "evenly":    "равномерно",
@@ -44,7 +43,8 @@ export default function SGRow({
 
   const fraction = fractionLength(currentTool.priceStep);
 
-  const inputFormatter = (number, digits) => formatNumber(number != "" ? round(number, digits != null ? digits : fraction) : number);
+  const inputFormatter = (number, digits) => 
+    formatNumber(number != "" ? round(number, digits != null ? digits : fraction) : number);
 
   const contractsArray = data.map(row => row.merged ? -row.contracts : row.contracts);
   const contractsSum = contractsArray.reduce((acc, curr) => acc + curr, 0);
@@ -69,6 +69,12 @@ export default function SGRow({
     if (preferredStep == "") {
       preferredStepInMoney = currentTool.adrDay;
     }
+  }
+
+  const updateStep = step => {
+    return fraction > 0
+      ? round(step, fraction)
+      : magnetToClosest(step, currentTool.priceStep);
   }
 
   return (
@@ -119,9 +125,10 @@ export default function SGRow({
                           let { inPercent, preferredStep } = options.customData[i];
 
                           if (preferredStep) {
-                            // Были в процентах, теперь переводим в доллары
+                            // Были в процентах, теперь переводим в валюту
                             if (inPercent) {
                               preferredStep = percentToStepsConverter(preferredStep, currentTool, contracts);
+                              preferredStep = updateStep(preferredStep);
                             }
                             // переводим в проценты
                             else {
@@ -150,16 +157,21 @@ export default function SGRow({
                       placeholder={
                         customDataRow.inPercent
                           ? round(stepsToPercentConverter(currentTool.adrDay, currentTool, contracts), 4)
-                          : currentTool.adrDay
+                          : updateStep(currentTool.adrDay)
                       }
                       format={number => inputFormatter(number, customDataRow.inPercent ? 2 : undefined)}
                       unsigned="true"
                       min={0}
                       onBlur={preferredStep => {
+                        let value = preferredStep;
+                        if (!customDataRow.inPercent) {
+                          value = updateStep(value);
+                        }
+
                         const customDataCopy = [...options.customData];
                         customDataCopy[i] = {
                           ...customDataCopy[i],
-                          preferredStep: round(preferredStep, fraction),
+                          preferredStep: value,
                         };
 
                         onPropertyChange({ customData: customDataCopy })

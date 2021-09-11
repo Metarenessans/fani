@@ -13,34 +13,28 @@ const { Option } = Select;
 import {
   LoadingOutlined,
   SettingFilled,
-  WarningOutlined
 } from "@ant-design/icons"
 
-import fetch          from "../../../common/api/fetch"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
-import fetchSavesFor  from "../../../common/api/fetch-saves"
-import fetchSaveById  from "../../../common/api/fetch/fetch-save-by-id"
-import params         from "../../../common/utils/params"
-import round          from "../../../common/utils/round"
-import formatNumber   from "../../../common/utils/format-number"
-import typeOf         from "../../../common/utils/type-of"
-import fractionLength from "../../../common/utils/fraction-length"
-import sortInputFirst from "../../../common/utils/sort-input-first"
-import isEqual        from '../../../common/utils/is-equal';
+import fetch           from "../../../common/api/fetch"
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import fetchSaveById   from "../../../common/api/fetch/fetch-save-by-id"
+import params          from "../../../common/utils/params"
+import round           from "../../../common/utils/round"
+import formatNumber    from "../../../common/utils/format-number"
+import fractionLength  from "../../../common/utils/fraction-length"
+import sortInputFirst  from "../../../common/utils/sort-input-first"
+import isEqual         from '../../../common/utils/is-equal';
+import fallbackBoolean from '../../../common/utils/fallback-boolean';
+import stepConverter   from './components/settings-generator/step-converter';
+
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import { Tools, Tool, template } from "../../../common/tools"
 
-import {
-  Chart,
-  updateChartMinMax,
-  updateChartScaleMinMax,
-  updateChartZoom,
-  minChartValue,
-  maxChartValue,
-} from "./components/chart"
+let chartModule;
+let Chart;
 
 import Stack                   from "../../../common/components/stack"
-import CrossButton             from "../../../common/components/cross-button"
 import { Dialog, dialogAPI }   from "../../../common/components/dialog"
 
 import "../sass/style.sass";
@@ -50,6 +44,14 @@ import NumericInput            from "../../../common/components/numeric-input"
 import SettingsGenerator       from "./components/settings-generator"
 import Header                  from "./components/header"
 import CustomSlider            from "../../../common/components/custom-slider"
+
+const algorithms = [
+  { name: "Стандарт",  profitRatio: 60 },
+  { name: "СМС + ТОР", profitRatio: 60 },
+  { name: "Лимитник",  profitRatio: 90 }
+];
+
+let unsavedGena = null;
 
 class App extends React.Component {
 
@@ -66,7 +68,7 @@ class App extends React.Component {
         type:   "LONG",
       },
 
-      depo: 1000000,
+      depo: 1_000_000,
       mode: 0,
       chance: 50,
       page: 1,
@@ -90,8 +92,16 @@ class App extends React.Component {
       profitRatio:           60,
       searchVal:             "",
 
+      presetSelection:       algorithms.map(algorithm => 0),
+      totalIncome:           0,
+      totalStep:             0,
+
       toolsLoading:       false,
       isFocused:          false,
+
+      kodTable: [],
+
+      genaID: -1,
     };
 
     this.state = {
@@ -106,11 +116,17 @@ class App extends React.Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Mts");
+    this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
   }
 
   componentDidMount() {
     this.bindEvents();
     this.fetchInitialData();
+
+    import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+      chartModule = module;
+      Chart = module.Chart;
+    });
   }
 
   setStateAsync(state = {}) {
@@ -128,19 +144,32 @@ class App extends React.Component {
     to   = Math.floor(+to   / 1000);
 
     const tool = this.getCurrentTool();
+    const { code } = tool;
     let method = "getCompanyQuotes";
 
     if (tool.dollarRate == 0) {
       method = "getPeriodFutures";
-      from = tool.firstTradeDate;
-      to   = tool.lastTradeDate;
+
+      let _f = from;
+      let _t = to;
+
+      if (tool.firstTradeDate) {
+        _f = tool.firstTradeDate;
+      }
+      if (tool.lastTradeDate) {
+        _t = tool.lastTradeDate;
+      }
+
+      if (_f < _t) {
+        from = _f;
+        to   = _t;
+      }
+      else {
+        console.warn(_f, _t);
+      }
     }
 
-    let body = {
-      code: tool.code,
-      from,
-      to,
-    };
+    let body = { code, from, to };
     
     if (tool.dollarRate != 0) {
       body = {
@@ -151,16 +180,16 @@ class App extends React.Component {
 
     fetch(method, "GET", body)
       .then(response => {
-        if (this.state.currentToolCode == tool.code) {
-          const data = response.data;
-          this.setState({ data, loadingChartData: false });
-        }
+        const { data } = response;
+        return this.setStateAsync({ data, loadingChartData: false });
       })
-      .catch(error => console.error(error));
+      .catch(error => this.showAlert(`Не удалось получить график для ${code}: ${error}`));
   }
 
   setFetchingToolsTimeout() {
     new Promise(resolve => {
+      const ms = dev ? 10_000 : 1 * 60 * 1_000;
+      console.log(formatNumber(ms / 1_000) + "s timeout started");
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
@@ -179,7 +208,7 @@ class App extends React.Component {
             });
         }
         else resolve();
-      }, dev ? 10_000 : 1 * 60 * 1_000);
+      }, ms);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -190,15 +219,392 @@ class App extends React.Component {
 
   // Fetching everithing we need to start working
   fetchInitialData() {
-    this.fetchInvestorInfo();
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout())
       .finally(() => {
         this.fetchSaves()
           .catch(error => console.error(error))
-          .finally(() => this.fetchCompanyQuotes());
+          .finally(() => {
+            Promise.allSettled([
+              this.fetchInvestorInfo(),
+              this.fetchGENA()
+            ])
+              .finally(() => this.fetchCompanyQuotes())
+          });
       });
+  }
 
+  fetchGENA() {
+    const parseGENASave = save => {
+      save.ranull         = save.ranull == null ? 0 : save.ranull;
+      save.ranullMode     = fallbackBoolean(save.ranullMode, true)
+      save.ranullPlus     = save.ranullPlus == null ? 0 : save.ranullPlus;
+      save.ranullPlusMode = fallbackBoolean(save.ranullPlusMode, true);
+      return save;
+    };
+
+    return fetch("getGenaSnapshots")
+      .then(response => {
+        const { data } = response;
+        console.log("getGenaSnapshots:", data);
+        return this.setStateAsync({ genaSaves: data });
+      })
+      .then(() => {
+        return new Promise((resolve, reject) => {
+          const id = this.state.genaSaves[0]?.id;
+          if (id != null) {
+            fetch("getGenaSnapshot", "GET", { id })
+              .then(response => {
+                const { data } = response;
+                try {
+                  let genaSave = JSON.parse(data.static);
+                  genaSave = parseGENASave(genaSave);
+
+                  console.log("getGenaSnapshot", genaSave);
+                  this.setState({ genaID: id, genaSave }, () => resolve());
+                }
+                catch (e) {
+                  reject(e);
+                }
+              })
+              .catch(error => reject(error));
+          }
+          else {
+            resolve();
+          }
+        })
+      })
+      .catch(error => console.error(error))
+      .finally(() => {
+        if (false && dev) {
+          let genaSave = {
+            "isLong": true,
+            "comission": 1,
+            "risk": 300,
+            "depo": 250000,
+            "secondaryDepo": 750000,
+            "load": 44.96,
+            "currentTab": "Закрытие основного депозита",
+            "presets": [
+              {
+                "name": "Стандарт",
+                "type": "Стандарт",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "inPercent": false,
+                    "preferredStep": "",
+                    "length": "",
+                    "percent": "",
+                    "stepInPercent": "",
+                    "mode": "custom",
+                    "modes": [
+                      "custom"
+                    ],
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": "",
+                        "length": 10,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ]
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 285.2,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 285.2
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 285.2,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 285.2
+                  }
+                }
+              },
+              {
+                "name": "СМС + ТОР",
+                "type": "СМС + ТОР",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Закрытие плечевого депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "currentToolCode": "AFZ1"
+                }
+              },
+              {
+                "name": "Лимитник",
+                "type": "Лимитник",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 5.31
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "closeAll": false,
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 5.31
+                  }
+                }
+              },
+              {
+                "name": "Лимитник (SBER)",
+                "type": "Лимитник",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 2.44
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "closeAll": false,
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 2.44,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 2.44
+                  },
+                  "currentToolCode": "MMM"
+                }
+              },
+              {
+                "name": "test",
+                "type": "СМС + ТОР",
+                "options": {
+                  "Закрытие основного депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Закрытие плечевого депозита": {
+                    "closeAll": false,
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные докупки (ТОР)": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Прямые профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "Обратные профитные докупки": {
+                    "mode": "custom",
+                    "customData": [
+                      {
+                        "inPercent": false,
+                        "preferredStep": 220,
+                        "length": 1,
+                        "percent": "",
+                        "stepInPercent": ""
+                      }
+                    ],
+                    "preferredStep": 220
+                  },
+                  "currentToolCode": "AFZ1"
+                }
+              }
+            ],
+            "currentPresetName": "test",
+            "isProfitableBying": false,
+            "isReversedProfitableBying": false,
+            "isMirrorBying": false,
+            "isReversedBying": true,
+            "ranull": 0,
+            "ranullMode": true,
+            "ranullPlus": 0,
+            "ranullPlusMode": true
+          };
+          genaSave = parseGENASave(genaSave);
+
+          console.log("getGenaSnapshot", genaSave);
+          return this.setStateAsync({ genaSave })
+        }
+      });
+  }
+
+  saveGENA(save) {
+    const { genaID } = this.state;
+
+    let request = "addGenaSnapshot";
+    if (genaID > -1) {
+      request = "updateGenaSnapshot";
+    }
+
+    const data = {
+      id: genaID,
+      name: "",
+      static: JSON.stringify(save)
+    };
+
+    return fetch(request, "POST", data)
+      .then(response => {
+        console.log(response);
+        if (response.id != null) {
+          return this.setStateAsync({
+            genaID:   response.id,
+            genaSave: save
+          });
+        }
+      })
+      .catch(error => console.error(error))
+      .finally(() => {
+        if (dev) {
+          return this.setStateAsync({ genaSave: save })
+        }
+      })
   }
 
   fetchSaves() {
@@ -222,26 +628,45 @@ class App extends React.Component {
                 .catch(error => reject(error));
             }
           }
-        })
-        .catch(reason => {
-          if (dev) {
-            this.extractSave();
+          else {
             resolve();
           }
-          else {
-            this.showAlert(`Не удалось получить сохранения! ${reason}`);
-            reject(reason);
+        })
+        .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
+          if (dev) {
+            const saves = [{
+              "id": 14,
+              "name": "Новое сохранение 11",
+              "dateCreate": 1626631308,
+            }];
+            const save = {
+              ...saves[0],
+              "static": "{\"depo\":1500000,\"priceRange\":[68.66,69.24],\"percentage\":10,\"profitRatio\":60,\"risk\":100,\"mode\":0,\"days\":5,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"BRQ1\",\"kodTable\":[{\"fact\":\"2\",\"income\":\"3\"},{\"fact\":\"5\",\"income\":\"5\"},{\"fact\":\"1\",\"income\":\"1\"}],\"current_date\":\"#\"}"
+            };
+
+            this.setStateAsync({ saves }).then(() => this.extractSave(save))
           }
-        });
+        })
     });
   }
 
   imitateFetchcingTools() {
     return new Promise((resolve, reject) => {
       if (Tools.storageReady) {
-        this.setStateAsync({ toolsLoading: true });
+        this.setState({ toolsLoading: true });
+
+        let newTools = [...Tools.storage];
         const oldTool = this.getCurrentTool();
-        const newTools = [...Tools.storage];
+        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
+        if (oldToolIndex == -1) {
+          console.warn(`No ${oldTool.code} in new tools list`, newTools);
+          newTools.push(oldTool);
+        }
+
         setTimeout(() => {
           this.setState({
             tools: newTools,
@@ -280,7 +705,7 @@ class App extends React.Component {
               if (response.data?.length == 0) {
                 console.warn("В ответе с сервера нет " + (request == "getFutures" ? "фючерсов" : "акций"));
               }
-              return Tools.parse(response.data, { investorInfo })
+              return Tools.parse(response.data, { investorInfo, useDefault: true })
             })
             .then(tools => Tools.sort(Tools.storage.concat(tools)))
             .then(tools => {
@@ -297,7 +722,7 @@ class App extends React.Component {
         const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
         const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
 
-        console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
+        // console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
 
         if (futuresCount == 0) {
           console.warn("В массиве нет фьючерсов!", tools);
@@ -313,13 +738,14 @@ class App extends React.Component {
   }
 
   fetchTools(shouldUpdatePriceRange = true) {
+    const { investorInfo } = this.state;
     return new Promise(resolve => {
       const requests = [];
       this.setState({ toolsLoading: true })
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .then(() => {
@@ -337,21 +763,35 @@ class App extends React.Component {
     })
   }
 
-  syncToolsWithInvestorInfo(investorInfo = {}) {
-    const { tools } = this.state;
-    investorInfo = investorInfo || this.state.investorInfo;
-    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
-  }
-
   fetchInvestorInfo() {
-    fetch("getInvestorInfo")
-      .then(this.applyInvestorInfo)
-      .then(response => {
-        const { deposit } = response.data;
-        this.setState({ depo: deposit || 10_000 })
-      })
-      .then(() => this.syncToolsWithInvestorInfo())
-      .catch(error => console.error(error))
+    return new Promise((resolve, reject) => {
+      fetch("getInvestorInfo")
+        .then(this.applyInvestorInfo)
+        .then(response => {
+          const depo = response.data.deposit || 10_000;
+          return this.setStateAsync({ depo });
+        })
+        .then(this.syncToolsWithInvestorInfo)
+        .then(() => resolve())
+        .catch(reason => reject(reason))
+        .finally(() => {
+          if (dev) {
+            this.setStateAsync({
+              investorInfo: {
+                email:   "justbratka@ya.ru",
+                deposit: 50_000,
+                status:  "KSUR",
+                skill:   "SKILLED",
+                type:    this.state.percentage >= 0 ? "LONG" : "SHORT"
+              }
+            })
+              .then(this.syncToolsWithInvestorInfo);
+          }
+          else {
+            this.syncToolsWithInvestorInfo();
+          }
+        })
+    })
   }
 
   updatePriceRange(tool) {
@@ -361,12 +801,60 @@ class App extends React.Component {
     })
   }
 
-  showAlert(msg = "") {
-    console.log(`%c${msg}`, "background: #222; color: #bada55");
+  importDataFromGENA(genaSave) {
+    const { mode, presetSelection } = this.state;
+
+    if (!genaSave) {
+      return Promise.resolve();
+    }
+    
+    if (algorithms[mode].name != genaSave.presets.find(preset => preset.name == genaSave.currentPresetName).type) {
+      return Promise.resolve();
+    }
+
+    const options = genaSave?.presets.filter(preset => preset.type == algorithms[mode].name) || [{ name: algorithm.name }];
+    const currentPreset = options[presetSelection[mode]];
+
+    let percentToSteps = currentPreset.type == "Лимитник"
+      ? stepConverter.complexFromPercentToSteps
+      : stepConverter.fromPercentsToStep;
+    
+    let totalStep = 0;
+
+    const primaryOption = currentPreset.options["Закрытие основного депозита"];
+    if (primaryOption && primaryOption.customData) {
+      totalStep += primaryOption.customData.reduce((acc, curr) => {
+        const value = curr.inPercent
+          ? percentToSteps(curr.preferredStep, currentTool, contracts)
+          : curr.preferredStep;
+        return acc + Number(value);
+      }, 0);
+    }
+
+    const secondaryOption = currentPreset.options["Закрытие плечевого депозита"];
+    if (secondaryOption && secondaryOption.customData) {
+      totalStep += secondaryOption.customData.reduce((acc, curr) => {
+        const value = curr.inPercent
+          ? percentToSteps(curr.preferredStep, currentTool, contracts)
+          : curr.preferredStep;
+        return acc + Number(value);
+      }, 0);
+    }
+
+    return this.setStateAsync({
+      depo:            genaSave.depo + genaSave.secondaryDepo,
+      percentage:      genaSave.load,
+      currentToolCode: currentPreset.options.currentToolCode,
+      risk:            genaSave.risk,
+      totalIncome:     genaSave.totalIncome,
+      totalStep,
+    });
+  }
+
+  showAlert(errorMessage = "") {
+    console.log(`%c${errorMessage}`, "background: #222; color: #bada55");
     if (!dev) {
-      this.setState({ errorMessage: msg }, () => {
-        dialogAPI.open("dialog-msg");
-      });
+      this.setState({ errorMessage }, () => dialogAPI.open("dialog-msg"));
     }
   }
 
@@ -384,7 +872,8 @@ class App extends React.Component {
       risk,
       mode,
       days,
-      scaleOffset
+      scaleOffset,
+      kodTable
     } = this.state;
 
     const json = {
@@ -399,6 +888,7 @@ class App extends React.Component {
         scaleOffset,
         customTools,
         currentToolCode,
+        kodTable,
         current_date: "#"
       },
     };
@@ -412,8 +902,6 @@ class App extends React.Component {
   }
 
   extractSave(save) {
-    console.log('Extracting save:', save);
-
     const onError = e => {
       this.showAlert(String(e));
       console.error(String(e));
@@ -432,73 +920,90 @@ class App extends React.Component {
     let state = {};
     let failed = false;
 
-    if (dev) {
-      state = {
-        currentToolCode: "AAPL",
-        current_date: "#",
-        customTools: [],
-        days: 5,
-        depo: 1_000_000,
-        mode: 1,
-        percentage: -13.5,
-        priceRange: [129.042, 132.006],
-        profitRatio: 60,
-        risk: 0.5,
-        scaleOffset: -2.6,
-      };
+    try {
+      let lastUpdated = save.dateUpdate || save.dateCreate;
+      console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
 
-      state.id = 0;
+      staticParsed = JSON.parse(save.static);
+      console.log("Parsed static", staticParsed);
+
+      const initialState = { ...this.initialState };
+
+      state.depo = staticParsed.depo || initialState.depo;
+
+      state.priceRange = staticParsed.priceRange || initialState.priceRange;
+
+      state.percentage = staticParsed.percentage || initialState.percentage;
+
+      state.profitRatio = staticParsed.profitRatio || initialState.profitRatio;
+
+      state.risk = staticParsed.risk || initialState.risk;
+
+      state.mode = staticParsed.mode || initialState.mode;
+
+      state.days = staticParsed.days || initialState.days;
+
+      state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
+
+      state.kodTable = staticParsed.kodTable || initialState.kodTable;
+      
+      // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
+      state.customTools = staticParsed.customTools || [];
+      state.customTools = state.customTools
+        .map(tool => Tools.create(tool, { investorInfo }));
+
+      state.currentToolCode = staticParsed.currentToolCode ||initialState.currentToolCode;
+
+      state.id = save.id;
       state.saved = true;
       state.loading = false;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
-    else {
-      try {
-        staticParsed = JSON.parse(save.static);
-        console.log("Parsed static", staticParsed);
-  
-        const initialState = { ...this.initialState };
-  
-        state.depo = staticParsed.depo || initialState.depo;
-  
-        state.priceRange = staticParsed.priceRange || initialState.priceRange;
-  
-        state.percentage = staticParsed.percentage || initialState.percentage;
-  
-        state.profitRatio = staticParsed.profitRatio || initialState.profitRatio;
-  
-        state.risk = staticParsed.risk || initialState.risk;
-  
-        state.mode = staticParsed.mode || initialState.mode;
-  
-        state.days = staticParsed.days || initialState.days;
-  
-        state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
-        
-        // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
-        state.customTools = staticParsed.customTools || [];
-        state.customTools = state.customTools
-          .map(tool => Tools.create(tool, { investorInfo }));
-  
-        state.currentToolCode = staticParsed.currentToolCode ||initialState.currentToolCode;
-  
-        state.id = save.id;
-        state.saved = true;
-        state.loading = false;
-        state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
-      }
-      catch (e) {
-        failed = true;
-        state = {
-          id: save.id,
-          saved: true
-        };
-  
-        onError(e);
-      }
+    catch (e) {
+      failed = true;
+      state = {
+        id: save?.id || 0,
+        saved: true
+      };
+
+      onError(e);
     }
 
+    state.investorInfo = { ...this.state.investorInfo };
+    state.investorInfo.type = state.percentage >= 0 ? "LONG" : "SHORT";
+
     console.log('Parsing save finished!', state);
-    this.setState(state);
+    return this.setStateAsync(state)
+      .then(this.syncToolsWithInvestorInfo)
+      .then(() => {
+        const priceRangeMinMax = priceRange => {
+          let range = [...priceRange].sort((l, r) => l - r);
+
+          const { days, scaleOffset } = this.state;
+          // Проверка на выход за диапазоны
+          const currentTool = this.getCurrentTool();
+          const price = currentTool.currentPrice;
+          let percent = currentTool.adrDay;
+          if (days == 5) {
+            percent = currentTool.adrWeek;
+          }
+          else if (days == 20) {
+            percent = currentTool.adrMonth;
+          }
+
+          const max = price + percent - scaleOffset;
+          const min = price - percent + scaleOffset;
+
+          if (priceRange[1] > max || priceRange[0] < min) {
+            range = [price, price];
+          }
+
+          return range;
+        };
+
+        const priceRange = priceRangeMinMax(state.priceRange);
+        return this.setStateAsync({ priceRange });
+      });
   }
 
   reset() {
@@ -541,6 +1046,10 @@ class App extends React.Component {
   update(name = "") {
     const { id } = this.state;
     return new Promise((resolve, reject) => {
+      if (dev) {
+        resolve();
+      }
+
       if (!id) {
         reject("id must be present!");
       }
@@ -552,11 +1061,11 @@ class App extends React.Component {
         static: JSON.stringify(json.static),
       };
       fetch("updateMtsSnapshot", "POST", data)
-        .then(res => {
-          console.log("Updated!", res);
+        .then(response => {
+          console.log("Updated!", response);
           resolve();
         })
-        .catch(err => console.log(err));
+        .catch(error => console.error(error));
     })
   }
 
@@ -603,11 +1112,6 @@ class App extends React.Component {
     });
   }
 
-  getCurrentTool() {
-    const { tools, currentToolCode } = this.state;
-    return tools.find(tool => tool.code == currentToolCode) || Tools.create();
-  }
-
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools)
@@ -626,46 +1130,42 @@ class App extends React.Component {
     return sortInputFirst(this.state.searchVal, this.getOptions());
   }
 
-  getToolIndexByCode(code) {
-    const tools = this.getTools();
-    if (!code || !tools.length) {
-      return 0;
-    }
-    
-    let index = tools.indexOf( tools.find(tool => tool.code == code) );
-    if (index < 0) {
-      index = 0;
-    }
-    return Math.min(index, tools.length);
+  getCurrentToolIndex() {
+    const { currentToolCode } = this.state;
+    return Tools.getToolIndexByCode(this.getTools(), currentToolCode);
   }
 
-  getCurrentToolIndex() {
-    let { currentToolCode } = this.state;
-    let index = this.getToolIndexByCode(currentToolCode);
-    return index;
+  getCurrentTool() {
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.create();
   }
   
   getToolByCode(code) {
-    const { tools } = this.state;
-    return tools.find(tool => tool.code == code) || Tools.create();
+    return Tools.getToolIndexByCode(this.getTools(), code);
+  }
+
+  getTitleJSX() {
+    const { saves, currentSaveIndex } = this.state;
+    let titleJSX = <span>Моделирование Торговой&nbsp;Стратегии</span>;
+    if (saves && saves[currentSaveIndex - 1]) {
+      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
+    }
+
+    return titleJSX;
   }
 
   /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Моделирование Торговой Стратегии")
-   */
+   * Возвращает название текущего сейва (по дефолту возвращает строку "Моделирование Торговой Стратегии") */
   getTitle() {
-    const { saves, currentSaveIndex } = this.state;
-    let title = "Моделирование Торговой Стратегии";
-
-    if (saves.length && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
-    }
-
-    return title;
+    return this.getTitleJSX().props.children;
   }
 
   render() {
     let {
+      currentSaveIndex,
+      loading,
+      saves,
+      changed,
+      saved,
       data,
       days,
       depo,
@@ -673,33 +1173,40 @@ class App extends React.Component {
       page,
       risk,
       chance,
+      currentToolCode,
       percentage,
       priceRange,
       profitRatio,
       scaleOffset,
       toolsLoading,
       movePercantage,
+      investorInfo,
       prevDays,
+      genaSave,
+      presetSelection,
+      totalIncome,
+      totalStep,
+      kodTable
     } = this.state;
 
     const tools = this.getTools();
     const currentTool = this.getCurrentTool();
+    const fraction = fractionLength(currentTool.priceStep);
+
     const isLong = percentage >= 0;
     const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     
-    const planIncome = round(priceRangeSorted[1] - priceRangeSorted[0], 2);
-    const contracts = Math.floor(depo * (Math.abs(percentage) / 100 ) / currentTool.guarantee);
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
     const disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
-      currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600000,
-      depo <= 100000
+      currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600_000,
+      depo <= 100_000
     ];
     if (disabledModes[mode]) {
       mode = disabledModes.indexOf(false);
     }
 
-    const fraction = fractionLength(currentTool.priceStep);
     const price = currentTool.currentPrice;
     let percent = currentTool.adrDay;
     if (days == 5) {
@@ -712,11 +1219,9 @@ class App extends React.Component {
     const max = price + percent;
     const min = price - percent;
 
-    const STEP_IN_EACH_DIRECTION = 20;
-    const step = (max - min) / (STEP_IN_EACH_DIRECTION * 2);
+    const step = currentTool.priceStep;
     
-    let income = (contracts || 1) * planIncome / currentTool.priceStep * currentTool.stepPrice;
-    income *= profitRatio / 100
+    let income = totalIncome * profitRatio / 100
     
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
@@ -745,10 +1250,10 @@ class App extends React.Component {
 
       if (risk != 0 && percentage != 0) {
         possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
-        updateChartMinMax(this.state.priceRange, isLong, possibleRisk)
+        chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
       }
 
-      return possibleRisk
+      return possibleRisk;
     }
 
     let possibleRisk = getPossibleRisk();
@@ -760,7 +1265,12 @@ class App extends React.Component {
           <main className="main">
 
             <Header
-              title={this.getTitle()}
+              title={this.getTitleJSX()}
+              loading={loading}
+              saves={saves}
+              currentSaveIndex={currentSaveIndex}
+              changed={changed}
+              saved={saved}
               onSaveChange={currentSaveIndex => {
                 const { saves } = this.state;
 
@@ -781,7 +1291,6 @@ class App extends React.Component {
               }}
               onSave={e => {
                 const { saved, changed } = this.state;
-
                 if (saved && changed) {
                   this.update(this.getTitle());
                   this.setState({ changed: false });
@@ -793,11 +1302,11 @@ class App extends React.Component {
             >
               <Tooltip title="Настройки">
                 <button
-                  className="settings-button js-open-modal main-top__settings"
+                  className="settings-button js-open-modal page-header__settings"
                   onClick={e => dialogAPI.open("config", e.target)}
                 >
-                  <span className="visually-hidden">Открыть конфиг</span>
-                  <SettingFilled className="settings-button__icon" />
+                  <span className="visually-hidden">Открыть настройки инструментов</span>
+                  <SettingFilled className="settings-button__icon" aria-hidden="true" />
                 </button>
               </Tooltip>
             </Header>
@@ -896,21 +1405,15 @@ class App extends React.Component {
                             tooltipPlacement="left"
                             tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
                             onChange={priceRange => {
-                              console.log(
-                                priceRange,
-                                `offset: ${scaleOffset}`,
-                                `max: ${max - scaleOffset}`,
-                                `min: ${min + scaleOffset}`
-                              );
-                              this.setState({ priceRange });
-                              updateChartMinMax(priceRange, isLong, possibleRisk);
+                              this.setState({ priceRange, changed: true });
+                              chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
                             }}
                           />
 
                           <Button
                             className="scale-button scale-button--default"
                             onClick={ e => {
-                              updateChartScaleMinMax(min, max);
+                              chartModule?.updateChartScaleMinMax(min, max);
                               this.setState({
                                 scaleOffset: 0,
                                 changedMinRange: min,
@@ -941,7 +1444,7 @@ class App extends React.Component {
                                   movePercantage: movePercantage + sliderStepPercent,
                                   days: this.initialState.days
                                 });
-                                updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                                chartModule?.updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
                               }
                             }}
                             aria-label="Увеличить масштаб графика"
@@ -971,7 +1474,7 @@ class App extends React.Component {
                                   movePercantage: movePercantage + sliderStepPercent,
                                   days: 0
                                 });
-                                updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
+                                chartModule?.updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
                               }
                             }}
                             aria-label="Уменьшить масштаб графика"
@@ -999,9 +1502,12 @@ class App extends React.Component {
                                 defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
                                 onBlur={value => {
                                   const callback = () => {
-                                    let possibleRisk = getPossibleRisk();
-                                    updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    const possibleRisk = getPossibleRisk();
+                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    this.setState({ changed: true });
                                   };
+
+                                  value = round(value, fraction);
 
                                   // ЛОНГ: то есть точка входа - снизу (число меньше)
                                   if (isLong) {
@@ -1040,10 +1546,13 @@ class App extends React.Component {
                                 round={"false"}
                                 defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
                                 onBlur={value => {
-                                  const { possibleRisk } = this.state
                                   const callback = () => {
-                                    updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    const possibleRisk = getPossibleRisk();
+                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    this.setState({ changed: true });
                                   };
+
+                                  value = round(value, fraction);
 
                                   // ЛОНГ: то есть точка выхода - сверху (число меньше)
                                   if (isLong) {
@@ -1074,7 +1583,7 @@ class App extends React.Component {
                                 </Tooltip>
                               </span>
                               <span className="main-content-stats__val">
-                                {formatNumber(round(Math.abs(priceRange[0] - priceRange[1]), fraction))}
+                                {formatNumber(totalStep)}
                               </span>
                             </div>
                             
@@ -1122,9 +1631,11 @@ class App extends React.Component {
                                 format={number => formatNumber(round(number, fraction))}
                                 round={"false"}
                                 onBlur={risk => {
-                                  this.setState({risk});
-                                  let possibleRisk = getPossibleRisk();
-                                  updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                  this.setStateAsync({ risk, changed: true })
+                                    .then(() => {
+                                      let possibleRisk = getPossibleRisk();
+                                      chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                    });
                                 }}
                               />
                             </div>
@@ -1162,7 +1673,6 @@ class App extends React.Component {
                                     </span>
                                     <span className="main-content-stats__val">
                                       {`${formatNumber(Math.floor(depo * risk / 100))} ₽`}
-                                      {/* {`${formatNumber(Math.floor(depo * risk / 100))}  ${suffix}₽`} */}
                                     </span>
                                   </div>
 
@@ -1195,27 +1705,27 @@ class App extends React.Component {
                   })()}
 
                   <Stack className="main-content__right">
-                    <Chart
-                      className="mts__chart"
-                      key={currentTool.toString() + this.state.loadingChartData}
-                      min={min}
-                      max={max}
-                      priceRange={priceRange}
-                      loading={this.state.loadingChartData}
-                      tool={currentTool}
-                      data={data}
-                      days={days}
-                      onRendered={() => {
-                        console.log("Chart has been rendered");
-
-                        const { percentage, priceRange, scaleOffset, days } = this.state;
-                        const isLong = percentage >= 0;
-                        const possibleRisk = getPossibleRisk();
-                        updateChartMinMax(priceRange, isLong, possibleRisk);
-                        updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);
-                        updateChartZoom(days);
-                      }}
-                    />
+                    {Chart &&
+                      <Chart
+                        className="mts__chart"
+                        key={currentTool.toString() + this.state.loadingChartData}
+                        min={min}
+                        max={max}
+                        priceRange={priceRange}
+                        loading={this.state.loadingChartData}
+                        tool={currentTool}
+                        data={data}
+                        days={days}
+                        onRendered={() => {
+                          const { percentage, priceRange, scaleOffset, days } = this.state;
+                          const isLong = percentage >= 0;
+                          const possibleRisk = getPossibleRisk();
+                          chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+                          chartModule?.updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);
+                          chartModule?.updateChartZoom(days);
+                        }}
+                      />
+                    }
 
                     {(() => {
                       return (
@@ -1241,7 +1751,6 @@ class App extends React.Component {
 
                           <CustomSlider
                             className="mts-slider2__input"
-                            // key={percentage}
                             style={{
                               "--primary-color": percentage >= 0 ? "var(--accent-color)" : "var(--danger-color)",
                               "--primary-color-lighter": percentage >= 0 ? "var(--accent-color-lighter)" : "var(--danger-color-lighter)",
@@ -1254,18 +1763,18 @@ class App extends React.Component {
                             precision={1}
                             tooltipVisible={false}
                             onChange={(range = []) => {
-                              let { tools, investorInfo } = this.state;
+                              let { investorInfo } = this.state;
                               const percentage = range[0] + range[1];
                               
                               investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
-                              tools = tools.map(tool => tool.update(investorInfo));
 
-                              updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
-                              this.setState({
+                              chartModule?.updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
+                              this.setStateAsync({
                                 investorInfo,
                                 percentage, 
-                                tools,
+                                changed: true
                               })
+                                .then(this.syncToolsWithInvestorInfo)
                             }}
                           />
 
@@ -1278,48 +1787,72 @@ class App extends React.Component {
 
                     <div className="main-content-options">
                       <div className="main-content-options__wrap">
+
                         <div className="main-content-options__row">
                           <span className="main-content-options__label">
                             <Tooltip title="Настройки торгового робота для расчёта результатов торговой стратегии">
-                              Алгоритм МАНИ 144
+                              Алгоритм МААНИ 144
                             </Tooltip>
                           </span>
-                          <Radio.Group 
-                            className="main-content-options__radio"
-                            value={mode}
-                            onChange={e => this.setState({ mode: e.target.value })} 
-                          >
-                            <Radio 
-                              value={0} 
-                              disabled={disabledModes[0]}
-                              onClick={ e => this.setState({ profitRatio: 60 }) }
-                            >
-                              стандарт
-                            </Radio>
-                            <Radio 
-                              value={1}
-                              disabled={disabledModes[1]}
-                              onClick={ e => this.setState({ profitRatio: 60 })}
-                            >
-                              смс<span style={{ fontFamily: "serif", fontWeight: 300 }}>+</span>тор
-                            </Radio>
-                            <Radio 
-                              value={2} 
-                              disabled={disabledModes[2]}
-                              onClick={ e => this.setState({ profitRatio: 90 })}
-                            >
-                              лимитник
-                            </Radio>
-                          </Radio.Group>
-                    
+
+                          <div className="main-content-options-group">
+
+                            {algorithms.map((algorithm, index) => (() => {
+                              let options = genaSave?.presets.filter(preset => preset.type == algorithm.name) || [{ name: algorithm.name }];
+
+                              return (
+                                <Select
+                                  className={mode == index ? "selected" : ""}
+                                  value={presetSelection[index]}
+                                  disabled={disabledModes[index]}
+                                  showArrow={options?.length > 1}
+                                  dropdownStyle={{
+                                    visibility:    options?.length > 1 ? "visible" : "hidden",
+                                    pointerEvents: options?.length > 1 ? "all"     : "none"
+                                  }}
+                                  onSelect={value => {
+                                    presetSelection[index] = value;
+
+                                    this.setStateAsync({
+                                      presetSelection,
+                                      mode: index,
+                                      profitRatio: algorithm.profitRatio,
+                                      changed: true
+                                    })
+                                      .then(() => this.importDataFromGENA(genaSave));
+                                  }}
+                                  onFocus={e => {
+                                    if (options?.length == 1) {
+                                      presetSelection[index] = 0;
+
+                                      this.setStateAsync({
+                                        presetSelection,
+                                        mode: index,
+                                        profitRatio: algorithm.profitRatio,
+                                        changed: true
+                                      })
+                                        .then(() => this.importDataFromGENA(genaSave));
+                                    }
+                                  }}
+                                >
+                                  {options.map((preset, index) =>
+                                    <Select.Option value={index} title={preset.name}>
+                                      {preset.name}
+                                    </Select.Option>
+                                  )}
+                                </Select>
+                              )
+                            })())}
+                            
+
+                          </div>
+
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
                             onClick={e => dialogAPI.open("settings-generator", e.target)}
-                            // На проде ГЕНА дизейблится
-                            disabled={dev ? false : !location.href.replace(/\/$/, "").endsWith("-dev")}
                           >
-                              <span className="visually-hidden">Открыть конфиг</span>
-                            <Tooltip title=" Генератор настроек МАНИ 144">
+                            <span className="visually-hidden">Открыть конфиг</span>
+                            <Tooltip title=" Генератор настроек МААНИ 144">
                               <SettingFilled className="settings-button__icon" />
                             </Tooltip>
                           </button>
@@ -1351,9 +1884,9 @@ class App extends React.Component {
                               const max = round(price + percent, fraction);
                               const min = round(price - percent, fraction);
 
-                              this.setState({ days, prevDays: days });
-                              updateChartScaleMinMax(min, max);
-                              updateChartZoom(days);
+                              this.setState({ days, prevDays: days, changed: true });
+                              chartModule?.updateChartScaleMinMax(min, max);
+                              chartModule?.updateChartZoom(days);
                             }}
                           >
                             <Radio value={1}>день</Radio>
@@ -1389,8 +1922,30 @@ class App extends React.Component {
                                 <tr key={index}>
                                   <td>{((page - 1) * period) + (index + 1)}</td>
                                   <td>{kod}</td>
-                                  <td><Input defaultValue="1"/></td>
-                                  <td><Input defaultValue="1"/></td>
+                                  <td>
+                                    <Input 
+                                      defaultValue={kodTable[index]?.fact || 0}
+                                      onBlur={e => {
+                                        if (!kodTable[index]) {
+                                          kodTable[index] = {};
+                                        }
+                                        kodTable[index].fact = e.target.value;
+                                        this.setState({ kodTable });
+                                      }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Input
+                                      defaultValue={kodTable[index]?.income || 0}
+                                      onBlur={e => {
+                                        if (!kodTable[index]) {
+                                          kodTable[index] = {};
+                                        }
+                                        kodTable[index].income = e.target.value;
+                                        this.setState({ kodTable });
+                                      }}
+                                    />
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -1557,7 +2112,6 @@ class App extends React.Component {
               else {
                 const onResolve = (id) => {
                   let index = saves.push({ id, name });
-                  console.log(saves);
 
                   this.setState({
                     data,
@@ -1611,7 +2165,7 @@ class App extends React.Component {
 
           <Dialog
             id="dialog4"
-            title="Удаление трейдометра"
+            title="Удаление сохранения"
             confirmText={"Удалить"}
             onConfirm={() => {
               const { id } = this.state;
@@ -1646,7 +2200,6 @@ class App extends React.Component {
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools })}
-
             insertBeforeDialog={
               <label className="input-group input-group--fluid mts-config__depo">
                 <span className="input-group__label">Размер депозита:</span>
@@ -1691,13 +2244,55 @@ class App extends React.Component {
             pure={true}
           >
             <SettingsGenerator
-              depo={this.state.depo}
-              tools={this.getTools()}
+              depo={depo}
+              tools={tools}
               load={percentage}
               toolsLoading={toolsLoading}
-              investorInfo={this.state.investorInfo}
-              onClose={() => {
-                dialogAPI.close("settings-generator");
+              investorInfo={investorInfo}
+              currentToolCode={currentToolCode}
+              contracts={contracts}
+              risk={risk}
+              algorithm={algorithms[mode].name}
+              genaSave={genaSave}
+              onSave={genaSave => {
+                this.saveGENA(genaSave);
+                this.importDataFromGENA(genaSave);
+              }}
+              onUpdate={genaSave => {
+                this.setStateAsync({ genaSave }).then(() => this.importDataFromGENA(genaSave));
+              }}
+              onClose={(save, e) => {
+
+                unsavedGena = {...save};
+
+                const genaSavePure = { ...genaSave };
+                delete genaSavePure.key;
+
+                let changed = false;
+
+                if (genaSavePure == null) {
+                  changed = true;
+                }
+                else if (!isEqual(save, genaSavePure)) {
+                  changed = true;
+                }
+
+                if (changed) {
+                  dialogAPI.open("settings-generator-close-confirm", e.target);
+                }
+                else {
+                  dialogAPI.close("settings-generator");
+                }
+              }}
+              onDownload={(title, text) => {
+                const file = new Blob([text], { type: 'text/plain' });
+
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(file);
+                link.setAttribute('download', `${title}.txt`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
               }}
               onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
               onToolSelectBlur={() => {
@@ -1707,6 +2302,26 @@ class App extends React.Component {
             />
           </Dialog>
           {/* ГЕНА */}
+
+          <Dialog
+            id="settings-generator-close-confirm"
+            title="Предупреждение"
+            confirmText="ОК"
+            onConfirm={e => {
+              dialogAPI.close("settings-generator");
+              if (unsavedGena) {
+                this.setStateAsync({ genaSave: { ...unsavedGena, key: Math.random() } })
+                  .then(() => this.importDataFromGENA(unsavedGena))
+                  .finally(() => {
+                    unsavedGena = null;
+                  });
+              }
+              return true;
+            }}
+            cancelText="Отмена"
+          >
+            Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны
+          </Dialog>
 
         </div>
       </Provider>

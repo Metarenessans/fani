@@ -5,6 +5,7 @@ const stepConverter = {
   fromPercentsToStep(percent, tool) {
     return percent / 100 * tool.currentPrice
   },
+  // https://docs.google.com/document/d/1wuO5RF_VH1PD-XxjHXLYDW124L5R2EuHt9b_PNeRiG0/edit#bookmark=kix.34i0zgw4qwsj
   complexFromStepsToPercent(points, tool, contracts) {
     let percent = 0;
     // Акции
@@ -53,6 +54,7 @@ const stepConverter = {
 
     return percent;
   },
+  // https://docs.google.com/document/d/1wuO5RF_VH1PD-XxjHXLYDW124L5R2EuHt9b_PNeRiG0/edit#bookmark=kix.oz32wk9usy3c
   complexFromPercentToSteps(percent, tool, contracts) {
     let points;
     // Акции

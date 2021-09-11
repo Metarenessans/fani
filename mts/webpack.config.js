@@ -1,155 +1,111 @@
-const path = require("path");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+/** @type {import("webpack").Configuration} */
+
 const webpack = require("webpack");
+
+const path = require("path");
+/* Plugins */
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
+  const publicPath = "public/";
 
-  const entry = "./src/js/index.js";
-  const output = "index";
-  const devtool = prod ? "source-map" : "eval-sourcemap";
-  const publicPath = "public";
-
-  // Rules
-
-  const cssPipeline = [
-    // Translates CSS into CommonJS
-    "css-loader?url=false",
-    // PostCSS
-    {
-      loader: "postcss-loader",
-      options: {
-        plugins: [
-          require("postcss-custom-properties")(),
-          require("autoprefixer")({
-            overrideBrowserslist: ["ie >= 8", "last 4 version"]
-          }),
-          require("postcss-csso"),
-        ],
-        sourceMap: true
-      }
-    },
-    "resolve-url-loader",
-    // Compiles Sass to CSS
-    {
-      loader: "sass-loader",
-      options: {
-        prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
-        webpackImporter: false,
-        sassOptions: {
-          // publicPath: "./",
-          // outputStyle: "expanded",
-        },
-      },
-    }
-  ];
-
-  const fontRule = {
-    test: /\.(woff|woff2|eot|ttf|otf)$/,
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  };
-
-  const imageRule = {
-    test: /\.(png|jpe?g|gif|webp)$/,
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  };
-
-  const plugins = [
-    new webpack.DefinePlugin({ dev: !prod }),
-    new ExtractTextPlugin("css/style.css"),
-  ];
-
-  const old = {
-    entry,
+  return {
+    entry: "./src/js/index.js",
+    devtool: prod ? "source-map" : "eval-source-map",
     output: {
       path: path.resolve(__dirname, publicPath),
-      filename: `${output}.js`,
-      publicPath
-    },
-    module: {
-      rules: [
-        {
-          test: /\.js$/,
-          exclude: "/node_modules/",
-          use: {
-            loader: "babel-loader",
-            options: {
-              presets: [
-                "@babel/preset-env",
-                "@babel/preset-react"
-              ]
-            }
-          }
-        },
-        {
-          test: /\.s[ac]ss$/i,
-          use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
-            : ["style-loader"].concat(cssPipeline)
-        },
-        fontRule,
-        imageRule,
-      ]
-    },
-    plugins
-  };
-
-  const modern = {
-    entry,
-    devtool,
-    output: {
-      path: path.resolve(__dirname, publicPath),
-      filename: `${output}-es6.js`,
-      publicPath
+      filename: `js/index.js`,
+      chunkFilename: 'js/[name].js'
     },
     devServer: {
-      contentBase: path.join(__dirname, ""),
-      overlay: true,
-      hot: true,
-      //host: '192.168.0.129'
+      port: 1337,
+      contentBase: path.join(__dirname, "public"),
+      writeToDisk: true,
+      open: true
+      // host: '192.168.0.129'
     },
     module: {
       rules: [
+        // JS
         {
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
             options: {
-              presets: [
-                "@babel/preset-react"
-              ]
+              rootMode: "upward",
             }
           }
         },
+        // CSS
         {
           test: /\.s[ac]ss$/i,
-          use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
-            : ["style-loader"].concat(cssPipeline)
+          use: [
+            prod ? MiniCssExtractPlugin.loader : "style-loader",
+            // Translates CSS into CommonJS
+            "css-loader?url=false",
+            // PostCSS
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    require("postcss-custom-properties")({ preserve: true }),
+                    require("autoprefixer")(),
+                    prod && require("cssnano")()
+                  ],
+                },
+                sourceMap: true
+              }
+            },
+            "resolve-url-loader",
+            // Compiles SASS to CSS
+            {
+              loader: "sass-loader",
+              options: {
+                webpackImporter: false,
+                sassOptions: { outputStyle: "expanded" },
+              },
+            }
+          ]
         },
-        fontRule,
-        imageRule,
+        // Fonts
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        },
+        // Graphics
+        {
+          test: /\.(png|jpe?g|gif|webp)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        }
       ]
     },
-    plugins
-  };
-
-  return [prod && old, modern].filter(value => !!value)
+    plugins: [
+      new webpack.DefinePlugin({ dev: !prod }),
+      new MiniCssExtractPlugin({
+        filename: "css/style.css",
+        chunkFilename: "css/[name].css"
+      })
+    ],
+    optimization: {
+      minimize: prod,
+      minimizer: [new TerserPlugin({
+        terserOptions: {
+          format: {
+            comments: false
+          },
+        },
+        extractComments: false
+      })]
+    },
+  }
 };

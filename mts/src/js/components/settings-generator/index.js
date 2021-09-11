@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import {
-  Button, Input, Select, Switch, Tooltip
-} from 'antd/es'
+import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
-import {
-  LoadingOutlined,
-} from "@ant-design/icons"
+import { LoadingOutlined } from "@ant-design/icons"
 
 import "wicg-inert"
 
@@ -23,62 +19,69 @@ import SGRow        from "./sgrow"
 import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
 import Table            from "./table"
-import { Tool, Tools }  from '../../../../../common/tools'
+import SaveModal        from '../save-modal'
+import { Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
 import sortInputFirst   from "../../../../../common/utils/sort-input-first"
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
-import createData    from './data'
+import round           from '../../../../../common/utils/round'
+import formatNumber    from '../../../../../common/utils/format-number'
+import fractionLength  from '../../../../../common/utils/fraction-length'
+import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
 
-import round          from '../../../../../common/utils/round'
-import formatNumber   from '../../../../../common/utils/format-number'
-import fractionLength from '../../../../../common/utils/fraction-length'
-import { keys } from 'lodash'
 import stepConverter from './step-converter'
+
+import createData from './data'
 
 const SettingsGenerator = props => {
 
-  const { onClose, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
+  const { onClose, onUpdate, onSave, genaSave, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
+
+  const onDownload = props.onDownload || function(title, text) {
+    const file = new Blob([text], { type: 'text/plain' });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
+    link.setAttribute('download', `${title}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const firstRender = useRef(true);
+  const [shouldSave, setShouldSave] = useState(false);
+  const [shouldRegisterUpdate, setShouldRegisterUpdate] = useState(false);
 
   const investorInfo = props.investorInfo || {};
-
-  const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
-  const [currentToolCode, setCurrentToolCode] = useState("SBER");
-  const currentToolIndex = Math.max(tools.indexOf(tools.find(tool => tool.code == currentToolCode)), 0);
-  const currentTool = tools[currentToolIndex] || Tools.create();
-  const prevTool = useRef(currentTool);
-  const fraction = fractionLength(currentTool.priceStep);
-  
-  const [searchVal, setSearchVal] = useState("");
-  const [isLong, setIsLong] = useState(true);
-  const [risk, setRisk] = useState(100);
-  const [isRiskStatic, setIsRiskStatic] = useState(true);
-  const [comission, setComission] = useState(currentTool.dollarRate >= 1 ? 45 : 1);
-  const [load, setLoad] = useState(dev ? 20 : props.load || 0);
 
   const initialCurrentTab = "Закрытие основного депозита";
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
   const prevCurrentTab = useRef();
 
+  const defaultToolCode = dev ? "SiU1" : "SBER";
   const [presets, setPresets] = useState([
     {
       name: "Стандарт",
       type: "Стандарт",
       options: {
+        currentToolCode: defaultToolCode,
         [initialCurrentTab]: {
           closeAll: false,
           ...optionsTemplate,
           mode: "custom",
-          modes: ["evenly", "custom", "fibonacci"],
-          customData: [{ ...optionsTemplate, length: 1 }]
+          modes: ["custom"],
+          customData: [{ ...optionsTemplate }]
         },
         "Прямые профитные докупки": {
-          ...optionsTemplate,
           mode: "custom",
-          modes: ["evenly", "custom"],
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
+        },
+        "Обратные профитные докупки": {
+          mode: "custom",
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
@@ -86,27 +89,28 @@ const SettingsGenerator = props => {
       name: "СМС + ТОР",
       type: "СМС + ТОР",
       options: {
+        currentToolCode: defaultToolCode,
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Закрытие плечевого депозита": {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Прямые профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные профитные докупки": {
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
@@ -114,25 +118,46 @@ const SettingsGenerator = props => {
       name: "Лимитник",
       type: "Лимитник",
       options: {
+        currentToolCode: defaultToolCode,
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
         "Обратные докупки (ТОР)": {
           mode: "custom",
           closeAll: false,
-          customData: [{ ...optionsTemplate, length: 1 }]
+          customData: [{ ...optionsTemplate }]
         },
       }
     },
   ]);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Лимитник");
+  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
-  const [investorDepo, setInvestorDepo] = useState(props?.depo || 1_000_000);
+  const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
+  const currentToolCode = currentPreset.options.currentToolCode || defaultToolCode;
+  const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+  const currentTool = tools[currentToolIndex] || Tools.create();
+  const prevTool = useRef(currentTool);
+  const fraction = fractionLength(currentTool.priceStep);
+
+  const filterStep = step => {
+    return fraction > 0
+      ? round(step, fraction)
+      : magnetToClosest(step, currentTool.priceStep);
+  };
+
+  const [searchVal, setSearchVal] = useState("");
+  const [isLong, setIsLong] = useState(true);
+  const [risk, setRisk] = useState(100);
+  const [isRiskStatic, setIsRiskStatic] = useState(true);
+  const [comission, setComission] = useState(currentTool.dollarRate == 0 ? 1 : 45);
+  const [load, setLoad] = useState(dev ? 50 : props.load || 0);
+
+  const [investorDepo, setInvestorDepo] = useState(dev ? 20_000_000 : props.depo || 1_000_000);
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -149,6 +174,11 @@ const SettingsGenerator = props => {
   );
   const depoSum = depo + secondaryDepo;
   const depoAvailable = (depo + secondaryDepo) * (load / 100);
+
+  const [ranull, setRanull] = useState(10);
+  const [ranullMode, setRanullMode] = useState(true);
+  const [ranullPlus, setRanullPlus] = useState(3);
+  const [ranullPlusMode, setRanullPlusMode] = useState(true);
 
   // Прямые профитные докупки 
   const [isProfitableBying, setProfitableBying] = useState(false);
@@ -167,12 +197,34 @@ const SettingsGenerator = props => {
   const ItemOptions = props => {
     const locked = props.locked == true;
     const onDelete = props.onDelete;
+    const preset = props.preset;
 
     return (
       <ul className="preset-options">
         <li>
           <Tooltip title="Скачать файл">
-            <button className="round-btn" aria-label="Скачать">
+            <button 
+              className="round-btn" 
+              aria-label="Скачать"
+              onClick={e => {
+                const prevPresetName = currentPreset.name;
+
+                setCurrentPresetName(preset.name);
+                setTimeout(() => {
+                  const title = preset.name;
+                  const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
+                    .map(node => [...node.querySelectorAll("[data-should-output]")]
+                      .map(node => node.innerText)
+                      .join("\n")
+                    )
+                    .join("\n");
+
+                  onDownload(title, content);
+
+                  setCurrentPresetName(prevPresetName);
+                }, 0);
+              }}
+            >
               <DownloadIcon />
             </button>
           </Tooltip>
@@ -312,6 +364,8 @@ const SettingsGenerator = props => {
   const totalIncome = mainData.length
     ? mainData[mainData.length - 1]?.incomeWithComission
     : 0;
+  
+  const totalLoss = round((depo + secondaryDepo) * risk / 100, fraction);
 
   function updatePresetProperty(subtype, property, value) {
     const presetsCopy = [...presets];
@@ -333,18 +387,61 @@ const SettingsGenerator = props => {
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
+    setShouldRegisterUpdate(true);
   }
+
+  function updateCurrentPresetTool(code) {
+    const presetsCopy = [...presets];
+
+    const currentPresetCopy = {
+      ...currentPreset,
+      options: {
+        ...currentPreset.options,
+        currentToolCode: code,
+      }
+    };
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    setPresets(presetsCopy);
+  }
+
+  const getPackedSave = () => {
+    return {
+      isLong,
+      comission,
+      risk,
+      depo,
+      secondaryDepo,
+      load,
+      currentTab,
+      presets,
+      currentPresetName,
+      isProfitableBying,
+      isReversedProfitableBying,
+      isMirrorBying,
+      isReversedBying,
+      ranull,
+      ranullMode,
+      ranullPlus,
+      ranullPlusMode,
+      totalIncome,
+      totalLoss,
+    };
+  };
 
   // componentDidMount
   useEffect(() => {
 
-    const handleCodeControlClick = e => {
-      const currentTab = prevCurrentTab.current;
+    firstRender.current = false;
 
-      if (e.target.ariaSelected == "true") {
+    const handleCodeControlClick = e => {
+
+      const prevTab = prevCurrentTab.current;
+      console.log(prevTab, e.target.getAttribute("aria-selected"));
+
+      if (e.target.getAttribute("aria-selected") == "true") {
         const tab = Array.prototype.find.call(
           document.querySelectorAll(`[role="tab"]`),
-          it => it.textContent == currentTab
+          it => it.textContent == prevTab
         );
 
         setTimeout(() => tab?.click(), 0);
@@ -360,6 +457,48 @@ const SettingsGenerator = props => {
       codeControlButton.removeEventListener("click", handleCodeControlClick);
     }
   }, []);
+
+  useEffect(() => {
+    if (genaSave) {
+      const {
+        isLong,
+        comission,
+        risk,
+        depo,
+        secondaryDepo,
+        load,
+        currentTab,
+        presets,
+        currentPresetName,
+        isProfitableBying,
+        isReversedProfitableBying,
+        isMirrorBying,
+        isReversedBying,
+        ranull,
+        ranullMode,
+        ranullPlus,
+        ranullPlusMode
+      } = genaSave;
+
+      setIsLong(isLong);
+      setComission(comission);
+      setRisk(risk);
+      setDepo(depo);
+      setSecondaryDepo(secondaryDepo);
+      setLoad(load);
+      setCurrentTab(currentTab);
+      setPresets(presets);
+      setCurrentPresetName(currentPresetName);
+      setProfitableBying(isProfitableBying);
+      setReversedProfitableBying(isReversedProfitableBying)
+      setMirrorBying(isMirrorBying);
+      setReversedBying(isReversedBying);
+      setRanull(ranull);
+      setRanullMode(ranullMode);
+      setRanullPlus(ranullPlus);
+      setRanullPlusMode(ranullPlusMode);
+    }
+  }, [genaSave]);
 
   useEffect(() => {
     prevCurrentTab.current = currentTab;
@@ -383,7 +522,31 @@ const SettingsGenerator = props => {
 
     setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
 
+    setReversedBying(dev || currentPreset.type == "СМС + ТОР");
+
+    setShouldRegisterUpdate(true);
+
   }, [currentPreset.type]);
+
+  useEffect(() => {
+    let base = investorDepo;
+    if (depoSum != investorDepo) {
+      base = depoSum;
+    }
+
+    // Плечевой депо есть только в режиме СМС + ТОР
+    if (currentPreset.type == "СМС + ТОР") {
+      setDepo(Math.floor(base * .25));
+      setSecondaryDepo(Math.floor(base * .75));
+    }
+    else {
+      setDepo(base);
+      setSecondaryDepo(0);
+    }
+
+    setShouldRegisterUpdate(true);
+
+  }, [investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
@@ -395,7 +558,13 @@ const SettingsGenerator = props => {
     // Обновляем ход только если новый инструмент отличается от предыдущего
     // а не является устаревшей/новой версией текущего
     if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
-      keys(currentPreset.options).map(key => {
+      Object.keys(currentPreset.options).map(key => {
+
+        // Выполняем проверку только на объектах
+        if (typeof currentPreset.options[key] != "object") {
+          return;
+        }
+
         const { preferredStep, inPercent, customData } = currentPreset.options[key];
 
         let _prefStep = preferredStep;
@@ -468,21 +637,42 @@ const SettingsGenerator = props => {
   
       presetsCopy[currentPresetIndex] = currentPresetCopy;
       setPresets(presetsCopy);
+      setShouldRegisterUpdate(true);
     }
 
     // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
     // для нового инструмента
     if (comission == 45 || comission == 1) {
-      setComission(currentTool.dollarRate >= 1 ? 45 : 1);
+      setComission(currentTool.dollarRate == 0 ? 1 : 45);
     }
 
     prevTool.current = currentTool;
+
+    setShouldRegisterUpdate(true);
 
   }, [currentTool.code]);
 
   useEffect(() => {
     setTools(props.tools?.length ? props.tools : Tools.createArray());
   }, [props.tools]);
+
+  useEffect(() => {
+    if (shouldSave) {
+      
+      onSave && onSave(getPackedSave());
+      setShouldSave(false);
+
+    }
+  }, [shouldSave]);
+
+  useEffect(() => {
+    if (shouldRegisterUpdate) {
+
+      onUpdate && onUpdate(getPackedSave());
+  
+      setShouldRegisterUpdate(false);
+    }
+  }, [shouldRegisterUpdate]);
 
   return (
     <>
@@ -546,7 +736,15 @@ const SettingsGenerator = props => {
                     const presetsCopy = [...presets];
                     presetsCopy.splice(index, 1);
                     setPresets(presetsCopy);
+                    // Был удален выбранный сейв
+                    if (preset.name == currentPresetName) {
+                      setCurrentPresetName(presetsCopy[0].name);
+                    }
+
+                    setShouldSave(true);
+                    setShouldRegisterUpdate(true);
                   }}
+                  preset={preset}
                 />
               </li>
             )}
@@ -568,14 +766,14 @@ const SettingsGenerator = props => {
               onClick={e => setMenuVisible(!menuVisible)}
             />
 
-            <h3 className="settings-generator__title">Генератор настроек МАНИ 144</h3>
+            <h3 className="settings-generator__title">Генератор настроек МААНИ 144</h3>
             
             <Tooltip title="Закрыть генератор настроек">
               <CrossButton 
                 className="settings-generator__close js-dialog-focus-first"
                 onClick={e => {
                   if (onClose) {
-                    onClose(e);
+                    onClose(getPackedSave(), e);
                   }
                 }}
               />
@@ -592,9 +790,8 @@ const SettingsGenerator = props => {
               >
 
                 <h3
-                  key={Math.random()}
                   className="settings-generator-content-header__title"
-                  contentEditable
+                  contentEditable={currentPresetIndex > 2}
                   suppressContentEditableWarning={true}
                   onKeyDown={e => {
                     const key = e.key.toLowerCase();
@@ -610,7 +807,6 @@ const SettingsGenerator = props => {
                     currentPreset.name = name;
 
                     const namesArray = presetsCopy.map(preset => preset.name);
-
                     if ( namesArray.filter(n => n == name).length > 1 ) {
                       name = makeUnique( name, namesArray );
                     }
@@ -618,12 +814,27 @@ const SettingsGenerator = props => {
                     currentPreset.name = name;
                     setCurrentPresetName(name);
                     setPresets(presetsCopy);
+                    setShouldRegisterUpdate(true);
                   }}
                 >
                   {currentPresetName}
                 </h3>
-                <Tooltip title="Скачать файл">
-                  <button className="round-btn settings-generator-content-header__download" aria-label="Скачать">
+                <Tooltip title='Скачать файл'>
+                  <button 
+                    className="round-btn settings-generator-content-header__download"
+                    aria-label="Скачать"
+                    onClick={e => {
+                      const title = currentPreset.name;
+                      const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
+                        .map(node => [...node.querySelectorAll("[data-should-output]")]
+                          .map(node => node.innerText)
+                          .join("\n")
+                        )
+                        .join("\n");
+                      
+                      onDownload(title, content);
+                    }}
+                  >
                     <DownloadIcon />
                   </button>
                 </Tooltip>
@@ -632,7 +843,19 @@ const SettingsGenerator = props => {
               <ul className="settings-generator-content-header-options">
                 <li>
                   <Tooltip title="Сохранить текущие настройки">
-                    <Button className="custom-btn">Сохранить</Button>
+                    <Button 
+                      className="custom-btn"
+                      onClick={e => {
+                        if (currentPresetIndex < 3) {
+                          dialogAPI.open("settings-generator-save-preset-popup", e.target);
+                        }
+                        else {
+                          setShouldSave(true);
+                        }
+                      }}
+                    >
+                      Сохранить
+                    </Button>
                   </Tooltip>
                 </li>
               </ul>
@@ -651,8 +874,8 @@ const SettingsGenerator = props => {
                     onBlur={() => onToolSelectBlur && onToolSelectBlur()}
                     loading={toolsLoading}
                     disabled={toolsLoading}
-                    value={toolsLoading && tools.length == 0 ? 0 :currentToolIndex}
-                    onChange={index => setCurrentToolCode(tools[index].code)}
+                    value={toolsLoading && tools.length == 0 ? 0 : currentToolIndex}
+                    onChange={index => updateCurrentPresetTool(tools[index].code)}
                     showSearch
                     onSearch={value => setSearchVal(value)}
                     optionFilterProp="children"
@@ -675,7 +898,7 @@ const SettingsGenerator = props => {
                           }))
                         )
                           .map(option => (
-                            <Select.Option key={option.idx} value={option.idx}>
+                            <Select.Option key={option.idx} value={option.idx} title={option.label}>
                               {option.label}
                             </Select.Option>
                           ))
@@ -695,9 +918,7 @@ const SettingsGenerator = props => {
                     defaultValue={comission}
                     format={formatNumber}
                     unsigned="true"
-                    onBlur={val => {
-                      setComission(val);
-                    }}
+                    onBlur={value => setComission(value)}
                   />
                 </label>
 
@@ -710,6 +931,7 @@ const SettingsGenerator = props => {
                     unsigned="true"
                     onBlur={depo => {
                       setDepo(depo);
+                      setShouldRegisterUpdate(true);
                     }}
                   />
                 </label>
@@ -807,7 +1029,7 @@ const SettingsGenerator = props => {
                             Убыток (риск)
                           </Tooltip>
                         }
-                        value={round((depo + secondaryDepo) * risk / 100, fraction)}
+                        value={totalLoss}
                       />
                     </>
                   )
@@ -824,41 +1046,44 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half">
 
-                <div className="settings-generator-content__row-col-custom settings-generator-slider__label-wrap">
-
-                  <label className="settings-generator-slider__label input-group">
-                    <span className="input-group__label">
-                      <Tooltip title="Объём депозита в процентах на вход в сделку">
-                        Загрузка
-                      </Tooltip>
-                    </span>
-                    <span className="settings-generator-slider__value">
-                      <NumericInput
-                        className="input-group__input"
-                        defaultValue={load}
-                        format={value => formatNumber(round(value, fraction))}
-                        unsigned="true"
-                        onBlur={value => setLoad(value)}
-                        suffix="%"
-                      />
-                    </span>
-                  </label>
-                  <Tooltip title="Направление позиции">
-                    <Switch
-                      className="settings-generator-slider__switch-long-short"
-                      checkedChildren="LONG"
-                      unCheckedChildren="SHORT"
-                      checked={isLong}
-                      onChange={isLong => {
-                        setIsLong(isLong);
-                        const updatedTools = [...tools];
-                        updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
-                        setTools(updatedTools);
-                      }}
+                <label className="settings-generator-slider__label input-group">
+                  <span className="input-group__label">
+                    <Tooltip title="Объём депозита в процентах на вход в сделку">
+                      Загрузка
+                    </Tooltip>
+                  </span>
+                  <span className="settings-generator-slider__value">
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={load}
+                      format={value => formatNumber(round(value, fraction))}
+                      unsigned="true"
+                      onBlur={value => setLoad(value)}
+                      suffix="%"
                     />
-                  </Tooltip>
+                  </span>
+                </label>
 
-                </div>
+                {/* 
+                  Лев, [24.07.21 21:34]
+                  Короче по второму: убираем свитч лонш шорт и считаем по дефолтному го
+                */}
+                {false &&
+                <Tooltip title="Направление позиции">
+                  <Switch
+                    className="settings-generator-slider__switch-long-short"
+                    checkedChildren="LONG"
+                    unCheckedChildren="SHORT"
+                    checked={isLong}
+                    onChange={isLong => {
+                      setIsLong(isLong);
+                      const updatedTools = [...tools];
+                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                      setTools(updatedTools);
+                    }}
+                  />
+                </Tooltip>
+                }
 
                 <div className="settings-generator-slider__wrap">
 
@@ -876,77 +1101,145 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
 
-                <div className="input-group">
-                  <div className="risk-label-wrap">
-                    <span className="input-group__label">
-                      <Tooltip title="Stop loss в процентах, пунктах или рублях на весь депозит">
-                        Риск (стоп)
-                      </Tooltip>
-                    </span>
-                    <button className="risk-label__switch"
-                            onClick={() => setIsRiskStatic(!isRiskStatic)}>
-                      {isRiskStatic ? "статический" : "динамический"}
-                    </button>
-                  </div>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={risk}
-                    format={val => formatNumber(round(val, 2))}
-                    unsigned="true"
-                    onBlur={value => {
-                      if (value == round(risk, 2)) {
-                        value = risk;
-                      }
-                      setRisk(value)
-                    }}
-                    suffix="%"
-                  />
+                <div>
+                  
+                  <label className="input-group">
+                    <div className="risk-label-wrap">
+                      <span className="input-group__label">Б/У</span>
+                      <button className="risk-label__switch"
+                              onClick={() => setRanullMode(!ranullMode)}>
+                        {ranullMode 
+                          ? currentPreset.type == "Лимитник"
+                            ? "% от депо"
+                            : "п" 
+                          : currentPreset.type == "Лимитник"
+                            ? "% от ср цены"
+                            : "%"
+                        }
+                      </button>
+                    </div>
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={ranull}
+                      format={formatNumber}
+                      unsigned="true"
+                      onBlur={ranull => setRanull(ranull)}
+                      suffix={currentPreset.type == "Лимитник" ? "%" : ranullMode ? "п" : "%"}
+                    />
+                  </label>
+
+                  <label className="input-group">
+                    <div className="risk-label-wrap">
+                      <span className="input-group__label">Смещение Б/У</span>
+                      <button className="risk-label__switch"
+                              onClick={() => setRanullPlusMode(!ranullPlusMode)}>
+                        {ranullPlusMode
+                          ? currentPreset.type == "Лимитник"
+                            ? "% от депо"
+                            : "п"
+                          : currentPreset.type == "Лимитник"
+                            ? "% от сред. цены"
+                            : "%"
+                        }
+                      </button>
+                    </div>
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={ranullPlus}
+                      format={formatNumber}
+                      unsigned="true"
+                      onBlur={ranullPlus => setRanullPlus(ranullPlus)}
+                      suffix={currentPreset.type == "Лимитник" ? "%" : ranullPlusMode ? "п" : "%"}
+                    />
+                  </label>
+
                 </div>
 
-                <label className="input-group">
-                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={
-                      (depoSum * risk / 100)
-                      /
-                      currentTool.stepPrice
-                      /
-                      (contracts || 1)
-                    }
-                    format={val => formatNumber(Math.floor(val))}
-                    unsigned="true"
-                    onBlur={riskInSteps => {
-                      setRisk(
-                        riskInSteps
-                        *
+                <div>
+                  
+                  <div className="input-group">
+                    <div className="risk-label-wrap">
+                      <span className="input-group__label">
+                        <Tooltip title="Stop loss в процентах, пунктах или рублях на весь депозит">
+                          Риск (стоп)
+                        </Tooltip>
+                      </span>
+                      <button className="risk-label__switch"
+                              onClick={() => setIsRiskStatic(!isRiskStatic)}>
+                        {isRiskStatic ? "статический" : "динамический"}
+                      </button>
+                    </div>
+                    <NumericInput
+                      className="input-group__input"
+                      disabled={isReversedBying}
+                      defaultValue={risk}
+                      format={val => formatNumber(round(val, 2))}
+                      unsigned="true"
+                      onBlur={value => {
+                        if (value == round(risk, 2)) {
+                          value = risk;
+                        }
+                        setRisk(value)
+                      }}
+                      suffix={<Tooltip title="Процент от депозита">%</Tooltip>}
+                    />
+                  </div>
+
+                  <label className="input-group">
+                    <span className="input-group__label visually-hidden">Риск (стоп)</span>
+                    <NumericInput
+                      className="input-group__input"
+                      disabled={isReversedBying}
+                      defaultValue={
+                        (depoSum * risk / 100)
+                        /
                         currentTool.stepPrice
                         *
-                        (contracts || 1)
+                        currentTool.priceStep
                         /
-                        depoSum
-                        *
-                        100
-                      );
-                    }}
-                    suffix="п"
-                  />
-                </label>
+                        (contracts || 1)
+                      }
+                      min={currentTool.priceStep}
+                      format={value => formatNumber(filterStep(value))}
+                      unsigned="true"
+                      onBlur={riskInSteps => {
+                        setRisk(
+                          riskInSteps
+                          *
+                          currentTool.stepPrice
+                          /
+                          currentTool.priceStep
+                          *
+                          (contracts || 1)
+                          /
+                          depoSum
+                          *
+                          100
+                        );
+                      }}
+                      suffix={<Tooltip title="Ход цены от точки входа">$/₽</Tooltip>}
+                    />
+                  </label>
 
-                <label className="input-group">
-                  <span className="input-group__label visually-hidden">Риск (стоп)</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={depoSum * risk / 100}
-                    format={value => formatNumber(round(value, fraction))}
-                    unsigned="true"
-                    onBlur={riskInMoney => {
-                      setRisk(riskInMoney / depoSum * 100);
-                    }}
-                    suffix="₽"
-                  />
-                </label>
-                
+                  <label className="input-group">
+                    <span className="input-group__label visually-hidden">Риск (стоп)</span>
+                    <NumericInput
+                      className="input-group__input"
+                      disabled={isReversedBying}
+                      defaultValue={depoSum * risk / 100}
+                      format={value => formatNumber(round(value, fraction))}
+                      unsigned="true"
+                      onBlur={riskInMoney => {
+                        setRisk(riskInMoney / depoSum * 100);
+                      }}
+                      suffix="₽"
+                      suffix={<Tooltip title="Сумма риска в рублях">₽</Tooltip>}
+                    />
+                  </label>
+
+                </div>
+
+                  
               </div>
               {/* row-col-half */}
 
@@ -982,18 +1275,21 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Сброс массива закрытия</span>
                 </label>                
 
-                <label className="switch-group settings-generator-content__row-header-mirror-switch">
-                  <Switch
-                    checked={isMirrorBying}
-                    onChange={val => setMirrorBying(val)}
-                  />
-                  <span className="switch-group__label">
-                    {currentPreset.type == "Лимитник" 
-                      ? "Перевыставление в точку входа"
-                      : "Зеркальные докупки (СМС)"
-                    }
-                  </span>
-                </label>
+                {/* В Стандарте нет зеркальных докупок */}
+                {["Стандарт"].indexOf(currentPreset.type) == -1 &&
+                  <label className="switch-group settings-generator-content__row-header-mirror-switch">
+                    <Switch
+                      checked={isMirrorBying}
+                      onChange={val => setMirrorBying(val)}
+                    />
+                    <span className="switch-group__label">
+                      {currentPreset.type == "Лимитник" 
+                        ? "Перевыставление в точку входа"
+                        : "Зеркальные докупки (СМС)"
+                      }
+                    </span>
+                  </label>
+                }
               </div>
 
               <SGRow
@@ -1052,18 +1348,20 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Прямые профитные докупки</span>
                 </label>
 
-                <div style={{ width: '100%' }} hidden={!isProfitableBying}>
-                  <SGRow
-                    isBying={true}
-                    preferredStepLabel="Прямой ход"
-                    data={data["Прямые профитные докупки"]}
-                    options={currentPreset.options["Прямые профитные докупки"]}
-                    onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
-                    onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
-                    contracts={contractsTotal - contracts}
-                    currentTool={currentTool}
-                  />
-                </div>
+                {isProfitableBying &&
+                  <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+                    <SGRow
+                      isBying={true}
+                      preferredStepLabel="Прямой ход"
+                      data={data["Прямые профитные докупки"]}
+                      options={currentPreset.options["Прямые профитные докупки"]}
+                      onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
+                      onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
+                      contracts={contractsTotal - contracts}
+                      currentTool={currentTool}
+                    />
+                  </div>
+                }
               </>
             }
 
@@ -1078,16 +1376,18 @@ const SettingsGenerator = props => {
                   <span className="switch-group__label">Обратные профитные докупки</span>
                 </label>
 
-                <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
-                  <SGRow
-                    isBying={true}
-                    data={data["Обратные профитные докупки"]}
-                    options={currentPreset.options["Обратные профитные докупки"]}
-                    contracts={contractsTotal - contracts}
-                    currentTool={currentTool}
-                    onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
-                  />
-                </div>
+                {isReversedProfitableBying &&
+                  <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+                    <SGRow
+                      isBying={true}
+                      data={data["Обратные профитные докупки"]}
+                      options={currentPreset.options["Обратные профитные докупки"]}
+                      contracts={contractsTotal - contracts}
+                      currentTool={currentTool}
+                      onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
+                    />
+                  </div>
+                }
               </>
             }
 
@@ -1182,8 +1482,8 @@ const SettingsGenerator = props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab5"
                           id="settings-generator-tab5-control"
-                          hidden={!isMirrorBying}
-                          onClick={e => setCurrentTab("Зеркальные докупки")}>
+                          hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
+                          onClick={e => setCurrentTab(e.target.innerText)}>
                     {currentPreset.type == "Лимитник"
                       ? "Перевыставление в точку входа"
                       : "Зеркальные докупки (СМС)"
@@ -1299,7 +1599,11 @@ const SettingsGenerator = props => {
                            tool={currentTool}
                            contracts={contracts}
                            risk={risk}
-                           isRiskStatic={isRiskStatic}/>
+                           isRiskStatic={isRiskStatic}
+                           ranull={ranull}
+                           ranullMode={ranullMode}
+                           ranullPlus={ranullPlus}
+                           ranullPlusMode={ranullPlusMode} />
                 
               </div>
               {/* tabpanel */}
@@ -1320,12 +1624,32 @@ const SettingsGenerator = props => {
         title="Добавить настройку по шаблону"
         confirmText="Добавить"
         onConfirm={e => {
+          let presetTypeToFind = newPresetName;
+          if (newPresetName == "МТС") {
+            presetTypeToFind = props.algorithm || presets[0].type;
+          }
+          
           const presetsCopy = [...presets];
-          let name = makeUnique(newPresetName, presetsCopy.map(preset => preset.name));
+          const presetToCopy = presets.find(preset => preset.type == presetTypeToFind);
+          const newPreset = { ...presetToCopy };
+          newPreset.name = makeUnique(newPreset.name, presets.map(preset => preset.name));
 
-          presetsCopy.push({ name, type: newPresetName });
+          if (newPresetName == "МТС") {
+            console.log('!!', props);
+            
+            newPreset.options.currentToolCode = props.currentToolCode;
+            setRisk(props.risk);
+            setLoad(Math.abs(props.load));
+            setIsLong(props.load >= 0);
+            setInvestorDepo(props.depo);
+          }
+
+          presetsCopy.push(newPreset);
           setPresets(presetsCopy);
-          setCurrentPresetName(name);
+          setCurrentPresetName(newPreset.name);
+
+          setShouldSave(true);
+          setShouldRegisterUpdate(true);
 
           return true;
         }}
@@ -1333,9 +1657,7 @@ const SettingsGenerator = props => {
       >
         <Select
           defaultValue={newPresetName}
-          onChange={name => {
-            setNewPresetName(name);
-          }}
+          onChange={name => setNewPresetName(name)}
           showSearch
           optionFilterProp="children"
           filterOption={(input, option) =>
@@ -1349,6 +1671,29 @@ const SettingsGenerator = props => {
           <Select.Option value={"Лимитник"}>Лимитник</Select.Option>
         </Select>
       </Dialog>
+
+      <SaveModal
+        id="settings-generator-save-preset-popup"
+        title={`${currentPreset.type} (${currentTool.code})`}
+        namesTaken={presets.map(preset => preset.name)}
+        onConfirm={name => {
+
+          const presetsCopy = [...presets];
+          const presetToCopy = currentPreset;
+          if (currentPresetIndex < 3) {
+            const newPreset = { ...presetToCopy };
+            newPreset.name = makeUnique(name, presets.map(preset => preset.name));
+            presetsCopy.push(newPreset);
+            setCurrentPresetName(newPreset.name);
+            setPresets(presetsCopy);
+          }
+
+          setShouldSave(true);
+          setShouldRegisterUpdate(true);
+
+          return true;
+        }}
+      />
     </>
   );
 }

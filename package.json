@@ -12,6 +12,7 @@
   "devDependencies": {
     "@ant-design/icons": "^4.0.5",
     "@antv/g2": "^4.0.5",
+    "@babel/plugin-proposal-optional-chaining": "^7.14.5",
     "antd": "^3.24.2",
     "anychart": "^8.7.1",
     "anychart-react": "^1.4.1",

@@ -39,7 +39,7 @@ const ToolSelect = ({ tools, value, disabled, onChange, toolsLoading, onFocus, o
       {(() => {
         if (tools.length) {
           return sortInputFirst(searchVal, options).map((option) => (
-            <Select.Option key={option.idx} value={option.idx}>
+            <Select.Option key={option.idx} value={option.idx} title={option.label}>
               {option.label}
             </Select.Option>
           ));

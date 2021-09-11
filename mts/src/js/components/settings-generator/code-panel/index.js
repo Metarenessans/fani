@@ -36,13 +36,61 @@ function selectElementContent(node) {
 }
 
 export default function CodePanel(props) {
-  const { currentPreset, data, tool, contracts, risk, isRiskStatic } = props;
+  const {
+    currentPreset,
+    data,
+    tool,
+    contracts,
+    risk,
+    isRiskStatic,
+    ranull,
+    ranullMode,
+    ranullPlus,
+    ranullPlusMode
+  } = props;
 
   const [rollback, setRollback] = useState(tool.priceStep);
 
   useEffect(() => {
     setRollback(tool.priceStep);
   }, [tool.code]);
+
+  const renderLine = (title, param, value) => {
+    const codeElement = React.createRef();
+    const textContent = `GParam.${param} = ${value}`;
+
+    return (
+      <div 
+        className="code-panel-group" 
+        key={Math.random()}
+        style={{ marginTop: title == null ? " -1.5em" : "" }}
+      >
+        {title != null &&
+          <div className="code-panel-group-header">
+            {title && <h3 data-should-output="true">{ title }</h3>}
+            <button
+              className="code-panel-group__copy-btn"
+              onClick={e => {
+                selectElementContent(codeElement.current);
+
+                navigator.clipboard.writeText(textContent)
+                  .then(() => message.success("Скопировано!"))
+                  .catch(error => console.log('Произошла ошибка', error));
+              }}
+            >
+              копировать
+            </button>
+          </div>
+        }
+        <div className="code-panel-group-content">
+          <pre ref={codeElement} onClick={e => selectElementContent(e.target)} data-should-output="true">
+            {textContent}
+          </pre>
+        </div>
+
+      </div>
+    )
+  };
 
   return (
     <Stack className="code-panel">
@@ -153,7 +201,7 @@ export default function CodePanel(props) {
         }
 
         // В Лимитнике и СМС + ТОР в массиве закрытия добавляем еще пару фигурных скобок
-        if ((currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && !arr.isBying) {
+        if ((currentPreset.type == "Лимитник") && !arr.isBying) {
           parsedData = `{${parsedData}}`;
         }
 
@@ -221,7 +269,7 @@ export default function CodePanel(props) {
                      style={{ marginBottom: "-2em" }}>
 
                   <div className="code-panel-group-header">
-                    <h3>{title}</h3>
+                    <h3 data-should-output="true">{title}</h3>
                     <button
                       className="code-panel-group__copy-btn"
                       onClick={e => {
@@ -236,8 +284,7 @@ export default function CodePanel(props) {
                   </button>
                   </div>
                   <div className="code-panel-group-content">
-                    <pre onClick={e => selectElementContent(e.target)}
-                      ref={codeElement}>
+                    <pre onClick={e => selectElementContent(e.target)} ref={codeElement} data-should-output="true">
                       {textContent}
                     </pre>
                   </div>
@@ -250,7 +297,7 @@ export default function CodePanel(props) {
 
               {!hideTitle &&
                 <div className="code-panel-group-header">
-                  <h3>{title}</h3>
+                  <h3 data-should-output="true">{title}</h3>
                   <button
                     className="code-panel-group__copy-btn"
                     onClick={e => {
@@ -284,7 +331,7 @@ export default function CodePanel(props) {
                 </div>
               }
               <div className="code-panel-group-content">
-                <pre onClick={e => selectElementContent(e.target)} ref={codeElement}>
+                <pre onClick={e => selectElementContent(e.target)} ref={codeElement} data-should-output="true">
                   {textContent}
                 </pre>
               </div>
@@ -295,36 +342,39 @@ export default function CodePanel(props) {
       })}
 
       {(() => {
-        const codeElement = React.createRef();
-        const textContent = `GParam.depo_stop = {${!isRiskStatic ? round(risk, 3) : 0},${isRiskStatic ? round(risk, 3) : 0}}`;
+        let condition = isRiskStatic;
+        if (data["Обратные докупки (ТОР)"]?.on) {
+          condition = false;
+        }
+
+        if (currentPreset.type == "Лимитник") {
+          return renderLine("Риск", "depo_stop", `{${!condition ? risk : 0},${condition ? risk : 0}}`)
+        }
 
         return (
-          <div className="code-panel-group" key={Math.random()}>
-
-            <div className="code-panel-group-header">
-              <h3>Риск</h3>
-              <button
-                className="code-panel-group__copy-btn"
-                onClick={e => {
-                  selectElementContent(codeElement.current);
-
-                  navigator.clipboard.writeText(textContent)
-                    .then(() => message.success("Скопировано!"))
-                    .catch(error => console.log('Something went wrong', error));
-                }}
-              >
-                копировать
-              </button>
-            </div>
-            <div className="code-panel-group-content">
-              <pre onClick={e => selectElementContent(e.target)}
-                ref={codeElement}>
-                {textContent}
-              </pre>
-            </div>
-
-          </div>
+          <>
+            {renderLine("Риск",  "rastop", condition ? risk : 0)}
+            {renderLine(null, "depo_stop", condition ? 0 : risk)}
+          </>
         )
+      })()}
+
+      {(() => {
+        let value = round(ranullMode ? ranull * tool.priceStep : ranull / 100, 2);
+        if (currentPreset.type == "Лимитник") {
+          value = round(ranull / 100, 2);
+        }
+        let content = ranullMode ? `${value},0` : `0,${value}`;
+        return renderLine("Безубыток", "ranull", "{" + content + "}");
+      })()}
+
+      {(() => {
+        let value = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
+        if (currentPreset.type == "Лимитник") {
+          value = round(ranullPlus / 100, 2);
+        }
+        let content = ranullPlusMode ? `${value},0` : `0,${value}`;
+        return renderLine(null, "ranullplus", "{" + content + "}");
       })()}
 
     </Stack>

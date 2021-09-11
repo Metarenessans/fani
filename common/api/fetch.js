@@ -3,30 +3,31 @@ import { ajax } from "jquery"
 const urlPrefix = dev ? "https://fani144.ru/" : "";
 
 export default function fetch(url = "", method = "GET", data = {}) {
-  // console.log(`Sending ${url} request...`);
+  // console.log(`%c Sending ${url} request...`, 'color: pink; background-color: black');
   return new Promise((resolve, reject) => {
     ajax({
       url: `${urlPrefix}/local/php_interface/s1/ajax/?method=${url}`,
       method,
       data,
       success: response => {
+        // console.log(`%c ${url} finished`, 'color: orange; background-color: black');
         try {
           const parsed = JSON.parse(response);
           if (parsed.error) {
-            reject(parsed.message);
+            reject(url + " failed: " + parsed.message);
           }
           resolve(parsed);
         }
         catch (e) {
           console.log("Couldn't parse JSON", response);
-          reject(e);
+          reject(url + " failed: " + e);
         }
       },
       error: error => {
         if (error.status == 0) {
           return;
         }
-        reject(error);
+        reject(url + " failed: " + error);
       }
     });
   });
