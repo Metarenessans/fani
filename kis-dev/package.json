@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --mode development --open",
-    "test": "jest",
+    "test": "jest --runInBand --detectOpenHandles",
     "watch": "webpack --watch --progress --mode production",
     "build": "webpack --mode production"
   },
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.0.5",
+    "@babel/plugin-transform-runtime": "^7.15.0",
     "antd": "^3.24.2",
     "anychart": "^8.7.1",
     "chart.js": "^2.9.4",

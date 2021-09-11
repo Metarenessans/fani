@@ -1,11 +1,4 @@
-// import round from "../../../../common/utils/round"
-
-function round(value, decimals = 0) {
-  if (value == null) return value;
-
-  let dec = Math.pow(10, decimals);
-  return Math.round(value * dec) / dec;
-}
+import round from "../../../../common/utils/round"
 
 /** Недвижимость
  * возвращает итоговую сумму в зависимости от периода
