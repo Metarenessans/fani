@@ -166,6 +166,7 @@ const parseNumber = (value, fallback = 0) => {
   return result;
 };
 
+// ~~
 const parseTool = tool => {
   const ref = { ...tool };
 
