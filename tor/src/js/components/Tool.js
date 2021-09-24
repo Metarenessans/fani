@@ -150,8 +150,6 @@ export default class Item extends React.Component {
       currentTool.update(investorInfo, { useDefault: true });
     }
 
-    console.log(currentTool.code, currentTool.guarantee, currentTool.ref.guarantee);
-
     const currentToolIndex = Tools.getToolIndexByCode(tools, data.selectedToolName);
 
     let selectedToolName = data.selectedToolName;

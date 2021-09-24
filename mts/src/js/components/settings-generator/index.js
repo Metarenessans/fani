@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, memo } from 'react'
 import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
 import { LoadingOutlined } from "@ant-design/icons"
@@ -32,13 +32,51 @@ import formatNumber    from '../../../../../common/utils/format-number'
 import fractionLength  from '../../../../../common/utils/fraction-length'
 import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
 
+import { isEqual, cloneDeep } from "lodash"
+
 import stepConverter from './step-converter'
 
 import createData from './data'
 
-const SettingsGenerator = props => {
+let changed = false;
+let changedDueToCurrentPreset = false;
+let changedDueToAddPreset = false;
+
+const SettingsGenerator = memo(props => {
 
   const { onClose, onUpdate, onSave, genaSave, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
+
+  function useDeepCompareMemorize(value) {
+    const ref = useRef();
+    if (!deepEqual(value, ref.current)) {
+      ref.current = value;
+    }
+
+    return ref.current;
+  }
+
+  function useDeepCompareEffect(callback, dependencies) {
+    useEffect(
+      callback,
+      dependencies.map(useDeepCompareMemorize)
+    )
+  }
+
+  function usePrevious(value) {
+    // The ref object is a generic container whose current property is mutable ...
+    // ... and can hold any value, similar to an instance property on a class
+    const ref = useRef(value);
+    // Store current value in ref
+    useEffect(() => {
+      if (!isEqual(value, ref.current)) {
+        ref.current = cloneDeep(value);
+      }
+    });
+    // Return previous value (happens before update in useEffect above)
+    return ref.current;
+  }
+
+  const prevGENA = usePrevious(genaSave);
 
   const onDownload = props.onDownload || function(title, text) {
     const file = new Blob([text], { type: 'text/plain' });
@@ -61,8 +99,8 @@ const SettingsGenerator = props => {
   const [currentTab, setCurrentTab] = useState(initialCurrentTab);
   const prevCurrentTab = useRef();
 
-  const defaultToolCode = dev ? "SiU1" : "SBER";
-  const [presets, setPresets] = useState([
+  const defaultToolCode = props.defaultToolCode || "SBER";
+  const initialPresets = [
     {
       name: "Стандарт",
       type: "Стандарт",
@@ -70,9 +108,7 @@ const SettingsGenerator = props => {
         currentToolCode: defaultToolCode,
         [initialCurrentTab]: {
           closeAll: false,
-          ...optionsTemplate,
           mode: "custom",
-          modes: ["custom"],
           customData: [{ ...optionsTemplate }]
         },
         "Прямые профитные докупки": {
@@ -131,33 +167,30 @@ const SettingsGenerator = props => {
         },
       }
     },
-  ]);
+  ];
+  const [presets, setPresets] = useState(initialPresets);
   const [newPresetName, setNewPresetName] = useState("МТС");
-  const [currentPresetName, setCurrentPresetName] = useState(dev ? "СМС + ТОР" : "Стандарт");
+  const [currentPresetName, setCurrentPresetName] = useState(props.defaultPresetName || "Стандарт");
   const currentPreset = presets.find(preset => preset.name == currentPresetName);
   const currentPresetIndex = presets.indexOf(currentPreset);
 
   const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
+  const [changedToolManually, setChangedToolManually] = useState(false)
   const currentToolCode = currentPreset.options.currentToolCode || defaultToolCode;
   const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
   const currentTool = tools[currentToolIndex] || Tools.create();
   const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
 
-  const filterStep = step => {
-    return fraction > 0
-      ? round(step, fraction)
-      : magnetToClosest(step, currentTool.priceStep);
-  };
-
   const [searchVal, setSearchVal] = useState("");
   const [isLong, setIsLong] = useState(true);
-  const [risk, setRisk] = useState(100);
+  const [risk, setRisk] = useState(calcRisk(currentPreset.type));
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(currentTool.dollarRate == 0 ? 1 : 45);
-  const [load, setLoad] = useState(dev ? 50 : props.load || 0);
+  const [load, setLoad] = useState(props.load || 0);
 
-  const [investorDepo, setInvestorDepo] = useState(dev ? 20_000_000 : props.depo || 1_000_000);
+  const [investorDepo, setInvestorDepo] = useState(props.depo || 1_000_000);
+  const [changedDepoManually, setChangedDepoManually] = useState(false);
   const [depo, setDepo] = useState(
     investorDepo != null
       ? currentPreset.type == "Лимитник"
@@ -190,6 +223,16 @@ const SettingsGenerator = props => {
   // По дефолту включен в СМС + ТОР
   const [isReversedBying, setReversedBying] = useState(currentPreset.type == "СМС + ТОР");
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const filterStep = step => {
+    return fraction > 0
+      ? round(step, fraction)
+      : magnetToClosest(step, currentTool.priceStep);
+  };
+
+  function calcRisk(presetType) {
+    return presetType == "СМС + ТОР" ? 300 : 0.5
+  }
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -387,11 +430,14 @@ const SettingsGenerator = props => {
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
     setPresets(presetsCopy);
+
+    changedDueToCurrentPreset = false;
+    changedDueToAddPreset     = false;
     setShouldRegisterUpdate(true);
   }
 
   function updateCurrentPresetTool(code) {
-    const presetsCopy = [...presets];
+    let presetsCopy = [...presets];
 
     const currentPresetCopy = {
       ...currentPreset,
@@ -401,7 +447,20 @@ const SettingsGenerator = props => {
       }
     };
     presetsCopy[currentPresetIndex] = currentPresetCopy;
+
+    // Если меняем инструмент в дефолтном пресете,
+    // то выбранный инструмент подставляется во все дефолтные пресеты
+    if (currentPresetIndex < 3) {
+      presetsCopy = presetsCopy.map((preset, index) => {
+        if (index < 3) {
+          preset.options.currentToolCode = code;
+        }
+        return preset;
+      });
+    }
+    
     setPresets(presetsCopy);
+    setChangedToolManually(true);
   }
 
   const getPackedSave = () => {
@@ -457,12 +516,74 @@ const SettingsGenerator = props => {
     }
   }, []);
 
+  // Проверка обновления гены
   useEffect(() => {
+    let prevGENAToCompare;
+    if (prevGENA) {
+      prevGENAToCompare = cloneDeep(prevGENA);
+      delete prevGENAToCompare.currentPresetName;
+      delete prevGENAToCompare.totalIncome;
+      delete prevGENAToCompare.totalLoss;
+    }
+
+    let genaToCompare;
     if (genaSave) {
-      const {
+      genaToCompare = cloneDeep(genaSave);
+      delete genaToCompare.currentPresetName;
+      delete genaToCompare.totalIncome;
+      delete genaToCompare.totalLoss;
+    }
+
+    if (prevGENA && !isEqual(prevGENAToCompare, genaToCompare)) {
+      if (genaSave == null) {
+        // Откат к дефолту
+        setPresets(initialPresets);
+        const currentPresetName = props.defaultPresetName || "Стандарт";
+        setCurrentPresetName(currentPresetName);
+        const currentPreset = initialPresets.find(preset => preset.name == currentPresetName);
+
+        setInvestorDepo(props.depo || 1_000_000)
+        setChangedDepoManually(true);
+
+        setCurrentTab(initialCurrentTab);
+        setLoad(props.load || 0);
+        setIsLong(true);
+        
+        const tools = props.tools?.length ? props.tools : Tools.createArray();
+        setTools(tools);
+        setChangedToolManually(true);
+
+        const currentToolCode = initialPresets[0].options.currentToolCode;
+        const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+        const currentTool = tools[currentToolIndex] || Tools.create();
+
+        setSearchVal("");
+        setRisk(calcRisk(currentPreset.type))
+        setIsRiskStatic(true);
+        setComission(currentTool.dollarRate == 0 ? 1 : 45);
+
+        setRanull(10);
+        setRanullMode(true);
+        setRanullPlus(3);
+        setRanullPlusMode(true);
+
+        // Прямые профитные докупки 
+        setProfitableBying(false);
+        setReversedProfitableBying(false);
+        setMirrorBying(false);
+        setReversedBying(currentPreset.type == "СМС + ТОР");
+
+        changedDueToCurrentPreset = false;
+        changedDueToAddPreset     = false;
+
+        setShouldRegisterUpdate(true);
+
+        return;
+      }
+
+      let {
         isLong,
         comission,
-        risk,
         depo,
         secondaryDepo,
         load,
@@ -479,14 +600,44 @@ const SettingsGenerator = props => {
         ranullPlusMode
       } = genaSave;
 
-      setIsLong(isLong);
-      setComission(comission);
-      setRisk(risk);
+      console.log(prevGENAToCompare, genaToCompare);
+
       setDepo(depo);
       setSecondaryDepo(secondaryDepo);
       setLoad(load);
       setCurrentTab(currentTab);
-      setPresets(presets);
+
+      // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
+      let _presets = cloneDeep(presets);
+      if (genaSave.firstLoad) {
+        console.log("ПЕРВАЯ ЗАГРУЗКА");
+
+        _presets.splice(0, 3, ...initialPresets); 
+        // Переносится только инструмент
+        _presets = _presets.map((preset, index) => {
+          preset.options.currentToolCode = genaSave.presets[index].options.currentToolCode;
+          preset.options[initialCurrentTab].customData[0].preferredStep = 
+            genaSave.presets[index].options[initialCurrentTab].customData[0].preferredStep;
+          return preset;
+        })
+      }
+
+      _presets = _presets.map(preset => {
+        preset.percentMode = preset.percentMode ?? "total";
+        return preset;
+      })
+      
+      setPresets(_presets);
+      
+      const currentPreset = _presets.find(preset => preset.name == currentPresetName);
+      const currentPresetIndex = _presets.indexOf(currentPreset);
+      if (currentPresetIndex > 2) {
+        setComission(comission);
+      }
+      if (currentPreset) {
+        setRisk(calcRisk(currentPreset.type));
+      }
+
       setCurrentPresetName(currentPresetName);
       setProfitableBying(isProfitableBying);
       setReversedProfitableBying(isReversedProfitableBying)
@@ -496,8 +647,25 @@ const SettingsGenerator = props => {
       setRanullMode(ranullMode);
       setRanullPlus(ranullPlus);
       setRanullPlusMode(ranullPlusMode);
+
+      setIsLong(isLong);
+
+      // ~~
+
+      setChangedToolManually(false);
+      setChangedDepoManually(false);
+
+      if (changedDueToCurrentPreset) {
+        changedDueToCurrentPreset = false;
+      }
+      else if (changedDueToAddPreset) {
+        changedDueToAddPreset = false;
+      }
+      else {
+        setShouldRegisterUpdate(true);
+      }
     }
-  }, [genaSave]);
+  });
 
   useEffect(() => {
     prevCurrentTab.current = currentTab;
@@ -519,15 +687,22 @@ const SettingsGenerator = props => {
       setSecondaryDepo(0);
     }
 
-    setRisk(currentPreset.type == "СМС + ТОР" ? 300 : 100);
+    setRisk(calcRisk(currentPreset.type));
 
-    setReversedBying(dev || currentPreset.type == "СМС + ТОР");
+    setReversedBying(currentPreset.type == "СМС + ТОР");
 
+    changedDueToCurrentPreset = true;
+    changedDueToAddPreset     = false;
     setShouldRegisterUpdate(true);
 
-  }, [currentPreset.type]);
+  }, [currentPreset.name]);
 
   useEffect(() => {
+    if (changedDepoManually) {
+      setChangedDepoManually(false);
+      return;
+    }
+
     let base = investorDepo;
     if (depoSum != investorDepo) {
       base = depoSum;
@@ -543,20 +718,24 @@ const SettingsGenerator = props => {
       setSecondaryDepo(0);
     }
 
+    changedDueToCurrentPreset = false;
+    changedDueToAddPreset     = false;
     setShouldRegisterUpdate(true);
 
   }, [investorDepo]);
 
   // При изменении инструмента меняем желаемый ход во всех инпутах
   useEffect(() => {
-
     const presetsCopy = [...presets];
 
     let currentPresetCopy = { ...currentPreset };
 
     // Обновляем ход только если новый инструмент отличается от предыдущего
     // а не является устаревшей/новой версией текущего
-    if (!(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))) {
+    if (
+      changedToolManually &&
+      !(currentTool.dollarRate == 0 && prevTool.current.code.slice(0, 2) == currentTool.code.slice(0, 2))
+    ) {
       Object.keys(currentPreset.options).map(key => {
 
         // Выполняем проверку только на объектах
@@ -568,54 +747,52 @@ const SettingsGenerator = props => {
 
         let _prefStep = preferredStep;
         if (inPercent) {
-          if (preferredStep != "") {
+          if (preferredStep !== "") {
             _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
           }
         }
         else {
-          if (preferredStep != "") {
+          if (preferredStep !== "") {
             _prefStep = currentTool.adrDay;
           }
         }
-        
         
         if (inPercent) {
           // Должно быть
           let oldDefaultStep = preferredStep;
           if (inPercent) {
-            if (preferredStep != "") {
+            if (preferredStep !== "") {
               oldDefaultStep = stepConverter.fromStepToPercents(prevTool.current.adrDay, prevTool.current);
             }
           }
           else {
-            if (preferredStep != "") {
+            if (preferredStep !== "") {
               oldDefaultStep = prevTool.current.adrDay;
             }
           }
-
           
-          if (preferredStep != oldDefaultStep) {
+          if (preferredStep !== oldDefaultStep) {
             _prefStep = oldDefaultStep;
           }
         }
-
 
         const obj = {
           preferredStep: _prefStep,
           customData: customData?.map(row => {
             let _prefStep = row.preferredStep;
+
             if (row.inPercent) {
-              if (preferredStep != "") {
+              if (preferredStep !== "") {
                 _prefStep = stepConverter.fromStepToPercents(currentTool.adrDay, currentTool);
               }
             }
             else {
-              if (preferredStep != "") {
+              if (preferredStep !== "") {
                 _prefStep = currentTool.adrDay;
               }
             }
 
-            row.preferredStep = _prefStep
+            row.preferredStep = _prefStep;
             return row;
           })
         };
@@ -635,11 +812,10 @@ const SettingsGenerator = props => {
   
       presetsCopy[currentPresetIndex] = currentPresetCopy;
       setPresets(presetsCopy);
-      setShouldRegisterUpdate(true);
     }
 
-    // Если комиссия была в дефолтном значении, то ее можно адаптировать под дефолтное значение
-    // для нового инструмента
+    // Если комиссия была в дефолтном значении,
+    // то ее можно адаптировать под дефолтное значение для нового инструмента
     if (comission == 45 || comission == 1) {
       setComission(currentTool.dollarRate == 0 ? 1 : 45);
     }
@@ -648,7 +824,13 @@ const SettingsGenerator = props => {
 
     setShouldRegisterUpdate(true);
 
-  }, [currentTool.code]);
+  }, [currentToolCode]);
+
+  useEffect(() => {
+    changedDueToCurrentPreset = false;
+    changedDueToAddPreset     = false;
+    setShouldRegisterUpdate(true);
+  }, [load, comission, depo, secondaryDepo])
 
   useEffect(() => {
     setTools(props.tools?.length ? props.tools : Tools.createArray());
@@ -656,19 +838,26 @@ const SettingsGenerator = props => {
 
   useEffect(() => {
     if (shouldSave) {
-      
       onSave && onSave(getPackedSave());
       setShouldSave(false);
-
     }
   }, [shouldSave]);
 
   useEffect(() => {
     if (shouldRegisterUpdate) {
-
-      onUpdate && onUpdate(getPackedSave());
-  
       setShouldRegisterUpdate(false);
+
+      changed = true;
+      if (changedDueToCurrentPreset) {
+        changed = false;
+        // changedDueToCurrentPreset = false;
+      }
+      else if (changedDueToAddPreset) {
+        changed = false;
+        // changedDueToAddPreset = false;
+      }
+
+      onUpdate && onUpdate(getPackedSave(), data, changed);
     }
   }, [shouldRegisterUpdate]);
 
@@ -740,6 +929,9 @@ const SettingsGenerator = props => {
                     }
 
                     setShouldSave(true);
+
+                    changedDueToCurrentPreset = false;
+                    changedDueToAddPreset     = false;
                     setShouldRegisterUpdate(true);
                   }}
                   preset={preset}
@@ -812,6 +1004,9 @@ const SettingsGenerator = props => {
                     currentPreset.name = name;
                     setCurrentPresetName(name);
                     setPresets(presetsCopy);
+
+                    changedDueToCurrentPreset = false;
+                    changedDueToAddPreset     = false;
                     setShouldRegisterUpdate(true);
                   }}
                 >
@@ -865,6 +1060,7 @@ const SettingsGenerator = props => {
 
               <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
 
+                {/* Торговый инструмент */}
                 <label className="input-group">
                   <span className="input-group__label">Инструмент</span>
                   <Select
@@ -903,7 +1099,6 @@ const SettingsGenerator = props => {
                     }
                   </Select>
                 </label>
-                {/* Торговый инструмент */}
 
                 <label className="input-group">
                   <span className="input-group__label">
@@ -929,7 +1124,7 @@ const SettingsGenerator = props => {
                     unsigned="true"
                     onBlur={depo => {
                       setDepo(depo);
-                      setShouldRegisterUpdate(true);
+                      setChangedDepoManually(true);
                     }}
                   />
                 </label>
@@ -944,7 +1139,10 @@ const SettingsGenerator = props => {
                         format={formatNumber}
                         unsigned="true"
                         min={0}
-                        onBlur={secondaryDepo => setSecondaryDepo(secondaryDepo)}
+                        onBlur={secondaryDepo => {
+                          setSecondaryDepo(secondaryDepo);
+                          setChangedDepoManually(true);
+                        }}
                       />
                     </label>
                 }
@@ -1009,7 +1207,8 @@ const SettingsGenerator = props => {
                             Прибыль
                           </Tooltip>
                         }
-                        value={round(totalIncome, 1)}
+                        value={formatNumber(round(totalIncome, 1)) + " (" + round(totalIncome / investorDepo * 100, 2) + "%)"}
+                        formatValue={false}
                       />
                       <PairJSX
                         name={<span>Комиссия</span>}
@@ -1622,6 +1821,9 @@ const SettingsGenerator = props => {
         title="Добавить настройку по шаблону"
         confirmText="Добавить"
         onConfirm={e => {
+          changedDueToCurrentPreset = false;
+          changedDueToAddPreset     = true;
+
           let presetTypeToFind = newPresetName;
           if (newPresetName == "МТС") {
             presetTypeToFind = props.algorithm || presets[0].type;
@@ -1673,7 +1875,6 @@ const SettingsGenerator = props => {
         title={`${currentPreset.type} (${currentTool.code})`}
         namesTaken={presets.map(preset => preset.name)}
         onConfirm={name => {
-
           const presetsCopy = [...presets];
           const presetToCopy = currentPreset;
           if (currentPresetIndex < 3) {
@@ -1686,12 +1887,21 @@ const SettingsGenerator = props => {
 
           setShouldSave(true);
           setShouldRegisterUpdate(true);
-
           return true;
         }}
       />
     </>
   );
-}
+}, (prevProps, nextProps) => isEqual(prevProps.genaSave, nextProps.genaSave))
 
-export default SettingsGenerator;
+const onSGOpen = () => {
+  console.log("onSGOpen WOW");
+  changed = false;
+};
+
+const onSGClose = () => {
+  console.log("onSGClose GAY");
+  changed = false;
+};
+
+export { SettingsGenerator, onSGOpen, onSGClose };

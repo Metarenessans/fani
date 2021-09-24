@@ -680,4 +680,4 @@ class Tools {
   }
 }
 
-export { Tools, Tool, template };
+export { Tools, Tool, template, parseTool };

@@ -9,6 +9,7 @@ import {
   Pagination,
 } from 'antd/es'
 const { Option } = Select;
+import { message } from 'antd';
 
 import {
   LoadingOutlined,
@@ -23,13 +24,14 @@ import round           from "../../../common/utils/round"
 import formatNumber    from "../../../common/utils/format-number"
 import fractionLength  from "../../../common/utils/fraction-length"
 import sortInputFirst  from "../../../common/utils/sort-input-first"
-import isEqual         from '../../../common/utils/is-equal';
 import fallbackBoolean from '../../../common/utils/fallback-boolean';
 import stepConverter   from './components/settings-generator/step-converter';
 
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
-import { Tools, Tool, template } from "../../../common/tools"
+import { cloneDeep, isEqual } from "lodash"
+
+import { Tools, Tool, template, parseTool } from "../../../common/tools"
 
 let chartModule;
 let Chart;
@@ -41,17 +43,31 @@ import "../sass/style.sass";
 
 import Config                  from "../../../common/components/config"
 import NumericInput            from "../../../common/components/numeric-input"
-import SettingsGenerator       from "./components/settings-generator"
 import Header                  from "./components/header"
 import CustomSlider            from "../../../common/components/custom-slider"
 
+import { SettingsGenerator, onSGOpen } from "./components/settings-generator"
+
+function delay(ms) {
+  return new Promise(resolve =>
+    setTimeout(resolve, ms)
+  )
+}
+
+// TODO: удалить и заменить на вызов функции
+let min, max;
+
 const algorithms = [
-  { name: "Стандарт",  profitRatio: 60 },
-  { name: "СМС + ТОР", profitRatio: 60 },
-  { name: "Лимитник",  profitRatio: 90 }
+  { name: "Стандарт",  profitRatio: 100 },
+  { name: "СМС + ТОР", profitRatio: 100 },
+  { name: "Лимитник",  profitRatio: 100 }
 ];
 
+let initialImport = true;
+let genaTable;
 let unsavedGena = null;
+let lastSavedSG = null;
+let sgChanged = false;
 
 class App extends React.Component {
 
@@ -61,7 +77,7 @@ class App extends React.Component {
     this.initialState = {
 
       loading: false,
-      loadingChartData: true,
+      chartLoading: true,
 
       investorInfo: {
         status: "KSUR",
@@ -69,7 +85,6 @@ class App extends React.Component {
       },
 
       depo: 1_000_000,
-      mode: 0,
       chance: 50,
       page: 1,
       priceRange: [null, null],
@@ -79,6 +94,7 @@ class App extends React.Component {
       data: null,
 
       customTools: [],
+      /** Код текущего выбранного инструмента */
       currentToolCode: "SBER",
 
       id:                  null,
@@ -89,10 +105,14 @@ class App extends React.Component {
       changedMinRange:        0,
       changedMaxRange:        0,
       movePercantage:         0,
-      profitRatio:           60,
-      searchVal:             "",
+      profitRatio:            100,
+      searchVal:              "",
 
+      // Индекс алгоритма МААНИ (0 - Стандарт, 1 - СМС + ТОР, 2 - Лимитник)
+      mode:                  0,
+      // Индекс выбранного пресета в данной категории (mode)
       presetSelection:       algorithms.map(algorithm => 0),
+
       totalIncome:           0,
       totalStep:             0,
 
@@ -101,7 +121,9 @@ class App extends React.Component {
 
       kodTable: [],
 
-      genaID: -1,
+      genaSave: null,
+      genaID:   -1,
+      shouldImportSG: false,
     };
 
     this.state = {
@@ -129,12 +151,55 @@ class App extends React.Component {
     });
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    const { currentToolCode } = this.state;
+    // if (
+    //   (prevState.priceRange?.every(value => !!value) && this.state.priceRange?.every(value => !!value)) &&
+    //   !isEqual(prevState.priceRange, this.state.priceRange)
+    // ) {
+    //   console.log("priceRange changed", prevState.priceRange, this.state.priceRange);
+    // }
+
+    if (prevState.currentToolCode != currentToolCode) {
+      console.log("Сбрасываем масштаб графика");
+      // Обновляем график
+      this.setStateAsync({ scaleOffset: 0 }).then(() => chartModule?.updateChartScaleMinMax(min, max));
+    }
+
+    const { shouldImportSG } = this.state;
+    if (shouldImportSG) {
+      setTimeout(() => {
+        this.importDataFromGENA(this.state.genaSave)
+      }, 100)
+    }
+  }
+
   setStateAsync(state = {}) {
     return new Promise(resolve => this.setState(state, resolve))
   }
 
+  fallbackToBasePreset() {
+    console.warn("Resetting presetSelection");
+
+    const { mode } = this.state;
+    const presetSelection = [...this.state.presetSelection];
+    presetSelection[mode] = 0
+
+    const genaSave = cloneDeep(this.state.genaSave);
+    const options = genaSave?.presets.filter(preset => preset.type == algorithms[mode].name) || [{ name: algorithm.name }];
+    const currentPreset = options[presetSelection[mode]];
+    genaSave.currentPresetName = currentPreset.name;
+    
+    return this.setStateAsync({ presetSelection, genaSave });
+  }
+
   fetchCompanyQuotes() {
-    this.setState({ loadingChartData: true });
+    // Отменяем запрос, если модуль с графиком не подгрузился или ответ от предыдущего запроса еще не был получен 
+    if (!Chart) {
+      return Promise.resolve();
+    }
+
+    this.setState({ chartLoading: true });
 
     let from = new Date();
     let to   = new Date();
@@ -181,12 +246,19 @@ class App extends React.Component {
     fetch(method, "GET", body)
       .then(response => {
         const { data } = response;
-        return this.setStateAsync({ data, loadingChartData: false });
+        return this.setStateAsync({ data, chartLoading: false });
       })
       .catch(reason => {
+        message.error(`Не удалось получить график для ${code}: ${reason}`);
         console.warn(`Не удалось получить график для ${code}: ${reason}`);
-        // this.showAlert(`Не удалось получить график для ${code}: ${reason}`);
-        return this.fetchCompanyQuotes();
+
+        this.setStateAsync({ chartLoading: false });
+        // Пробуем отправить запрос снова 2 секунды
+        return new Promise(resolve => {
+          setTimeout(() => {
+            this.fetchCompanyQuotes().then(() => resolve());
+          }, 2_000)
+        })
       });
   }
 
@@ -194,44 +266,52 @@ class App extends React.Component {
     const ms = dev ? 10_000 : 1 * 60 * 1_000;
     new Promise(resolve => {
       setTimeout(() => {
+        const currentTool = this.getCurrentTool();
         if (!document.hidden) {
-          this.prefetchTools()
-            .then(() => {
+          fetch("getCompanyTrademeterInfo", "GET", {
+            code:   currentTool.code,
+            region: currentTool.dollarRate == 1 ? "RU" : "EN"
+          })
+            .then(response => {
+              Tools.prefetchedTool = response.data;
+
               const { isToolsDropdownOpen } = this.state;
               if (!isToolsDropdownOpen) {
-                this.imitateFetchcingTools()
+                this.imitateFetchingTools()
                   .then(() => resolve());
               }
               else {
-                console.log('no way!');
-                Tools.storage = [];
-                Tools.storageReady = false;
+                console.log('Не могу пропушить инструмент в стейт, буду ждать окно');
+                Tools.prefetchedTool = null;
                 resolve();
               }
-            });
+
+              resolve();
+            })
         }
         else resolve();
       }, ms);
     }).then(() => this.setFetchingToolsTimeout())
   }
 
-  // ----------
-  // Fetch
-  // ----------
-
   // Fetching everithing we need to start working
   fetchInitialData() {
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout())
+      .then(() => {
+        if (this.state.id == null) {
+          this.updatePriceRange(this.getCurrentTool())
+        }
+      })
       .then(() => this.fetchSaves())
       .catch(error => console.error(error))
       .finally(() => {
-        Promise.allSettled([
+        return Promise.allSettled([
           this.fetchInvestorInfo(),
           this.fetchGENA()
         ])
-          .finally(() => this.fetchCompanyQuotes())
-      });
+      })
+      .then(() => this.fetchCompanyQuotes())
   }
 
   fetchGENA() {
@@ -240,6 +320,25 @@ class App extends React.Component {
       save.ranullMode     = fallbackBoolean(save.ranullMode, true)
       save.ranullPlus     = save.ranullPlus == null ? 0 : save.ranullPlus;
       save.ranullPlusMode = fallbackBoolean(save.ranullPlusMode, true);
+
+      // Ставим в ГЕНЕ такой же пресет, как и в сохраненном алгоритме МААНИИ
+      const mode = this.state.mode;
+      const { presetSelection } = this.state;
+      const options = save?.presets.filter(preset => preset.type == algorithms[mode].name);
+      const currentPreset = options[presetSelection[mode]];
+      // Меняем в текущем пресете название инструмента, чтобы не произошло базинги
+      currentPreset.options.currentToolCode = this.state.currentToolCode;
+      // Делаем фолбек на дефолтный инструмент во всех пресетах
+      save.presets = save.presets.map(preset => {
+        preset.options.currentToolCode = preset.options.currentToolCode ?? "SBER";
+        return preset;
+      });
+
+      save.currentPresetName = currentPreset.name;
+
+      save.firstLoad = true;
+
+      console.log("parseGENASave", save);
       return save;
     };
 
@@ -249,264 +348,68 @@ class App extends React.Component {
         console.log("getGenaSnapshots:", data);
         return this.setStateAsync({ genaSaves: data });
       })
-      .then(() => {
-        return new Promise((resolve, reject) => {
-          const id = this.state.genaSaves[0]?.id;
-          if (id != null) {
-            fetch("getGenaSnapshot", "GET", { id })
-              .then(response => {
-                const { data } = response;
-                try {
-                  let genaSave = JSON.parse(data.static);
-                  genaSave = parseGENASave(genaSave);
+      .then(() => new Promise((resolve, reject) => {
+        const { id } = this.state.genaSaves[0];
+        if (id != null) {
+          fetch("getGenaSnapshot", "GET", { id })
+            .then(response => {
+              const { data } = response;
+              try {
+                let genaSave = JSON.parse(data.static);
+                genaSave = parseGENASave(genaSave);
+                lastSavedSG = cloneDeep(genaSave);
+                sgChanged = false;
 
-                  console.log("getGenaSnapshot", genaSave);
-                  this.setState({ genaID: id, genaSave }, () => resolve());
-                }
-                catch (e) {
-                  reject(e);
-                }
-              })
-              .catch(error => reject(error));
-          }
-          else {
-            resolve();
-          }
-        })
-      })
+                console.log("getGenaSnapshot", genaSave);
+                this.setStateAsync({ genaID: id, genaSave })
+                  .then(() => delay(100))
+                  .then(() => this.exportDataToSG(true))
+                  .then(() => this.setStateAsync({ shouldImportSG: true }))
+                  .then(() => resolve())
+              }
+              catch (e) {
+                reject("Не удалось распарсить генератор настроек!", e);
+              }
+            })
+            .catch(error => reject(error));
+        }
+        else {
+          resolve();
+        }
+      }))
       .catch(error => console.error(error))
       .finally(() => {
         if (dev) {
-          let genaSave = {
-            "isLong": true,
-            "comission": 1,
-            "risk": 0.5,
-            "depo": 3000000,
-            "secondaryDepo": 0,
-            "load": 3,
-            "currentTab": "Закрытие основного депозита",
-            "presets": [
-              {
-                "name": "Стандарт",
-                "type": "Стандарт",
-                "options": {
-                  "currentToolCode": "BRU1",
-                  "Закрытие основного депозита": {
-                    "closeAll": false,
-                    "inPercent": false,
-                    "preferredStep": "",
-                    "length": 1,
-                    "percent": "",
-                    "stepInPercent": "",
-                    "mode": "custom",
-                    "modes": [
-                      "custom"
-                    ],
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": "",
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ]
-                  },
-                  "Прямые профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.43,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.43
-                  },
-                  "Обратные профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.43,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.43
-                  }
-                }
-              },
-              {
-                "name": "СМС + ТОР",
-                "type": "СМС + ТОР",
-                "options": {
-                  "currentToolCode": "BRU1",
-                  "Закрытие основного депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.52,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Закрытие плечевого депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.52,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Обратные докупки (ТОР)": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.52,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Прямые профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.52,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Обратные профитные докупки": {
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": 1.52,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  }
-                }
-              },
-              {
-                "name": "Лимитник",
-                "type": "Лимитник",
-                "options": {
-                  "currentToolCode": "GDH2",
-                  "Закрытие основного депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": null,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Обратные докупки (ТОР)": {
-                    "mode": "custom",
-                    "closeAll": false,
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": null,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  }
-                }
-              },
-              {
-                "name": "Лимитник 2",
-                "type": "Лимитник",
-                "options": {
-                  "currentToolCode": "GDH2",
-                  "Закрытие основного депозита": {
-                    "closeAll": false,
-                    "mode": "custom",
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": null,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  },
-                  "Обратные докупки (ТОР)": {
-                    "mode": "custom",
-                    "closeAll": false,
-                    "customData": [
-                      {
-                        "inPercent": false,
-                        "preferredStep": null,
-                        "length": 1,
-                        "percent": "",
-                        "stepInPercent": ""
-                      }
-                    ],
-                    "preferredStep": 1.52
-                  }
-                }
-              }
-            ],
-            "currentPresetName": "Лимитник 2",
-            "isProfitableBying": false,
-            "isReversedProfitableBying": false,
-            "isMirrorBying": false,
-            "isReversedBying": false,
-            "ranull": 10,
-            "ranullMode": true,
-            "ranullPlus": 3,
-            "ranullPlusMode": true,
-            "totalIncome": 884.8624,
-            "totalLoss": 15000
+          const response = {
+            "error": false,
+            "data": {
+              "id": 60,
+              "name": "",
+              "dateCreate": 1629903262,
+              "static": "{\"isLong\":true,\"comission\":1,\"risk\":0.5,\"depo\":10000000,\"secondaryDepo\":0,\"load\":10,\"currentTab\":\"Закрытие основного депозита\",\"presets\":[{\"name\":\"Стандарт\",\"type\":\"Стандарт\",\"options\":{\"currentToolCode\":\"BRV1\",\"Закрытие основного депозита\":{\"closeAll\":false,\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\",\"mode\":\"custom\",\"modes\":[\"custom\"],\"customData\":[{\"inPercent\":false,\"preferredStep\":0.03,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.05,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.08,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.09,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.11,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.14,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.17,\"length\":1,\"percent\":18,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.2,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.26,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.3,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.33,\"length\":1,\"percent\":7,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.35,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.39,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.45,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.53,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.55,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.65,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.75,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.82,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.84,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.86,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.89,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.05,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.15,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.25,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.44,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"}]},\"Прямые профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64},\"Обратные профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64}}},{\"name\":\"СМС + ТОР\",\"type\":\"СМС + ТОР\",\"options\":{\"currentToolCode\":\"SBER\",\"Закрытие основного депозита\":{\"closeAll\":false,\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}]},\"Закрытие плечевого депозита\":{\"closeAll\":false,\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}]},\"Обратные докупки (ТОР)\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}]},\"Прямые профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}]},\"Обратные профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}]}}},{\"name\":\"Лимитник\",\"type\":\"Лимитник\",\"options\":{\"currentToolCode\":\"SBER\",\"Закрытие основного депозита\":{\"closeAll\":false,\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":5.63,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":5.63},\"Обратные докупки (ТОР)\":{\"mode\":\"custom\",\"closeAll\":false,\"customData\":[{\"inPercent\":false,\"preferredStep\":5.63,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":5.63}}},{\"name\":\"Стандарт (BRV1)\",\"type\":\"Стандарт\",\"options\":{\"currentToolCode\":\"BRV1\",\"Закрытие основного депозита\":{\"closeAll\":false,\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\",\"mode\":\"custom\",\"modes\":[\"custom\"],\"customData\":[{\"inPercent\":false,\"preferredStep\":0.03,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.05,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":true,\"preferredStep\":0.08,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.09,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.11,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.14,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.17,\"length\":1,\"percent\":18,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.2,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.26,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.3,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.33,\"length\":1,\"percent\":7,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.35,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.39,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.45,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.53,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.55,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.65,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.75,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.82,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.84,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.86,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.89,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.05,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.15,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.25,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.44,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"}]},\"Прямые профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64},\"Обратные профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64}}},{\"name\":\"Стандарт (BRV1) 2\",\"type\":\"Стандарт\",\"options\":{\"currentToolCode\":\"BRV1\",\"Закрытие основного депозита\":{\"closeAll\":false,\"inPercent\":false,\"preferredStep\":\"\",\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\",\"mode\":\"custom\",\"modes\":[\"custom\"],\"customData\":[{\"inPercent\":false,\"preferredStep\":0.03,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.05,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.08,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.09,\"length\":1,\"percent\":9.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.11,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.14,\"length\":1,\"percent\":9,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.17,\"length\":1,\"percent\":18,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.2,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.26,\"length\":1,\"percent\":2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.3,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.33,\"length\":1,\"percent\":7,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.35,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.39,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.45,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.53,\"length\":1,\"percent\":3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.55,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.65,\"length\":1,\"percent\":0.3,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.75,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.82,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.84,\"length\":1,\"percent\":1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.86,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":0.89,\"length\":1,\"percent\":0.1,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.05,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.15,\"length\":1,\"percent\":0.2,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.25,\"length\":1,\"percent\":0.4,\"stepInPercent\":\"\"},{\"inPercent\":false,\"preferredStep\":1.44,\"length\":1,\"percent\":0.5,\"stepInPercent\":\"\"}]},\"Прямые профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64},\"Обратные профитные докупки\":{\"mode\":\"custom\",\"customData\":[{\"inPercent\":false,\"preferredStep\":1.64,\"length\":1,\"percent\":\"\",\"stepInPercent\":\"\"}],\"preferredStep\":1.64}}}],\"currentPresetName\":\"Стандарт (BRV1) 2\",\"isProfitableBying\":false,\"isReversedProfitableBying\":false,\"isMirrorBying\":false,\"isReversedBying\":false,\"ranull\":10,\"ranullMode\":true,\"ranullPlus\":3,\"ranullPlusMode\":true,\"totalIncome\":81099.29179999998,\"totalLoss\":50000}"
+            }
           };
+          const { data } = response;
+
+          let genaSave = JSON.parse(data.static);
           genaSave = parseGENASave(genaSave);
+          lastSavedSG = cloneDeep(genaSave);
+          sgChanged = false;
 
           console.log("getGenaSnapshot", genaSave);
-          return this.setStateAsync({ genaSave })
+          this.setStateAsync({ genaID: response.data.id, genaSave })
+            .then(() => delay(100))
+            .then(() => this.exportDataToSG(true))
+            .then(() => this.setStateAsync({ shouldImportSG: true }))
         }
       });
   }
 
   saveGENA(save) {
     const { genaID } = this.state;
+
+    lastSavedSG = cloneDeep(save);
+    sgChanged = false;
 
     let request = "addGenaSnapshot";
     if (genaID > -1) {
@@ -522,17 +425,231 @@ class App extends React.Component {
     return fetch(request, "POST", data)
       .then(response => {
         console.log(response);
-        if (response.id != null) {
+        if (!response.error) {
+          message.success("Сохранено!");
           return this.setStateAsync({
             genaID:   response.id,
             genaSave: save
           });
         }
       })
-      .catch(error => console.error(error))
+      .catch(error => {
+        console.error(error);
+        message.error("Что-то пошло не так");
+      })
       .finally(() => {
         if (dev) {
+          message.success("Сохранено!");
           return this.setStateAsync({ genaSave: save })
+        }
+      })
+  }
+
+  exportDataToSG(initialExport = false) {
+    const {
+      mode,
+      presetSelection,
+      priceRange,
+      percentage,
+      depo,
+      currentToolCode
+    } = this.state;
+    const genaSave = cloneDeep(this.state.genaSave);
+    const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
+    const currentPreset = options[presetSelection[mode]];
+    const currentPresetIndex = genaSave.presets.indexOf(currentPreset);
+
+    const changes = {};
+
+    // Инструмент
+    currentPreset.options.currentToolCode = currentToolCode;
+    // Данные пушатся в дефолтный пресет
+    if (currentPresetIndex < 3) {
+      genaSave.presets = genaSave.presets.map((preset, index) => {
+        if (index < 3) {
+          preset.options.currentToolCode = currentToolCode;
+        }
+        return preset;
+      });
+    }
+    changes["Инструмент:"] = currentToolCode;
+
+    // Ход
+    const currentTool = this.getCurrentTool();
+    const fraction = fractionLength(currentTool.priceStep);
+    const step = round(Math.abs(priceRange[0] - priceRange[1]), fraction);
+    currentPreset.options["Закрытие основного депозита"].customData = [{
+      length:        1,
+      percent:       100,
+      preferredStep: step,
+      inPercent:     false,
+    }];
+    changes["Ход:"] = step;
+
+    // Загрузка
+    const load = Math.abs(percentage);
+    genaSave.load = load;
+    changes["Загрузка:"] = load;
+    // Депозит
+    genaSave.depo = depo;
+    genaSave.secondaryDepo = 0;
+    changes["Депозит:"] = formatNumber(depo);
+
+    genaSave.firstLoad = initialExport;
+
+    console.warn(
+      `Экспорт данных из МТС в ${currentPreset.name}:`,
+      ...Object.keys(changes).map(key => [key, changes[key]]),
+      genaSave
+    );
+
+    return this.setStateAsync({ genaSave });
+  }
+
+  importDataFromGENA(genaSave) {
+    const { mode, percentage, presetSelection, currentToolCode } = this.state;
+    
+    if (!genaSave) {
+      return Promise.resolve();
+    }
+
+    const getStepFromPreset = currentPreset => {
+      const { depo, percentage } = this.state;
+      const currentTool = this.getCurrentTool();
+
+      const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+
+      const percentToSteps = currentPreset.type == "Лимитник"
+        ? stepConverter.complexFromPercentToSteps
+        : stepConverter.fromPercentsToStep;
+
+      let totalStep = 0;
+
+      const primaryRows = currentPreset.options["Закрытие основного депозита"]?.customData;
+      if (primaryRows?.length) {
+        const lastPrimaryRow = primaryRows[primaryRows.length - 1];
+        if (lastPrimaryRow) {
+          let value = lastPrimaryRow.inPercent
+            ? percentToSteps(lastPrimaryRow.preferredStep, currentTool, contracts)
+            : lastPrimaryRow.preferredStep === "" ? currentTool.adrDay : lastPrimaryRow.preferredStep;
+          value /= (lastPrimaryRow.length || 1);
+  
+          totalStep += value;
+        }
+      }
+
+      const secondaryRows = currentPreset.options["Закрытие плечевого депозита"]?.customData;
+      if (secondaryRows?.length) {
+        const lastSecondaryRow = secondaryRows[secondaryRows.length - 1];
+        if (genaTable["Закрытие плечевого депозита"]?.on && lastSecondaryRow) {
+          const value = lastSecondaryRow.inPercent
+            ? percentToSteps(lastSecondaryRow.preferredStep, currentTool, contracts)
+            : lastSecondaryRow.preferredStep === "" ? currentTool.adrDay : lastSecondaryRow.preferredStep;
+          value /= (lastSecondaryRow.length || 1);
+  
+          totalStep += value;
+        }
+      }
+
+      if (isNaN(totalStep)) {
+        console.log("Шаг в гене равен NaN, откатываемся к нулю");
+        totalStep = 0;
+      }
+
+      return totalStep;
+    };
+    
+    const options = genaSave?.presets.filter(preset => preset.type == algorithms[mode].name) || [{ name: algorithm.name }];
+    const currentPreset = options[presetSelection[mode]];
+
+    console.log("importDataFromGENA", genaSave, currentPreset, genaSave.currentPresetName);
+
+    // Не можем стягивать из ГЕНЫ изменения, тк в ГЕНЕ выбран не тот свейв, который выбран в "Алгоритм МААНИ"
+    if (currentPreset.name != genaSave.currentPresetName) {
+      console.error("Отмена importDataFromGENA, изменения были в несинхронизированном сейве", currentPreset.name, genaSave.currentPresetName);
+      return Promise.resolve();
+    }
+
+    // console.log("стягиваем инструмент из синхронизированного пресета", currentPreset, currentPreset.options.currentToolCode);
+
+    // TODO: работает ли JSDoc?
+    const previousToolCode = currentToolCode;
+    return this.setStateAsync({
+      depo:            genaSave.depo + genaSave.secondaryDepo,
+      // В гене загрузка всегда положительная, поэтому чтобы правильно импорировать данные,
+      // нужно учесть знак предыдущей загрузки
+      percentage:      genaSave.load * (percentage < 0 ? -1 : 1),
+      currentToolCode: currentPreset.options.currentToolCode ?? currentToolCode,
+      risk:            genaSave.risk,
+      totalIncome:     genaSave.totalIncome,
+      shouldImportSG:  false,
+    })
+      .then(() => {
+        const currentTool = this.getCurrentTool();
+        const fraction = fractionLength(currentTool.priceStep);
+
+        const step = round(Math.abs(this.state.priceRange[0] - this.state.priceRange[1]), fraction);
+        if (initialImport) {
+          initialImport = false;
+          return this.setStateAsync({ totalStep: round(step, fraction) });
+        }
+
+        const totalStep = getStepFromPreset(currentPreset);
+        // Шаг в Гене не равен шагу в МТС
+        console.warn("Ход в гене:", totalStep, "ход в мтс:", step);
+
+        // Если передвинули ползунок вручную, то перенос хода в мтс не требуется
+        if (this.state.changedPriceRangeManually) {
+          // console.log("Передвинули ползунок вручную, то перенос хода в мтс не требуется");
+          return this.setStateAsync({ totalStep: round(totalStep, fraction) });
+        }
+
+        if (totalStep === 0) {
+          this.updatePriceRange(currentTool, 0);
+        }
+        else if (totalStep !== step) {
+          if (totalStep === 0) {
+            console.warn("Ход в гене = 0, соответственно откатываем ползунок хода в мтс");
+            this.updatePriceRange(currentTool);
+          }
+          else {
+            const { percentage } = this.state;
+            const startOffset =  percentage >= 0 ? 0         : totalStep;
+            const endOffset   =  percentage >= 0 ? totalStep : 0;
+            const priceRange = [
+              currentTool.currentPrice - startOffset,
+              currentTool.currentPrice + endOffset
+            ];
+            console.warn("Раздвигаем ползунок под ход из гены:", totalStep, priceRange);
+            
+            // TODO: поменять цифры на краях ползунка
+            const prevStep = Math.abs(min - max);
+            const realStep = Math.abs(priceRange[0] - priceRange[1]);
+
+            let scaleOffset = this.state.scaleOffset; 
+            if (realStep * 2 >= prevStep) {
+              // max = price + realStep;
+              // min = price - realStep;
+              // console.log("corrected minmax:", min, max);
+
+              scaleOffset = -Math.abs(realStep - prevStep) + scaleOffset;
+            }
+            
+            this.setStateAsync({ priceRange, scaleOffset });
+            // Обновляем график
+            const isLong = percentage >= 0;
+            const possibleRisk = this.getPossibleRisk();
+            chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+            chartModule?.updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);
+          }
+        }
+        
+        this.setStateAsync({ totalStep: round(totalStep, fraction) })
+      })
+      .then(() => {
+        if (previousToolCode != this.state.currentToolCode) {
+          // console.log("prevTool", previousToolCode, "currTool", this.state.currentToolCode);
+          this.fetchCompanyQuotes();
         }
       })
   }
@@ -542,23 +659,21 @@ class App extends React.Component {
       fetch("getMtsSnapshots")
         .then(response => {
           const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
+          this.setState({ saves, loading: false });
         })
-        .then(saves => {
-          if (saves.length) {
+
+      fetch("getLastModifiedMtsSnapshot")
+        .then(response => {
+          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+          if (!response.error && response.data?.name) {
             const pure = params.get("pure") === "true";
             if (!pure) {
-              const save = saves[0];
-              const { id } = save;
-
               this.setState({ loading: true });
-              return this.fetchSaveById(id)
-                .then(response => this.extractSave(response.data))
-                .then(() => resolve())
+              return this.extractSave(response.data)
+                .then(resolve)
                 .catch(error => reject(error));
             }
           }
-          
           resolve();
         })
         .catch(reason => {
@@ -567,51 +682,52 @@ class App extends React.Component {
         })
         .finally(() => {
           if (dev) {
-            const saves = [{
-              "id": 14,
-              "name": "Новое сохранение 11",
-              "dateCreate": 1626631308,
-            }];
-            const save = {
-              ...saves[0],
-              "static": "{\"depo\":3100000,\"priceRange\":[1799.9,1799.9],\"percentage\":3,\"profitRatio\":90,\"risk\":0.5,\"mode\":2,\"days\":1,\"scaleOffset\":0,\"customTools\":[],\"currentToolCode\":\"GDH2\",\"kodTable\":[],\"current_date\":\"#\"}"
+            const response = {
+              "error": false,
+              "data": {
+                "id": 0,
+                "name": null,
+                "dateCreate": 0,
+                "dateUpdate": 0,
+                "static": null
+              }
             };
 
-            this.setStateAsync({ saves }).then(() => this.extractSave(save))
+            const saves = [{
+              "id": response.data.id,
+              "name": response.data.name,
+              "dateCreate": response.data.dateCreate,
+            }];
+
+            this.setStateAsync({ saves }).then(() => {
+              if (!response.error && response.data?.name) {
+                this.extractSave(response.data)
+              }
+            })
           }
         })
     });
   }
 
-  imitateFetchcingTools() {
-    return new Promise((resolve, reject) => {
-      if (Tools.storageReady) {
+  imitateFetchingTools() {
+    return new Promise(resolve => {
+      if (Tools.prefetchedTool) {
         this.setState({ toolsLoading: true });
 
-        let newTools = [...Tools.storage];
+        const tools = [...this.state.tools];
         const oldTool = this.getCurrentTool();
-        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
-        if (oldToolIndex == -1) {
-          console.warn(`No ${oldTool.code} in new tools list`, newTools);
-          newTools.push(oldTool);
+        const index = tools.indexOf(oldTool);
+        if (index != -1) {
+          tools[index] = Tools.create(parseTool(Tools.prefetchedTool));
         }
 
         setTimeout(() => {
           this.setState({
-            tools: newTools,
+            tools,
             toolsLoading: false,
           }, () => {
-            Tools.storage = [];
-            Tools.storageReady = false;
-
-            const newTool = newTools[Tools.getToolIndexByCode(newTools, oldTool.code)];
-
-            if (oldTool.code != newTool.code) {
-              this.updatePriceRange(newTool).then(() => resolve())
-            }
-            else {
-              resolve()
-            }
+            Tools.prefetchedTool = null;
+            resolve()
           });
         }, 2_000);
       }
@@ -621,73 +737,27 @@ class App extends React.Component {
     })
   }
 
-  prefetchTools() {
+  // TODO: Написать тесты
+  // Должен возвращать фьючи и акции
+  // Должен содержать в себе Apple, Сбер и BR
+  fetchTools() {
     return new Promise(resolve => {
-      Tools.storage = [];
-      Tools.storageReady = false;
       const { investorInfo } = this.state;
       const requests = [];
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => {
-              if (response.data?.length == 0) {
-                console.warn("В ответе с сервера нет " + (request == "getFutures" ? "фючерсов" : "акций"));
-              }
-              return Tools.parse(response.data, { investorInfo, useDefault: true })
-            })
-            .then(tools => Tools.sort(Tools.storage.concat(tools)))
-            .then(tools => {
-              Tools.storage = [...tools];
-            })
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        )
-      }
-
-      Promise.all(requests).then(() => {
-        Tools.storageReady = true;
-
-        const tools = [...Tools.storage];
-        const futuresCount = tools.filter(tool => tool.ref.toolType == "futures").length;
-        const stocksCount = tools.filter(tool => tool.ref.toolType == "shareUs" || tool.ref.toolType == "shareRu").length;
-
-        // console.log(`Акций: ${stocksCount}, фьючерсов: ${futuresCount}`);
-
-        if (futuresCount == 0) {
-          console.warn("В массиве нет фьючерсов!", tools);
-        }
-        
-        if (stocksCount == 0) {
-          console.warn("В массиве нет акций!", tools);
-        }
-
-        resolve();
-      })
-    })
-  }
-
-  fetchTools(shouldUpdatePriceRange = true) {
-    const { investorInfo } = this.state;
-    return new Promise(resolve => {
-      const requests = [];
+      const parsedTools = [];
       this.setState({ toolsLoading: true })
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
             .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(this.state.tools.concat(tools)))
-            .then(tools => this.setStateAsync({ tools }))
-            .then(() => {
-              if (shouldUpdatePriceRange && this.state.id == null) {
-                this.updatePriceRange(this.getCurrentTool())
-              }
-            })
+            .then(tools => Tools.sort(parsedTools.concat(tools)))
+            .then(tools => parsedTools.push(...tools))
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
       Promise.all(requests)
-        .then(() => this.setStateAsync({ toolsLoading: false }))
+        .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
         .then(() => resolve())
     })
   }
@@ -723,61 +793,12 @@ class App extends React.Component {
     })
   }
 
-  updatePriceRange(tool) {
+  updatePriceRange(tool, step = 0) {
+    // console.log(`%c updatePriceRange, ${tool.code}, ${step}`, "background-color: yellow; color: black");
     return new Promise(resolve => {
       const currentPrice = tool.currentPrice;
-      this.setState({ priceRange: [currentPrice, currentPrice] }, () => resolve());
+      this.setState({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] }, () => resolve());
     })
-  }
-
-  importDataFromGENA(genaSave) {
-    const { mode, presetSelection } = this.state;
-
-    if (!genaSave) {
-      return Promise.resolve();
-    }
-    
-    if (algorithms[mode].name != genaSave.presets.find(preset => preset.name == genaSave.currentPresetName).type) {
-      return Promise.resolve();
-    }
-
-    const options = genaSave?.presets.filter(preset => preset.type == algorithms[mode].name) || [{ name: algorithm.name }];
-    const currentPreset = options[presetSelection[mode]];
-
-    let percentToSteps = currentPreset.type == "Лимитник"
-      ? stepConverter.complexFromPercentToSteps
-      : stepConverter.fromPercentsToStep;
-    
-    let totalStep = 0;
-
-    const primaryOption = currentPreset.options["Закрытие основного депозита"];
-    if (primaryOption && primaryOption.customData) {
-      totalStep += primaryOption.customData.reduce((acc, curr) => {
-        const value = curr.inPercent
-          ? percentToSteps(curr.preferredStep, currentTool, contracts)
-          : curr.preferredStep;
-        return acc + Number(value);
-      }, 0);
-    }
-
-    const secondaryOption = currentPreset.options["Закрытие плечевого депозита"];
-    if (secondaryOption && secondaryOption.customData) {
-      totalStep += secondaryOption.customData.reduce((acc, curr) => {
-        const value = curr.inPercent
-          ? percentToSteps(curr.preferredStep, currentTool, contracts)
-          : curr.preferredStep;
-        return acc + Number(value);
-      }, 0);
-    }
-
-    return this.setStateAsync({
-      depo:            genaSave.depo + genaSave.secondaryDepo,
-      percentage:      genaSave.load,
-      currentToolCode: currentPreset.options.currentToolCode,
-      risk:            genaSave.risk,
-      totalIncome:     genaSave.totalIncome,
-      totalStep,
-    });
   }
 
   showAlert(errorMessage = "") {
@@ -800,6 +821,7 @@ class App extends React.Component {
       profitRatio,
       risk,
       mode,
+      presetSelection,
       days,
       scaleOffset,
       kodTable
@@ -813,6 +835,7 @@ class App extends React.Component {
         profitRatio,
         risk,
         mode,
+        presetSelection,
         days,
         scaleOffset,
         customTools,
@@ -870,6 +893,8 @@ class App extends React.Component {
 
       state.mode = staticParsed.mode || initialState.mode;
 
+      state.presetSelection = staticParsed.presetSelection || initialState.presetSelection;
+
       state.days = staticParsed.days || initialState.days;
 
       state.scaleOffset = staticParsed.scaleOffset || initialState.scaleOffset;
@@ -881,7 +906,7 @@ class App extends React.Component {
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo }));
 
-      state.currentToolCode = staticParsed.currentToolCode ||initialState.currentToolCode;
+      state.currentToolCode = staticParsed.currentToolCode || initialState.currentToolCode;
 
       state.id = save.id;
       state.saved = true;
@@ -901,7 +926,7 @@ class App extends React.Component {
     state.investorInfo = { ...this.state.investorInfo };
     state.investorInfo.type = state.percentage >= 0 ? "LONG" : "SHORT";
 
-    console.log('Parsing save finished!', state);
+    console.log('%c Parsing save finished!', state, "background: orange");
     return this.setStateAsync(state)
       .then(this.syncToolsWithInvestorInfo)
       .then(() => {
@@ -932,6 +957,12 @@ class App extends React.Component {
 
         const priceRange = priceRangeMinMax(state.priceRange);
         return this.setStateAsync({ priceRange });
+      })
+      .then(() => {
+        setTimeout(() => {
+          // console.log("Ready to push good old presetSelection", state.presetSelection);
+          return this.setStateAsync({ presetSelection: state.presetSelection })
+        }, 250);
       });
   }
 
@@ -939,7 +970,8 @@ class App extends React.Component {
     return new Promise(resolve => {
       const state = JSON.parse(JSON.stringify(this.initialState));
       this.setStateAsync(state)
-        .then(() => this.updatePriceRange(this.getCurrentTool()))
+        // .then(() => this.updatePriceRange(this.getCurrentTool()))
+        .then(() => this.setStateAsync({ shouldImportSG: true }))
         .then(() => this.fetchCompanyQuotes())
         .then(() => resolve());
     })
@@ -1136,6 +1168,31 @@ class App extends React.Component {
     return disabledModes;
   }
 
+  getPossibleRisk() {
+    const currentTool = this.getCurrentTool();
+    let { depo, percentage, priceRange, risk } = this.state;
+    const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
+    let possibleRisk = 0;
+    const isLong = percentage >= 0;
+    let enterPoint = isLong ? priceRange[0] : priceRange[1];
+
+    let stopSteps =
+      (depo * risk / 100)
+      /
+      currentTool.stepPrice
+      /
+      (contracts || 1)
+      *
+      currentTool.priceStep;
+
+    if (risk != 0 && percentage != 0) {
+      possibleRisk = round(enterPoint + (isLong ? -stopSteps : stopSteps), 2);
+      chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+    }
+
+    return possibleRisk;
+  }
+
   render() {
     let {
       currentSaveIndex,
@@ -1150,6 +1207,7 @@ class App extends React.Component {
       page,
       risk,
       chance,
+      chartLoading,
       currentToolCode,
       percentage,
       priceRange,
@@ -1166,12 +1224,47 @@ class App extends React.Component {
       kodTable
     } = this.state;
 
+    // Вызывается в момент выбора пресета в МТС
+    const onAlgorythmChange = (index, subIndex) => {
+      const mode = index;
+
+      const _presetSelection = [...presetSelection];
+      _presetSelection[index] = subIndex;
+
+      let profitRatio = algorithms[index].profitRatio;
+      if (_presetSelection[mode] != 0) {
+        profitRatio = this.state.profitRatio;
+      }
+
+      return this.setStateAsync({
+        mode,
+        presetSelection: _presetSelection,
+        // scaleOffset: 0,
+        profitRatio,
+        changed: true
+      })
+        .then(() => {
+          // Ставим в гене такой же пресет, какой только что выбрали
+          const genaSave = cloneDeep(this.state.genaSave);
+          const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
+          const currentPreset = options[subIndex];
+          console.log("Ставим в гене такой же пресет, какой только что выбрали", options, currentPreset);
+          genaSave.currentPresetName = currentPreset.name;
+
+          return this.setStateAsync({ genaSave })
+        })
+        // Если выбираем дефолтный пресет - переносится данные в гену
+        // иначе скипаем этот шаг и переходим к импорту данных из гены
+        .then(() => (subIndex === 0 ? this.exportDataToSG() : Promise.resolve()))
+        .then(() => delay(100))
+        .then(() => this.setStateAsync({ shouldImportSG: true }))
+    }
+
     const tools = this.getTools();
     const currentTool = this.getCurrentTool();
     const fraction = fractionLength(currentTool.priceStep);
 
     const isLong = percentage >= 0;
-    const priceRangeSorted = [...priceRange].sort((l, r) => l - r);
     
     const contracts = Math.floor(depo * (Math.abs(percentage) / 100) / currentTool.guarantee);
 
@@ -1185,6 +1278,9 @@ class App extends React.Component {
     // Если текущий режим заблокирован, откатываемся к доступному
     if (disabledModes[mode]) {
       mode = disabledModes.indexOf(false);
+      // ~~
+      console.warn("Текущий режим заблокирован, откатываемся к доступному");
+      onAlgorythmChange(mode, presetSelection[mode]);
     }
 
     const price = currentTool.currentPrice;
@@ -1196,12 +1292,12 @@ class App extends React.Component {
       percent = currentTool.adrMonth;
     }
 
-    const max = price + percent;
-    const min = price - percent;
-
+    max = price + percent;
+    min = price - percent;
+    
     const step = currentTool.priceStep;
     
-    let income = totalIncome * profitRatio / 100
+    let income = totalIncome * profitRatio / 100;
     
     const ratio = income / depo * 100;
     let suffix = round(ratio, 2);
@@ -1257,19 +1353,14 @@ class App extends React.Component {
                 this.setState({ currentSaveIndex });
 
                 if (currentSaveIndex === 0) {
-                  this.reset()
-                    .then(() => this.recalc())
-                    .catch(error => console.warn(error));
+                  this.reset().catch(error => console.warn(error));
                 }
                 else {
                   const id = saves[currentSaveIndex - 1].id;
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
                     .then(response => this.extractSave(response.data))
-                    .then(() => {
-                      console.log("fetchCompanyQuotes request should be here");
-                      return this.fetchCompanyQuotes()
-                    })
+                    .then(() => this.fetchCompanyQuotes())
                     .catch(error => this.showAlert(error));
                 }
               }}
@@ -1307,23 +1398,32 @@ class App extends React.Component {
                         <label>
                           <span className="visually-hidden">Торговый инструмент</span>
                           
+                          {/* Торговый инструмент */}
                           <Select
                             onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                             onBlur={() => {
                               this.setStateAsync({ isToolsDropdownOpen: false })
-                                .then(() => this.imitateFetchcingTools());
+                                .then(() => this.imitateFetchingTools());
                             }}
                             value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                             onChange={currentToolIndex => {
                               const tools = this.getTools();
-                              const currentToolCode = tools[currentToolIndex].code;
+                              const currentTool = tools[currentToolIndex];
+                              const currentToolCode = currentTool.code;
                               this.setStateAsync({ currentToolCode, isToolsDropdownOpen: false })
-                                .then(() => this.updatePriceRange(tools[currentToolIndex]))
-                                .then(() => this.imitateFetchcingTools())
-                                .then(() => this.fetchCompanyQuotes());
+                                .then(() => this.updatePriceRange(currentTool))
+                                .then(() => this.fallbackToBasePreset())
+                                .then(() => this.exportDataToSG())
+                                .then(() => new Promise(resolve => {
+                                  setTimeout(() => {
+                                    this.setState({ shouldImportSG: true }, resolve)
+                                  }, 500)
+                                }))
+                                .then(() => this.imitateFetchingTools())
+                                .then(() => this.fetchCompanyQuotes())
                             }}
-                            disabled={toolsLoading}
-                            loading={toolsLoading}
+                            disabled={toolsLoading || chartLoading}
+                            loading={toolsLoading || chartLoading}
                             showSearch
                             onSearch={(value) => this.setState({ searchVal: value })}
                             optionFilterProp="children"
@@ -1351,27 +1451,20 @@ class App extends React.Component {
                             })()}
                           </Select>
                         </label>
-                        {/* Торговый инструмент */}
 
                         <div className="mts-slider1">
                           <span className="mts-slider1-middle">
                             <b>Текущая цена</b><br />
-                            {(() => {
-                              if(toolsLoading) {
-                                return <LoadingOutlined/>
-                              }
-                              else {
-                                return formatNumber(price)
-                              }
-                            })()}
-                            
+                            {toolsLoading ? <LoadingOutlined /> : formatNumber(price)}
                           </span>
                           <span className="mts-slider1-top">
+                            {/* TODO: заменить на вызов функции */}
                             <b>{formatNumber(round(max - scaleOffset, fraction))}</b>
                             &nbsp;
                             (+{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
                           </span>
                           <span className="mts-slider1-bottom">
+                            {/* TODO: заменить на вызов функции */}
                             <b>{formatNumber(round(min + scaleOffset, fraction))}</b>
                             &nbsp;
                             (-{round((percent / currentTool.currentPrice * 100) + movePercantage, 2)}%)
@@ -1380,6 +1473,7 @@ class App extends React.Component {
                             className="mts-slider1__input"
                             range
                             vertical
+                            disabled={toolsLoading || chartLoading}
                             value={priceRange}
                             max={max - scaleOffset}
                             min={min + scaleOffset}
@@ -1388,9 +1482,29 @@ class App extends React.Component {
                             precision={1}
                             tooltipPlacement="left"
                             tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
+                            onClick={e => {
+                              this.fallbackToBasePreset();
+                            }}
                             onChange={priceRange => {
-                              this.setState({ priceRange, changed: true });
+                              // console.log("Should apprear after real slider drag", priceRange);
+                              this.setState({
+                                priceRange,
+                                totalStep: round(Math.abs(priceRange[0] - priceRange[1]), fraction),
+                                changedPriceRangeManually: false,
+                                changed: true
+                              });
                               chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+                            }}
+                            // Вызывается только при ручном изменении значения
+                            onAfterChange={priceRange => {
+                              console.log("onAfterChange");
+                              this.exportDataToSG()
+                                .then(() => 
+                                  this.setStateAsync({
+                                    changedPriceRangeManually: true,
+                                    shouldImportSG: true
+                                  })
+                                );
                             }}
                           />
 
@@ -1456,7 +1570,7 @@ class App extends React.Component {
                                   scaleOffset: updatedScaleOffset, changedMinRange: min + updatedScaleOffset,
                                   changedMaxRange: max - updatedScaleOffset,
                                   movePercantage: movePercantage + sliderStepPercent,
-                                  days: 0
+                                  days: this.initialState.days
                                 });
                                 chartModule?.updateChartScaleMinMax(min + updatedScaleOffset, max - updatedScaleOffset);
                               }
@@ -1470,95 +1584,132 @@ class App extends React.Component {
                         <div className="card main-content-stats">
                           <div className="main-content-stats__wrap">
 
-                            <div className="main-content-stats__row">
-                              <span>
-                                <Tooltip title="Цена приобретения позиции">
-                                  Точка входа
-                                </Tooltip>
-                              </span>
-                              <NumericInput
-                                key={this.state.priceRange}
-                                min={min}
-                                max={max}
-                                unsigned="true"
-                                format={number => formatNumber(round(number, fraction))}
-                                round={"false"}
-                                defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
-                                onBlur={value => {
-                                  const callback = () => {
-                                    const possibleRisk = getPossibleRisk();
-                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                                    this.setState({ changed: true });
-                                  };
+                            {(() => {
+                              const callback = priceRange => {
+                                const { percentage } = this.state;
+                                const oldStep = Math.abs(this.state.priceRange[0] - this.state.priceRange[1]);
+                                const newStep = Math.abs(priceRange[0] - priceRange[1]);
+                                console.warn("old step:", oldStep, this.state.priceRange);
+                                console.warn("new step:", newStep, priceRange);
+                                const totalStep = round(newStep, fraction);
 
-                                  value = round(value, fraction);
-
-                                  // ЛОНГ: то есть точка входа - снизу (число меньше)
-                                  if (isLong) {
-                                    if (value > priceRange[1]) {
-                                      this.setState({ priceRange: [priceRange[1], value] }, callback);
-                                    }
-                                    else {
-                                      this.setState({ priceRange: [value, priceRange[1]] }, callback);
-                                    }
+                                let scaleOffset = this.state.scaleOffset;
+                                if (newStep > oldStep) {
+                                  // Меняем цифры на краях ползунка через scaleOffset
+                                  const realStep = Math.abs(priceRange[0] - priceRange[1]);
+                                  
+                                  if (realStep * 2 >= oldStep) {
+                                    scaleOffset = -Math.abs(realStep - oldStep) + scaleOffset;
                                   }
-                                  // ШОРТ: то есть точка входа - сверху (число больше)
-                                  else {
-                                    if (value < priceRange[0]) {
-                                      this.setState({ priceRange: [value, priceRange[0],] }, callback);
-                                    }
-                                    else {
-                                      this.setState({ priceRange: [priceRange[0], value] }, callback);
-                                    }
-                                  }
-                                }}
-                              />
-                            </div>
+                                }
 
-                            <div className="main-content-stats__row">
-                              <span>
-                                <Tooltip title="Цена закрытия позиции">
-                                  Точка выхода
-                                </Tooltip>
-                              </span>
-                              <NumericInput
-                                key={this.state.priceRange}
-                                min={min}
-                                max={max}
-                                format={ number => formatNumber(round(number, fraction)) }
-                                unsigned="true"
-                                round={"false"}
-                                defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
-                                onBlur={value => {
-                                  const callback = () => {
-                                    const possibleRisk = getPossibleRisk();
-                                    chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                                    this.setState({ changed: true });
-                                  };
+                                // Обновляем график
+                                const isLong = percentage >= 0;
+                                const possibleRisk = this.getPossibleRisk();
+                                chartModule?.updateChartMinMax(priceRange, isLong, possibleRisk);
+                                chartModule?.updateChartScaleMinMax(min + scaleOffset, max - scaleOffset);  
 
-                                  value = round(value, fraction);
+                                this.setStateAsync({ priceRange, scaleOffset, totalStep, changed: true })
+                                  .then(() => this.exportDataToSG())
+                                  .then(() =>
+                                    this.setStateAsync({
+                                      changedPriceRangeManually: true,
+                                      shouldImportSG: true
+                                    })
+                                  );
+                              };
 
-                                  // ЛОНГ: то есть точка выхода - сверху (число меньше)
-                                  if (isLong) {
-                                    if (value < priceRange[0]) {
-                                      this.setState({ priceRange: [value, priceRange[0]] }, callback);
-                                    }
-                                    else {
-                                      this.setState({ priceRange: [priceRange[0], value] }, callback);
-                                    }
-                                  }
-                                  // ШОРТ: то есть точка выхода - снизу (число больше)
-                                  else {
-                                    if (value > priceRange[1]) {
-                                      this.setState({ priceRange: [priceRange[1], value] }, callback);
-                                    }
-                                    else {
-                                      this.setState({ priceRange: [value, priceRange[1]] }, callback);
-                                    }
-                                  }
-                                }}
-                              />
-                            </div>
+                              return (
+                                <>
+                                  <div className="main-content-stats__row">
+                                    <span>
+                                      <Tooltip title="Цена приобретения позиции">
+                                        Точка входа
+                                      </Tooltip>
+                                    </span>
+                                    <NumericInput
+                                      // min={min}
+                                      // max={max}
+                                      unsigned="true"
+                                      format={number => formatNumber(round(number, fraction))}
+                                      round={"false"}
+                                      disabled={toolsLoading || chartLoading}
+                                      key={Math.random()}
+                                      defaultValue={(isLong ? priceRange[0] : priceRange[1]) || 0}
+                                      onBlur={value => {
+                                        value = round(value, fraction);
+
+                                        console.log(isLong);
+
+                                        // ЛОНГ: то есть точка входа - снизу (число меньше)
+                                        if (isLong) {
+                                          if (value > priceRange[1]) {
+                                            callback([priceRange[1], value]);
+                                          }
+                                          else {
+                                            callback([value, priceRange[1]]);
+                                          }
+                                        }
+                                        // ШОРТ: то есть точка входа - сверху (число больше)
+                                        else {
+                                          if (value < priceRange[0]) {
+                                            callback([value, priceRange[0]]);
+                                          }
+                                          else {
+                                            callback([priceRange[0], value]);
+                                          }
+                                        }
+
+                                        this.fallbackToBasePreset();
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div className="main-content-stats__row">
+                                    <span>
+                                      <Tooltip title="Цена закрытия позиции">
+                                        Точка выхода
+                                      </Tooltip>
+                                    </span>
+                                    <NumericInput
+                                      // min={min}
+                                      // max={max}
+                                      format={ number => formatNumber(round(number, fraction)) }
+                                      unsigned="true"
+                                      round={"false"}
+                                      disabled={toolsLoading || chartLoading}
+                                      key={Math.random()}
+                                      defaultValue={(isLong ? priceRange[1] : priceRange[0]) || 0}
+                                      onBlur={value => {
+                                        value = round(value, fraction);
+
+                                        // ЛОНГ: то есть точка выхода - сверху (число меньше)
+                                        if (isLong) {
+                                          if (value < priceRange[0]) {
+                                            callback([value, priceRange[0]]);
+                                          }
+                                          else {
+                                            callback([priceRange[0], value]);
+                                          }
+                                        }
+                                        // ШОРТ: то есть точка выхода - снизу (число больше)
+                                        else {
+                                          if (value > priceRange[1]) {
+                                            callback([priceRange[1], value]);
+                                          }
+                                          else {
+                                            callback([value, priceRange[1]]);
+                                          }
+                                        }
+
+                                        this.fallbackToBasePreset();
+                                      }}
+                                    />
+                                  </div>
+                                </>
+                              )
+                            })()}
+
 
                             <div className="main-content-stats__row">
                               <span>
@@ -1590,8 +1741,8 @@ class App extends React.Component {
                               </span>
                               <NumericInput 
                                 unsigned="true"
-                                key={mode + chance * Math.random()} 
-                                disabled={mode == 0}
+                                // Лев, [20.09.21 15:04]
+                                // еще минор: коэффициент прибыли теперь будет разлочен во всех режимах и по дефолту 100%
                                 defaultValue={profitRatio}
                                 min={0}
                                 max={100}
@@ -1667,14 +1818,7 @@ class App extends React.Component {
                                       </Tooltip>
                                     </span>
                                     <span className="main-content-stats__val">
-                                      {(() => {
-                                        if (scaleOffset != 0) {
-                                          return "-"
-                                        }
-                                        else {
-                                          return formatNumber(kod) + "%"
-                                        }
-                                      })()}
+                                      {formatNumber(kod) + "%"}
                                     </span>
                                   </div>
                                 </>
@@ -1692,11 +1836,11 @@ class App extends React.Component {
                     {Chart &&
                       <Chart
                         className="mts__chart"
-                        key={currentTool.toString() + this.state.loadingChartData}
+                        key={currentTool.toString()}
                         min={min}
                         max={max}
                         priceRange={priceRange}
-                        loading={this.state.loadingChartData}
+                        loading={chartLoading}
                         tool={currentTool}
                         data={data}
                         days={days}
@@ -1746,8 +1890,11 @@ class App extends React.Component {
                             step= {.5}
                             precision={1}
                             tooltipVisible={false}
+                            onClick={e => {
+                              this.fallbackToBasePreset();
+                            }}
                             onChange={(range = []) => {
-                              let { investorInfo } = this.state;
+                              const { investorInfo } = this.state;
                               const percentage = range[0] + range[1];
                               
                               investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
@@ -1759,6 +1906,11 @@ class App extends React.Component {
                                 changed: true
                               })
                                 .then(this.syncToolsWithInvestorInfo)
+                            }}
+                            onAfterChange={priceRange => {
+                              console.log("onAfterChange");
+                              this.exportDataToSG()
+                                .then(() => this.setStateAsync({ shouldImportSG: true }))
                             }}
                           />
 
@@ -1782,40 +1934,27 @@ class App extends React.Component {
                           <div className="main-content-options-group">
 
                             {algorithms.map((algorithm, index) => (() => {
-                              let options = genaSave?.presets.filter(preset => preset.type == algorithm.name) || [{ name: algorithm.name }];
+                              const options = 
+                                genaSave?.presets.filter(preset => preset.type == algorithm.name) ||
+                                [{ name: algorithm.name }];
 
                               return (
                                 <Select
                                   className={mode == index ? "selected" : ""}
                                   value={presetSelection[index]}
-                                  disabled={disabledModes[index]}
+                                  disabled={disabledModes[index] || chartLoading}
                                   showArrow={options?.length > 1}
                                   dropdownStyle={{
                                     visibility:    options?.length > 1 ? "visible" : "hidden",
                                     pointerEvents: options?.length > 1 ? "all"     : "none"
                                   }}
                                   onSelect={value => {
-                                    presetSelection[index] = value;
-
-                                    this.setStateAsync({
-                                      presetSelection,
-                                      mode: index,
-                                      profitRatio: algorithm.profitRatio,
-                                      changed: true
-                                    })
-                                      .then(() => this.importDataFromGENA(genaSave));
+                                    onAlgorythmChange(index, value);
                                   }}
+                                  // Сработает только в случае, когда есть только дефолтный пресет
                                   onFocus={e => {
                                     if (options?.length == 1) {
-                                      presetSelection[index] = 0;
-
-                                      this.setStateAsync({
-                                        presetSelection,
-                                        mode: index,
-                                        profitRatio: algorithm.profitRatio,
-                                        changed: true
-                                      })
-                                        .then(() => this.importDataFromGENA(genaSave));
+                                      onAlgorythmChange(index, 0);
                                     }
                                   }}
                                 >
@@ -1833,10 +1972,16 @@ class App extends React.Component {
 
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
-                            onClick={e => dialogAPI.open("settings-generator", e.target)}
+                            disabled={toolsLoading || chartLoading}
+                            onClick={e => {
+                              lastSavedSG = cloneDeep(genaSave);
+                              sgChanged = false;
+                              dialogAPI.open("settings-generator", e.target);
+                              onSGOpen();
+                            }}
                           >
-                            <span className="visually-hidden">Открыть конфиг</span>
-                            <Tooltip title=" Генератор настроек МААНИ 144">
+                            <span className="visually-hidden">Открыть генератор настроек МААНИ 144</span>
+                            <Tooltip title="Генератор настроек МААНИ 144">
                               <SettingFilled className="settings-button__icon" />
                             </Tooltip>
                           </button>
@@ -2189,10 +2334,9 @@ class App extends React.Component {
                 <span className="input-group__label">Размер депозита:</span>
                 <NumericInput
                   className="input-group__input"
-                  key={this.state.depo}
                   defaultValue={this.state.depo}
                   format={formatNumber}
-                  min={10000}
+                  min={10_000}
                   max={Infinity}
                   onBlur={val => {
                     const { depo } = this.state;
@@ -2223,69 +2367,103 @@ class App extends React.Component {
           })()}
           {/* Error Popup */}
 
-          <Dialog
-            id="settings-generator"
-            pure={true}
-          >
-            <SettingsGenerator
-              depo={depo}
-              tools={tools}
-              load={percentage}
-              toolsLoading={toolsLoading}
-              investorInfo={investorInfo}
-              currentToolCode={currentToolCode}
-              contracts={contracts}
-              risk={risk}
-              algorithm={algorithms[mode].name}
-              genaSave={genaSave}
-              onSave={genaSave => {
-                this.saveGENA(genaSave);
-                this.importDataFromGENA(genaSave);
-              }}
-              onUpdate={genaSave => {
-                this.setStateAsync({ genaSave }).then(() => this.importDataFromGENA(genaSave));
-              }}
-              onClose={(save, e) => {
-
-                unsavedGena = {...save};
-
-                const genaSavePure = { ...genaSave };
-                delete genaSavePure.key;
-
-                let changed = false;
-
-                if (genaSavePure == null) {
-                  changed = true;
-                }
-                else if (!isEqual(save, genaSavePure)) {
-                  changed = true;
-                }
-
-                if (changed) {
-                  dialogAPI.open("settings-generator-close-confirm", e.target);
-                }
-                else {
-                  dialogAPI.close("settings-generator");
-                }
-              }}
-              onDownload={(title, text) => {
-                const file = new Blob([text], { type: 'text/plain' });
-
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(file);
-                link.setAttribute('download', `${title}.txt`);
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-              }}
-              onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
-              onToolSelectBlur={() => {
-                this.setStateAsync({ isToolsDropdownOpen: false })
-                  .then(() => this.imitateFetchcingTools());
-              }}
-            />
-          </Dialog>
           {/* ГЕНА */}
+          {(() => {
+            const onClose = (save, e) => {
+              const { genaSave } = this.state;
+
+              const target = e?.target || document.querySelector(".settings-button");
+
+              const saveToCompare = cloneDeep(lastSavedSG);
+              delete saveToCompare.currentTab;
+              
+              const genaSavePure = cloneDeep(genaSave);
+              delete genaSavePure.key;
+              delete genaSavePure.currentTab;
+              
+              if (saveToCompare?.currentPresetName != genaSavePure?.currentPresetName) {
+                // console.log("Изменился пресет");
+
+                // delete saveToCompare.currentPresetName;
+                // delete genaSavePure.currentPresetName;
+
+                // delete saveToCompare.totalIncome;
+                // delete genaSavePure.totalIncome;
+
+                // delete saveToCompare.totalLoss;
+                // delete genaSavePure.totalLoss;
+              }
+              // console.log("On close", saveToCompare, target);
+              // console.log("comparing", saveToCompare, genaSavePure, !genaSavePure && isEqual(saveToCompare, genaSavePure));
+
+              let changed = sgChanged;
+              if (genaSavePure == null) {
+                changed = true;
+              }
+              else if (changed) {
+                // console.log(saveToCompare, "and", genaSavePure, "are not equal!");
+                changed = true;
+              }
+
+              if (changed) {
+                dialogAPI.open("settings-generator-close-confirm", target);
+              }
+              else {
+                dialogAPI.close("settings-generator");
+                this.setState({
+                  shouldImportSG: true,
+                  changedPriceRangeManually: false
+                });
+              }
+            };
+
+            return (
+              <Dialog
+                id="settings-generator"
+                pure={true}
+                onClose={() => onClose()}
+              >
+                <SettingsGenerator
+                  depo={depo}
+                  tools={tools}
+                  load={percentage}
+                  toolsLoading={toolsLoading}
+                  investorInfo={investorInfo}
+                  defaultToolCode={currentToolCode}
+                  currentToolCode={currentToolCode}
+                  contracts={contracts}
+                  risk={risk}
+                  algorithm={algorithms[mode].name}
+                  genaSave={genaSave}
+                  onSave={genaSave => {
+                    this.saveGENA(genaSave);
+                  }}
+                  onUpdate={(genaSave, tableData, changed) => {
+                    console.log("onUpdate", "changed", changed);
+                    sgChanged = sgChanged || changed;
+                    genaTable = tableData;
+                    this.setStateAsync({ genaSave });
+                  }}
+                  onClose={(save, e) => onClose(save, e)}
+                  onDownload={(title, text) => {
+                    const file = new Blob([text], { type: "text/plain" });
+
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(file);
+                    link.setAttribute("download", title + ".txt");
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                  }}
+                  onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                  onToolSelectBlur={() => {
+                    this.setStateAsync({ isToolsDropdownOpen: false })
+                      .then(() => this.imitateFetchingTools());
+                  }}
+                />
+              </Dialog>
+            )
+          })()}
 
           <Dialog
             id="settings-generator-close-confirm"
@@ -2294,9 +2472,11 @@ class App extends React.Component {
             onConfirm={e => {
               dialogAPI.close("settings-generator");
               if (unsavedGena) {
-                this.setStateAsync({ genaSave: { ...unsavedGena, key: Math.random() } })
-                  .then(() => this.importDataFromGENA(unsavedGena))
-                  .finally(() => {
+                this.setStateAsync({
+                  genaSave: { ...unsavedGena, key: Math.random() },
+                  shouldImportSG: true
+                })
+                  .then(() => {
                     unsavedGena = null;
                   });
               }

@@ -1,12 +1,128 @@
 .dialog {
-  font-size: 0.7em;
+  
+  &-footer {
+    font-size: 1.3em;
+
+    &-wrap {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    @include sm {
+      font-size: 1.4em;
+    }
+
+    @include xs {
+      font-size: 1.8em;
+    }
+  }
+
+  &__content {
+    .dashboard-row {
+      box-shadow: none;
+    }
+  }
+  
+  &__close {
+    @include xs {
+      font-size: 4em;
+    }
+  }
+  &__title {
+    font-size: 1.8em;
+    margin-bottom: -0.25em;
+
+    @include xs {
+      font-size: 2.1em;
+
+      padding-top: 1em;
+      margin-bottom: 0.25em;
+    }
+
+  }
+
+  &__inner {
+    font-size: 1em!important;
+
+    box-shadow: initial;
+
+    @include sm {
+      max-width: 85vw!important;
+      font-size: 1.6em;
+    }
+    
+  }
+
+  .card {
+    padding-right: 2em;
+    padding-left:  2em;
+    
+    .dashboard {
+      &-col {
+        @include xs {
+          flex-basis:    100%;
+          align-items: center!important;
+        }
+      }
+
+      &-row {
+        padding-right: 0;
+      }
+  
+      &-val {
+        width: 100%;
+        
+        @include xs {
+          width: 80%;
+        }
+      }
+
+      &-key {
+        height: 2.7rem;
+
+        @include sm {
+          height: 2.5rem;
+        }
+      }
+
+    }
+
+    
+    @include sm {
+      padding-right: 4em;
+      padding-left:  4em;
+    }
+    
+    @include xs {
+      padding-right: 4em;
+      padding-left:  4em;
+    }
+  }
 
   .ant-input {
     padding-left: 0.4em!important;
+    font-size: 1.3em;
+
+    &-suffix {
+      font-size: 1.3em;
+    }
   }
 
   .dashboard-key {
     height: 2.2rem;
+    
+    &--contribution-rate {
+      height: 1.2rem;
+    }
+
+    
+    @include sm {
+      height: 1.9rem;
+    }
+
+    @include xs {
+      height: 1rem;
+    }
   }
 }
 .ant-input {
@@ -14,6 +130,19 @@
   &-suffix {
     top: 51.5%;
     right: 0.6em;
-    // font-size: 1em;
   }
+}
+
+
+// скрыл визуал от сейва
+.page__title {
+  display: none;
+
+  &-icon-wrap {
+    display: none;
+  }
+}
+
+.main-top__select {
+  display: none;
 }

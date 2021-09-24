@@ -86,15 +86,13 @@ const Header = ({
                       {(state.saved && !state.changed) ? "Изменить" : "Сохранить"}
                     </Button>
 
-                    {state.saves.length ? (
-                      <a
-                        className="custom-btn custom-btn--secondary main-top__save"
-                        href="#pure=true"
-                        target="_blank"
-                      >
-                        Добавить новый
-                      </a>
-                    ) : null}
+                    <a
+                      className="custom-btn custom-btn--secondary main-top__save"
+                      href="#pure=true"
+                      target="_blank"
+                    >
+                      Добавить новый
+                    </a>
                   </div>
 
                 </Stack>

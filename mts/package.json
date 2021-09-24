@@ -2,7 +2,7 @@
   "private": true,
   "sideEffects": true,
   "scripts": {
-    "dev": "webpack serve --mode development",
+    "dev": "webpack serve --mode development --open --hot",
     "test": "jest --runInBand --detectOpenHandles",
     "build": "webpack --mode production",
     "deploy": "wsl ./deploy.sh"
@@ -49,7 +49,7 @@
     "webpack": "^5.49.0",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.0"
+    "webpack-dev-server": "^4.2.1"
   },
   "dependencies": {
     "@ant-design/icons": "^4.0.5",

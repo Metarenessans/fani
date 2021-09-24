@@ -2,13 +2,14 @@
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --mode development --open",
-    "test": "jest",
+    "test": "jest --runInBand --detectOpenHandles",
     "watch": "webpack --watch --progress --mode production",
     "build": "webpack --mode production"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/core": "^7.11.6",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.5",
     "@babel/plugin-proposal-numeric-separator": "^7.10.4",
     "@babel/plugin-proposal-optional-chaining": "^7.11.0",
     "@babel/plugin-transform-modules-commonjs": "^7.10.4",
@@ -45,6 +46,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.0.5",
+    "@babel/plugin-transform-runtime": "^7.15.0",
     "antd": "^3.24.2",
     "anychart": "^8.7.1",
     "chart.js": "^2.9.4",

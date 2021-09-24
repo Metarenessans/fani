@@ -13,17 +13,24 @@ module.exports = (env, options) => {
 
   return {
     entry: "./src/js/index.js",
-    devtool: prod ? "source-map" : "eval-source-map",
+    devtool: prod ? "source-map" : "source-map",
     output: {
-      path: path.resolve(__dirname, publicPath),
-      filename: `js/index.js`,
-      chunkFilename: 'js/[name].js'
+      path: path.resolve(__dirname, "public/"),
+      filename:      "js/index.js",
+      chunkFilename: "js/[name].js"
     },
+    cache: false,
     devServer: {
-      port: 1337,
-      contentBase: path.join(__dirname, "public"),
-      open: true
-      // host: '192.168.0.129'
+      static: {
+        directory: path.resolve(__dirname, publicPath),
+        publicPath: "/",
+        watch: {
+          ignored: "/node_modules/",
+          usePolling: true,
+        },
+      },
+      port: 3000,
+      host: '192.168.0.129'
     },
     module: {
       rules: [
@@ -91,20 +98,9 @@ module.exports = (env, options) => {
     plugins: [
       new webpack.DefinePlugin({ dev: !prod }),
       new MiniCssExtractPlugin({
-        filename: "css/style.css",
+        filename:      "css/style.css",
         chunkFilename: "css/[name].css"
       })
-    ],
-    optimization: {
-      minimize: prod,
-      minimizer: [new TerserPlugin({
-        terserOptions: {
-          format: {
-            comments: false
-          },
-        },
-        extractComments: false
-      })]
-    },
+    ]
   }
 };

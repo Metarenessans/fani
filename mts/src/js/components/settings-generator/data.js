@@ -118,10 +118,14 @@ const createData = (type, options, meta) => {
     }
 
     let _comission = contractsForCalcs * comission;
+    _comission += row.contracts * comission;
+    if (index > 0) {
+      _comission = row.contracts * comission;
+    }
+
     // Если выбрана акция 
     if (currentTool.dollarRate >= 1) {
       _comission = comission;
-
       if (index == 0) {
         _comission *= 2;
       }
@@ -170,7 +174,7 @@ const createData = (type, options, meta) => {
 
   if (isSMS_TOR) {
     // Инпут "% докупки" пустой
-    if (presetOptions.percent == "") {
+    if (presetOptions.percent === "") {
       return data;
     }
 
@@ -248,10 +252,11 @@ const createData = (type, options, meta) => {
         percent = presetRules.percents[blockNumber - 1] || 0;
       }
       else if (mode == 'custom') {
-        percent = currentOptions.percent;
+        percent = currentOptions.percent === "" ? 100 : currentOptions.percent;
+        percent /= (currentOptions.percentMode === "total" ? (currentOptions.length || 1) : 1);
       }
 
-      if (percent == "") {
+      if (percent === "") {
         percent = round(100 / (subLength || 1), fraction);
       }
 
@@ -339,8 +344,10 @@ const createData = (type, options, meta) => {
         points = currentTool.adrDay * (multiplier / 100);
       }
 
+      let groupLength = 1;
       if (mode == 'custom') {
         let preferredStepInMoney = currentOptions.preferredStep;
+
         const { inPercent } = currentOptions;
         if (inPercent) {
           if (preferredStepInMoney == "") {
@@ -351,21 +358,18 @@ const createData = (type, options, meta) => {
           }
         }
         else {
-          if (preferredStepInMoney == "") {
+          if (preferredStepInMoney === "") {
             preferredStepInMoney = currentTool.adrDay;
           }
         }
 
-        const groupLength = currentOptions.length || 1;
+        groupLength = currentOptions.length || 1;
 
-        const base = preferredStepInMoney / groupLength;
-
+        let base = (preferredStepInMoney - (index > 0 ? data[lastRowInGroupIndex].points : 0)) / groupLength;
         points = croppNumber(
           base * (j + 1)
-          +
           // Добавляем последнее значение из предыдущего блока
-          (index > 0 ? data[lastRowInGroupIndex].points : 0)
-          ,
+          + (index > 0 ? data[lastRowInGroupIndex].points : 0),
           fraction
         );
 
@@ -377,12 +381,6 @@ const createData = (type, options, meta) => {
       if (isSMS_TOR) {
         points = round(currentTool.currentPrice * (stepInPercent * (index + 1)) / 100, fraction);
       }
-
-      // if (currentPreset.type == "СМС + ТОР" && type == "Обратные докупки (ТОР)") {
-      //   points = subIndex < Math.floor(50 / presetOptions.percent)
-      //     ? round((mainData[0].points / 2) * (index + 1), fraction)
-      //     : round(currentTool.adrDay * (index + 1 - Math.floor(50 / presetOptions.percent)), fraction);
-      // }
 
       points = updateStep(points);
 
@@ -518,7 +516,8 @@ const createData = (type, options, meta) => {
       if (mode == 'custom') {
         data[subIndex] = {
           ...data[subIndex],
-          group: index
+          group: index,
+          groupLength,
         };
       }
 

@@ -122,9 +122,17 @@ class Chart extends Component {
       return;
     }
 
-    anychart.onDocumentReady(() => {
+    anychart?.onDocumentReady(() => {
       this.update();
     });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.loading != this.props.loading && !this.props.loading) {
+      anychart?.onDocumentReady(() => {
+        this.update();
+      });
+    }
   }
   
   componentWillUnmount() {

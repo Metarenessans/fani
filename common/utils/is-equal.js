@@ -1,4 +1,8 @@
 export default function isEqual(obj1, obj2) {
+  if (obj1 == null || obj2 == null) {
+    return false;
+  }
+
   //Loop through properties in object 1
   for (var p in obj1) {
     //Check property exists on both objects

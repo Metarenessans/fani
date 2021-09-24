@@ -95,6 +95,7 @@ constructor(props) {
 
     this.state.loading = true;
 
+    
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
     this.fetchSaveById     = fetchSaveById.bind(this, "tor");
@@ -154,10 +155,14 @@ constructor(props) {
     }, 1500);
   }
 
+  // ~~
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
-      .then(this.applyInvestorInfo)
-      .then(depo => this.setState({ depo: depo || 10000 }))
+      .then(response => this.applyInvestorInfo(response))
+      .then(response => {
+        console.log(response);
+        return this.setStateAsync({ depo: response.data.deposit || 10_000 })
+      })
       .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
@@ -287,11 +292,10 @@ constructor(props) {
   }
 
   packSave() {
-    let { items, depo, customTools } = this.state;
+    let { items, customTools } = this.state;
 
     const json = {
       static: {
-        depo,
         items,
         customTools,
         current_date: "#"
@@ -330,7 +334,6 @@ constructor(props) {
       console.log(save);
       console.log("staticParsed", staticParsed);
 
-      state.depo = staticParsed.depo || this.state.depo;
       state.items = staticParsed.items;
 
       state.customTools = staticParsed.customTools || [];
@@ -469,6 +472,8 @@ constructor(props) {
   }
 
   render() {
+    console.log(this.state.depo);
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -791,7 +796,6 @@ constructor(props) {
                 <span className="input-group__label">Размер депозита:</span>
                 <NumericInput
                   className="input-group__input"
-                  key={this.state.depo}
                   defaultValue={this.state.depo}
                   format={formatNumber}
                   min={10000}

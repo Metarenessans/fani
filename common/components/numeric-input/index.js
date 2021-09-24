@@ -36,10 +36,6 @@ export default class NumericInput extends React.Component {
     return this.props.unsigned == "true"
   }
 
-  handleResize(e) {
-
-  }
-
   componentDidUpdate(prevProps) {
     const { defaultValue, test } = this.props;
     const { value } = this.state;
@@ -49,7 +45,7 @@ export default class NumericInput extends React.Component {
       this.setState({ value: 0 })
       return;
     }
-    else if (defaultValue != prevProps.defaultValue) {
+    else if (defaultValue !== prevProps.defaultValue) {
       this.setState({ value: this.format(defaultValue) })
     }
   }
