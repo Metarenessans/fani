@@ -115,8 +115,9 @@ export default function CodePanel(props) {
           (["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1) && 
           (key == "Закрытие основного депозита" || key == "Обратные профитные докупки");
 
+        let lastGroup = 0;
         let parsedData = (arr || [])
-          .map(v => {
+          .map((v, index, arr) => {
             let { percent, points } = v;
             let formattedPoints = points;
             // Переводим ход в проценты только в лимитнике
@@ -132,6 +133,13 @@ export default function CodePanel(props) {
 
               formattedPoints = round(formattedPoints, 2);
             }
+
+            // Корректируем процент для диапазонов
+            if (v.group > lastGroup && index > 0) {
+              lastGroup = v.group;
+              percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+            }
+
             return `{${percent},${formattedPoints}${showRollback ? "," + rollback : ""}}`;
           })
           .join(",");
@@ -139,7 +147,7 @@ export default function CodePanel(props) {
 
         if (key == "Закрытие основного депозита") {
           let suffix = (data["Закрытие плечевого депозита"] || [])
-            .map(v => {
+            .map((v, index, arr) => {
               let { percent, points } = v;
               let pointsInPercents = points;
               if (currentPreset.type == "Лимитник") {
@@ -191,12 +199,22 @@ export default function CodePanel(props) {
 
                 pointsInPercents = round(pointsInPercents, 4);
               }
+
+              // Корректируем процент для диапазонов
+              if (v.group > lastGroup && index > 0) {
+                lastGroup = v.group;
+                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
+
               return `{${percent},${pointsInPercents}${showRollback ? "," + rollback : ""}}`;
             })
             .join(",");
 
           if (suffix) {
             parsedData = `{${parsedData},{${suffix}}}`;
+          }
+          else if (currentPreset.type == "СМС + ТОР") {
+            parsedData = "{" + parsedData + "}";
           }
         }
 
@@ -218,8 +236,13 @@ export default function CodePanel(props) {
           title = "Массив прямых докупок";
           param = "aaperc";
           parsedData = (arr || [])
-            .map(v => {
+            .map((v, index, arr) => {
               let { percent, points } = v;
+              // Корректируем процент для диапазонов
+              if (v.group > lastGroup && index > 0) {
+                lastGroup = v.group;
+                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
               return `{${percent},${points},true}`;
             })
             .join(",");
@@ -229,8 +252,13 @@ export default function CodePanel(props) {
           title = "Массив обратных профитных докупок";
           param = "aapercsh";
           parsedData = (arr || [])
-            .map(v => {
+            .map((v, index, arr) => {
               let { percent, points } = v;
+              // Корректируем процент для диапазонов
+              if (v.group > lastGroup && index > 0) {
+                lastGroup = v.group;
+                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
               return `{${percent},${points}}`;
             })
             .join(",");
@@ -370,11 +398,13 @@ export default function CodePanel(props) {
 
       {(() => {
         let value = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
+        let content = value;
         if (currentPreset.type == "Лимитник") {
           value = round(ranullPlus / 100, 2);
+          content = ranullPlusMode ? `${value},0` : `0,${value}`;
+          content = "{" + content + "}";
         }
-        let content = ranullPlusMode ? `${value},0` : `0,${value}`;
-        return renderLine(null, "ranullplus", "{" + content + "}");
+        return renderLine(null, "ranullplus", content);
       })()}
 
     </Stack>

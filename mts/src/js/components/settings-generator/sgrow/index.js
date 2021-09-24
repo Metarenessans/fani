@@ -11,6 +11,7 @@ import magnetToClosest from '../../../../../../common/utils/magnet-to-closest'
 
 import stepConverter   from '../step-converter'
 import optionsTemplate from "../options-template"
+import { cloneDeep } from 'lodash'
 
 const names = {
   "evenly":    "равномерно",
@@ -44,7 +45,10 @@ export default function SGRow({
   const fraction = fractionLength(currentTool.priceStep);
 
   const inputFormatter = (number, digits) => 
-    formatNumber(number != "" ? round(number, digits != null ? digits : fraction) : number);
+    formatNumber(number !== ""
+      ? round(number, digits != null ? digits : fraction)
+      : number
+    );
 
   const contractsArray = data.map(row => row.merged ? -row.contracts : row.contracts);
   const contractsSum = contractsArray.reduce((acc, curr) => acc + curr, 0);
@@ -58,7 +62,7 @@ export default function SGRow({
 
   let preferredStepInMoney = preferredStep;
   if (inPercent) {
-    if (preferredStep == "") {
+    if (preferredStep === "") {
       preferredStepInMoney = currentTool.adrDay;
     }
     else {
@@ -66,7 +70,7 @@ export default function SGRow({
     }
   }
   else {
-    if (preferredStep == "") {
+    if (preferredStep === "") {
       preferredStepInMoney = currentTool.adrDay;
     }
   }
@@ -105,12 +109,11 @@ export default function SGRow({
           ?
           <>
             {options.customData
-              .map((customDataRow, i) =>
+              .map((customDataRow, i, arr) =>
                 <div
                   className="settings-generator-content__row settings-generator-content__opt-row settings-generator-content__opt-row--custom"
                   key={i}
                 >
-
                   <span className="settings-generator-content__opt-row-number">{i + 1}</span>
 
                   <label className="input-group">
@@ -162,13 +165,37 @@ export default function SGRow({
                       format={number => inputFormatter(number, customDataRow.inPercent ? 2 : undefined)}
                       unsigned="true"
                       min={0}
-                      onBlur={preferredStep => {
+                      onChange={(e, textValue, jsx) => {
+                        const value = jsx.parse(textValue);
+                        jsx.setErrorMsg(
+                          i > 0 && value <= arr[i - 1]?.preferredStep 
+                            ? "Диапазоны хода не должны совпадать!"
+                            : value >= arr[i + 1]?.preferredStep
+                              ? "Желаемый ход не может превышать ход следующего диапазона!"
+                              : ""
+                        );
+                      }}
+                      onBlur={(preferredStep, textValue, jsx) => {
                         let value = preferredStep;
                         if (!customDataRow.inPercent) {
                           value = updateStep(value);
                         }
 
-                        const customDataCopy = [...options.customData];
+                        let customDataCopy = [...options.customData];
+
+                        // Ход меньше хода из предыдущего диапазона (если он есть)
+                        // откатываем ход до предыдущего + цена шага
+                        if (value <= arr[i - 1]?.preferredStep) {
+                          value = arr[i - 1]?.preferredStep + currentTool.priceStep;
+                          jsx.setErrorMsg("");
+                        }
+                        // Ход больше хода из следующего диапазона (если он есть)
+                        // удаляем все последующие диапазоны
+                        else if (value >= arr[i + 1]?.preferredStep) {
+                          customDataCopy = customDataCopy.slice(0, i);
+                          jsx.setErrorMsg("");
+                        }
+
                         customDataCopy[i] = {
                           ...customDataCopy[i],
                           preferredStep: value,
@@ -181,11 +208,30 @@ export default function SGRow({
                   </label>
 
                   <label className="input-group">
-                    <span className="input-group__label">% {isBying ? "докупки" : "закрытия"}</span>
+                    {/* ~~ */}
+                    <span className="input-group__label">
+                      % {isBying ? "докупки" : "закрытия"}
+
+                      <button
+                        className="settings-generator-content__step-mode-switcher"
+                        onClick={e => {
+                          const { percentMode } = options.customData[i];
+
+                          const customData = [...options.customData];
+                          customData[i] = {
+                            ...customData[i],
+                            percentMode: percentMode === "total" ? "each" : "total"
+                          };
+                          onPropertyChange({ customData });
+                        }}
+                      >
+                        {customDataRow.percentMode === "total" ? "суммарно" : "на уровне"}
+                      </button>
+                    </span>
                     <NumericInput
                       className="input-group__input"
                       defaultValue={customDataRow.percent}
-                      placeholder={round(100 / (customDataRow.length || 1), 2)}
+                      placeholder={round(100 / (customDataRow.percentMode === "total" ? 1 : 1), 2)}
                       format={value => inputFormatter(value, 2)}
                       unsigned="true"
                       min={0}
@@ -248,7 +294,6 @@ export default function SGRow({
                     )
                   }
 
-
                   <CrossButton
                     className={
                       []
@@ -292,10 +337,16 @@ export default function SGRow({
             <Button
               className="custom-btn settings-generator-content__opt-row-btn"
               onClick={e => {
+                const row = { ...optionsTemplate, length: 1 };
+                const lastRow = options.customData[options.customData.length - 1];
+                if (lastRow.preferredStep >= row.preferredStep) {
+                  row.preferredStep = lastRow.preferredStep + currentTool.priceStep
+                }
+
                 onPropertyChange({
                   customData: [
                     ...options.customData,
-                    { ...optionsTemplate, length: 1 }
+                    row
                   ]
                 });
               }}

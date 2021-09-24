@@ -7,12 +7,7 @@ import readyToolsApril from "./adr-april.json"
 
 import magnetToClosest from "./utils/magnet-to-closest"
 
-const filterJSONToolsFn = tool => {
-  if (tool.adrWeek == "" && tool.adrMonth == "") {
-    return false;
-  }
-  return true;
-};
+const filterJSONToolsFn = tool => tool.adr && tool.adrWeek && tool.adrMonth;
 
 const correctJSONToolFn = tool => {
   tool.code.replace(".US", "");
@@ -177,6 +172,7 @@ const parseTool = tool => {
   let dollarRate      = parseNumber(tool.dollarRate);
   let lotSize         = parseNumber(tool.lotVolume || tool.lotSize);
   let volume          = parseNumber(tool.value);
+  let volumeAverage   = parseNumber(tool.volumeAverage);
 
   let firstTradeDate  = parseNumber(tool.firstTradeDate);
   let lastTradeDate   = parseNumber(tool.lastTradeDate);
@@ -285,6 +281,7 @@ const parseTool = tool => {
     lotSize,
     dollarRate,
     volume,
+    volumeAverage,
 
     firstTradeDate,
     lastTradeDate,
@@ -605,6 +602,31 @@ class Tools {
         adrWeek:         7.67,
         adrMonth:        17.64,
       }),
+      this.create({
+        ref:             {},
+        "toolType": "shareRu",
+        "code": "CHMF",
+        "fullName": "Северсталь (ПАО)ао",
+        "priceStep": "0.2",
+        "guarantee": 1671,
+        "averageProgress": null,
+        "currentPrice": "1671",
+        "volumeAverage": "3505.21",
+        "currentAdrValue": "29.4",
+        "currentAdrPercent": "1.759",
+        "dailyAdrValue": "30.68",
+        "dailyAdrPercent": "1.7986",
+        "weeklyAdrValue": "29.84",
+        "weeklyAdrPercent": "1.7343",
+        "monthlyAdrValue": "36.3867",
+        "monthlyAdrPercent": "2.1806",
+        "lotSize": "1",
+        "dollarRate": "1",
+        "stepPrice": 0.20000000000000001,
+        adrDay:          3.11,
+        adrWeek:         7.67,
+        adrMonth:        17.64,
+      })
     ]
   }
 
@@ -659,4 +681,4 @@ class Tools {
   }
 }
 
-export { Tools, Tool, template };
+export { Tools, Tool, template, parseTool };

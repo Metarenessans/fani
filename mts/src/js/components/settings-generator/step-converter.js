@@ -71,12 +71,10 @@ const stepConverter = {
         (
           // кол-во контрактов на данную загрузку
           contracts
+          *
+          // лот
+          tool.lotSize
         )
-        *
-        // лот
-        tool.lotSize
-        /
-        100;
     }
     // ФОРТС
     else {

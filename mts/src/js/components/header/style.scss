@@ -2,11 +2,6 @@
 
 .page {
 
-  ::selection {
-    background: white;
-    color: var(--primary-color);
-  }
-
   &-header {
     position: relative;
     z-index: 2;
@@ -16,6 +11,11 @@
 
     color: white;
     text-align: center;
+
+    *::selection {
+      background: white;
+      color: var(--primary-color);
+    }
 
     .stack {
       --space: 1.15em;

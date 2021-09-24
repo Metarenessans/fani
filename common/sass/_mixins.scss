@@ -1,3 +1,9 @@
+@mixin xlg() {
+  @media (min-width: 1200px) {
+    @content;
+  }
+}
+
 @mixin lg() {
   @media (max-width: 1200px) {
     @content;

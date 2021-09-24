@@ -58,23 +58,19 @@ import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
 import ToolSelect      from "./components/tool-select"
-import {
-  Chart,
-  createChart,
-  updateChart,
-  updateChartTicks,
-  recommendData
-} from "./components/chart"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
 import "../sass/style.sass"
 
 import IterationsContainer from "./components/iterations-container"
 
+let chartModule;
+let Chart;
+
 let lastRealData = {};
 let saveToDownload;
 
-let shouldLoadFakeSave = false;
+let shouldLoadFakeSave = true;
 let chartVisible       = true;
 if (!dev) {
   chartVisible = true;
@@ -274,7 +270,6 @@ class App extends Component {
         // -----
         tools: [],
 
-
         /**
          * Индекс текущего сохранения
          */
@@ -348,11 +343,12 @@ class App extends Component {
   componentDidMount() {
     this.bindEvents();
 
-    if (chartVisible) {
-      createChart.call(this);
-    }
-
     this.fetchInitialData();
+
+    import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+      chartModule = module;
+      Chart = module.Chart;
+    });
 
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
@@ -404,28 +400,6 @@ class App extends Component {
     return new Promise(resolve => this.setState(state, resolve))
   }
 
-  loadFakeSave() {
-    this.setState({ loading: true });
-
-    setTimeout(() => {
-      let { saves } = this.state;
-      let save = require("./api/fake-save.js").default;
-  
-      const index = 0;
-      this.extractSave(save);
-  
-      saves[index] = {
-        id:      save.id,
-        name:    save.name,
-      };
-      this.setState({ 
-        saves, 
-        currentSaveIndex: index + 1,
-        loading: false
-      });
-    }, 1500);
-  }
-
   fetchInvestorInfo() {
     fetchInvestorInfo()
       .then(this.applyInvestorInfo)  
@@ -468,7 +442,7 @@ class App extends Component {
         }
         else resolve();
 
-      }, dev ? 6_000 : 1 * 60 * 1_000);
+      }, dev ? 60_000 : 1 * 60 * 1_000);
 
     }).then(() => this.setFetchingToolsTimeout())
   }
@@ -541,7 +515,6 @@ class App extends Component {
         .then(() => resolve())
     })
   }
-  
 
   fetchSaves() {
     fetchSavesFor("trademeter")
@@ -564,7 +537,25 @@ class App extends Component {
       .catch(reason => {
         console.log(reason);
         this.showAlert(`Не удалось получить сохранения! ${reason}`);
-      });
+      })
+      .finally(() => {
+        if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
+          const { saves } = this.state;
+          const response = require("./api/fake-save.js").default;
+          const { data } = response;
+          const { id, name } = data;
+          const index = 0;
+
+          this.extractSave(data);
+
+          saves[index] = { id, name };
+          this.setState({
+            saves,
+            currentSaveIndex: index + 1,
+            loading: false
+          });
+        }
+      })
   }
 
   fetchInitialData() {
@@ -572,12 +563,6 @@ class App extends Component {
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout());
     
-    if (dev) {
-      if (shouldLoadFakeSave && !(params.get("pure") === "true")) {
-        this.loadFakeSave();
-      }
-      return;
-    }
     this.fetchSaves();
   }
 
@@ -724,7 +709,7 @@ class App extends Component {
 
     const { depoEnd, saves } = this.state;
 
-    saveToDownload = { ...save };
+    saveToDownload = { error: false, data: { ...save } };
 
     let staticParsed;
     let dynamicParsed;
@@ -907,9 +892,12 @@ class App extends Component {
       if (!failed) {
         this.overrideData(dynamicParsed)
           .then(() => this.updateData())
-          .then(() => chartVisible && updateChart.call(this))
+          .then(() => chartVisible && chartModule?.updateChart.call(this))
           .then(() => this.setCurrentDay(currentDay))
-          .catch(err => this.showAlert(err));
+          .catch(error => {
+            console.warn(error);
+            this.showAlert("Error occured in 'extractSave':" + error)
+          });
       }
     });
   }
@@ -1047,7 +1035,7 @@ class App extends Component {
     return new Promise((resolve, reject) => {
       this.updateData(null, rebuild)
         .then(() => this.updatePassiveIncomeMonthly())
-        .then(() => chartVisible && updateChart.call(this))
+        .then(() => chartVisible && chartModule?.updateChart.call(this))
         .then(() => resolve())
         .catch(err => reject(err));
     });
@@ -1228,12 +1216,10 @@ class App extends Component {
             id = saves[currentSaveIndex - 1].id;
             this.fetchSaveById(id)
               .then(response => this.extractSave(response.data))
-              .catch(error => this.showAlert(error));
+              .catch(error => this.showAlert("Error occured in 'fetchSaveById':" + error));
           }
           else {
-            this.reset()
-              .then(() => this.recalc())
-              .catch(err => this.showAlert(err));
+            this.reset().then(() => this.recalc())
 
             saved = changed = false;
           }
@@ -1264,22 +1250,7 @@ class App extends Component {
   setCurrentDay(currentDay = 1) {
     this.setStateAsync({ currentDay })
       .then(() => this.updateDepoPersentageStart())
-      .then(() => {
-        const { data, chartScaleMode } = this.state;
-        if (chartScaleMode == "1d") {
-          let actualScale = 1;
-          let min = Math.floor(currentDay - (actualScale / 2));
-          let max = Math.floor(currentDay + (actualScale / 2));
-          if (min < 0) {
-            max += -min;
-            min += -min;
-          }
-
-          scaleStart = min / data.length
-          scaleEnd   = max / data.length;
-        }
-      })
-      .then(() => chartVisible && updateChartTicks.call(this));
+      .then(() => chartVisible && chartModule?.updateChart.call(this));
   }
   
   // ==================
@@ -1326,7 +1297,21 @@ class App extends Component {
       incomePersantageCustom,
     } = this.state;
 
-    // const bond = this.getCurrentPassiveIncomeTool();
+    const pit = this.getCurrentPassiveIncomeTool();
+    let bond;
+    if (false && pit != null) {
+      bond = {
+        // цена ОФЗ 
+        price:      pit.price,
+        // ставка выплаты по купону в день, например, 0.01.
+        // Если установлена, то "coupon", "frequency", "startDateCoupon" не используются
+        couponRate: pit.rate / 100,
+        // величина выплаты по купону
+        coupon:     pit.coupon, 
+        // периодичность выплаты по купону в днях
+        frequency:  pit.frequency, 
+      }
+    }
 
     if (!options.length) {
       options.length = dataLength;
@@ -1353,17 +1338,19 @@ class App extends Component {
         customBaseRate: options?.customBaseRate,
         customFuture:   options?.customFuture,
         tax,
-        getAverage: true
+        getAverage: true,
+        bond: bond
       }
     ];
 
-    const result = extRateReal(...args);
+    const result = extRateReal(...clone(args));
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
+    result.ratewithoutbond *= 100;
 
-    if (options.test) {
-      console.log(...args, "=", result);
+    if (dev && options.test) {
+      console.log(...args, "returns:", result);
     }
 
     return result;
@@ -1606,6 +1593,7 @@ class App extends Component {
     const realData = this._getRealData();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
+      // rate = this.useRate({ length: days[mode], test: true }).ratewithoutbond;
 
       const rateObj = this.useRate({ 
         customBaseRate: rate / 100,
@@ -1632,6 +1620,7 @@ class App extends Component {
           : undefined
       });
       rate            = rateObj.rate;
+      // rate            = rateObj.ratewithoutbond;
       rateRecommended = rateObj.rateRecommended;
       daysDiff        = rateObj.daysDiff;
       averageProf     = rateObj.averageProf;
@@ -1646,13 +1635,12 @@ class App extends Component {
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
     if ((data.lastFilledDay?.day || 1) == days[mode]) {
       daysDiff = 0;
-    }    
+    }
 
     const placeholder = "—";
 
     const tools = this.getTools();
     const currentTool = this.getCurrentTool();
-    console.log(currentTool.code, currentTool.guarantee, currentTool.ref.guarantee);
 
     return (
       <Provider value={this}>
@@ -1676,7 +1664,7 @@ class App extends Component {
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
                     .then(response => this.extractSave(response.data))
-                    .catch(error => this.showAlert(error));
+                    .catch(error => this.showAlert("Error occured in 'fetchSaveById':" + error));
                 }
               }}
               onSave={e => {
@@ -1731,10 +1719,10 @@ class App extends Component {
                     // TODO: вернуть?
                     // params.set("mode", value);
 
-                    // TODO: optimize because this.recalc() already uses this.updateChart()
+                    // TODO: optimize because this.recalc() already uses this.chartModule?.updateChart()
                     this.recalc(true)
                       .then(() => this.setState({ realData }))
-                      .then(() => updateChart.call(this));
+                      .then(() => chartModule?.updateChart.call(this));
                   });
                 }}
               />
@@ -2043,7 +2031,7 @@ class App extends Component {
                           </Tooltip>
                         </header>
 
-                        <Select
+                        {/* <Select
                           id="passive-tools"
                           value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
                           loading={this.state.toolsLoading}
@@ -2066,8 +2054,7 @@ class App extends Component {
 
                                 return this.updatePassiveIncomeMonthly();
                               })
-                              // ~~
-                              .then(() => this.recalc())
+                              .then(() => chartVisible && chartModule?.updateChart.call(this))
                           }}
                           showSearch
                           optionFilterProp="children"
@@ -2085,7 +2072,7 @@ class App extends Component {
                                 </Option>
                               )
                           }
-                        </Select>
+                        </Select> */}
                       </div>
 
                     </div>
@@ -2942,7 +2929,7 @@ class App extends Component {
                                           }
                                           value={formatNumber(round(value, 3))}
                                           formatter={node => {
-                                            const value = recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
+                                            const value = chartModule?.recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
   
                                             return value != null
                                               ?
@@ -3020,7 +3007,7 @@ class App extends Component {
                     
                     this.setStateAsync({ data })
                       .then(() => this.updateData(data.length, false, currentDay - 1))
-                      .then(() => chartVisible && updateChart.call(this))
+                      .then(() => chartVisible && chartModule?.updateChart.call(this))
                   };
 
                   const ArrowRight = props => {
@@ -3076,7 +3063,7 @@ class App extends Component {
                                     })
                                   })
                                 })
-                                .then(() => chartVisible && updateChart.call(this))
+                                .then(() => chartVisible && chartModule?.updateChart.call(this))
                                 .then(() => this.setCurrentDay(currentDay + 1))
                             }
                           }}>
@@ -3254,7 +3241,7 @@ class App extends Component {
                                 this.setStateAsync({ data })
                                   .then(() => callback())
                                   .then(() => this.updateData())
-                                  .then(() => chartVisible && updateChart.call(this))
+                                  .then(() => chartVisible && chartModule?.updateChart.call(this))
                                   .then(() => this.forceUpdate())
                               }}
                             />
@@ -3624,11 +3611,16 @@ class App extends Component {
                 {/* /.section5 */}
 
                 {/* График */}
-                {chartVisible && (
+                {chartVisible && Chart && (
                   <Chart 
                     defaultScaleMode={this.state.days[mode]} 
                     data={this.state.data}
                     currentDay={currentDay}
+                    onFirstRender={e => {
+                      if (chartVisible) {
+                        chartModule?.createChart.call(this);
+                      }
+                    }}
                   />
                 )}
 
@@ -3772,7 +3764,7 @@ class App extends Component {
                       changed: false,
                     })
                   })
-                  .catch(err => this.showAlert(err));
+                  .catch(error => this.showAlert("Error occured in 'update':" + error));
               }
               else {
                 const onResolve = (id) => {
@@ -3795,7 +3787,7 @@ class App extends Component {
                 
                 this.save(name)
                   .then(onResolve)
-                  .catch(err => this.showAlert(err));
+                  .catch(error => this.showAlert("Error occured in 'save':" + error));
 
                 if (dev) {
                   onResolve();

@@ -218,11 +218,11 @@ export default class DashboardRow extends React.Component {
             <NumericInput
               className="dashboard__input"
               defaultValue={toolType == "Трейдинг" ? depo : firstPay}
-              onBlur={value => onChange("firstPay", value)}
+              onBlur={value => onChange(toolType == "Трейдинг" ? "depo" : "firstPay", value)}
+              // onBlur={value => onChange("firstPay", value)}
               format={formatNumber}
               unsigned="true"
               min={0}
-              max={depo}
             />
           </span>
 

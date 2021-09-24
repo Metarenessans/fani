@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import ReactDOM from 'react-dom'
 
-import { TimePicker } from 'antd'
+import { TimePicker } from 'antd/es'
 
 import moment from 'moment'
 

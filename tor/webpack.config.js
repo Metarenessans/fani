@@ -7,7 +7,7 @@ module.exports = (env, options) => {
 
   const entry = "./src/js/index.js";
   const output = "index";
-  // const devtool = prod ? "source-map" : "eval-sourcemap";
+  const devtool = prod ? "source-map" : "eval-source-map";
   const publicPath = "public";
 
   // Rules
@@ -72,6 +72,7 @@ module.exports = (env, options) => {
       filename: `${output}.js`,
       publicPath
     },
+    devtool,
     module: {
       rules: [
         {
@@ -107,7 +108,7 @@ module.exports = (env, options) => {
 
   const modern = {
     entry,
-    // devtool,
+    devtool,
     output: {
       path: path.resolve(__dirname, publicPath),
       filename: `${output}-es6.js`,

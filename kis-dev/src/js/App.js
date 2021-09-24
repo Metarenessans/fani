@@ -931,6 +931,7 @@ class App extends React.Component {
                                 this.setState({ data: dataCopy, changed: true });
                               }}
                               unsigned="true"
+                              disabled={toolType === "Трейдинг"}
                               format={formatNumber}
                               min={0}
                             />
@@ -949,6 +950,7 @@ class App extends React.Component {
                               key={monthPay}
                               className="dashboard__input"
                               defaultValue={monthPay}
+                              disabled={toolType === "Трейдинг"}
                               onBlur={value => {
                                 const dataCopy = [...data];
                                 dataCopy[lineConfigIndex].monthPay = value;

@@ -1,32 +1,29 @@
 import React, { memo, useState, useEffect } from 'react'
-import { Consumer } from "../../app"
 import { Radio } from "antd/es"
-import roundUp      from "../../../../../common/utils/round-up"
-import formatNumber from "../../../../../common/utils/format-number"
+
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-bundle.min.js");
+
 import { flatten } from 'lodash'
+import roundUp from "../../../../../common/utils/round-up"
+import formatNumber from "../../../../../common/utils/format-number"
+import roundToClosest from "../../../../../common/utils/round-to-closest"
 
 import "./style.scss"
-import getFraction    from '../../../../../common/utils/get-fraction'
-import round          from '../../../../../common/utils/round'
 
-let 
+let
   chart,
+  chartScaleMode = 1,
   chartData,
   chartData2,
   chartData3,
   planEndData,
   scale,
   scaleStart = 0,
-  scaleEnd   = 1,
-  steps      = 1;
+  scaleEnd   = 1;
 
 let factData = [];
 let planData = [];
 let recommendData = [];
-
-function roundToClosest(value, n) {
-  return Math.floor(value / n) * n;
-}
 
 const getLen = data => {
   if (!data) {
@@ -62,7 +59,7 @@ function updateChartScaleXY(scaleStart, scaleEnd, data, scaleMode) {
         ? scaleEnd
         : scaleEnd - step;
   
-  chart.xZoom().setTo(start, end);
+  chart?.xZoom().setTo(start, end);
   
   // Y axis
   updateChartScaleY(start, end);
@@ -92,9 +89,9 @@ function updateChartScaleY(start, end) {
   minY = Math.max(minY, 0);
   maxY += minMaxDifference;
 
-  chart.yScale().minimum( minY );
-  chart.yScale().maximum( maxY );
-  chart.yZoom().setToValues(minY, maxY);
+  chart?.yScale().minimum( minY );
+  chart?.yScale().maximum( maxY );
+  chart?.yZoom().setToValues(minY, maxY);
 }
 
 function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
@@ -151,19 +148,149 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
   }
 }
 
+function updateChartXZoom(start, end) {
+  const step = 1 / (planData.length - 1);
+  let scaleStart = roundToClosest(start, step);
+  let scaleEnd   = roundToClosest(end,   step);
+
+  const ceiling = 1 - step;
+  if (scaleEnd >= ceiling) {
+    scaleEnd = 1;
+  }
+
+  chart?.xZoom().setTo(scaleStart, scaleEnd);
+  return { scaleStart, scaleEnd };
+}
+
+/** Возвращает массив дней для выбраного диапазона от 0 до 1 */
+const getSlicedChunk = (data = [], start = scaleStart, end = scaleEnd) => {
+  const step = 1 / getLen(data);
+
+  end += step;
+  if (end > 1) {
+    end = 1;
+  }
+
+  return planData.slice(planData.length * start, planData.length * end)
+}
+
+function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
+  const slicedChunk = getSlicedChunk(planData, startRatio, endRatio).map(v => ({
+    x:      v.x,
+    weight: v.weight,
+  }));
+
+  // Находим кол-во итераций у каждого дня на экране
+  // TODO: использовать weight для расчета
+  const counter = {};
+  for (let d of slicedChunk) {
+    let day = d.x;
+    const dotIndex = d.x.indexOf(".");
+    if (dotIndex != -1) {
+      day = day.slice(0, dotIndex);
+    }
+
+    if (day) {
+      if (!counter[day]) {
+        counter[day] = 0;
+      }
+      counter[day]++;
+    }
+  }
+
+  let min = 0;
+  let max = 0;
+
+  // Выбран масштаб в 1 день
+  if (chartScaleMode == 1) {
+    // Находим день с наибольшим кол-вом итераций
+    let dayWithTheMostIterations = Object.keys(counter).map(key => [key, counter[key]])
+      // Сортировка в порядке возрастания количества итераций
+      .sort((l, r) => l[1] - r[1])
+      // Берем последний элемент (с наибольшим количеством итераций)
+      .pop()[0];
+
+    if (startRatio == 0) {
+      dayWithTheMostIterations = planData[0].x;
+    }
+    else if (endRatio == 1) {
+      // Берем предпоследний элемент
+      dayWithTheMostIterations = planData[planData.length - 2].x;
+    }
+
+    const iterations = slicedChunk.filter(value => value.x.startsWith(dayWithTheMostIterations));
+    min = planData.indexOf(planData.find(value => value.x == iterations[0].x));
+    if (iterations[0].x.indexOf(".") != -1) {
+      min -= iterations[0].x.replace(/\d+\./, "")
+    }
+
+    max = min + (iterations[0].weight ?? 1);
+    if (min < 0) {
+      max += -min;
+      min += -min;
+    }
+  }
+  else {
+    // TODO: remove logs
+    
+    const counterArr = Object.keys(counter).map(key => [key, counter[key]]);
+    // Берем N центральных дней
+    const focusArr = counterArr.slice(
+      counterArr.length / 2 - chartScaleMode / 2,
+      counterArr.length / 2 + chartScaleMode / 2
+    );
+    console.log(chartScaleMode, "центральных дней:", focusArr);
+    
+    const startIterations = slicedChunk.filter(value => value.x.startsWith(focusArr[0][0]));
+    console.log("startIterations:", startIterations);
+    min = planData.indexOf(planData.find(value => value.x == startIterations[0].x));
+    if (startIterations[0].x.indexOf(".") > -1) {
+      min -= startIterations[0].x.replace(/\d+\./, "")
+    }
+    
+    const endIterations = slicedChunk.filter(value => value.x.startsWith(focusArr[focusArr.length - 1][0]));
+    const lastEndIteration = endIterations[endIterations.length - 1];
+    console.log("endIterations:", endIterations, lastEndIteration);
+    max = planData.indexOf(planData.find(value => value.x == lastEndIteration.x));
+    if (lastEndIteration.x.indexOf(".") > -1) {
+      max += lastEndIteration.weight - lastEndIteration.x.replace(/\d+\./, "");
+    }
+    else if (lastEndIteration.weight) {
+      max += lastEndIteration.weight;
+    }
+    // В дне нет итераций
+    else {
+      max += 1;
+    }
+
+    if (min < 0) {
+      max += -min;
+      min += -min;
+    }
+  }
+
+  const len = getLen(planData) - 1;
+  const step = 1 / len;
+
+  let start = roundToClosest(min / len, step);
+  if (start < 0) {
+    start = 0;
+  }
+  let end = roundToClosest(max / len, step);
+  if (end > 1) {
+    end = 1;
+  }
+
+  return { start, end }
+}
+
 function createChart() {
-  anychart && anychart.onDocumentReady(() => {
+  anychart?.onDocumentReady(() => {
     chart = anychart.line();
 
     updateChart.call(this, true);
     
     chart.animation(true, 3000);
-    chart.listen("click", e => {
-      return;
-      if (e.pointIndex) {
-        this.setCurrentDay(e.pointIndex + 1);
-      }
-    });
     chart.tooltip().titleFormat(e => {
       const { data } = this.state;
       
@@ -300,21 +427,35 @@ function createChart() {
       chart.xScroller().minHeight(40);
       chart.xScroller().fill("#40a9ff 0.1");
       chart.xScroller().selectedFill("#40a9ff 0.5");
-      chart.xScroller().listen("scrollerchange", e => {
-        const step = 1 / (planData.length - 1);
-        scaleStart = roundToClosest(e.startRatio, step);
-        // scaleEnd   = scaleStart + (step * steps);
-        scaleEnd = roundToClosest(e.endRatio, step);
-
-        const ceiling = 1 - step;
-        if (scaleEnd >= ceiling) {
-          scaleEnd = 1;
-        }
-
-        chart.xZoom().setTo(scaleStart, scaleEnd);
+      chart.xScroller().listen("scrollerchange", e => {        
+        const { scaleStart, scaleEnd } = updateChartXZoom(e.startRatio, e.endRatio);
         updateChartScaleY(scaleStart, scaleEnd);
         updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
       });
+      chart.xScroller().listen("scrollerchangefinish", e => {
+        // Меняем масштаб вручную
+        if (e.source == "thumb-drag") {
+          const step = 1 / (planData.length - 1);
+          scaleStart = roundToClosest(e.startRatio, step);
+          scaleEnd   = roundToClosest(e.endRatio,   step);
+
+          const ceiling = 1 - step;
+          if (scaleEnd >= ceiling) {
+            scaleEnd = 1;
+          }
+
+          chart?.xZoom().setTo(scaleStart, scaleEnd);
+        }
+        else {
+          const { start, end } = calcXZoom(chartScaleMode, e.startRatio, e.endRatio);
+          const xZoom = updateChartXZoom(start, end);
+          scaleStart = xZoom.scaleStart;
+          scaleEnd   = xZoom.scaleEnd;
+        }
+
+        updateChartScaleY(scaleStart, scaleEnd);
+        updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
+      })
     }
     
     // Genetal settings
@@ -344,13 +485,12 @@ function updatePlanEndLine(start, length, value) {
   }
   else {
     console.log(planEnd);
-    planEndData.data(planEnd);
-  } 
-
+    planEndData?.data(planEnd);
+  }
 }
 
 function updateChart(isInit = false) {
-  const { data, days, mode, currentDay } = this.state;
+  const { data, days, mode } = this.state;
 
   // ----
   // Факт
@@ -360,7 +500,7 @@ function updateChart(isInit = false) {
   const factDays = data.filter(di => di.changed);
   let factArray = [];
   factData = [];
-  
+
   if (data.hasNoGaps) {
     if (factDays.length) {
       for (let i = 0; i < factDays.length; i++) {
@@ -373,7 +513,7 @@ function updateChart(isInit = false) {
           let start = data[i].depoStartReal;
           
           for (let j = 0; j < iterations.slice(0, -1).length; j++) {
-            start += iterations[j].getIncome( data[currentDay - 1].depoStartReal );
+            start += iterations[j].getIncome( data[i]?.depoStartReal );
             factArray[i].push(start);
           }
           factArray[i].push(endValue);
@@ -459,7 +599,7 @@ function updateChart(isInit = false) {
     chartData = anychart.data.set(factData);
   }
   else {
-    chartData.data(factData);
+    chartData?.data(factData);
   }
   
   // ----
@@ -533,8 +673,12 @@ function updateChart(isInit = false) {
         x:          factData[i + j].x,
         value:      planData[i - 1].value + (step * (j + 1)),
         customName: factData[i].customName,
+        weight:     1 / factData[i].weight
       }));
       planData.splice(i, 0, ...items);
+
+      // Задаем для начала дня такой же weight, как и у всех итераций
+      planData[i - 1].weight = items[0].weight;
 
       i += length;
     }
@@ -555,11 +699,9 @@ function updateChart(isInit = false) {
     chartData2 = anychart.data.set(planData);
   }
   else {
-    chartData2.data(planData);
+    chartData2?.data(planData);
   }
 
-  // updatePlanEndLine(days[mode], data.length - days[mode], planData[planData.length - 1].value);
-  
   // --------
   // Рекоменд
   // --------
@@ -608,7 +750,7 @@ function updateChart(isInit = false) {
       if (!data.hasNoGaps) {
         recommendData = null;
       }
-      chartData3.data(recommendData);
+      chartData3?.data(recommendData);
     }
   }
   
@@ -618,25 +760,11 @@ function updateChart(isInit = false) {
   }
 
   if (data.length > 0) {
-    let actualScale = steps;
-    const len = getLen(data) - 1;
-    if (steps == data.length) {
-      actualScale = planData.length;
-    }
+    const xZoom = calcXZoom(chartScaleMode);
+    scaleStart = xZoom.start;
+    scaleEnd   = xZoom.end;
 
-    let min = Math.floor(currentDay - (actualScale / 2));
-    let max = Math.floor(currentDay + (actualScale / 2));
-    if (min < 0) {
-      max += -min;
-      min += -min;
-    }
-    
-    const step = 1 / len;
-
-    scaleStart = roundToClosest(min / len, step);
-    scaleEnd   = roundToClosest(max / len, step);
-    
-    chart.xZoom().setTo(scaleStart, scaleEnd);
+    updateChartXZoom(scaleStart, scaleEnd);
     updateChartScaleY(scaleStart, scaleEnd);
     updateChartTicks.call(this, scaleStart, scaleEnd, data);
   }
@@ -648,11 +776,14 @@ function updateChart(isInit = false) {
 }
 
 let Chart = memo(props => {
-  const { data, currentDay } = props;
+  const { data, currentDay, onFirstRender } = props;
   const [scaleMode, setScaleMode] = useState(props.defaultScaleMode);
 
   useEffect(() => {
-    steps = scaleMode;
+    onFirstRender();
+  }, []);
+
+  useEffect(() => {
     if (chart) {
       updateChartTicks(scaleStart, scaleEnd, data);
     }
@@ -660,12 +791,12 @@ let Chart = memo(props => {
 
   return (
     <div className="chart-wrapper">
-    <div id="chart" className="chart"></div>
-    {true && (
+      <div id="chart" className="chart"></div>
       <Radio.Group
         className="chart-mode"
+        defaultValue={chartScaleMode}
         onChange={e => {
-          let chartScaleMode = e.target.value;
+          chartScaleMode = e.target.value;
           
           let actualScale = chartScaleMode;
           const len = getLen(data) - 1;
@@ -673,34 +804,33 @@ let Chart = memo(props => {
             actualScale = planData.length;
           }
 
-          let min = Math.floor(currentDay - (actualScale / 2));
-          let max = Math.floor(currentDay + (actualScale / 2));
+          let min = Math.round(currentDay - (actualScale / 2));
+          let max = Math.round(currentDay + (actualScale / 2));
           if (min < 0) {
             max += -min;
             min += -min;
           }
-          
-          const step = 1 / len;
 
+          const step = 1 / len;
           scaleStart = roundToClosest(min / len, step);
           scaleEnd   = roundToClosest(max / len, step);
 
-          chart.xZoom().setTo(scaleStart, scaleEnd);
+          const xZoom = calcXZoom(chartScaleMode, 0, 1);
+          scaleStart = xZoom.start;
+          scaleEnd   = xZoom.end;
+
+          updateChartXZoom(scaleStart, scaleEnd);
           updateChartScaleY(scaleStart, scaleEnd);
           updateChartTicks(scaleStart, scaleEnd - step, data);
-
           setScaleMode(chartScaleMode);
         }}
       >
-      <Radio.Button value={1}>день</Radio.Button>
-      <Radio.Button value={5}>неделя</Radio.Button>
-      <Radio.Button value={20}>месяц</Radio.Button>
-      <Radio.Button value={260}>год</Radio.Button>
-      {data.length > 260 ? (
+        <Radio.Button value={1}>день</Radio.Button>
+        {data.length > 5 && <Radio.Button value={5}>неделя</Radio.Button>}
+        {data.length > 20 && <Radio.Button value={20}>месяц</Radio.Button>}
+        {data.length > 260 && <Radio.Button value={260}>год</Radio.Button>}
         <Radio.Button value={data.length}>все время</Radio.Button>
-      ) : null}
       </Radio.Group>
-    )}
     </div>
   )
 }, (prevProps, nextProps) => true);

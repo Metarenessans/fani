@@ -16,30 +16,20 @@
   
   cursor: pointer;
   
-  transform: scale(.85);
   transition: transform .15s ease-in-out;
   will-change: transform;
 
-  user-select: none;
-
-  &:hover {
-    transform: scale(1);
-    background-color: rgba(black, .2);
-    opacity: 1;
-
-    color: var( --danger-color );
-  }
-
+  &:hover,
   &:focus {
-    outline: none;
-    box-shadow: 0 0 0 var(--focus-outline-width) white;
+    background-color: rgba(black, .05);
   }
-  
+
   [role="img"] {
-    font-size: .75em;
-    position: absolute;
-    // left: 50%;
-    // top:  50%;
+    font-size: .625em;
+
     transform: rotate(45deg);
+
+    user-select: none;
+    pointer-events: none;
   }
 }
