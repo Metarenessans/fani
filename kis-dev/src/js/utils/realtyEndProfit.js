@@ -23,6 +23,7 @@ export default function realtyEndProfit(period, rentIncome, monthAppend, monthPa
     // итог
     let endSum = monthBalance - lostProfit
 
+    // далее условия для сдвига в расчётах
     if (i == 1) {
       let currentBalance = (firstPay - (arr[i - 1].monthBalance + rentIncome - monthPay)) / 12 * profitPercent
 

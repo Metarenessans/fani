@@ -177,7 +177,6 @@ export default class DashboardRow extends React.Component {
     */
     const contributionFinalVal = kisDepositMonth(investPercent, firstPay, period * 260, allMonthOutCome, monthAppend)
 
-    
     /** Недвижимость
      * возвращает итоговую сумму в зависимости от периода
      * @period      количество месяцев
@@ -374,7 +373,9 @@ export default class DashboardRow extends React.Component {
                   round(
                     toolType !== "Недвижимость"?
                       (toolType == "Вклад" ? contributionFinalVal.total : tradeFinalVal(260 * period, 12)) :
-                      realtyProfit(period * 12)
+                      // недвижимость
+                      // вычитание для чистого минуса
+                      (realtyProfit(period * 12) + (depo - firstPay))
                   )
                 )
               }

@@ -77,9 +77,9 @@ const defaultToolData = {
   payRate:          .08,
   profitPercent:    .04,
   activeInvestVal:  .03,
-  ofzVal:           .05,
+  ofzVal:           .06,
   monthPay:           0,
-  investPercent:   0.03,
+  investPercent:   0.06,
 };
 
 function onScroll() {
