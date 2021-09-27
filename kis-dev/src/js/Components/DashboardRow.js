@@ -112,7 +112,7 @@ export default class DashboardRow extends React.Component {
      * @append      boolean, все пополнения
      * @clearProfit boolean, чистая прибыль от офз
     */
-    const resultOfz = (period, outcome, append, clearProfit) => {
+    const resultOfz = (period, outcome, append, clearProfit, depo) => {
       return (
         (extRateReal(depo, null, 
           outcome ? allMonthOutCome : 0, outcome ? 21 : 0,
@@ -141,9 +141,9 @@ export default class DashboardRow extends React.Component {
             round(
               months == 1 ?
                 // значение месячного итога
-                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true) / 12 :
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true, depo) / 12 :
                 // значение итога за весь период
-                personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true)
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true, depo)
             )
           )
         }
@@ -153,8 +153,8 @@ export default class DashboardRow extends React.Component {
           return (
             round(
               months == 1 ?
-                depo + (resultOfz(1, false, false, true) / 12) :
-                resultOfz(period, false, false, false)
+                depo + (resultOfz(1, false, false, true, depo) / 12) :
+                resultOfz(period, false, false, false, depo)
             )
           )
         }
@@ -168,6 +168,16 @@ export default class DashboardRow extends React.Component {
           )
         }
       }
+    }
+
+    // трейдинг Пассивный доход
+    const tradingPassiveIncome = () => {
+
+      let tradeFinal = tradeFinalVal(260 * period, 12);
+
+      let passiveIncome = resultOfz(1, false, false, true, tradeFinal ) / 12;
+
+      return round(passiveIncome)
     }
 
     /** инструмент -"Вклад"
@@ -275,7 +285,7 @@ export default class DashboardRow extends React.Component {
               className="dashboard__input"
               defaultValue={
                 toolType == "Трейдинг" ?
-                  round( resultOfz(1, false, false, true) / 12 ) :
+                  tradingPassiveIncome() :
                   (toolType == "Вклад" ? round(contributionFinalVal.averageMonthIncome) : rentIncome)
               }
               disabled={toolType !== "Недвижимость"}
@@ -342,9 +352,7 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--main">
 
           <span className="dashboard-key dashboard-key--month">
-            <Tooltip title={""}>
-              Баланс по итогам месяца
-            </Tooltip>
+            Баланс по итогам месяца
           </span>
 
           <span className="dashboard-val dashboard-col--main">
