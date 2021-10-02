@@ -1,0 +1,13 @@
+.info {
+  position: relative;
+
+  &__icon {
+    position: absolute;
+    right: -1.1em;
+    top:  -0.15em;
+
+    font-size: .75em;
+    color: #d1d1d1 !important;
+    line-height: 1;
+  }
+}

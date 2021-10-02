@@ -1,0 +1,82 @@
+.third-step {
+  font-size: 1.8em;
+
+  display: flex;
+  justify-content: space-between;
+
+  &-title {
+    margin-bottom: 0!important;
+  }
+
+  &-column {
+    display: flex;
+    flex-direction: column;
+  
+    width: 49%;
+    gap: .5em;
+  }
+
+  &-table {
+    display: flex;
+    flex-direction: column;
+    margin-top: -0.5em;
+
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, .03), 0px 0px 8px rgba(12, 12, 12, 0.06);
+
+    &-check-box {
+      display: flex;
+      justify-content: center;
+      border-left: .03em solid #cacaca;
+      width: 20%;
+
+      padding-top: .6em;
+
+      .ant-check-box {
+        &-inner {
+          height: 20px!important;
+          width:  20px!important;
+        }
+      }
+    }
+
+    &-title {
+      font-size: .8em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  
+      width: 100%;
+      font-weight: bold;
+      padding: .8em;
+
+      border-top: .03em solid #cacaca;
+      border-bottom: .03em solid #cacaca;
+    }
+
+    &-row-container {
+      display: flex;
+      flex-direction: column;
+
+      
+      &-row {
+        display: flex;
+        justify-content: space-between;
+        height: 2.19em;
+        
+        &:nth-child(2n-1) {
+          background-color: #e7f0f9;
+        }
+
+        p {
+          font-size: .8em;
+            margin: 0;
+
+            padding-left: 1em;
+            padding-top: 0.6em;
+            font-weight: 500;
+        }
+      }
+    }
+  }
+  
+}
