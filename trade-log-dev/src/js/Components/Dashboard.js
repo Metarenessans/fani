@@ -20,11 +20,12 @@ import num2str        from "../../../../common/utils/num2str"
 import formatNumber   from "../../../../common/utils/format-number"
 import clsx from 'clsx'
 import { data } from 'jquery'
+import { result } from 'lodash'
 
 const { Option } = Select;
 
 const setFocusToNextButton = () => {
-  document.querySelector(".next-button").focus();
+  document.querySelector(".next-button").scrollTo();
 }
 
 export default class Dashboard extends React.Component {
@@ -32,16 +33,24 @@ export default class Dashboard extends React.Component {
     super(props);
 
     this.state = {
-      data: [
-        {}, {}, {}, {}, {}
-      ]
+      dashboardData: [
+        {},
+        {},
+        {},
+        {},
+        {},
+      ],
+
+      // tradeLogData: [
+
+      // ],
     };
   }
 
   render() {
-    let {} = this.props;
+    let { currentRowIndex, rowData } = this.props;
 
-    let { data } = this.state
+    let { dashboardData } = this.state
     
     return (
       <>
@@ -54,7 +63,9 @@ export default class Dashboard extends React.Component {
             {
               (() => {
                 return (
-                  data.map((currentData, index) =>
+
+                  dashboardData.map((currentData, index) =>
+                  
                     <>
                       <div className={clsx("dashboard-row", index === 0 && ("row-height-fix"))}>
 
@@ -95,7 +106,16 @@ export default class Dashboard extends React.Component {
                           )}
 
                           <div className="dashboard-val">
-                            Some text here
+                            {(() => {
+                              let result = rowData[index].result
+                               
+                              if (result) {
+                                return result
+                              }
+
+                              else return "-"
+
+                            })()}
                           </div>
                         </div>
                         {/* col */}
@@ -114,6 +134,7 @@ export default class Dashboard extends React.Component {
                                 setFocusToNextButton()
                                 document.querySelector(".trade-slider").classList.add("trade-slider-active")
                                 document.querySelector(".dashboard").classList.add("dashboard-active")
+                                currentRowIndex(index)
                               }}
                             >
                               Просмотр

@@ -93,15 +93,31 @@ export default class DashboardRow extends React.Component {
     const container = React.createRef();
 
     
-    const { toolType, depo, firstPay, period, rentIncome, monthAppend, monthOutcome, payRate, profitPercent, ofzVal, activeInvestVal, monthPay, investPercent} = item;
+    const { 
+      toolType, 
+      depo,
+      secondDepo,
+      firstPay, 
+      period, 
+      rentIncome, 
+      monthAppend, 
+      monthOutcome, 
+      payRate, 
+      profitPercent, 
+      ofzVal, 
+      activeInvestVal, 
+      monthPay, 
+      investPercent
+    } = item;
 
     // сумма всех выводов в месяц
+    // как появятся заёмные возможно пригодится
     const allMonthOutCome = monthPay + monthOutcome
 
     // итог от активных инвестиций в зависимости от входящего периода
     const personalInvestProfitVal = period => {
       return (
-        extRateReal(depo, null, allMonthOutCome, 21, monthAppend, 21, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
+        extRateReal(secondDepo, null, monthOutcome, 21, monthAppend, 21, period, 1, 1, 0, {}, { customRate: activeInvestVal / 100 }).sum
       )
     }
 
@@ -115,14 +131,14 @@ export default class DashboardRow extends React.Component {
     const resultOfz = (period, outcome, append, clearProfit, depo) => {
       return (
         (extRateReal(depo, null, 
-          outcome ? allMonthOutCome : 0, outcome ? 21 : 0,
+          outcome ? monthOutCome    : 0, outcome ? 21 : 0,
           append  ? monthAppend     : 0, append  ? 21 : 0,
           period, 1, 1, 0, {}, 
           { customRate: ofzVal }
         ).sum) - (clearProfit ? depo : 0)
       )
     }
-
+    
     /** инструмент -"Трейдинг"
      * возвращает итоговую сумму
      * @activeInvestPeriod принимает в себя значение в днях
@@ -141,9 +157,9 @@ export default class DashboardRow extends React.Component {
             round(
               months == 1 ?
                 // значение месячного итога
-                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true, depo) / 12 :
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(1, false, false, true, secondDepo) / 12 :
                 // значение итога за весь период
-                personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true, depo)
+                personalInvestProfitVal(activeInvestPeriod) + resultOfz(period, false, false, true, secondDepo)
             )
           )
         }
@@ -153,8 +169,8 @@ export default class DashboardRow extends React.Component {
           return (
             round(
               months == 1 ?
-                depo + (resultOfz(1, false, false, true, depo) / 12) :
-                resultOfz(period, false, false, false, depo)
+                secondDepo + (resultOfz(1, false, false, true, secondDepo) / 12) :
+                resultOfz(period, false, false, false, secondDepo)
             )
           )
         }
@@ -185,7 +201,7 @@ export default class DashboardRow extends React.Component {
        @firstMonthTotalResult	общая сумма на конец первого месяца
        @averageMonthIncome    среднемесячные проценты по вкладу за период
     */
-    const contributionFinalVal = kisDepositMonth(investPercent, firstPay, period * 260, allMonthOutCome, monthAppend)
+    const contributionFinalVal = kisDepositMonth(investPercent, secondDepo, period * 260, monthOutcome , monthAppend)
 
     /** Недвижимость
      * возвращает итоговую сумму в зависимости от периода
@@ -218,17 +234,14 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--main">
 
           <span className="dashboard-key">
-            <Tooltip title={""}>
-              Первонач. взнос 
-            </Tooltip>
+            Первонач. взнос 
           </span>
 
           <span className="dashboard-val dashboard-col--main">
             <NumericInput
               className="dashboard__input"
-              defaultValue={toolType == "Трейдинг" ? depo : firstPay}
-              onBlur={value => onChange(toolType == "Трейдинг" ? "depo" : "firstPay", value)}
-              // onBlur={value => onChange("firstPay", value)}
+              defaultValue={toolType == "Недвижимость" ? firstPay : secondDepo}
+              onBlur={value => onChange(toolType == "Недвижимость" ? "firstPay" : "secondDepo", value)}
               format={formatNumber}
               unsigned="true"
               min={0}
@@ -240,9 +253,7 @@ export default class DashboardRow extends React.Component {
         
         <div className="dashboard-col dashboard-col--splitted">
           <span className="dashboard-key">
-            <Tooltip title={""}>
-              Период
-            </Tooltip>
+            Период
           </span>
           <span className="dashboard-val dashboard-col--wide dashboard-val--period">
             <NumericInput
@@ -303,9 +314,7 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--main">
 
           <span className="dashboard-key">
-            <Tooltip title={""}>
-              Ежемесячный вывод
-            </Tooltip>
+            Ежемесячный вывод
           </span>
 
           <span className="dashboard-val dashboard-col--main">
@@ -317,7 +326,6 @@ export default class DashboardRow extends React.Component {
               format={formatNumber}
               unsigned="true"
               min={0}
-              max={rentIncome}
             />
           </span>
 

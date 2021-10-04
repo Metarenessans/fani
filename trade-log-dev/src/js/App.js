@@ -44,22 +44,63 @@ class App extends React.Component {
     super(props);
 
     this.initialState = {
-    };
-
-    this.state = {
-      ...this.initialState,
-
       step: 1,
       extraStep: false,
       day:  1,
       isSaved: false,
     };
+
+    this.state = {
+      ...this.initialState,
+
+      currentRowIndex: 0,
+
+      rowData: [
+
+        {
+          // DashboardData
+          result: 115,
+          // TradeLogData
+        },
+
+        {
+          // DashboardData
+          result: 115,
+          // TradeLogData
+        },
+
+        {
+          // DashboardData
+          result: 115,
+          // TradeLogData
+        },
+
+        {
+          // DashboardData
+          result: 115,
+          // TradeLogData
+        },
+
+        {
+          // DashboardData
+          result: 115,
+          // TradeLogData
+        },
+      ]
+    };
   }
 
-
+  
   render() {
-    let { step, extraStep, day, isSaved } = this.state;
-    
+    let { 
+      step, 
+      extraStep, 
+      day, 
+      isSaved, 
+      currentRowIndex, 
+      rowData,
+    } = this.state;
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -71,21 +112,9 @@ class App extends React.Component {
                 <div className="container">
                   
                   <Dashboard
-                    onChange={(prop, value, index) => {
-                      const dataClone = [...data];
-                      data[index][prop] = value;
-                      this.setState({ data: dataClone })
-                    }}
-                    onAddRow={() => {
-                      const dataClone = [...data];
-                      dataClone.push({ ...defaultToolData });
-                      this.setState({ data: dataClone });
-                    }}
-                    onRemoveRow={() => {
-                      const dataClone = [...data];
-                      dataClone.pop();
-                      this.setState({ data: dataClone });
-                    }}
+                    rowData={rowData}
+                    currentRowIndex={currentRowIndex => this.setState({ currentRowIndex }) }
+
                   />
 
                   <div className="trade-slider">
@@ -172,7 +201,14 @@ class App extends React.Component {
 
                       <div className="trade-slider-steps">
                         {step == 1 && (
-                          <TradeLog />
+                          <TradeLog
+                            currentRowIndex={currentRowIndex}
+                            onChange={(prop, value, index) => {
+                              const rowDataClone = [...rowData];
+                              rowDataClone[index][prop] = value;
+                              this.setState({ rowData: rowDataClone })
+                            }}
+                          />
                         )}
 
                         {step == 2 && (

@@ -29,13 +29,11 @@ export default class TradeLog extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      data: []
-    };
+    this.state = {};
   }
 
   render() {
-    let { } = this.props;
+    let { onChange, currentRowIndex } = this.props;
 
     let { data } = this.state
 
@@ -168,6 +166,9 @@ export default class TradeLog extends React.Component {
                 <NumericInput
                   className=""
                   defaultValue={15}
+                  onBlur={(val) => {
+                    onChange("result", val, currentRowIndex)
+                  }}
                   unsigned="true"
                   min={0}
                   suffix={"%"}

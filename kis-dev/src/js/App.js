@@ -63,24 +63,26 @@ const defaultToolData = {
   tool: {},
 
   period:            10,
-  firstPay:   1_500_000,
+  firstPay:   1_000_000,
   rentIncome:    20_000,
   monthOutcome:       0,
   
-  incomeMonthly: 1_000_000,
-  monthPay:              0,
+  // incomeMonthly: 1_000_000,
   monthAppend:           0,
   
   // config
-  depo:       1_500_000,
+  depo:       5_000_000,
+  secondDepo: 1_500_000,
   payPeriod:         10,
   payRate:          .08,
   profitPercent:    .04,
   activeInvestVal:  .03,
   ofzVal:           .06,
-  monthPay:           0,
+  monthPay:      40_000,
   investPercent:   0.06,
 };
+
+
 
 function onScroll() {
   if (innerWidth <= 768) {
@@ -596,7 +598,7 @@ class App extends React.Component {
 
   render() {
     const { data, sortProp, sortDESC, lineConfigIndex } = this.state;
-    
+
     return (
       <Provider value={this}>
         <div className="page">
@@ -906,7 +908,7 @@ class App extends React.Component {
           >
             <div className="dashboard-row" >
               {(() => {
-                let { depo, payPeriod, ofzVal, payRate, toolType, profitPercent, activeInvestVal, monthPay, investPercent } = data[lineConfigIndex || 0];
+                let { depo, secondDepo, ofzVal, toolType, profitPercent, activeInvestVal, monthPay, investPercent } = data[lineConfigIndex || 0];
                 
                 const requiredVal = toolType == "Недвижимость" ? profitPercent : ofzVal
                 return (
@@ -924,12 +926,12 @@ class App extends React.Component {
                             <NumericInput
                               key={Math.random()}
                               className="dashboard__input"
-                              defaultValue={depo}
-                              onBlur={value => {
-                                const dataCopy = [...data];
-                                dataCopy[lineConfigIndex].depo = value;
-                                this.setState({ data: dataCopy, changed: true });
-                              }}
+                              defaultValue={toolType == "Недвижимость" ? depo : secondDepo}
+                              // onBlur={value => {
+                              //   const dataCopy = [...data];
+                              //   dataCopy[lineConfigIndex].depo = value;
+                              //   this.setState({ data: dataCopy, changed: true });
+                              // }}
                               unsigned="true"
                               disabled={toolType === "Трейдинг"}
                               format={formatNumber}
@@ -949,7 +951,7 @@ class App extends React.Component {
                             <NumericInput
                               key={monthPay}
                               className="dashboard__input"
-                              defaultValue={monthPay}
+                              defaultValue={toolType === "Недвижимость" ? monthPay : 0 }
                               disabled={toolType === "Трейдинг"}
                               onBlur={value => {
                                 const dataCopy = [...data];
