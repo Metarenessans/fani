@@ -150,5 +150,5 @@ module.exports = (env, options) => {
     plugins
   };
 
-  return [prod && old, modern].filter(value => !!value)
+  return modern
 };

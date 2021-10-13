@@ -1,0 +1,152 @@
+Адрес для запросов: https://fani144.ru/local/php_interface/s1/ajax/
+
+
+
+--- Список сохранений пользователя ---
+
+Параметры:
+- method=getFinplanSnapshots
+
+Ответ:
+- массив идентификаторов сохранений текущего пользователя
+
+Пример запроса:
+GET https://fani144.ru/local/php_interface/s1/ajax/?method=getFinplanSnapshots
+
+Пример ответа:
+{"error":false,"data":[{"id":1,"name":"Some name","dateCreate":1590480370}]}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки
+data -- массив сохранений текущего пользователя
+    id -- идентификатор записи
+    name -- название сохранения
+    dateCreate -- дата создания записи (в Unix формате)
+
+
+
+
+
+--- Последнее измененное сохранение пользователя ---
+Параметры:
+- method=getLastModifiedFinplanSnapshot
+
+Ответ:
+- поля последнего измененного сохранения текущего пользователя
+
+Пример запроса:
+GET https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedFinplanSnapshot
+
+Пример ответа:
+{"error":false,"data":{"id":2,"name":"Some name","dateCreate":1590480370,"dateUpdate":1590480370,"static":"some data...","dynamic":"some data..."}}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки
+data -- информация по конкретного сохранения текущего пользователя
+    id -- идентификатор записи
+    name -- название сохранения
+    dateCreate -- дата создания записи (в Unix формате)
+    dateUpdate -- дата изменения записи (в Unix формате)
+    static -- статические данные (как были переданы при сохранении)
+    dynamic -- динамические данные (как были переданы при сохранении)
+
+
+
+
+
+--- Конкретное сохранение пользователя ---
+Параметры:
+- method=getFinplanSnapshot
+- id=123
+
+Ответ:
+- поля конкретного сохранения текущего пользователя
+
+Пример запроса:
+GET https://fani144.ru/local/php_interface/s1/ajax/?method=getFinplanSnapshot&id=2
+
+Пример ответа:
+{"error":false,"data":{"id":2,"name":"Some name","dateCreate":1590480370,"static":"some data..."}}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки
+data -- информация по конкретного сохранения текущего пользователя
+    id -- идентификатор записи
+    name -- название сохранения
+    dateCreate -- дата создания записи (в Unix формате)
+    static -- статические данные (как были переданы при сохранении)
+
+Примечание: если id не указан, будет возвращено последнее сохранение текущего пользователя.
+
+
+
+
+
+--- Добавление нового сохранения пользователя ---
+Параметры:
+- method=addFinplanSnapshot
+- name="название"
+- static="тут строка в формате JSON"
+
+Ответ:
+- идентификатор добавленного сохранения
+
+Пример запроса:
+POST https://fani144.ru/local/php_interface/s1/ajax/?method=addFinplanSnapshot
+- name="some name"
+- static="some data..."
+
+Пример ответа:
+{"error":false,"id":4}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки
+id -- идентификатор нового сохранения
+
+
+
+
+
+--- Обновление сохранения пользователя ---
+Параметры:
+- method=updateFinplanSnapshot
+- id=123
+- name="название"
+- static="тут строка в формате JSON"
+
+Ответ:
+- статус
+
+Пример запроса:
+POST https://fani144.ru/local/php_interface/s1/ajax/?method=updateFinplanSnapshot
+- id=2
+- name="some name"
+- static="some data..."
+
+Пример ответа:
+{"error":false}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки
+
+
+
+
+
+--- Удаление сохранения пользователя ---
+Параметры:
+- method=deleteFinplanSnapshot
+- id=123
+
+Ответ:
+- статус
+
+Пример запроса:
+POST https://fani144.ru/local/php_interface/s1/ajax/?method=deleteFinplanSnapshot
+- id=2
+
+Пример ответа:
+{"error":false}
+
+error -- статус ошибки (да/нет)
+message -- текст ошибки

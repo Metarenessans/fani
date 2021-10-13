@@ -123,11 +123,12 @@ body
 
 .ant
   &-input
+    &-affix-wrapper.error .ant-input,
     &.error
       border-color: var( --danger-color ) !important
 
       &:focus
-        box-shadow: 0 0 0 .3em var( --danger-color-transparent )
+        box-shadow: 0 0 0 var(--focus-outline-width) var( --danger-color-transparent )
 
       &:hover
         border-color: var( --danger-color )
