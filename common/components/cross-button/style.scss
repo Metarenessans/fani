@@ -24,6 +24,12 @@
     background-color: rgba(black, .05);
   }
 
+  button:disabled {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
   [role="img"] {
     font-size: .625em;
 
