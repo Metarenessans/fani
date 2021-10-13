@@ -46,10 +46,14 @@ export default function CodePanel(props) {
     ranull,
     ranullMode,
     ranullPlus,
-    ranullPlusMode
+    ranullPlusMode,
+    flagMirror,
+    flagPR
   } = props;
 
   const [rollback, setRollback] = useState(tool.priceStep);
+  const [rapradd, setRapradd] = useState(0.98);
+  const [sizepradd, setSizepradd] = useState(100);
 
   useEffect(() => {
     setRollback(tool.priceStep);
@@ -61,9 +65,8 @@ export default function CodePanel(props) {
 
     return (
       <div 
-        className="code-panel-group" 
-        key={Math.random()}
-        style={{ marginTop: title == null ? " -1.5em" : "" }}
+        className="code-panel-group"
+        style={{ marginTop: title == null ? " -0.25em" : "" }}
       >
         {title != null &&
           <div className="code-panel-group-header">
@@ -73,9 +76,9 @@ export default function CodePanel(props) {
               onClick={e => {
                 selectElementContent(codeElement.current);
 
-                navigator.clipboard.writeText(textContent)
+                navigator.clipboard?.writeText(textContent)
                   .then(() => message.success("Скопировано!"))
-                  .catch(error => console.log('Произошла ошибка', error));
+                  .catch(error => message.error('Не удалось скопировать: ' + error));
               }}
             >
               копировать
@@ -116,6 +119,8 @@ export default function CodePanel(props) {
           (key == "Закрытие основного депозита" || key == "Обратные профитные докупки");
 
         let lastGroup = 0;
+        let lastGroupObject = null;
+
         let parsedData = (arr || [])
           .map((v, index, arr) => {
             let { percent, points } = v;
@@ -135,9 +140,15 @@ export default function CodePanel(props) {
             }
 
             // Корректируем процент для диапазонов
-            if (v.group > lastGroup && index > 0) {
+            if (v.group > lastGroup) {
+              lastGroupObject = arr.find(row => row.group == lastGroup);
               lastGroup = v.group;
-              percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+            }
+            if (v.percentMode == "total" && lastGroupObject) {
+              const percentsLeft = (100 - (v.percent * v.groupLength));
+              if (percentsLeft < 0.01005) {
+                percent = round((100 - (lastGroupObject.percent * lastGroupObject.groupLength)) / v.groupLength, 2);
+              }
             }
 
             return `{${percent},${formattedPoints}${showRollback ? "," + rollback : ""}}`;
@@ -201,9 +212,15 @@ export default function CodePanel(props) {
               }
 
               // Корректируем процент для диапазонов
-              if (v.group > lastGroup && index > 0) {
+              if (v.group > lastGroup) {
+                lastGroupObject = arr.find(row => row.group == lastGroup);
                 lastGroup = v.group;
-                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
+              if (v.percentMode == "total" && lastGroupObject) {
+                const percentsLeft = (100 - (v.percent * v.groupLength));
+                if (percentsLeft < 0.01005) {
+                  percent = round((100 - (lastGroupObject.percent * lastGroupObject.groupLength)) / v.groupLength, 2);
+                }
               }
 
               return `{${percent},${pointsInPercents}${showRollback ? "," + rollback : ""}}`;
@@ -227,11 +244,6 @@ export default function CodePanel(props) {
         if (key == "Обратные докупки (ТОР)") {
           param = currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР" ? "aapercent" : "aaperc";
         }
-        else if (key == "Зеркальные докупки") {
-          title = "Массив зеркальных докупок";
-          param = "flagmirroradd";
-          parsedData = String(arr.on);
-        }
         else if (key == "Прямые профитные докупки") {
           title = "Массив прямых докупок";
           param = "aaperc";
@@ -239,9 +251,15 @@ export default function CodePanel(props) {
             .map((v, index, arr) => {
               let { percent, points } = v;
               // Корректируем процент для диапазонов
-              if (v.group > lastGroup && index > 0) {
+              if (v.group > lastGroup) {
+                lastGroupObject = arr.find(row => row.group == lastGroup);
                 lastGroup = v.group;
-                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
+              if (v.percentMode == "total" && lastGroupObject) {
+                const percentsLeft = (100 - (v.percent * v.groupLength));
+                if (percentsLeft < 0.01005) {
+                  percent = round((100 - (lastGroupObject.percent * lastGroupObject.groupLength)) / v.groupLength, 2);
+                }
               }
               return `{${percent},${points},true}`;
             })
@@ -255,9 +273,15 @@ export default function CodePanel(props) {
             .map((v, index, arr) => {
               let { percent, points } = v;
               // Корректируем процент для диапазонов
-              if (v.group > lastGroup && index > 0) {
+              if (v.group > lastGroup) {
+                lastGroupObject = arr.find(row => row.group == lastGroup);
                 lastGroup = v.group;
-                percent = round((100 - arr[index - 1].percent * arr[index - 1].groupLength) / v.groupLength, 2);
+              }
+              if (v.percentMode == "total" && lastGroupObject) {
+                const percentsLeft = (100 - (v.percent * v.groupLength));
+                if (percentsLeft < 0.01005) {
+                  percent = round((100 - (lastGroupObject.percent * lastGroupObject.groupLength)) / v.groupLength, 2);
+                }
               }
               return `{${percent},${points}}`;
             })
@@ -293,8 +317,7 @@ export default function CodePanel(props) {
               const textContent = `GParam.${param} = ${parsedData}`;
               return (
                 <div className="code-panel-group"
-                     key={Math.random()}
-                     style={{ marginBottom: "-2em" }}>
+                     style={{ marginBottom: "-1.5em" }}>
 
                   <div className="code-panel-group-header">
                     <h3 data-should-output="true">{title}</h3>
@@ -303,9 +326,9 @@ export default function CodePanel(props) {
                       onClick={e => {
                         selectElementContent(codeElement.current);
 
-                        navigator.clipboard.writeText(textContent)
+                        navigator.clipboard?.writeText(textContent)
                           .then(() => message.success("Скопировано!"))
-                          .catch(error => console.log('Something went wrong', error));
+                          .catch(error => message.error('Не удалось скопировать: ' + error));
                       }}
                     >
                       копировать
@@ -320,8 +343,7 @@ export default function CodePanel(props) {
                 </div>
               )
             })()}
-            <div className="code-panel-group"
-                 key={Math.random()}>
+            <div className="code-panel-group">
 
               {!hideTitle &&
                 <div className="code-panel-group-header">
@@ -331,9 +353,9 @@ export default function CodePanel(props) {
                     onClick={e => {
                       selectElementContent(codeElement.current);
 
-                      navigator.clipboard.writeText(textContent)
+                      navigator.clipboard?.writeText(textContent)
                         .then(() => message.success("Скопировано!"))
-                        .catch(error => console.log('Something went wrong', error));
+                        .catch(error => message.error('Не удалось скопировать: ' + error));
                     }}
                   >
                     копировать
@@ -368,6 +390,75 @@ export default function CodePanel(props) {
           </>
         )
       })}
+
+      {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && 
+        renderLine("Массив зеркальных докупок", "flagmirroradd", flagMirror)
+      }
+
+      {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && (() => {
+        const codeElement = React.createRef();
+
+        return (
+          <div className="code-panel-group">
+            <div className="code-panel-group-header">
+              <h3 data-should-output="true">Перевыставление в точку входа</h3>
+              <button
+                className="code-panel-group__copy-btn"
+                onClick={e => {
+                  selectElementContent(codeElement.current);
+
+                  navigator.clipboard?.writeText(codeElement.current.innerText)
+                    .then(() => message.success("Скопировано!"))
+                    .catch(error => message.error('Не удалось скопировать: ' + error));
+                }}
+              >
+                копировать
+              </button>
+            </div>
+            <label>
+              Размер отступа от цены закрытия
+              <NumericInput 
+                className="code-panel-group__input" 
+                defaultValue={rapradd}
+                format={value => round(value, 2)}
+                onBlur={rapradd => setRapradd(rapradd)}
+                suffix={currentPreset.type == "Лимитник" ? "%" : "п"}
+              />
+            </label>
+            <label>
+              Доля автоматической докупки
+              <NumericInput 
+                className="code-panel-group__input" 
+                defaultValue={sizepradd} 
+                format={value => round(value, 2)}
+                onBlur={sizepradd => setSizepradd(sizepradd)}
+                suffix="%"
+              />
+            </label>
+            <div className="code-panel-group-content" ref={codeElement}>
+              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
+                GParam.flagpradd = {String(flagPR)}
+              </pre>
+              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
+                GParam.rapradd = {rapradd}
+              </pre>
+              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
+                GParam.sizepradd = {sizepradd}
+              </pre>
+            </div>
+
+          </div>
+        )
+      })()}
+
+      {/* {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") &&
+        <>
+          
+          {renderLine("Перевыставление в точку входа", "flagpradd", flagPR)}
+          {renderLine(null, "rapradd", 0.98)}
+          {renderLine(null, "sizepradd", 100)}
+        </>
+      } */}
 
       {(() => {
         let condition = isRiskStatic;

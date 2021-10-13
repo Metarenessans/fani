@@ -518,6 +518,7 @@ const createData = (type, options, meta) => {
           ...data[subIndex],
           group: index,
           groupLength,
+          percentMode: currentOptions.percentMode
         };
       }
 

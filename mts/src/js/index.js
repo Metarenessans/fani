@@ -4,7 +4,7 @@ import { App } from "./app"
 ReactDOM.render(<App />, document.querySelector("#root"));
 
 // import "../sass/style.sass"
-// import SettingsGenerator from "./components/settings-generator"
+// import { SettingsGenerator } from "./components/settings-generator"
 // ReactDOM.render(
 //   <SettingsGenerator
 //     // defaultToolCode="SiU1"

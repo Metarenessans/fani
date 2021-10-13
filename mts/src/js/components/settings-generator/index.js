@@ -38,6 +38,7 @@ import stepConverter from './step-converter'
 
 import createData from './data'
 
+let open = false;
 let changed = false;
 let changedDueToCurrentPreset = false;
 let changedDueToAddPreset = false;
@@ -106,6 +107,7 @@ const SettingsGenerator = memo(props => {
       type: "Стандарт",
       options: {
         currentToolCode: defaultToolCode,
+        risk: 0.5,
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
@@ -126,6 +128,7 @@ const SettingsGenerator = memo(props => {
       type: "СМС + ТОР",
       options: {
         currentToolCode: defaultToolCode,
+        risk: 300,
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
@@ -155,6 +158,7 @@ const SettingsGenerator = memo(props => {
       type: "Лимитник",
       options: {
         currentToolCode: defaultToolCode,
+        risk: 0.5,
         [initialCurrentTab]: {
           closeAll: false,
           mode: "custom",
@@ -184,7 +188,25 @@ const SettingsGenerator = memo(props => {
 
   const [searchVal, setSearchVal] = useState("");
   const [isLong, setIsLong] = useState(true);
-  const [risk, setRisk] = useState(calcRisk(currentPreset.type));
+  
+  const { risk } = currentPreset.options;
+  function setRisk(risk) {
+    const presetsCopy = [...presets];
+    const currentPresetCopy = {
+      ...currentPreset,
+      options: {
+        ...currentPreset.options,
+        risk,
+      }
+    };
+    presetsCopy[currentPresetIndex] = currentPresetCopy;
+    
+    changedDueToCurrentPreset = false;
+    changedDueToAddPreset     = false;
+
+    setPresets(presetsCopy);
+  }
+
   const [isRiskStatic, setIsRiskStatic] = useState(true);
   const [comission, setComission] = useState(currentTool.dollarRate == 0 ? 1 : 45);
   const [load, setLoad] = useState(props.load || 0);
@@ -219,8 +241,9 @@ const SettingsGenerator = memo(props => {
   const [isReversedProfitableBying, setReversedProfitableBying] = useState(false);
   // Зеркальные докупки
   const [isMirrorBying, setMirrorBying] = useState(false);
-  // Обратные докупки (ТОР)
-  // По дефолту включен в СМС + ТОР
+  // Перевыставление в точку входа
+  const [isResetStartPointEnabled, setResetStartPointEnabled] = useState(false);
+  // Обратные докупки (ТОР), по дефолту включены в СМС + ТОР
   const [isReversedBying, setReversedBying] = useState(currentPreset.type == "СМС + ТОР");
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -404,10 +427,12 @@ const SettingsGenerator = memo(props => {
     });
   }
 
-  const totalIncome = mainData.length
-    ? mainData[mainData.length - 1]?.incomeWithComission
-    : 0;
-  
+  // TODO: test before cleanup
+  // const totalIncome = mainData.length
+  //   ? mainData[mainData.length - 1]?.incomeWithComission
+  //   : 0;
+
+  const totalIncome = [...mainData].pop().incomeWithComission ?? 0;
   const totalLoss = round((depo + secondaryDepo) * risk / 100, fraction);
 
   function updatePresetProperty(subtype, property, value) {
@@ -518,6 +543,12 @@ const SettingsGenerator = memo(props => {
 
   // Проверка обновления гены
   useEffect(() => {
+
+    if (open) {
+      dev && console.log("ГЕНА открыт, поэтому не нужно стягивать данные");
+      return;
+    }
+
     let prevGENAToCompare;
     if (prevGENA) {
       prevGENAToCompare = cloneDeep(prevGENA);
@@ -558,7 +589,8 @@ const SettingsGenerator = memo(props => {
         const currentTool = tools[currentToolIndex] || Tools.create();
 
         setSearchVal("");
-        setRisk(calcRisk(currentPreset.type))
+        // TODO: remove?
+        // setRisk(calcRisk(currentPreset.type))
         setIsRiskStatic(true);
         setComission(currentTool.dollarRate == 0 ? 1 : 45);
 
@@ -600,43 +632,12 @@ const SettingsGenerator = memo(props => {
         ranullPlusMode
       } = genaSave;
 
-      console.log(prevGENAToCompare, genaToCompare);
+      console.log("Стягиваем данные в гену", genaSave);
 
       setDepo(depo);
       setSecondaryDepo(secondaryDepo);
       setLoad(load);
       setCurrentTab(currentTab);
-
-      // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
-      let _presets = cloneDeep(presets);
-      if (genaSave.firstLoad) {
-        console.log("ПЕРВАЯ ЗАГРУЗКА");
-
-        _presets.splice(0, 3, ...initialPresets); 
-        // Переносится только инструмент
-        _presets = _presets.map((preset, index) => {
-          preset.options.currentToolCode = genaSave.presets[index].options.currentToolCode;
-          preset.options[initialCurrentTab].customData[0].preferredStep = 
-            genaSave.presets[index].options[initialCurrentTab].customData[0].preferredStep;
-          return preset;
-        })
-      }
-
-      _presets = _presets.map(preset => {
-        preset.percentMode = preset.percentMode ?? "total";
-        return preset;
-      })
-      
-      setPresets(_presets);
-      
-      const currentPreset = _presets.find(preset => preset.name == currentPresetName);
-      const currentPresetIndex = _presets.indexOf(currentPreset);
-      if (currentPresetIndex > 2) {
-        setComission(comission);
-      }
-      if (currentPreset) {
-        setRisk(calcRisk(currentPreset.type));
-      }
 
       setCurrentPresetName(currentPresetName);
       setProfitableBying(isProfitableBying);
@@ -650,7 +651,37 @@ const SettingsGenerator = memo(props => {
 
       setIsLong(isLong);
 
-      // ~~
+      // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
+      let _presets = cloneDeep(presets);
+      if (genaSave.firstLoad) {
+        console.log("ПЕРВАЯ ЗАГРУЗКА");
+
+        _presets.splice(0, 3, ...initialPresets);
+        // Переносится только инструмент
+        _presets = _presets.map((preset, index) => {
+          preset.options.currentToolCode = genaSave.presets[index].options.currentToolCode;
+          preset.options[initialCurrentTab].customData[0].preferredStep =
+            genaSave.presets[index].options[initialCurrentTab].customData[0].preferredStep;
+          return preset;
+        })
+      }
+
+      _presets = _presets.map(preset => {
+        preset.percentMode = preset.percentMode ?? "total";
+        return preset;
+      })
+
+      setPresets(_presets);
+
+      const currentPreset = _presets.find(preset => preset.name == currentPresetName);
+      const currentPresetIndex = _presets.indexOf(currentPreset);
+      if (currentPresetIndex > 2) {
+        setComission(comission);
+      }
+      // TODO: remove?
+      if (currentPreset) {
+        // setRisk(calcRisk(currentPreset.type));
+      }
 
       setChangedToolManually(false);
       setChangedDepoManually(false);
@@ -662,8 +693,9 @@ const SettingsGenerator = memo(props => {
         changedDueToAddPreset = false;
       }
       else {
-        setShouldRegisterUpdate(true);
       }
+
+      setShouldRegisterUpdate(true);
     }
   });
 
@@ -686,8 +718,6 @@ const SettingsGenerator = memo(props => {
       setDepo(base);
       setSecondaryDepo(0);
     }
-
-    setRisk(calcRisk(currentPreset.type));
 
     setReversedBying(currentPreset.type == "СМС + ТОР");
 
@@ -1207,7 +1237,10 @@ const SettingsGenerator = memo(props => {
                             Прибыль
                           </Tooltip>
                         }
-                        value={formatNumber(round(totalIncome, 1)) + " (" + round(totalIncome / investorDepo * 100, 2) + "%)"}
+                        value={
+                          formatNumber(round(totalIncome, 1)) + 
+                          " (" + round(totalIncome / depoSum * 100, 2) + "%)"
+                        }
                         formatValue={false}
                       />
                       <PairJSX
@@ -1369,14 +1402,15 @@ const SettingsGenerator = memo(props => {
                     <NumericInput
                       className="input-group__input"
                       disabled={isReversedBying}
-                      defaultValue={risk}
+                      // defaultValue={risk}
+                      defaultValue={currentPreset.options.risk}
                       format={val => formatNumber(round(val, 2))}
                       unsigned="true"
                       onBlur={value => {
                         if (value == round(risk, 2)) {
                           value = risk;
                         }
-                        setRisk(value)
+                        setRisk(value);
                       }}
                       suffix={<Tooltip title="Процент от депозита">%</Tooltip>}
                     />
@@ -1476,14 +1510,40 @@ const SettingsGenerator = memo(props => {
                 {["Стандарт"].indexOf(currentPreset.type) == -1 &&
                   <label className="switch-group settings-generator-content__row-header-mirror-switch">
                     <Switch
-                      checked={isMirrorBying}
-                      onChange={val => setMirrorBying(val)}
+                      checked={isResetStartPointEnabled}
+                      onChange={checked => {
+                        // Зеркальные докупки и Перевыставление в точку входа
+                        // не могут быть включены одновременно
+                        if (checked && isMirrorBying) {
+                          setMirrorBying(false);
+                        }
+                        setResetStartPointEnabled(checked);
+                      }}
                     />
                     <span className="switch-group__label">
-                      {currentPreset.type == "Лимитник" 
-                        ? "Перевыставление в точку входа"
-                        : "Зеркальные докупки (СМС)"
-                      }
+                      Перевыставление<br/>
+                      в точку входа
+                    </span>
+                  </label>
+                }
+
+                {/* В Стандарте нет зеркальных докупок */}
+                {["Стандарт"].indexOf(currentPreset.type) == -1 &&
+                  <label className="switch-group settings-generator-content__row-header-mirror-switch">
+                    <Switch
+                      checked={isMirrorBying}
+                      onChange={checked => {
+                        // Зеркальные докупки и Перевыставление в точку входа
+                        // не могут быть включены одновременно
+                        if (checked && isResetStartPointEnabled) {
+                          setResetStartPointEnabled(false);
+                        }
+                        setMirrorBying(checked);
+                      }}
+                    />
+                    <span className="switch-group__label">
+                      Зеркальные докупки<br/>
+                      (СМС)
                     </span>
                   </label>
                 }
@@ -1679,12 +1739,11 @@ const SettingsGenerator = memo(props => {
                           aria-selected="false"
                           aria-controls="settings-generator-tab5"
                           id="settings-generator-tab5-control"
-                          hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
+                          // TODO: убрать?
+                          // hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
+                          hidden={true}
                           onClick={e => setCurrentTab(e.target.innerText)}>
-                    {currentPreset.type == "Лимитник"
-                      ? "Перевыставление в точку входа"
-                      : "Зеркальные докупки (СМС)"
-                    }
+                    Зеркальные докупки (СМС)
                   </Button>
 
                   <Button className="custom-btn"
@@ -1796,6 +1855,8 @@ const SettingsGenerator = memo(props => {
                            tool={currentTool}
                            contracts={contracts}
                            risk={risk}
+                           flagMirror={isMirrorBying}
+                           flagPR={isResetStartPointEnabled}
                            isRiskStatic={isRiskStatic}
                            ranull={ranull}
                            ranullMode={ranullMode}
@@ -1896,11 +1957,13 @@ const SettingsGenerator = memo(props => {
 
 const onSGOpen = () => {
   console.log("onSGOpen WOW");
+  open = true;
   changed = false;
 };
 
 const onSGClose = () => {
   console.log("onSGClose GAY");
+  open = false;
   changed = false;
 };
 
