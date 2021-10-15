@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button, Tooltip, Select, Progress, Checkbox, TimePicker } from 'antd/es'
+import moment from 'moment'
 
 import {
   PlusOutlined,
@@ -12,8 +13,13 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
+import { Tools, Tool, template, parseTool } from "../../../../../common/tools"
+
 import NumericInput from "../../../../../common/components/numeric-input"
+import sortInputFirst from "../../../../../common/utils/sort-input-first"
 import CrossButton from "../../../../../common/components/cross-button"
+
+import TimeRangePicker from "../time-range-picker"
 
 import round from "../../../../../common/utils/round"
 import num2str from "../../../../../common/utils/num2str"
@@ -25,17 +31,59 @@ import "./style.scss"
 
 const { Option } = Select;
 
+function onChangeTime(time, timeString) {
+  console.log(timeString, "timeString");
+}
+
 export default class TradeLog extends React.Component {
   constructor(props) {
     super(props);
-
+    
     this.state = {};
   }
 
-  render() {
-    let { onChange, currentRowIndex } = this.props;
+  getOptions() {
+    let { tools } = this.props;
+    return tools.map((tool, idx) => {
+      return {
+        idx: idx,
+        label: String(tool),
+      };
+    });
+  }
 
-    let { data } = this.state
+  getCurrentToolIndex() {
+    const { currentToolCode } = this.props;
+    
+    let { tools } = this.props;
+    return Tools.getToolIndexByCode(tools, currentToolCode);
+  }
+
+  getSortedOptions() {
+    let { searchVal } = this.props
+    return sortInputFirst(searchVal, this.getOptions());
+  }
+
+  render() {
+    let { 
+      onChange, 
+      currentRowIndex, 
+      rowData, 
+      tools, 
+      setSeachVal,
+      toolsLoading,
+    } = this.props;
+
+    let {
+      enterTime,
+      long,
+      short,
+      impulse,
+      postponed,
+      levels,
+      breakout,
+      result,
+    } = rowData[currentRowIndex];
 
     return (
       <>
@@ -54,10 +102,42 @@ export default class TradeLog extends React.Component {
               </div>
 
               <div className="trade-log-table-val trade-log-table-val--base trade-log-table-val-tool">
+                {/* Торговый инструмент */}
                 <Select
-                  value={"Инструменты"}
+                  key={currentRowIndex}
+                  value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                  onChange={currentToolIndex => {
+                    const currentTool = tools[currentToolIndex];
+                    const currentToolCode = currentTool.code;
+                    onChange("currentToolCode", currentToolCode, currentRowIndex)
+                  }}
+                  disabled={toolsLoading}
+                  loading ={toolsLoading}
+                  showSearch
+                  onSearch={(value) => setSeachVal(value)}
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                  style={{ width: "100%" }}
                 >
-                  {["Инструменты", "Инструмент", "Инструменты"].map((label, index) => <Option value={label} key={index} >{label}</Option>)}
+                  {(() => {
+                    if (toolsLoading && tools.length == 0) {
+                      return (
+                        <Option key={0} value={0}>
+                          <LoadingOutlined style={{ marginRight: ".2em" }} />
+                          Загрузка...
+                        </Option>
+                      )
+                    }
+                    else {
+                      return this.getSortedOptions().map((option) => (
+                        <Option key={option.idx} value={option.idx}>
+                          {option.label}
+                        </Option>
+                      ));
+                    }
+                  })()}
                 </Select>
               </div>
             </div>
@@ -70,10 +150,19 @@ export default class TradeLog extends React.Component {
               </div>
 
               <div className="trade-log-table-val trade-log-table-val--base trade-log-table-val-time">
-                <TimePicker
+                <TimePicker 
+                  key={currentRowIndex}
                   format={'HH:mm'}
-                  placeholder="введите время"
                   allowClear={true}
+                  onChange={onChangeTime}
+                  defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
+                  placeholder="Введите время"
+                  onChange={time => {
+                    let value = +time;
+                    console.log(value);
+                    onChange("enterTime", value, currentRowIndex);
+                  }}
+                  placeholder="введите время"
                 />
               </div>
             </div>
@@ -89,7 +178,14 @@ export default class TradeLog extends React.Component {
                   Long
                 </div>
                 <div className="check-box-container check-box-container--first">
-                  <Checkbox />
+                  <Checkbox
+                    key={currentRowIndex}
+                    checked={long}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("long", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
@@ -98,7 +194,13 @@ export default class TradeLog extends React.Component {
                   Short
                 </div>
                 <div className="check-box-container check-box-container--second">
-                  <Checkbox/>
+                  <Checkbox
+                    checked={short}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("short", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -114,7 +216,13 @@ export default class TradeLog extends React.Component {
                   Импульс
                 </div>
                 <div className="check-box-container check-box-container--first">
-                  <Checkbox />
+                  <Checkbox
+                    checked={impulse}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("impulse", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
@@ -124,7 +232,13 @@ export default class TradeLog extends React.Component {
                 </div>
 
                 <div className="check-box-container check-box-container--second">
-                  <Checkbox />
+                  <Checkbox
+                    checked={postponed}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("postponed", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -140,7 +254,13 @@ export default class TradeLog extends React.Component {
                   Уровни
                 </div>
                 <div className="check-box-container check-box-container--first">
-                  <Checkbox />
+                  <Checkbox
+                    checked={levels}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("levels", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
@@ -149,7 +269,13 @@ export default class TradeLog extends React.Component {
                   Пробои
                 </div>
                 <div className="check-box-container check-box-container--second">
-                  <Checkbox />
+                  <Checkbox
+                    checked={breakout}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("breakout", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -164,8 +290,7 @@ export default class TradeLog extends React.Component {
 
               <div className="trade-log-table-val trade-log-table-val--final">
                 <NumericInput
-                  className=""
-                  defaultValue={15}
+                  defaultValue={result || 0}
                   onBlur={(val) => {
                     onChange("result", val, currentRowIndex)
                   }}

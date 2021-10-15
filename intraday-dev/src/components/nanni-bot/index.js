@@ -251,7 +251,6 @@ export const NanniBot = () => {
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>
       <Button
-        
         disabled={loading}
         type="primary"
         shape="round"

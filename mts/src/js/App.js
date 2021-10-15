@@ -97,16 +97,16 @@ class App extends React.Component {
       /** Код текущего выбранного инструмента */
       currentToolCode: "SBER",
 
-      id:                  null,
-      saved:              false,
-      risk:                  .5,
-      isResetDisabled:     true,
-      scaleOffset:            0,
-      changedMinRange:        0,
-      changedMaxRange:        0,
-      movePercantage:         0,
-      profitRatio:            100,
-      searchVal:              "",
+      id:                null,
+      saved:            false,
+      risk:                .5,
+      isResetDisabled:   true,
+      scaleOffset:          0,
+      changedMinRange:      0,
+      changedMaxRange:      0,
+      movePercantage:       0,
+      profitRatio:        100,
+      searchVal:           "",
 
       // Индекс алгоритма МААНИ (0 - Стандарт, 1 - СМС + ТОР, 2 - Лимитник)
       mode:                  0,
@@ -1397,7 +1397,7 @@ class App extends React.Component {
 
                         <label>
                           <span className="visually-hidden">Торговый инструмент</span>
-                          
+                          {/* ~~ */}
                           {/* Торговый инструмент */}
                           <Select
                             onFocus={() => this.setState({ isToolsDropdownOpen: true })}

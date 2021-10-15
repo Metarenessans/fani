@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+
 import { Input } from "antd/es";
 
 import isEqual from "../../utils/is-equal";
@@ -151,9 +152,20 @@ class Config extends React.Component {
             <Input
               className="config__search"
               placeholder="Фильтр по названию"
+              
               onChange={(e) => {
                 const filter = e.target.value;
                 this.setState({ filter });
+              }}
+
+              onKeyDown={e => {
+                if (e.keyCode == 13) {
+                  document.querySelector(".config__search").blur()
+                }
+
+                if (e.keyCode == 27) {
+                  document.querySelector(".config__search").blur()
+                }
               }}
             />
 

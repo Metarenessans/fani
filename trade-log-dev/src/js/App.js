@@ -18,10 +18,14 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
-import "../../../common/api/fetch";
+import fetch from "../../../common/api/fetch"
 
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
+
+import { cloneDeep, isEqual } from "lodash"
+
+import { Tools, Tool, template, parseTool } from "../../../common/tools"
 
 import CrossButton           from "../../../common/components/cross-button"
 import NumericInput          from "../../../common/components/numeric-input"
@@ -31,75 +35,186 @@ import SecondStep            from "./components/second-step"
 import ThirdStep             from "./components/third-step"
 
 import "../sass/style.sass"
-
-const defaultToolData = {};
-
-const setFocusToNextButton = () => {
-  document.querySelector(".next-button").focus();
-}
+import { message } from 'antd';
 
 class App extends React.Component {
-
   constructor(props) {
     super(props);
 
     this.initialState = {
-      step: 1,
-      extraStep: false,
-      day:  1,
-      isSaved: false,
+      step:           1,
+      extraStep:  false,
+      extraSaved: false,
+
+      // DashboardData
+      rowData: new Array(5).fill(0).map( _ => {
+        return {
+          // значения для тул селекта
+          currentToolCode: "SBER",
+
+          isSaved: false,
+
+          // firstStep
+          enterTime:   null,
+          long:       false,
+          short:      false,
+          impulse:    false,
+          postponed:  false,
+          levels:     false,
+          breakout:   false,
+          result:         0,
+          practiceStep:   0,
+
+          // second step
+          calmnessBefore:       0,
+          calmnessDuring:       0,
+          calmnessAfter:        0,
+
+          collectednessBefore:  0,
+          collectednessDuring:  0,
+          collectednessAfter:   0,
+          
+          braveryBefore:        0,
+          braveryDuring:        0,
+          braveryAfter:         0,
+          
+          confidenceBefore:     0,
+          confidenceDuring:     0,
+          confidenceAfter:      0,
+          
+          compassionBefore:     0,
+          compassionDuring:     0,
+          compassionAfter:      0,
+          
+          greedinessBefore:      0,
+          greedinessDuring: 0,
+          greedinessAfter:            0,
+          
+          egoBefore:             0,
+          egoDuring:             0,
+          egoAfter:              0,
+          
+          euphoriaBefore:                 0,
+          euphoriaDuring:                 0,
+          euphoriaAfter:                 0,
+          
+          faultBefore:                    0,
+          faultDuring:                    0,
+          faultAfter:                    0,
+          
+          resentmentBefore:               0,
+          resentmentDuring:               0,
+          resentmentAfter:               0,
+          
+          angerBefore:                    0,
+          angerDuring:                    0,
+          angerAfter:                    0,
+          
+          // ~~
+          apathyBefore:                   0,
+          apathyDuring:                   0,
+          apathyAfter:                   0,
+
+          stagnationBefore:               0,
+          stagnationDuring:               0,
+          stagnationAfter:               0,
+
+
+
+          
+          marketVision:   false,
+          entrySkill:     false,
+          exitSkill:      false,
+          dealStay:       false,
+          mediumTermStay: false,
+          tradeAlgorithm: false,
+          boredom:        false,
+          excitement:     false,
+          tradeDesire:    false,
+
+          // third step
+          amy:                             false,
+          tmo:                             false,
+          recapitulation:                  false,
+          archetypesWork:                  false,
+          transactionTimeChange:           false,
+          noneWithdrawPendingApplications: false,
+          noReenterAfterClosingStopLoss:   false,
+          noDisablingRobot:                false,
+          inputVolumeControl:              false,
+          makeFaniCalculate:               false,
+          enterResultsInFani:              false,
+          screenshotTransactions:          false,
+          keyBehavioralPatternsIdentify:   false,
+        }
+      })
     };
 
     this.state = {
       ...this.initialState,
 
+      toolsLoading: false,
+      tools: [],
       currentRowIndex: 0,
-
-      rowData: [
-
-        {
-          // DashboardData
-          result: 115,
-          // TradeLogData
-        },
-
-        {
-          // DashboardData
-          result: 115,
-          // TradeLogData
-        },
-
-        {
-          // DashboardData
-          result: 115,
-          // TradeLogData
-        },
-
-        {
-          // DashboardData
-          result: 115,
-          // TradeLogData
-        },
-
-        {
-          // DashboardData
-          result: 115,
-          // TradeLogData
-        },
-      ]
+      searchVal:           "",
     };
   }
 
-  
+  componentDidUpdate(prevProps, prevState) {
+
+    if (prevState.step == 2 && this.state.step == 1) {
+      document.getElementById("trade-slider").scrollIntoView();
+    }
+    
+    if (prevState.step !== this.state.step && this.state.step == 2) {
+      document.getElementById("second-step").scrollIntoView();
+    }
+
+    if (prevState.step !== this.state.step && this.state.step == 3) {
+      document.getElementById("trade-slider").scrollIntoView();
+    }
+  }
+
+  componentDidMount() {
+    this.fetchTools();
+  }
+
+  setStateAsync(state = {}) {
+    return new Promise(resolve => this.setState(state, resolve))
+  }
+
+  fetchTools() {
+    return new Promise(resolve => {
+      const { investorInfo } = this.state;
+      const requests = [];
+      const parsedTools = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
+            .then(tools => Tools.sort(parsedTools.concat(tools)))
+            .then(tools => parsedTools.push(...tools))
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
+        .then(() => resolve())
+    })
+  }
+
   render() {
     let { 
       step, 
       extraStep, 
-      day, 
-      isSaved, 
       currentRowIndex, 
       rowData,
+      extraSaved,
     } = this.state;
+
+    let { currentToolCode, isSaved } = rowData[currentRowIndex];
 
     return (
       <Provider value={this}>
@@ -107,34 +222,89 @@ class App extends React.Component {
 
           <main className="main">
             <div className="hdOptimize" >
-              <div className="main-content">
+              <div 
+                className="main-content"
+                style={{
+                  overflow:
+                    document.querySelector(".trade-slider-active") ? "hidden" : ""
+                }}
+              >
+                <div className="page-header">
+                  <h2>Бинарный журнал сделок</h2>
+                </div>
 
                 <div className="container">
-                  
-                  <Dashboard
-                    rowData={rowData}
-                    currentRowIndex={currentRowIndex => this.setState({ currentRowIndex }) }
 
+                  <Dashboard
+                    key={rowData}
+                    rowData={rowData}
+                    currentRowIndex={currentRowIndex}
+                    setCurrentRowIndex={currentRowIndex => this.setState({ currentRowIndex }) }
+                    onChange={(prop, value, index) => {
+                      const rowDataClone = [...rowData];
+                      rowDataClone[index][prop] = value;
+                      this.setState({ rowData: rowDataClone })
+                    }}
+                    allPracticeStepsModify={(value) => {
+                      const rowDataClone = 
+                      [...rowData].map(row => {
+                        row.practiceStep = value;
+                        return row;
+                      });
+                      this.setState({ rowData: rowDataClone })
+                    }}
                   />
 
-                  <div className="trade-slider">
+                  <div className="add-button-container">
+                    <Button
+                      className="custom-btn"
+                      onClick={() => {
+                        const dataClone = [...rowData];
+                        dataClone.push({ ...rowData });
+                        dataClone[dataClone.length - 1].practiceStep = dataClone[0].practiceStep
+                        this.setState({ rowData: dataClone });
+                      }}
+                      style={ document.querySelector(".trade-slider-active") && ({display: "none"}) }
+                    >
+                      <PlusOutlined aria-label="Добавить день" />
+                      Добавить день
+                    </Button>
+                  </div>
+
+                  <div className="trade-slider" id="trade-slider">
                     <div className="trade-slider-container">
 
 
                       <div className="trade-slider-top">
                         <Button
                           className={"day-button"}
-                          onClick={e => this.setState({ day: day - 1 })}
-                          disabled={day == 1}
+                          onClick={e => this.setState({ currentRowIndex: currentRowIndex - 1, step: 1})}
+                          disabled={currentRowIndex == 0}
                         >
                           {"<< Предыдущий день"}
                         </Button>
 
-                        <p>День {day}</p>
+                        <p>День {currentRowIndex + 1}</p>
+                        <CrossButton
+                          className="cross-button"
+                          disabled={rowData.length == 1}
+                          onClick={() => {
+                            document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                            document.querySelector(".dashboard").classList.remove("dashboard-active");
+                            let rowDataClone = [...rowData];
+                            rowDataClone.splice(currentRowIndex, 1);
+
+                            this.setState({ 
+                              rowData: rowDataClone,
+                              currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                            });
+                          }}
+                        />
 
                         <Button
                           className={"day-button"}
-                          onClick={e => this.setState({ day: day + 1 })}
+                          disabled={currentRowIndex + 1 == rowData.length}
+                          onClick={e => this.setState({ currentRowIndex: currentRowIndex + 1, step: 1})}
                         >
                           {"Следующий день >>"}
                         </Button>
@@ -193,7 +363,7 @@ class App extends React.Component {
                             <svg fill={extraStep ? "#4859b4" : "#cacaca"} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M212.895 319.868c7.811 7.811 20.474 7.811 28.284 0l99.453-99.452c7.81-7.811 7.81-20.474 0-28.284-7.811-7.811-20.475-7.811-28.285 0l-85.31 85.31-27.384-27.384c-7.811-7.811-20.474-7.811-28.284 0-7.81 7.811-7.811 20.474 0 28.284l41.526 41.526z" /><path d="M416 0H96C84.954 0 76 8.954 76 20v376a20.003 20.003 0 0 0 9.709 17.15l160 96a20.001 20.001 0 0 0 20.58 0l160.001-96A20 20 0 0 0 436 396V20c0-11.046-8.954-20-20-20zm-20 384.676-140 84-140-84V40h280v344.676z" /></svg>
                           )}
 
-                          <span style={{ color: extraStep  ? "#4859b4" : "#cacaca" }} >
+                          <span style={{ color: extraStep ? "#4859b4" : "#cacaca" }}>
                             Корректировка
                           </span>
                         </div>
@@ -202,7 +372,14 @@ class App extends React.Component {
                       <div className="trade-slider-steps">
                         {step == 1 && (
                           <TradeLog
+                            key={rowData}
+                            rowData={rowData}
+                            tools={this.state.tools}
+                            searchVal={this.state.searchVal}
+                            setSeachVal={ val => this.setState({searchVal: val}) }
+                            currentToolCode={currentToolCode}
                             currentRowIndex={currentRowIndex}
+                            toolsLoading={this.state.toolsLoading}
                             onChange={(prop, value, index) => {
                               const rowDataClone = [...rowData];
                               rowDataClone[index][prop] = value;
@@ -212,11 +389,27 @@ class App extends React.Component {
                         )}
 
                         {step == 2 && (
-                          <SecondStep />
+                          <SecondStep
+                            // key={currentRowIndex}
+                            rowData={rowData}
+                            currentRowIndex={currentRowIndex}
+                            onChange={(prop, value, index) => {
+                              const rowDataClone = [...rowData];
+                              rowDataClone[index][prop] = value;
+                              this.setState({ rowData: rowDataClone })
+                            }}
+                          />
                         )}
 
                         {step == 3 && (
                           <ThirdStep
+                            rowData={rowData}
+                            currentRowIndex={currentRowIndex}
+                            onChange={(prop, value, index) => {
+                              const rowDataClone = [...rowData];
+                              rowDataClone[index][prop] = value;
+                              this.setState({ rowData: rowDataClone })
+                            }}
                             onClickTab={(boolean) => this.setState({ extraStep: boolean })}
                           />
                         )}
@@ -240,7 +433,9 @@ class App extends React.Component {
                         {step > 1 && (
                           <Button
                             className="custom-btn custom-btn--slider"
-                            onClick={e => this.setState({ step: step - 1, extraStep: false })}
+                            onClick={e => {
+                              this.setState({ step: step - 1, extraStep: false })
+                            }}
                             disabled={step == 1}
                           >
                             Назад
@@ -252,32 +447,35 @@ class App extends React.Component {
                             className="custom-btn custom-btn--slider next-button"
                             onClick={e => {
                               this.setState({ step: step + 1 })
-                              setFocusToNextButton()
                             }}
                             disabled={step == 3}
                           >
                             Далее
                           </Button>
                         )}
-                        
+
                         {(() => {
-                          if (step == 3 && !isSaved) {
+                          if (step == 3 && !extraSaved) {
                             return (
                               <Button
                                 className="custom-btn custom-btn--slider"
-                                onClick={() => this.setState({ isSaved: true, extraStep: true })}
+                                onClick={() => {
+                                  const rowDataClone = [...rowData];
+                                  rowDataClone[currentRowIndex].isSaved = true;
+                                  this.setState({ rowData: rowDataClone, extraStep: true, extraSaved: true  })
+                                }}
                               >
                                 Сохранить
                               </Button>
                             )
                           }
                           
-                          if (step == 3 && isSaved) {
+                          if (step == 3 && extraSaved) {
                             return (
                               <Button
                                 className="custom-btn custom-btn--slider"
                                 onClick={e => {
-                                  this.setState({ step: 1, extraStep: false, isSaved: false });
+                                  this.setState({ step: 1, extraStep: false, extraSaved: false});
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                   document.querySelector(".dashboard").classList.remove("dashboard-active");
                                 }}

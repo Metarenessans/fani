@@ -82,6 +82,8 @@ constructor(props) {
       toolsLoading: true,
 
       isFocused: false,
+
+      currentToolIndex:  0,
     };
 
     this.state = {
@@ -104,6 +106,10 @@ constructor(props) {
   componentDidMount() {
     this.bindEvents();
     this.fetchInitialData();
+
+    if (this.state.tools !== undefined) {
+      console.log(this.getCurrentTool(), "- TOOL")
+    }
   }
 
   setStateAsync(state = {}) {
@@ -155,7 +161,6 @@ constructor(props) {
     }, 1500);
   }
 
-  // ~~
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
       .then(response => this.applyInvestorInfo(response))
@@ -259,27 +264,82 @@ constructor(props) {
     })
   }
 
-  fetchSaves() {
-    fetchSavesFor("tor")
-      .then(response => {
-        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-        return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-      })
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            const save = saves[0];
-            const { id } = save;
+  // fetchSaves() {
+  //   fetchSavesFor("tor")
+  //     .then(response => {
+  //       const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+  //       return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
+  //     })
+  //     .then(saves => {
+  //       if (saves.length) {
+  //         const pure = params.get("pure") === "true";
+  //         if (!pure) {
+  //           const save = saves[0];
+  //           const { id } = save;
 
-            this.setState({ loading: true });
-            this.fetchSaveById(id)
-              .then(response => this.extractSave(response.data))
-              .catch(error => console.error(error));
+  //           this.setState({ loading: true });
+  //           this.fetchSaveById(id)
+  //             .then(response => this.extractSave(response.data))
+  //             .catch(error => console.error(error));
+  //         }
+  //       }
+  //     })
+  //     .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
+  // }
+
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      fetch("tor")
+        .then(response => {
+          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+          this.setState({ saves, loading: false });
+        })
+
+      fetch("getLastModifiedTorSnapshot")
+        .then(response => {
+          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+          if (!response.error && response.data?.name) {
+            const pure = params.get("pure") === "true";
+            if (!pure) {
+              this.setState({ loading: true });
+              return this.extractSave(response.data)
+                .then(resolve)
+                .catch(error => reject(error));
+            }
           }
-        }
-      })
-      .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
+          resolve();
+        })
+        .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
+          if (dev) {
+            const response = {
+              "error": false,
+              "data": {
+                "id": 0,
+                "name": null,
+                "dateCreate": 0,
+                "dateUpdate": 0,
+                "static": null
+              }
+            };
+
+            const saves = [{
+              "id": response.data.id,
+              "name": response.data.name,
+              "dateCreate": response.data.dateCreate,
+            }];
+
+            this.setStateAsync({ saves }).then(() => {
+              if (!response.error && response.data?.name) {
+                this.extractSave(response.data)
+              }
+            })
+          }
+        })
+    });
   }
 
   showAlert(msg = "") {
@@ -471,9 +531,26 @@ constructor(props) {
     return title;
   }
 
-  render() {
-    console.log(this.state.depo);
+  getCurrentTool() {
+    let { currentToolIndex, tools } = this.state
 
+    let currentTool = tools[currentToolIndex]
+
+    if (currentTool !== undefined) {
+      return currentTool
+    }
+    
+    // return currentTool
+  }
+
+  render() {
+    // let { currentToolIndex, tools} = this.state
+    // ~~
+    // { this.getCurrentTool() !== undefined && (
+    //   )}
+      // console.log(this.getCurrentTool().guarantee, "- TOOL" )
+    // console.log(this.getCurrentTool() !== undefined, "- guarantee" );
+    
     return (
       <Provider value={this}>
         <div className="page">
@@ -559,10 +636,13 @@ constructor(props) {
                           items.splice(index, 1);
                           this.setState({ items });
                         }
-
+                      }}
+                      onChangeTool={ value => {
+                        const { currentToolIndex } = this.state;
+                        this.setState({ currentToolIndex: value });
                       }}
                     />
-                  )
+                  ) 
                 }
               
               </div>

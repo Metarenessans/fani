@@ -262,7 +262,8 @@ export default class DashboardRow extends React.Component {
               onBlur={value => onChange("period", value)}
               unsigned="true"
               format={formatNumber}
-              min={0}
+              min={1}
+              max={50}
               suffix={ num2str(period, ["год", "года", "лет"]) }
             />
         
@@ -274,7 +275,8 @@ export default class DashboardRow extends React.Component {
               unsigned="true"
               onFocus={value => formatNumber(value)}
               format={formatNumber}
-              min={0}
+              min={260}
+              max={260*50}
               suffix="дн"
             />
           </span>

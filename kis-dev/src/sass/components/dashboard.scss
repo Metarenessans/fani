@@ -23,7 +23,7 @@
       }
     }
   }
-
+  
   .ant-input {
     text-align: start!important;
     font-size: 1em;
@@ -200,7 +200,7 @@
 
     &--month-pay {
       width: 8em;
-    } 
+    }
 
     // config
     &--dialog {
@@ -428,6 +428,54 @@
     text-align: center;
     white-space: nowrap;
 
+    &--profit-percent {
+      input {
+        padding-right: 1.55em;
+      }
+
+      .ant-input-suffix {
+        right: .5em!important;
+        top: 53%;
+      }
+    }
+    
+
+    &--invest-percent {
+      input {
+        padding-right: 1.15em;
+        width: 4.3em;
+      }
+
+      .ant-input-suffix {
+        right: -0.6em!important;
+        top: 53%;
+      }
+    }
+
+    &--ofz {
+       input {
+        width: 4.5em;
+        padding-right: 1.38em;
+      }
+
+      .ant-input-suffix {
+        right: .3em!important;
+        top: 53%;
+      }
+    }
+
+    &--active-invest {
+       input {
+        width: 4.5em;
+        padding-right: 1.38em;
+      }
+
+      .ant-input-suffix {
+        right: .3em!important;
+        top: 53%;
+      }
+    }
+    
     @include sm {
       padding: 0.75em .35em;
       min-height: 4em;

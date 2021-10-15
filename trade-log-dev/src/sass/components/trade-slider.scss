@@ -1,13 +1,14 @@
 .trade-slider {
-  position: relative;
-
-  right: -180%;
-  top: -46em;
-
-  transition: right 0.3s ease-out;
-
+  position: absolute;
+  width: 100%;
+  
+  right:  0;
+  top:    0;
+  transform: translateX(150%);
+  transition: transform .3s ease-out;
+  
   &-active {
-    right: 0%;
+    transform: translateX(0);
   }
   
   .day-button {
@@ -27,9 +28,35 @@
     gap: 2em;
 
     p {
+      position: relative;
       margin:  0;
       padding: 0;
       user-select: none;
+    }
+
+    .cross-button {
+      font-size: 1em!important;
+      display: flex!important;
+      position: absolute;
+      right: 15.9em;
+      top: 0.16em;
+
+      color: red;
+      opacity: .6;
+
+      &:hover {
+        color: red!important;
+        opacity: 1;
+      }
+
+      button {
+        font-size: 0.9em!important;
+
+        span {
+          display: flex;
+          align-items: center;
+        }
+      }
     }
 
     button {
@@ -117,6 +144,7 @@
 
 .main {
   position: relative;
+  overflow-x: none!important;
 }
 
 .blue-after-element {

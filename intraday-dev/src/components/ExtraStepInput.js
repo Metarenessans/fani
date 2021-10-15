@@ -50,7 +50,16 @@ export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
         }}
         value={stepValue}
         onChange={setStepValue}
-        onKeyDown={handleKeyboard}
+        // onKeyDown={handleKeyboard}
+        onKeyDown={ e => {
+          if (e.keyCode == 13) {
+            inputRef.current.blur()
+          }
+
+          if (e.keyCode == 27) {
+            inputRef.current.blur()
+          }
+        }}
         onStep={async (value) => {
           await setStepValue(value);
           await inputRef.current.blur();

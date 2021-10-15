@@ -8,13 +8,15 @@
   }
 
   &-icon {
-    right: 7px!important;
+    right: 11px!important;
   }
 }
+
 .ant-input {
-  font-size: 1.3em!important;
-  width: 3.7em!important;
-  height: 1.3em!important;
+  font-size: 1em!important;
+  padding-top: .2em;
+  padding-right: .6em!important;
+  width: 4.8em!important;
 
   &-suffix {
     font-size: 1em!important;
@@ -32,8 +34,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  
-  
+
   .check-box-container {
     display: inline-flex;
     text-align: center;

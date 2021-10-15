@@ -160,10 +160,19 @@ export const LoadTable = ({ tableIdx }) => {
                 }}
                 value={loadValueLocal}
                 onChange={setLoadValueLocal}
-                onKeyDown={(key) => {
-                  const codes = ["Enter", "NumpadEnter", "Escape"];
-                  if (codes.includes(key.code)) {
-                    inputRef.current.blur();
+                // onKeyDown={(key) => {
+                //   const codes = ["Enter", "NumpadEnter", "Escape"];
+                //   if (codes.includes(key.code)) {
+                //     inputRef.current.blur();
+                //   }
+                // }}
+                onKeyDown={e => {
+                  if (e.keyCode == 13) {
+                    inputRef.current.blur()
+                  }
+
+                  if (e.keyCode == 27) {
+                    inputRef.current.blur()
                   }
                 }}
                 onStep={async (value) => {

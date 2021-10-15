@@ -35,9 +35,25 @@ export default class ThirdStep extends React.Component {
   }
 
   render() {
-    let { onClickTab } = this.props;
+    let { onClickTab, onChange, currentRowIndex, rowData } = this.props;
 
     let { data } = this.state
+
+    let {
+      amy,
+      tmo,
+      recapitulation,
+      archetypesWork,
+      transactionTimeChange,
+      noneWithdrawPendingApplications,
+      noReenterAfterClosingStopLoss,
+      noDisablingRobot,
+      inputVolumeControl,
+      makeFaniCalculate,
+      enterResultsInFani,
+      screenshotTransactions,
+      keyBehavioralPatternsIdentify,
+    } = rowData[currentRowIndex]
 
     return (
       <div className="third-step">
@@ -63,28 +79,60 @@ export default class ThirdStep extends React.Component {
               <div className="third-step-table-row-container-row">
                 <p>ЭМИ</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={amy}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("amy", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
               <div className="third-step-table-row-container-row">
                 <p>ТМО</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={tmo}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("tmo", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
               <div className="third-step-table-row-container-row">
                 <p>Перепросмотр</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={recapitulation}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("recapitulation", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
               <div className="third-step-table-row-container-row">
                 <p>Работа с архетипами</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={archetypesWork}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("archetypesWork", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
 
@@ -114,14 +162,30 @@ export default class ThirdStep extends React.Component {
               <div className="third-step-table-row-container-row">
                 <p>Изменить время на сделку</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={transactionTimeChange}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("transactionTimeChange", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Не снимать отложенные заявки, выставленные до этого</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={noneWithdrawPendingApplications}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("noneWithdrawPendingApplications", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
               </div>
@@ -129,49 +193,105 @@ export default class ThirdStep extends React.Component {
               <div className="third-step-table-row-container-row">
                 <p>Не перезаходить после закрытия по Stop-Loss</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={noReenterAfterClosingStopLoss}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("noReenterAfterClosingStopLoss", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Не выключать робота</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={noDisablingRobot}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("noDisablingRobot", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Контролировать объём входа</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={inputVolumeControl}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("inputVolumeControl", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Делать расчёты ФАНИ</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={makeFaniCalculate}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("makeFaniCalculate", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Заносить результаты в ФАНИ</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={enterResultsInFani}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("enterResultsInFani", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
                 <p>Фиксировать сделки в скриншотах</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={screenshotTransactions}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("screenshotTransactions", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
             
               <div className="third-step-table-row-container-row">
-                <p>Веделять ключевые поведенченские паттерны и модели</p>
+                <p>Выделять ключевые поведенченские паттерны и модели</p>
                 <div className="third-step-table-check-box">
-                  <Checkbox className="check-box" aria-label="До входа" />
+                  <Checkbox
+                    className="check-box"
+                    key={currentRowIndex}
+                    checked={keyBehavioralPatternsIdentify}
+                    onChange={(val) => {
+                      let value = val.target.checked
+                      onChange("keyBehavioralPatternsIdentify", value, currentRowIndex)
+                    }}
+                  />
                 </div>
               </div>
           </div>

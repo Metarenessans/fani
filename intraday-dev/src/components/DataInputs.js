@@ -69,7 +69,16 @@ export const DataInputs = () => {
               precision={0}
               value={iterationQtyLocal}
               onChange={setIterationQtyLocal}
-              onKeyDown={(key) => handleKeyboard(key, iterationQtyRef)}
+              // onKeyDown={(key) => handleKeyboard(key, iterationQtyRef)}
+              onKeyDown={e => {
+                if (e.keyCode == 13) {
+                  iterationQtyRef.current.blur()
+                }
+
+                if (e.keyCode == 27) {
+                  iterationQtyRef.current.blur()
+                }
+              }}
               onStep={async (value) => {
                 await setIterationQtyLocal(value);
                 await iterationQtyRef.current.blur();
@@ -89,7 +98,16 @@ export const DataInputs = () => {
               parser={parser}
               value={stopValueLocal}
               onChange={setStopValueLocal}
-              onKeyDown={(key) => handleKeyboard(key, stopValueRef)}
+              // onKeyDown={(key) => handleKeyboard(key, stopValueRef)}
+              onKeyDown={e => {
+                if (e.keyCode == 13) {
+                  stopValueRef.current.blur()
+                }
+
+                if (e.keyCode == 27) {
+                  stopValueRef.current.blur()
+                }
+              }}
               onStep={async (value) => {
                 await setStopValueLocal(value);
                 await stopValueRef.current.blur();
@@ -109,7 +127,16 @@ export const DataInputs = () => {
               parser={parser}
               value={minYieldLocal}
               onChange={setMinYieldLocal}
-              onKeyDown={(key) => handleKeyboard(key, minYieldRef)}
+              // onKeyDown={(key) => handleKeyboard(key, minYieldRef)}
+              onKeyDown={e => {
+                if (e.keyCode == 13) {
+                  minYieldRef.current.blur()
+                }
+
+                if (e.keyCode == 27) {
+                  minYieldRef.current.blur()
+                }
+              }}
               onStep={async (value) => {
                 await setMinYieldLocal(value);
                 await minYieldRef.current.blur();
@@ -129,7 +156,16 @@ export const DataInputs = () => {
               parser={parser}
               value={yieldStepLocal}
               onChange={setYieldStepLocal}
-              onKeyDown={(key) => handleKeyboard(key, yieldStepRef)}
+              // onKeyDown={(key) => handleKeyboard(key, yieldStepRef)}
+              onKeyDown={e => {
+                if (e.keyCode == 13) {
+                  yieldStepRef.current.blur()
+                }
+
+                if (e.keyCode == 27) {
+                  yieldStepRef.current.blur()
+                }
+              }}
               onStep={async (value) => {
                 await setYieldStepLocal(value);
                 await yieldStepRef.current.blur();

@@ -24,37 +24,37 @@ import { result } from 'lodash'
 
 const { Option } = Select;
 
-const setFocusToNextButton = () => {
-  document.querySelector(".next-button").scrollTo();
+const scrollTop = () => {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
 }
 
 export default class Dashboard extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      dashboardData: [
-        {},
-        {},
-        {},
-        {},
-        {},
-      ],
-
-      // tradeLogData: [
-
-      // ],
-    };
+    this.state = {};
   }
 
   render() {
-    let { currentRowIndex, rowData } = this.props;
+    let { 
+      setCurrentRowIndex, 
+      rowData, 
+      onChange, 
+      allPracticeStepsModify,
+      currentRowIndex
+    } = this.props;
 
-    let { dashboardData } = this.state
-    
     return (
+      
       <>
-        <div className="dashboard">
+        <div
+          className="dashboard"
+          style={{
+            height:
+              document.querySelector(".trade-slider-active") ? "60em" : ""
+          }}
+        >
           <div className="title">
             Пошаговый план проработки
           </div>
@@ -63,11 +63,9 @@ export default class Dashboard extends React.Component {
             {
               (() => {
                 return (
-
-                  dashboardData.map((currentData, index) =>
-                  
+                  rowData.map((currentData, index) =>
                     <>
-                      <div className={clsx("dashboard-row", index === 0 && ("row-height-fix"))}>
+                      <div className={clsx("dashboard-row",index === 0 && ("row-height-fix"))}>
 
                         {/* col */}
                         <div className="dashboard-col">
@@ -92,7 +90,16 @@ export default class Dashboard extends React.Component {
                           )}
 
                           <div className="dashboard-val">
-                            Some text here
+                            <NumericInput
+                              defaultValue={rowData[index].practiceStep }
+                              onBlur={value => {
+                                if(index == 0) {
+                                  allPracticeStepsModify(value)
+                                }
+                                else onChange("practiceStep", value, index)
+                              }}
+                              suffix={"%"}
+                            />
                           </div>
                         </div>
                         {/* col */}
@@ -110,11 +117,9 @@ export default class Dashboard extends React.Component {
                               let result = rowData[index].result
                                
                               if (result) {
-                                return result
+                                return result + "%"
                               }
-
                               else return "-"
-
                             })()}
                           </div>
                         </div>
@@ -128,16 +133,25 @@ export default class Dashboard extends React.Component {
 
                           <div className="dashboard-val">
                             <Button
+                              key={rowData}
                               className="custom-btn"
                               aria-label="просмотр лога"
                               onClick={() => {
-                                setFocusToNextButton()
                                 document.querySelector(".trade-slider").classList.add("trade-slider-active")
                                 document.querySelector(".dashboard").classList.add("dashboard-active")
-                                currentRowIndex(index)
+                                setCurrentRowIndex(index)
+                                scrollTop()
                               }}
                             >
-                              Просмотр
+                              {(() => {
+                                let result = rowData[index].result;
+
+                                if (!result) {
+                                  return "Добавить"
+                                }
+
+                                else return "Просмотр"
+                              })()}
                             </Button>
                           </div>
                         </div>
@@ -148,19 +162,6 @@ export default class Dashboard extends React.Component {
                 )
               })()
             }
-          </div>
-          <div className="add-button-container">
-            <Button 
-              className="custom-btn"
-              onClick={() => {
-                const dataClone = [...data];
-                dataClone.push({ ...data });
-                this.setState({ data: dataClone });
-              }}
-            >
-              <PlusOutlined aria-label="Добавить день" />
-              Добавить день
-            </Button> 
           </div>
         </div>
       </>
