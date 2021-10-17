@@ -46,7 +46,7 @@ import NumericInput            from "../../../common/components/numeric-input"
 import Header                  from "./components/header"
 import CustomSlider            from "../../../common/components/custom-slider"
 
-import { SettingsGenerator, onSGOpen } from "./components/settings-generator"
+import { SettingsGenerator, onSGOpen, onSGClose } from "./components/settings-generator"
 
 function delay(ms) {
   return new Promise(resolve =>
@@ -532,8 +532,7 @@ class App extends React.Component {
           let value = lastPrimaryRow.inPercent
             ? percentToSteps(lastPrimaryRow.preferredStep, currentTool, contracts)
             : lastPrimaryRow.preferredStep === "" ? currentTool.adrDay : lastPrimaryRow.preferredStep;
-          value /= (lastPrimaryRow.length || 1);
-  
+          
           totalStep += value;
         }
       }
@@ -545,8 +544,7 @@ class App extends React.Component {
           const value = lastSecondaryRow.inPercent
             ? percentToSteps(lastSecondaryRow.preferredStep, currentTool, contracts)
             : lastSecondaryRow.preferredStep === "" ? currentTool.adrDay : lastSecondaryRow.preferredStep;
-          value /= (lastSecondaryRow.length || 1);
-  
+          
           totalStep += value;
         }
       }
@@ -596,7 +594,6 @@ class App extends React.Component {
 
         const totalStep = getStepFromPreset(currentPreset);
         // Шаг в Гене не равен шагу в МТС
-        console.warn("Ход в гене:", totalStep, "ход в мтс:", step);
 
         // Если передвинули ползунок вручную, то перенос хода в мтс не требуется
         if (this.state.changedPriceRangeManually) {
@@ -750,14 +747,13 @@ class App extends React.Component {
         requests.push(
           fetch(request)
             .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(parsedTools.concat(tools)))
             .then(tools => parsedTools.push(...tools))
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
+      Promise.allSettled(requests)
+        .then(() => this.setStateAsync({ tools: Tools.sort(parsedTools), toolsLoading: false }))
         .then(() => resolve())
     })
   }
@@ -1278,7 +1274,6 @@ class App extends React.Component {
     // Если текущий режим заблокирован, откатываемся к доступному
     if (disabledModes[mode]) {
       mode = disabledModes.indexOf(false);
-      // ~~
       console.warn("Текущий режим заблокирован, откатываемся к доступному");
       onAlgorythmChange(mode, presetSelection[mode]);
     }
@@ -2370,6 +2365,7 @@ class App extends React.Component {
           {/* ГЕНА */}
           {(() => {
             const onClose = (save, e) => {
+              // TODO: clean up
               const { genaSave } = this.state;
 
               const target = e?.target || document.querySelector(".settings-button");
@@ -2381,27 +2377,11 @@ class App extends React.Component {
               delete genaSavePure.key;
               delete genaSavePure.currentTab;
               
-              if (saveToCompare?.currentPresetName != genaSavePure?.currentPresetName) {
-                // console.log("Изменился пресет");
-
-                // delete saveToCompare.currentPresetName;
-                // delete genaSavePure.currentPresetName;
-
-                // delete saveToCompare.totalIncome;
-                // delete genaSavePure.totalIncome;
-
-                // delete saveToCompare.totalLoss;
-                // delete genaSavePure.totalLoss;
-              }
-              // console.log("On close", saveToCompare, target);
-              // console.log("comparing", saveToCompare, genaSavePure, !genaSavePure && isEqual(saveToCompare, genaSavePure));
-
               let changed = sgChanged;
               if (genaSavePure == null) {
                 changed = true;
               }
               else if (changed) {
-                // console.log(saveToCompare, "and", genaSavePure, "are not equal!");
                 changed = true;
               }
 
@@ -2410,6 +2390,7 @@ class App extends React.Component {
               }
               else {
                 dialogAPI.close("settings-generator");
+                onSGClose();
                 this.setState({
                   shouldImportSG: true,
                   changedPriceRangeManually: false
@@ -2427,7 +2408,7 @@ class App extends React.Component {
                   depo={depo}
                   tools={tools}
                   load={percentage}
-                  toolsLoading={toolsLoading}
+                  toolsLoading={toolsLoading || chartLoading}
                   investorInfo={investorInfo}
                   defaultToolCode={currentToolCode}
                   currentToolCode={currentToolCode}
@@ -2439,7 +2420,7 @@ class App extends React.Component {
                     this.saveGENA(genaSave);
                   }}
                   onUpdate={(genaSave, tableData, changed) => {
-                    console.log("onUpdate", "changed", changed);
+                    // console.log("onUpdate", "changed", changed);
                     sgChanged = sgChanged || changed;
                     genaTable = tableData;
                     this.setStateAsync({ genaSave });
@@ -2471,14 +2452,14 @@ class App extends React.Component {
             confirmText="ОК"
             onConfirm={e => {
               dialogAPI.close("settings-generator");
-              if (unsavedGena) {
-                this.setStateAsync({
-                  genaSave: { ...unsavedGena, key: Math.random() },
-                  shouldImportSG: true
+              onSGClose();
+              if (lastSavedSG) {
+                // TODO: откат к предыдущему сохраненному сейву гену
+                console.log("Откатываемся к предыдущему сохраненному сейву гены");
+                this.setState({
+                  genaSave: cloneDeep(lastSavedSG),
+                  shouldImportSG: true,
                 })
-                  .then(() => {
-                    unsavedGena = null;
-                  });
               }
               return true;
             }}

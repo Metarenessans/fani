@@ -175,6 +175,7 @@ $m: .4475;
           }
 
           &:nth-child(5n) {
+            width: initial;
             margin-right: 0;
           }
 
@@ -196,7 +197,7 @@ $m: .4475;
 
           &:nth-child(4),
           &:nth-child(8) {
-            width: 16em;
+            width: 15em;
             &::before {
               width: 11.5em;
             }
@@ -272,7 +273,8 @@ $m: .4475;
       }
 
       &:nth-child(n + 2) thead {
-        visibility: collapse;
+        // visibility: collapse;
+        display: none;
         padding: 0 !important;
       }
 

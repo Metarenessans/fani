@@ -14,6 +14,7 @@ import {
 
 import NumericInput from "../../../../common/components/numeric-input"
 import CrossButton  from "../../../../common/components/cross-button"
+import CustomSelect from "../../../../common/components/custom-select"
 
 import round          from "../../../../common/utils/round"
 import num2str        from "../../../../common/utils/num2str"
@@ -48,15 +49,10 @@ function onScroll() {
   }
 }
 
+// TODO: добавить PropTypes или JSDoc с описанием всех пропсов и зачем они нужны
 export default class DashboardRow extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      periods: [{}, {}, {}, {}],
-      
-      tools: [{ name: "Работа" }, { name: "Бизнес" }, { name: "Пассивный доход" }, ]
-    };
 
     this.onScrollCb = this.onScrollCb.bind(this);
   }
@@ -80,35 +76,55 @@ export default class DashboardRow extends React.Component {
   render() {
     let {
       data,
+      options,
       onChange,
+      onExtraChange,
       onAddRow,
       onRemoveRow,
       onAddColumn,
       onRemoveColumn,
       firstTitle,
+      firstSubtitle,
       secondTitle,
       thirdTitle,
       thirdTitleVerticalLine,
       rowButton,
-      rowModifyButtons,
       extraPeriodColumns,
       stats,
       rowButtonColor,
+      extendable,
+      canRemoveLastRow,
+      showSum,
+      firstColumnContent,
+      fixedWidth,
+      sumTitle,
+      onPeriodChange,
+      onUpdateOptions,
+      goal,
+      progressGoalPrimary,
+      progressGoalSecondary,
     } = this.props;
     onChange = onChange || (() => console.log("Oh nein cringe"));
+    showSum = showSum ?? true;
+    canRemoveLastRow = canRemoveLastRow ?? false;
 
     const containerElement = React.createRef();
 
-    const { periods } = this.state;
-    
     return (
-      <div className="dashboard" ref={containerElement}>
+      <div 
+        className={clsx(
+          "dashboard",
+          extraPeriodColumns && "extended-height",
+          !showSum && "no-sum"
+        )}
+        ref={containerElement}
+      >
       
         {!stats &&
           <div className="dashboard-header">
             <p>{firstTitle   || ""}</p>
             <p >{secondTitle || ""}</p>
-            <p className={thirdTitleVerticalLine && ".trird-title-before-element"}>
+            <p className={thirdTitleVerticalLine && "trird-title-before-element"}>
               {thirdTitle  || ""}
             </p>
           </div>
@@ -120,38 +136,41 @@ export default class DashboardRow extends React.Component {
             <div 
               className={clsx(
                 "dashboard-inner",
-                rowIndex > 0 ? "row-height-fix" : "",
-                extraPeriodColumns && ( "dashboard-inner-width-fix")
+                (rowIndex > 0 || rowIndex == data.length - 1) && "row-height-fix",
+                extraPeriodColumns && "dashboard-inner-width-fix",
+                (!showSum && rowIndex == data.length - 1) && "reset-height"
               )}
               key={rowIndex}
             >
               {/* col */}
               <div className="dashboard-col dashboard-col--tools">
                 <span className={"dashboard-key dashboard-tool"} hidden={rowIndex > 0}>
-                  Источник дохода
+                  {firstSubtitle}
                 </span>
                 <span
-                  className={clsx("dashboard-val dashboard-val--tool",
+                  className={clsx(
+                    "dashboard-val",
+                    "dashboard-val--tool",
                     rowIndex % 2 && "background-fix"
                   )}
                 >
-                  <Select
-                    className="dashboard__select dashboard__select--wide" 
-                    value={currentData.currentTool}
-                    showSearch
-                    style={{ width: "100%" }}
-                    onSelect={value => onChange("currentTool", value, rowIndex)}
-                  >
-                    {["Работа", "Бизнес", "Пассивный доход"].map((label, index) => 
-                      <Option value={label} key={index} >{label}</Option>
-                    )}
-                  </Select>
+                  {firstColumnContent
+                    ? firstColumnContent(rowIndex)
+                    :
+                      <CustomSelect
+                        type="text"
+                        options={options}
+                        value={currentData.currentTool}
+                        onChange={value => onChange("currentTool", value, rowIndex)}
+                        onAddOption={(newOption, options) => onUpdateOptions(options)}
+                      />
+                  }
                 </span>
 
                 {/* Выводится только в последней строке */}
-                {rowIndex == data.length - 1 && (
+                {showSum && showSum && rowIndex == data.length - 1 && (
                   <span className="dashboard-key dashboard-key-result dashboard-key-summ">
-                    Сумма:
+                    {sumTitle || "Сумма:"}
                   </span>
                 )}
               </div>
@@ -175,22 +194,38 @@ export default class DashboardRow extends React.Component {
                     onBlur={value => onChange("now", value, rowIndex)}
                     format={formatNumber}
                     unsigned="true"
-                    min={10_000}
+                    min={0}
                   />
                 </span>
                 
                 {/* Выводится только в последней строке */}
-                {rowIndex == data.length - 1 && (
+                {showSum && rowIndex == data.length - 1 && (
                   <span className="dashboard-key dashboard-key-result">
-                    {formatNumber(data.map(row => row.now).reduce((acc, curr) => acc + curr, 0))}
+                    {(() => {
+                      const value = data.map(row => row.now).reduce((acc, curr) => acc + curr, 0);
+                      const goal = progressGoalPrimary?.[0];
+                      const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
+
+                      return (
+                        <>
+                          {formatNumber(value)}
+                          {goal != null && 
+                            <Tooltip title="Покрытие расходов пассивным доходом">
+                              <Progress
+                                percent={round(goal / value * 100, 2)}
+                                format={_ => printedValue + "%"}
+                                status={printedValue >= 100 ? "success" : "normal"}
+                              />
+                            </Tooltip>
+                          }
+                        </>
+                      )
+                    })()}
                   </span>
                 )}
 
               </div>
               {/* col */}
-
-              {/* Проходимся в цикле по всем числовым ключам */}
-              {/* {data.} */}
 
               {/* col */}
               <div className="dashboard-col">
@@ -210,24 +245,47 @@ export default class DashboardRow extends React.Component {
                     onBlur={value => onChange("1", value, rowIndex)}
                     format={formatNumber}
                     unsigned="true"
-                    min={10_000}
+                    min={0}
                   />
                 </span>
 
                 {/* Выводится только в последней строке */}
-                {rowIndex == data.length - 1 && (
+                {showSum && rowIndex == data.length - 1 && (
                   <span className="dashboard-key dashboard-key-result">
-                    {formatNumber(data.map(row => row[1]).reduce((acc, curr) => acc + curr, 0))}
+                    {(() => {
+                      const value = data.map(row => row[1]).reduce((acc, curr) => acc + curr, 0);
+                      const goal = progressGoalPrimary?.[1];
+                      const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
+
+                      return (
+                        <>
+                          {formatNumber(value)}
+                          {goal != null &&
+                            <Tooltip title="Покрытие расходов пассивным доходом">
+                              <Progress
+                                percent={round(goal / value * 100, 2)}
+                                format={_ => printedValue + "%"}
+                                status={printedValue >= 100 ? "success" : "normal"}
+                              />
+                            </Tooltip>
+                          }
+                        </>
+                      )
+                    })()}
                   </span>
                 )}
               </div>
               {/* col */}
 
               <div 
-                className={clsx("dashboard-extra-container", "scroll-hide", extraPeriodColumns && "fixed-width")}
+                className={clsx(
+                  "dashboard-extra-container",
+                  "scroll-hide",
+                  (fixedWidth || extraPeriodColumns) && "fixed-width"
+                )}
                 onScroll={e => {
                   const scrollLeft = e.target.scrollLeft;
-                  const rows = [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                  [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
                     element.scrollLeft = scrollLeft;
                   });
                 }}
@@ -246,39 +304,55 @@ export default class DashboardRow extends React.Component {
                           <NumericInput
                             className="dashboard__input"
                             defaultValue={numericKey}
+                            disabled={!onPeriodChange}
                             size={"small"}
-                            onBlur={value => ""}
+                            onBlur={value => onPeriodChange(value, numericKey)}
                             suffix={num2str(numericKey , ["год", "года","лет"])}
                             unsigned="true"
                             min={0}
                           />
 
-                          {/* ~~ */}
                           <CrossButton
                             className="dashboard-key__remove-btn"
+                            disabled={!onRemoveColumn}
                             onClick={e => onRemoveColumn(numericKey)}
                           />
                         </span>
 
-                        <span
-                          className={clsx("dashboard-val dashboard-val--tool",
-                            rowIndex % 2 && "background-fix"
-                          )}
-                        >
+                        <span className={clsx("dashboard-val dashboard-val--tool", rowIndex % 2 && "background-fix")}>
                           <NumericInput
                             className="dashboard__input"
                             defaultValue={currentData[numericKey]}
                             onBlur={value => onChange(numericKey, value, rowIndex)}
                             format={formatNumber}
                             unsigned="true"
-                            min={10_000}
+                            min={0}
                           />
                         </span>
 
                         {/* Выводится только в последней строке */}
-                        {rowIndex == data.length - 1 && (
+                        {showSum && rowIndex == data.length - 1 && (
                           <span className="dashboard-key dashboard-key-result">
-                            {formatNumber(data.map(row => row[numericKey]).reduce((acc, curr) => acc + curr, 0))}
+                            {(() => {
+                              const value = data.map(row => row[numericKey]).reduce((acc, curr) => acc + curr, 0);
+                              const goal = progressGoalPrimary?.[2 + columnIndex];
+                              const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
+
+                              return (
+                                <>
+                                  {formatNumber(value)}
+                                  {goal != null &&
+                                    <Tooltip title="Покрытие расходов пассивным доходом">
+                                      <Progress
+                                        percent={round(goal / value * 100, 2)}
+                                        format={_ => printedValue + "%"}
+                                        status={printedValue >= 100 ? "success" : "normal"}
+                                      />
+                                    </Tooltip>
+                                  }
+                                </>
+                              )
+                            })()}
                           </span>
                         )}
 
@@ -289,7 +363,7 @@ export default class DashboardRow extends React.Component {
               </div>
 
               {/* extra extra container */}
-              {extraPeriodColumns && (
+              {extraPeriodColumns && extraPeriodColumns.length <= data.length && (
                 <div className="dashboard-extra-extra-container">
                   {/* col */}
                   <div className="dashboard-col">
@@ -307,19 +381,38 @@ export default class DashboardRow extends React.Component {
                     >
                       <NumericInput
                         className="dashboard__input"
-                        defaultValue={1_000_000}
-                        onBlur={() => ""}
+                        defaultValue={extraPeriodColumns[rowIndex][1]}
+                        onBlur={value => onExtraChange("1", value, rowIndex)}
                         format={formatNumber}
                         unsigned="true"
                         min={0}
                       />
                     </span>
 
+                    {/* Выводится только в последней строке */}
                     <span
                       className="dashboard-key dashboard-key-result"
                       hidden={rowIndex !== data.length - 1}
                     >
-                      {3_000_00}
+                      {(() => {
+                        const value = extraPeriodColumns.map(row => row[1]).reduce((acc, curr) => acc + curr, 0);
+                        const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
+
+                        return (
+                          <>
+                            {formatNumber(value)}
+                            {goal != null &&
+                              <Tooltip title="Покрытие расходов пассивным доходом">
+                                <Progress
+                                  percent={round(goal / value * 100, 2)}
+                                  format={_ => printedValue + "%"}
+                                  status={printedValue >= 100 ? "success" : "normal"}
+                                />
+                              </Tooltip>
+                            }
+                          </>
+                        )
+                      })()}
                     </span>
                   </div>
                   {/* col */}
@@ -328,48 +421,45 @@ export default class DashboardRow extends React.Component {
                     className="dashboard-extra-container scroll-hide"
                     onScroll={e => {
                       const scrollLeft = e.target.scrollLeft;
-                      const rows = [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                      [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
                         element.scrollLeft = scrollLeft;
                       });
                     }}
                   >
                     {(() => {
-                      {/* Перебор массива и рендеринг каждой отдельного стобца */ }
-                      let years = [3, 5, 10].concat(
-                        new Array(10).fill().map((number, index) => 10 + ((index + 1) * 5))
-                      )
-                      let { rowModifyButtons } = this.props
-                      
-                      const numericKeys = Object.keys(currentData)
+                      const numericKeys = Object.keys(data[rowIndex])
                         .map(key => !isNaN(+key) && key)
                         .filter(value => !!value)
                         .slice(1);
-
+                      
                       return (
                         numericKeys.map((numericKey, columnIndex) =>
-                          <div className="dashboard-col">
+                          <div className="dashboard-col" key={columnIndex}>
 
                             <span className="dashboard-key" hidden={rowIndex > 0}>
                               <NumericInput
                                 className="dashboard__input"
-                                defaultValue={years[columnIndex]}
+                                disabled={!onPeriodChange}
+                                defaultValue={numericKey}
                                 size={"small"}
-                                onBlur={() => ""}
-                                suffix={num2str(years[columnIndex], ["год", "года", "лет"])}
+                                onBlur={value => onPeriodChange(value, numericKey)}
+                                suffix={num2str(numericKey, ["год", "года", "лет"])}
                                 unsigned="true"
-                                min={0}
+                                min={1}
                               />
                             </span>
 
                             <span
-                              className={clsx("dashboard-val dashboard-val--tool",
+                              className={clsx(
+                                "dashboard-val",
+                                "dashboard-val--tool",
                                 rowIndex % 2 && "background-fix"
                               )}
                             >
                               <NumericInput
                                 className="dashboard__input"
-                                defaultValue={1_000_000}
-                                onBlur={() => ""}
+                                defaultValue={extraPeriodColumns[rowIndex][numericKey]}
+                                onBlur={value => onExtraChange(numericKey, value, rowIndex)}
                                 format={formatNumber}
                                 unsigned="true"
                                 min={0}
@@ -380,8 +470,25 @@ export default class DashboardRow extends React.Component {
                               className="dashboard-key dashboard-key-result"
                               hidden={rowIndex !== data.length - 1}
                             >
-                              {3_000_00}
-                              <Progress percent={30} />
+                              {(() => {
+                                const value = extraPeriodColumns.map(row => row[numericKey]).reduce((acc, curr) => acc + curr, 0);
+                                const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
+                                
+                                return (
+                                  <>
+                                    {formatNumber(value)}
+                                    {goal != null &&
+                                      <Tooltip title="Покрытие расходов пассивным доходом">
+                                        <Progress
+                                          percent={round(goal / value * 100, 2)}
+                                          format={_ => printedValue + "%"}
+                                          status={printedValue >= 100 ? "success" : "normal"}
+                                        />
+                                      </Tooltip>
+                                    }
+                                  </>
+                                )
+                              })()}
                             </span>
 
                           </div>
@@ -395,14 +502,15 @@ export default class DashboardRow extends React.Component {
             </div>
           )}
 
-          {!extraPeriodColumns && (
+          {extendable && !extraPeriodColumns && (
             <>
               <Button
                 className="custom-btn dashboard__add-column "
+                disabled={!onAddColumn}
                 onClick={() => onAddColumn()}
                 aria-label="Добавить период"
               >
-                <PlusOutlined />
+                <span className="dashboard__icon dashboard__icon--plus">+</span>
                 период
               </Button>
             </>
@@ -412,18 +520,19 @@ export default class DashboardRow extends React.Component {
         <div className={"row-modify__container"}>
           <Button
             className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            onClick={() => onAddRow && onAddRow()}
+            disabled={!onAddRow}
+            onClick={() => onAddRow()}
           >
-            <PlusOutlined aria-label="источник дохода" />
+            <span className="dashboard__icon dashboard__icon--plus">+</span>
             {rowButton}
           </Button>
 
           <Button
             className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={data.length == 1}
-            onClick={() => onRemoveRow && onRemoveRow()}
-            >
-            <MinusOutlined aria-label="источник дохода"/>
+            disabled={!onRemoveRow || (!canRemoveLastRow ? data.length == 1 : data.length == 0)}
+            onClick={() => onRemoveRow()}
+          >
+            <span className="dashboard__icon">—</span>
             {rowButton}
           </Button>
         </div>

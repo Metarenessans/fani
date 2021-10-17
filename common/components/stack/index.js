@@ -1,11 +1,16 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+
+import clsx from 'clsx'
 
 import './style.scss'
 
 export default function Stack(props) {
   return (
-    <div {...props} className={['stack'].concat(props.className).join(' ')}>
+    <div
+      {...props}
+      className={clsx("stack", props.className)}
+      style={{ "--space": props.space || "1.5rem" }}
+    >
       {props.children}
     </div>
   )

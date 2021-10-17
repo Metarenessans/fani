@@ -350,6 +350,7 @@ class App extends Component {
       Chart = module.Chart;
     });
 
+    // TODO: использовать fetchBonds из common
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
       .then(response => {

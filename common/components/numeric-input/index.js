@@ -45,7 +45,7 @@ export default class NumericInput extends React.Component {
       this.setState({ value: 0 })
       return;
     }
-    else if (defaultValue !== prevProps.defaultValue) {
+    else if (prevProps.defaultValue != defaultValue) {
       this.setState({ value: this.format(defaultValue) })
     }
   }
@@ -149,11 +149,12 @@ export default class NumericInput extends React.Component {
     var { value } = this.state;
     var { placeholder } = this.props;
 
-    if (placeholder && value === "") {
-      // return;
+    let val = value;
+
+    if (val === "") {
+      val = 0;
     }
 
-    let val = value;
     if (val) {
       val = this.parse(value);
       if (isNaN(val)) {

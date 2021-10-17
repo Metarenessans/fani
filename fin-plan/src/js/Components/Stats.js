@@ -69,10 +69,15 @@ export default class Stats extends React.Component {
       secondTitle,
       rowButton,
       rowModifyButtons,
-      extraPeriodColumns,
       stats,
+      title,
+      numericKeys,
+      multiplier,
     } = this.props;
-    onChange = onChange || (() => console.log("Oh nein cringe"));
+
+    multiplier = multiplier ?? 1;
+
+    const extraPeriodColumns = data.map(row => row.desirable).filter(val => !!val);
 
     const containerElement = React.createRef();
 
@@ -81,143 +86,114 @@ export default class Stats extends React.Component {
         
         <div className="dashboard-inner-wrap">
           {/* Перебор массива и рендеринг каждой отдельной строки */}
-          {data.map((currentData, rowIndex) => 
-            <div 
-              className={clsx(
-                "dashboard-inner",
-                rowIndex > 0 ? "row-height-fix" : "",
-                extraPeriodColumns && ( "dashboard-inner-width-fix")
-              )}
-              key={rowIndex}
-            >
-              {/* col */}
-              <div className="dashboard-col dashboard-col--tools">
-                
-                {/* Выводится только в последней строке */}
-                {true && (
-                  <span className="dashboard-key dashboard-key-result">
-                    Баланс на конец года:
-                  </span>
-                )}
-              </div>
-              {/* col */}
+          {data.map((currentData, rowIndex) => {
 
-              {/* col */}
-              <div className="dashboard-col ">
-                
-                {/* Выводится только в последней строке */}
-                {true && (
-                  <span className="dashboard-key dashboard-key-result">
-                    {formatNumber(data.map(row => row.now).reduce((acc, curr) => acc + curr, 0))}
-                  </span>
-                )}
-
-              </div>
-              {/* col */}
-
-              {/* Проходимся в цикле по всем числовым ключам */}
-              {/* {data.} */}
-
-              {/* col */}
-              <div className="dashboard-col">
-
-                {/* Выводится только в последней строке */}
-                {true && (
-                  <span className="dashboard-key dashboard-key-result">
-                    {formatNumber(data.map(row => row[1]).reduce((acc, curr) => acc + curr, 0))}
-                  </span>
-                )}
-              </div>
-              {/* col */}
-
+            return (
               <div 
-                className={clsx("dashboard-extra-container", "scroll-hide", extraPeriodColumns && "fixed-width")}
-                onScroll={e => {
-                  const scrollLeft = e.target.scrollLeft;
-                  const rows = [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                    element.scrollLeft = scrollLeft;
-                  });
-                }}
+                className={clsx(
+                  "dashboard-inner",
+                  rowIndex > 0 && "row-height-fix",
+                  extraPeriodColumns && ( "dashboard-inner-width-fix"),
+                  rowIndex == data.length - 1 && "reset-height"
+                )}
+                key={rowIndex}
               >
-                {(() => {
-                  const numericKeys = Object.keys(currentData)
-                    .map(key => !isNaN(+key) && key)
-                    .filter(value => !!value)
-                    .slice(1);
+                {/* col */}
+                <div className="dashboard-col dashboard-col--tools">
                   
-                  return (
-                    numericKeys.map((numericKey, columnIndex) =>
-                      <div className="dashboard-col">
-
-                        {/* Выводится только в последней строке */}
-                        {true && (
-                          <span className="dashboard-key dashboard-key-result">
-                            {formatNumber(data.map(row => row[numericKey]).reduce((acc, curr) => acc + curr, 0))}
-                          </span>
-                        )}
-
-                      </div>
-                    )
-                  )
-                })()}
-              </div>
-
-              {/* extra extra container */}
-              {extraPeriodColumns && (
-                <div className="dashboard-extra-extra-container">
-                  {/* col */}
-                  <div className="dashboard-col">
-
-                    <span
-                      className="dashboard-key dashboard-key-result"
-                      hidden={rowIndex !== data.length - 1}
-                    >
-                      {3_000_00}
-                    </span>
-                  </div>
-                  {/* col */}
-
-                  <div
-                    className="dashboard-extra-container scroll-hide"
-                    onScroll={e => {
-                      const scrollLeft = e.target.scrollLeft;
-                      const rows = [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                        element.scrollLeft = scrollLeft;
-                      });
-                    }}
-                  >
-                    {(() => {
-                      {/* Перебор массива и рендеринг каждой отдельного стобца */ }
-                      let years = [3, 5, 10].concat(
-                        new Array(10).fill().map((number, index) => 10 + ((index + 1) * 5))
-                      )
-                      let { rowModifyButtons } = this.props
-                      
-                      const numericKeys = Object.keys(currentData)
-                        .map(key => !isNaN(+key) && key)
-                        .filter(value => !!value)
-                        .slice(1);
-
-                      return (
-                        numericKeys.map((numericKey, columnIndex) =>
-                          <div className="dashboard-col">
-
-                            <span
-                              className="dashboard-key dashboard-key-result"
-                              hidden={rowIndex !== data.length - 1}
-                            >
-                              {3_000_00}
-                            </span>
-
-                          </div>
-                        )
-                      )
-                    })()}
-                  </div>
+                  {/* Выводится только в последней строке */}
+                  <span className="dashboard-key dashboard-key-result">
+                    {title}
+                  </span>
                 </div>
-              )}
+                {/* col */}
 
-            </div>
+                {/* col */}
+                <div className="dashboard-col ">
+                  
+                  {/* Выводится только в последней строке */}
+                  <span className="dashboard-key dashboard-key-result">
+                    {formatNumber(data[0] * multiplier)}
+                  </span>
+
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="dashboard-col">
+                  {/* Выводится только в последней строке */}
+                  <span className="dashboard-key dashboard-key-result">
+                    {formatNumber(data[1] * multiplier)}
+                  </span>
+                </div>
+                {/* col */}
+
+                <div 
+                  className={clsx("dashboard-extra-container", "scroll-hide", extraPeriodColumns && "fixed-width")}
+                  onScroll={e => {
+                    const scrollLeft = e.target.scrollLeft;
+                    [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                      element.scrollLeft = scrollLeft;
+                    });
+                  }}
+                >
+                  {(() => {
+                    return (
+                      numericKeys.map((numericKey, columnIndex) =>
+                        <div className="dashboard-col">
+
+                          {/* Выводится только в последней строке */}
+                          <span className="dashboard-key dashboard-key-result">
+                            {formatNumber(data[columnIndex + 2] * multiplier)}
+                          </span>
+
+                        </div>
+                      )
+                    )
+                  })()}
+                </div>
+
+                {/* extra extra container */}
+                {extraPeriodColumns && (
+                  <div className="dashboard-extra-extra-container">
+                    {/* col */}
+                    <div className="dashboard-col">
+                      <span className="dashboard-key dashboard-key-result">
+                        {formatNumber(data[numericKeys.length + 2] * multiplier)}
+                      </span>
+                    </div>
+                    {/* col */}
+
+                    <div
+                      className="dashboard-extra-container scroll-hide"
+                      onScroll={e => {
+                        const scrollLeft = e.target.scrollLeft;
+                        [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                          element.scrollLeft = scrollLeft;
+                        });
+                      }}
+                    >
+                      {(() => {
+                        {/* Перебор массива и рендеринг каждой отдельного стобца */ }
+                        return (
+                          numericKeys.map((numericKey, columnIndex) =>
+                            <div className="dashboard-col">
+
+                              <span className="dashboard-key dashboard-key-result">
+                                {formatNumber(data[numericKeys.length + 2 + columnIndex] * multiplier)}
+                              </span>
+
+                            </div>
+                          )
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )
+          }
           )}
 
         </div>

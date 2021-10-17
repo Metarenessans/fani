@@ -3,9 +3,9 @@ import { Select } from 'antd/es'
 const { Option } = Select;
 
 import round   from '../../utils/round';
-import isEqual from "../../utils/is-equal";
 
 import "./style.sass";
+import { cloneDeep, isEqual } from 'lodash';
 
 export default memo(class CustomSelect extends React.Component {
 
@@ -17,7 +17,7 @@ export default memo(class CustomSelect extends React.Component {
     this.inputElement = null;
 
     this.state = {
-      options: this.props.options || [],
+      options: cloneDeep(this.props.options) || [],
       index:   0
     };
 
@@ -36,18 +36,22 @@ export default memo(class CustomSelect extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { value, options} = this.props;
-    if (value != prevProps.value) {
-      this.onSelect(this.parseValue(value));
+    const { value, options } = this.props;
+    if (!isEqual(prevProps.options, options)) {
+      this.setState({ options }, () => this.onSelect(this.parseValue(this.props.value)));
     }
 
-    if (!isEqual(options, prevProps.options)) {
-      this.setState({ options }, () => this.onSelect(this.parseValue(value)));
+    if (prevProps.value != value) {
+      this.onSelect(this.parseValue(value));
     }
   }
 
   nextIndexOf(value) {
     const { options } = this.state;
+
+    if (this.props.type == "text") {
+      return options.length - 1;
+    }
 
     let index = -1;
     options.forEach((option, i) => {
@@ -60,11 +64,15 @@ export default memo(class CustomSelect extends React.Component {
   }
 
   addOption(value, cb) {
-    const { options } = this.state;
+    const options = cloneDeep(this.state.options);
+    const { onAddOption } = this.props;
 
-    let index = this.nextIndexOf(value) + 1;
+    const index = this.nextIndexOf(value) + 1;
     options.splice(index, 0, value);
 
+    if (onAddOption) {
+      onAddOption(value, options);
+    }
     this.setState({ options, index }, () => cb());
   }
 
@@ -100,6 +108,10 @@ export default memo(class CustomSelect extends React.Component {
   parseValue(value) {
     if (!value) {
       return;
+    }
+
+    if (this.props.type == "text") {
+      return value;
     }
 
     let { min, max, allowFraction } = this.props;
@@ -162,13 +174,14 @@ export default memo(class CustomSelect extends React.Component {
             onBlur();
           }
         }}
-        onChange={(index, element) => {
+        onChange={index => {
+          const options = cloneDeep(this.state.options);
           // Предотвращаем вызов this.onSelect() дважды
           if (this.inputElement && this.inputElement.value) {
             return;
           }
-          
-          var value = +(element.props.children + "").match(/\d+/)[0];
+
+          let value = options[index];
           value = this.parseValue(value);
           this.inputValue = value;
           this.onSelect(value, this.props.onChange);
@@ -187,7 +200,7 @@ export default memo(class CustomSelect extends React.Component {
 
             if (e.target.value) {
               let value = this.parseValue(e.target.value);
-              if (value != null && !isNaN(value)) {
+              if (value != null && (this.props.type == "text" ? true : !isNaN(value))) {
                 this.onSelect(value, this.props.onChange);
               }
             }
@@ -206,5 +219,11 @@ export default memo(class CustomSelect extends React.Component {
     )
   }
 }, (prevProps, nextProps) => {
-  return prevProps.value == nextProps.value && prevProps.disabled == nextProps.disabled
+  return false;
+  console.log(prevProps.options, nextProps.options, isEqual(prevProps.options, nextProps.options));
+  return (
+    prevProps.value == nextProps.value && 
+    prevProps.disabled == nextProps.disabled &&
+    isEqual(prevProps.options, nextProps.options)
+  ) 
 })

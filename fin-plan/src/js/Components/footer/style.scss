@@ -2,11 +2,11 @@
   position: relative;
   $root: &;
 
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
-  font-size: 1em;
+  gap: 1em;
 
-  // margin-top: 3em;
   padding: 2em 1em;
   
   font-size: 0.8em;
@@ -19,8 +19,7 @@
 
     height: .4em;
     width: 120em;
-    background: #ECB000;
-    opacity: 0.4;
+    background: #f7df99;
   }
 
   &::after {
@@ -31,8 +30,7 @@
     
     height: .4em;
     width: 120em;
-    background: #116B2C;
-    opacity: 0.4;
+    background: #9fc4aa;
   }
 
   &--stats {
@@ -41,6 +39,19 @@
     padding: 1em 0;
     
     text-align: center;
+  }
+
+  &-stats {
+    font-size: 1.9em;
+  }
+
+  &-info-line {
+    font-size: 1.6em;
+
+    &__key {
+      display: inline-block;
+      // min-width: 33.75ch;
+    }
   }
 
   & .ant-input {
@@ -58,23 +69,40 @@
     text-align: center;
   }
 
+  &-arrow {
+    position: absolute;
+    left: 100%;
+    top: 4.4em;
+    transform: translateY(-50%);
+    margin-left: 4.5em;
+
+    --size: 3.75em;
+    width:  var(--size);
+    height: var(--size);
+  }
+
   &-header {
 
-    &-arrow {
-      position: absolute;
-      left: 50%;
-      top:  2em;
-      transform: translateX(-50%);
+    &-title {
+      margin: 0;
+      width: 100%;
 
-      --size: 3.75em;
-      width:  var(--size);
-      height: var(--size);
+      font-size: 1.8em;
+      text-align: center;
+
+      &--uppercase {
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: .5em;
+      }
     }
 
     &-section {
+      width: 100%;
       position: relative;
       display: flex;
       justify-content: space-between;
+      align-items: flex-start;
 
       gap: 12em;
 
@@ -103,20 +131,38 @@
   }
 
   &-col {
+    position: relative;
+
     display: inline-flex;
     flex-direction: column;
-
+    
     width: 30em;
 
     &--fluid {
       width: 100%;
 
       .ant-input-suffix {
-        right: unset;
-        left: 50%;
-        transform: translateX(-50%);
+        // right: unset;
+        // left: 50%;
+        // transform: translateX(-50%);
 
-        margin-left: 1.75em;
+        // margin-left: 1.75em;
+      }
+    }
+
+    &__select {
+      flex-grow: 1;
+      margin-top: -0.2em!important;
+      margin-left: .5em !important;
+
+      font-size: 1em !important;
+
+      .ant-select-selection--single {
+        height: 1.4em;
+      }
+
+      .ant-select-selection-selected-value {
+        line-height: 1.4em;
       }
     }
 
@@ -124,15 +170,26 @@
     .numeric-input-wrap {
       width: 100%;
 
+      font-size: 1.4em;
       text-align: center;
+    }
+
+    .ant-input-suffix {
+      font-size: 1.4em !important;
     }
   }
 
   &-key {
+    display: flex;
     align-items: center;
+    padding-bottom: .3em;
 
     text-align:  left;
     font-size: 1.35em;
+
+    &--center {
+      justify-content: center;
+    }
   }
 
   // &-val {

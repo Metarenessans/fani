@@ -1,7 +1,3 @@
-.custom-btn {
-  font-size: .7em!important;
-}
-
 .fixed-width {
   min-width: 21.6em;
   // width: 16em;
@@ -50,16 +46,15 @@
 
   font-size: 1rem;
 
+  .custom-btn {
+    font-size: .7em;
+  }
+
   &--stats {
     overflow: visible;
     position: relative;
-    padding: 0;
-    margin: 0;
-    margin-top: 3.25em;
 
     box-shadow: none;
-
-    padding-top: 1em;
 
     #{$root}-col--tools {
       #{$root}-key-result:first-of-type {
@@ -69,10 +64,14 @@
       }
     }
 
-    #{$root}-key-result:first-of-type {
-      text-align: center !important;
+    #{$root}-key-result {
+      margin: 0;
+
       &:first-of-type {
         text-align: center !important;
+        &:first-of-type {
+          text-align: center !important;
+        }
       }
     }
 
@@ -111,6 +110,45 @@
 
   }
 
+  &.extended-height {
+    .trird-title-before-element::before,
+    .dashboard-header p + p::before {
+      height: calc(100% - 7.4em);
+    }
+  }
+
+  &.no-sum {
+    .trird-title-before-element::before,
+    .dashboard-header p + p::before {
+      height: calc(100% - 3.05em);
+    }
+  }
+
+  &__icon {
+    // background: pink;
+    margin-right: 0.2em;
+    display: inline-flex;
+    // width:  1ch;
+    height: 1ch;
+
+    position: relative;
+    top: 0.1em;
+    
+    font-size: 1.5em;
+
+    transform: scaleX(0.8);
+
+    &--plus {
+      font-size: 1.365em;
+      height: 1ch;
+      line-height: 1ch;
+      position: relative;
+      top: 0.15em;
+
+      transform: scaleX(1);
+    }
+  }
+
   &__delete-column {
     padding: 0.3em 1.5em;
     min-width: 1em;
@@ -121,6 +159,9 @@
   }
 
   &__add-column {
+    display: flex;
+    align-items: center;
+
     position: absolute;
     right:   0;
     top: 7.6em;
@@ -130,9 +171,9 @@
     padding: 0.3em 0.4em;
     // transform: translateX(-100%);
 
-    span+span {
-      margin-left: 4px!important;
-    }
+    // span+span {
+    //   margin-left: 4px!important;
+    // }
 
     .anticon {
       position: relative;
@@ -157,6 +198,22 @@
         font-weight: bold;
       }
 
+      &.trird-title-before-element {
+        // position: relative;
+
+        &::before {
+          content: '';
+          position: absolute;
+          z-index: 2;
+          display: block;
+          left:   48.8em;
+          top:    0;
+          width: .07em;
+          height: calc(100% - 5.25em);
+          background: #cacaca;
+        }
+      }
+
       + p {
         margin-left: 28.5ch;
 
@@ -167,10 +224,10 @@
           display: block;
           position: absolute;
           z-index: 2;
-          left: 12.8em;
-          top: 0;
+          left: 20em;
+          top:    0;
           width: .07em;
-          height: calc(100% - 7.3em);
+          height: calc(100% - 6em);
           background: #cacaca;
         }
       }
@@ -234,24 +291,7 @@
     overflow:  auto;
     
     overflow-y: hidden;
-    // width: 28em;
-    // background-color: pink;
-
   }
-  // ~~
-  // .trird-title-before-element {
-  //   &::before {
-  //     content: '';
-  //     position: absolute;
-  //     z-index: 3;
-  //     left: 0em;
-  //     top: 0;
-  //     width: 5em;
-  //     // height: calc(100% - 7.3em);
-  //     height: 7.3em;
-  //     background: hotpink;
-  //   }
-  // }
 
   .scroll-hide {
     overflow-y: hidden;
@@ -280,16 +320,34 @@
 
     &:last-of-type {
       overflow: initial;
-      height: 7.25em;
+      height: 6em;
 
       #{$root}-extra-container {
         padding-bottom: 0;
       }
     }
 
+    // Всего одна строка
+    &:only-of-type {
+      height: 6.6em;
+    }
+
     &-width-fix {
       max-width: 100%;
       padding-right: 0;
+
+      &:last-of-type {
+        height: 7.5em;
+      }
+
+      // Всего одна строка
+      &:only-of-type {
+        height: 7.95em;
+      }
+    }
+
+    &.reset-height {
+      height: initial !important;
     }
 
     &-wrap {
@@ -387,17 +445,18 @@
         top:  50%;
         transform: translate(-50%, -50%);
 
-          margin: 0;
-          margin-top: 0.2em;
+        width: initial;
+        margin: 0;
+        margin-top: 0.2em;
 
-        color: white;
+        color: white !important;
       }
     }
 
     &__remove-btn {
       position: absolute;
-      right: 1em;
-      top: 0.9em;
+      right:  0em;
+      top: 0.85em;
       transform: translateY(-50%);
 
       background: none;
@@ -416,25 +475,23 @@
       .ant-input {
         padding-top: 0;
         padding-bottom: 0;
-        width: 3.6em!important;
-        height: 1.5em!important;
+        width:  3em;
+        height: 1.5em;
 
-        color: black!important;
-        font-weight: 500!important;
-        font-weight: bold;
-        border: none!important;
+        color: black;
+        font-weight: normal;
 
-        text-align: left!important;
-
-        &:focus {
-          outline:    none !important;
-          border:     none !important;
-          box-shadow: none !important;
-        }
+        // &:focus {
+        //   outline:    none !important;
+        //   border:     none !important;
+        //   box-shadow: none !important;
+        // }
 
         &-suffix {
-          color: black;
-          right: 2.4em;
+          color: #000;
+          right: 0.9em;
+          background: pink;
+          width: 2em;
         }
       }
     }
