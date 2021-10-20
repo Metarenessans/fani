@@ -7,6 +7,8 @@ import {} from '@ant-design/icons'
 import params       from "../../../common/utils/params";
 import formatNumber from "../../../common/utils/format-number"
 
+import { cloneDeep, isEqual } from "lodash"
+
 import NumericInput          from "../../../common/components/numeric-input"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
@@ -106,9 +108,15 @@ constructor(props) {
   componentDidMount() {
     this.bindEvents();
     this.fetchInitialData();
+  }
 
-    if (this.state.tools !== undefined) {
-      console.log(this.getCurrentTool(), "- TOOL")
+  componentDidUpdate(prevProps, prevState) {
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
     }
   }
 
@@ -171,7 +179,7 @@ constructor(props) {
       .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
-
+  // ~~
   setFetchingToolsTimeout() {
     new Promise(resolve => {
       setTimeout(() => {
@@ -235,7 +243,7 @@ constructor(props) {
       Promise.all(requests).then(() => resolve())
     })
   }
-  
+
   fetchTools() {
     return new Promise(resolve => {
       let first = true;
@@ -264,37 +272,15 @@ constructor(props) {
     })
   }
 
-  // fetchSaves() {
-  //   fetchSavesFor("tor")
-  //     .then(response => {
-  //       const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-  //       return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-  //     })
-  //     .then(saves => {
-  //       if (saves.length) {
-  //         const pure = params.get("pure") === "true";
-  //         if (!pure) {
-  //           const save = saves[0];
-  //           const { id } = save;
-
-  //           this.setState({ loading: true });
-  //           this.fetchSaveById(id)
-  //             .then(response => this.extractSave(response.data))
-  //             .catch(error => console.error(error));
-  //         }
-  //       }
-  //     })
-  //     .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
-  // }
-
   fetchSaves() {
     return new Promise((resolve, reject) => {
-      fetch("tor")
+
+      fetchSavesFor("tor")
         .then(response => {
           const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          this.setState({ saves, loading: false });
+          return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
         })
-
+  
       fetch("getLastModifiedTorSnapshot")
         .then(response => {
           // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
@@ -303,7 +289,7 @@ constructor(props) {
             if (!pure) {
               this.setState({ loading: true });
               return this.extractSave(response.data)
-                .then(resolve)
+                .then(resolve())
                 .catch(error => reject(error));
             }
           }
@@ -325,13 +311,13 @@ constructor(props) {
                 "static": null
               }
             };
-
+  
             const saves = [{
               "id": response.data.id,
               "name": response.data.name,
               "dateCreate": response.data.dateCreate,
             }];
-
+  
             this.setStateAsync({ saves }).then(() => {
               if (!response.error && response.data?.name) {
                 this.extractSave(response.data)
@@ -339,7 +325,7 @@ constructor(props) {
             })
           }
         })
-    });
+    })
   }
 
   showAlert(msg = "") {
@@ -414,7 +400,7 @@ constructor(props) {
       onError(e);
     }
 
-    this.setState(state);
+    return this.setStateAsync(state)
   }
 
   reset() {
@@ -530,27 +516,40 @@ constructor(props) {
 
     return title;
   }
+  
+  /**
+  * Возвращает массив имён выбранных инструментов
+  */
+  getCurrentSelectedToolsName() {
+    const names = [];
+    const { items } = this.state;
+    items.map(item => names.push(item.selectedToolName));
+    return names;
+  }
+  
+  /**
+  * Возвращает массив индексов выбранных инструментов
+  */
+  getCurrentToolsIndex() {
+    const selectedToolsIndexArr = [];
+    const currentToolsName = this.getCurrentSelectedToolsName();
+    currentToolsName.map((item, index) => {
+      selectedToolsIndexArr.push(Tools.getToolIndexByCode(this.getTools(), currentToolsName[index]))
+    })
+    return selectedToolsIndexArr
+  }
 
-  getCurrentTool() {
-    let { currentToolIndex, tools } = this.state
-
-    let currentTool = tools[currentToolIndex]
-
-    if (currentTool !== undefined) {
-      return currentTool
-    }
-    
-    // return currentTool
+  getCurrentTools() {
+    const currentToolsArr = [];
+    const toolsIndexArr = this.getCurrentToolsIndex()
+    toolsIndexArr.map((item, index) => {
+      currentToolsArr.push(this.getTools()[index])
+    })
+    return currentToolsArr
   }
 
   render() {
-    // let { currentToolIndex, tools} = this.state
-    // ~~
-    // { this.getCurrentTool() !== undefined && (
-    //   )}
-      // console.log(this.getCurrentTool().guarantee, "- TOOL" )
-    // console.log(this.getCurrentTool() !== undefined, "- guarantee" );
-    
+    console.log(this.getCurrentTools());
     return (
       <Provider value={this}>
         <div className="page">

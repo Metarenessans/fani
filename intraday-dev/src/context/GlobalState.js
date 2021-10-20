@@ -145,6 +145,27 @@ export const GlobalProvider = ({ children }) => {
         payload: err.response,
       });
     }
+
+    try {
+      const res = await axios.get(
+        "https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedIntradaySnapshot"
+      );
+      if (!res.data.error) {
+        let sortedSaves = res.data.data.sort(
+          (a, b) => b.dateUpdate - a.dateUpdate
+        );
+
+        dispatch({
+          type: "GET_SAVES",
+          payload: sortedSaves,
+        });
+      }
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response,
+      });
+    }
   }
 
   async function getSave(id) {

@@ -1392,7 +1392,6 @@ class App extends React.Component {
 
                         <label>
                           <span className="visually-hidden">Торговый инструмент</span>
-                          {/* ~~ */}
                           {/* Торговый инструмент */}
                           <Select
                             onFocus={() => this.setState({ isToolsDropdownOpen: true })}
