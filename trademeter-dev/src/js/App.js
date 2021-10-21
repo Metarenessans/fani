@@ -811,8 +811,7 @@ class App extends Component {
       }
 
       state.customTools = staticParsed.customTools || [];
-      state.customTools = state.customTools
-        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
+      state.customTools = state.customTools.map(tool => Tool.fromObject(tool, { investorInfo: this.state.investorInfo }));
       // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
       
       // Кастомные инструменты пассивного дохода
@@ -1398,7 +1397,7 @@ class App extends Component {
    * Возвращает выбранный торговый инструмент
    */
   getCurrentTool() {
-    return this.getTools()[this.getCurrentToolIndex()] || Tools.create();
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.createArray()[0];
   }
 
   /**

@@ -1,6 +1,7 @@
 import React from "react"
 import { Consumer } from "./app"
 import { merge, round, cloneDeep as clone } from "lodash";
+import { Tool } from "../../../common/tools";
 
 const template = {
   ref:             null,
@@ -116,7 +117,7 @@ const parseTool = (tool, options = {}) => {
     stepPrice = priceStep * lotSize;
   }
 
-  let parsedTool = Tools.create({
+  let parsedTool = Tool.fromObject({
     ref:       tool,
     code:      tool.code,
     fullName:  tool.fullName  || tool.name,

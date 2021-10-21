@@ -24,13 +24,15 @@ function selectElementContent(node) {
     const range = document.body.createTextRange();
     range.moveToElementText(node);
     range.select();
-  } else if (window.getSelection) {
+  }
+  else if (window.getSelection) {
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(node);
     selection.removeAllRanges();
     selection.addRange(range);
-  } else {
+  }
+  else {
     console.warn("Could not select text in node: Unsupported browser.");
   }
 }
@@ -95,6 +97,45 @@ export default function CodePanel(props) {
     )
   };
 
+  const Group = props => {
+    const { title, mappedParams } = props;
+    const beforeContent = props?.beforeContent;
+
+    const codeElement = React.createRef();
+
+    return (
+      <div className="code-panel-group">
+        <div className="code-panel-group-header">
+          {title && <h3 data-should-output="true">{title}</h3>}
+          <button
+            className="code-panel-group__copy-btn"
+            onClick={e => {
+              selectElementContent(codeElement.current);
+
+              navigator.clipboard?.writeText(codeElement.current.innerText)
+                .then(() => message.success("Скопировано!"))
+                .catch(error => message.error('Не удалось скопировать: ' + error));
+            }}
+          >
+            копировать
+          </button>
+        </div>
+        {beforeContent}
+        <div ref={codeElement} className="code-panel-group-content">
+          {Object.keys(mappedParams).map((param, index) =>
+            <pre
+              key={index}
+              onClick={e => selectElementContent(e.target)}
+              data-should-output="true"
+            >
+              GParam.{param} = {mappedParams[param]}
+            </pre>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <Stack className="code-panel">
 
@@ -106,8 +147,7 @@ export default function CodePanel(props) {
           return null
         }
 
-        // "Зеркальные докупки" всегда должны быть видны в коде
-        const alwaysVisible = ["Зеркальные докупки", "Прямые профитные докупки", "Обратные профитные докупки"];
+        const alwaysVisible = ["Прямые профитные докупки", "Обратные профитные докупки"];
         if ((alwaysVisible.indexOf(key) == -1) && !arr.on) {
           return null;
         }
@@ -265,6 +305,13 @@ export default function CodePanel(props) {
             })
             .join(",");
           parsedData = `{${parsedData}}`;
+
+          return (
+            <Group
+              title={title}
+              mappedParams={{ flagautoadd: String(data[key].on), [param]: parsedData }}
+            />
+          )
         }
         else if (key == "Обратные профитные докупки") {
           title = "Массив обратных профитных докупок";
@@ -287,6 +334,13 @@ export default function CodePanel(props) {
             })
             .join(",");
           parsedData = `{${parsedData}}`;
+
+          return (
+            <Group
+              title={title}
+              mappedParams={{ flautoaddsh: String(data[key].on), [param]: parsedData }}
+            />
+          )
         }
 
         const textContent = `GParam.${param} = ${parsedData}`;
@@ -315,6 +369,13 @@ export default function CodePanel(props) {
               }
               parsedData = String(arr.on);
               const textContent = `GParam.${param} = ${parsedData}`;
+
+              return (
+                <Group
+                  title={title}
+                  mappedParams={{ [param]: parsedData }}
+                />
+              )
               return (
                 <div className="code-panel-group"
                      style={{ marginBottom: "-1.5em" }}>
@@ -395,70 +456,36 @@ export default function CodePanel(props) {
         renderLine("Массив зеркальных докупок", "flagmirroradd", flagMirror)
       }
 
-      {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") && (() => {
-        const codeElement = React.createRef();
-
-        return (
-          <div className="code-panel-group">
-            <div className="code-panel-group-header">
-              <h3 data-should-output="true">Перевыставление в точку входа</h3>
-              <button
-                className="code-panel-group__copy-btn"
-                onClick={e => {
-                  selectElementContent(codeElement.current);
-
-                  navigator.clipboard?.writeText(codeElement.current.innerText)
-                    .then(() => message.success("Скопировано!"))
-                    .catch(error => message.error('Не удалось скопировать: ' + error));
-                }}
-              >
-                копировать
-              </button>
-            </div>
-            <label>
-              Размер отступа от цены закрытия
-              <NumericInput 
-                className="code-panel-group__input" 
-                defaultValue={rapradd}
-                format={value => round(value, 2)}
-                onBlur={rapradd => setRapradd(rapradd)}
-                suffix={currentPreset.type == "Лимитник" ? "%" : "п"}
-              />
-            </label>
-            <label>
-              Доля автоматической докупки
-              <NumericInput 
-                className="code-panel-group__input" 
-                defaultValue={sizepradd} 
-                format={value => round(value, 2)}
-                onBlur={sizepradd => setSizepradd(sizepradd)}
-                suffix="%"
-              />
-            </label>
-            <div className="code-panel-group-content" ref={codeElement}>
-              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
-                GParam.flagpradd = {String(flagPR)}
-              </pre>
-              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
-                GParam.rapradd = {rapradd}
-              </pre>
-              <pre onClick={e => selectElementContent(e.target)} data-should-output="true">
-                GParam.sizepradd = {sizepradd}
-              </pre>
-            </div>
-
-          </div>
-        )
-      })()}
-
-      {/* {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") &&
-        <>
-          
-          {renderLine("Перевыставление в точку входа", "flagpradd", flagPR)}
-          {renderLine(null, "rapradd", 0.98)}
-          {renderLine(null, "sizepradd", 100)}
-        </>
-      } */}
+      {(currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР") &&
+        <Group
+          title="Перевыставление в точку входа"
+          beforeContent={
+            <>
+              <label>
+                Размер отступа от цены закрытия
+                <NumericInput
+                  className="code-panel-group__input"
+                  defaultValue={rapradd}
+                  format={value => round(value, 2)}
+                  onBlur={rapradd => setRapradd(rapradd)}
+                  suffix={currentPreset.type == "Лимитник" ? "%" : "п"}
+                />
+              </label>
+              <label>
+                Доля автоматической докупки
+                <NumericInput
+                  className="code-panel-group__input"
+                  defaultValue={sizepradd}
+                  format={value => round(value, 2)}
+                  onBlur={sizepradd => setSizepradd(sizepradd)}
+                  suffix="%"
+                />
+              </label>
+            </>
+          }
+          mappedParams={{ flagpradd: String(flagPR), rapradd, sizepradd }}
+        />
+      }
 
       {(() => {
         let condition = isRiskStatic;
@@ -467,9 +494,21 @@ export default function CodePanel(props) {
         }
 
         if (currentPreset.type == "Лимитник") {
+          return (
+            <Group
+              title="Риск"
+              mappedParams={{ depo_stop: `{${!condition ? risk : 0},${condition ? risk : 0}}` }}
+            />
+          )
           return renderLine("Риск", "depo_stop", `{${!condition ? risk : 0},${condition ? risk : 0}}`)
         }
 
+        return (
+          <Group
+            title="Риск"
+            mappedParams={{ rastop: condition ? risk : 0, depo_stop: condition ? 0 : risk }}
+          />
+        )
         return (
           <>
             {renderLine("Риск",  "rastop", condition ? risk : 0)}
@@ -479,15 +518,31 @@ export default function CodePanel(props) {
       })()}
 
       {(() => {
-        let value = round(ranullMode ? ranull * tool.priceStep : ranull / 100, 2);
+        let ranullValue = round(ranullMode ? ranull * tool.priceStep : ranull / 100, 2);
         if (currentPreset.type == "Лимитник") {
-          value = round(ranull / 100, 2);
+          ranullValue = round(ranull / 100, 2);
         }
-        let content = ranullMode ? `${value},0` : `0,${value}`;
+        ranullValue = ranullMode ? `${ranullValue},0` : `0,${ranullValue}`;
+        ranullValue = "{" + ranullValue + "}";
+
+        let ranullPlusValue = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
+        if (currentPreset.type == "Лимитник") {
+          ranullPlusValue = round(ranullPlus / 100, 2);
+          ranullPlusValue = ranullPlusMode ? `${ranullPlusValue},0` : `0,${ranullPlusValue}`;
+          ranullPlusValue = "{" + ranullPlusValue + "}";
+        }
+
+        return (
+          <Group
+            title="Безубыток"
+            mappedParams={{ ranull: ranullValue, ranullplus: ranullPlusValue }}
+          />
+        )
         return renderLine("Безубыток", "ranull", "{" + content + "}");
       })()}
 
       {(() => {
+        return;
         let value = round(ranullPlusMode ? ranullPlus * tool.priceStep : ranullPlus / 100, 2);
         let content = value;
         if (currentPreset.type == "Лимитник") {
@@ -495,6 +550,11 @@ export default function CodePanel(props) {
           content = ranullPlusMode ? `${value},0` : `0,${value}`;
           content = "{" + content + "}";
         }
+        return (
+          <Group
+            mappedParams={{ ranullplus: content }}
+          />
+        )
         return renderLine(null, "ranullplus", content);
       })()}
 

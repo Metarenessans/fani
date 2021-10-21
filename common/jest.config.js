@@ -8,4 +8,7 @@ module.exports = {
   transformIgnorePatterns: [
     "<roodDir>/node_modules/(?!antd)"
   ],
+  globals: {
+    dev: true
+  }
 };

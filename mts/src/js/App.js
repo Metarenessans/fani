@@ -85,7 +85,6 @@ class App extends React.Component {
       },
 
       depo: 1_000_000,
-      chance: 50,
       page: 1,
       priceRange: [null, null],
       percentage: 10,
@@ -95,18 +94,18 @@ class App extends React.Component {
 
       customTools: [],
       /** Код текущего выбранного инструмента */
-      currentToolCode: "SBER",
+      currentToolCode:   "SBER",
 
-      id:                null,
-      saved:            false,
-      risk:                .5,
-      isResetDisabled:   true,
-      scaleOffset:          0,
-      changedMinRange:      0,
-      changedMaxRange:      0,
-      movePercantage:       0,
-      profitRatio:        100,
-      searchVal:           "",
+      id:                  null,
+      saved:              false,
+      risk:                  .5,
+      isResetDisabled:     true,
+      scaleOffset:            0,
+      changedMinRange:        0,
+      changedMaxRange:        0,
+      movePercantage:         0,
+      profitRatio:          100,
+      searchVal:             "",
 
       // Индекс алгоритма МААНИ (0 - Стандарт, 1 - СМС + ТОР, 2 - Лимитник)
       mode:                  0,
@@ -121,7 +120,6 @@ class App extends React.Component {
 
       kodTable: [],
 
-      genaSave: null,
       genaID:   -1,
       shouldImportSG: false,
     };
@@ -132,12 +130,16 @@ class App extends React.Component {
         saves:              [],
         currentSaveIndex:    0,
         tools:              [],
+        genaSave: null,
       } 
     };
 
     // Bindings
+
+    /** @type {applyInvestorInfo} */
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Mts");
+    /** @type {syncToolsWithInvestorInfo} */
     this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
   }
 
@@ -153,17 +155,17 @@ class App extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     const { currentToolCode } = this.state;
-    // if (
-    //   (prevState.priceRange?.every(value => !!value) && this.state.priceRange?.every(value => !!value)) &&
-    //   !isEqual(prevState.priceRange, this.state.priceRange)
-    // ) {
-    //   console.log("priceRange changed", prevState.priceRange, this.state.priceRange);
-    // }
-
     if (prevState.currentToolCode != currentToolCode) {
       console.log("Сбрасываем масштаб графика");
-      // Обновляем график
       this.setStateAsync({ scaleOffset: 0 }).then(() => chartModule?.updateChartScaleMinMax(min, max));
+    }
+
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
     }
 
     const { shouldImportSG } = this.state;
@@ -452,7 +454,8 @@ class App extends React.Component {
       priceRange,
       percentage,
       depo,
-      currentToolCode
+      currentToolCode,
+      risk
     } = this.state;
     const genaSave = cloneDeep(this.state.genaSave);
     const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
@@ -474,6 +477,10 @@ class App extends React.Component {
     }
     changes["Инструмент:"] = currentToolCode;
 
+    // Риск
+    currentPreset.options.risk = risk;
+    changes["Риск:"] = formatNumber(risk);
+
     // Ход
     const currentTool = this.getCurrentTool();
     const fraction = fractionLength(currentTool.priceStep);
@@ -490,6 +497,7 @@ class App extends React.Component {
     const load = Math.abs(percentage);
     genaSave.load = load;
     changes["Загрузка:"] = load;
+
     // Депозит
     genaSave.depo = depo;
     genaSave.secondaryDepo = 0;
@@ -578,7 +586,7 @@ class App extends React.Component {
       // нужно учесть знак предыдущей загрузки
       percentage:      genaSave.load * (percentage < 0 ? -1 : 1),
       currentToolCode: currentPreset.options.currentToolCode ?? currentToolCode,
-      risk:            genaSave.risk,
+      risk:            currentPreset.options.risk,
       totalIncome:     genaSave.totalIncome,
       shouldImportSG:  false,
     })
@@ -679,16 +687,7 @@ class App extends React.Component {
         })
         .finally(() => {
           if (dev) {
-            const response = {
-              "error": false,
-              "data": {
-                "id": 0,
-                "name": null,
-                "dateCreate": 0,
-                "dateUpdate": 0,
-                "static": null
-              }
-            };
+            const response = require("./snapshot").default;
 
             const saves = [{
               "id": response.data.id,
@@ -715,7 +714,7 @@ class App extends React.Component {
         const oldTool = this.getCurrentTool();
         const index = tools.indexOf(oldTool);
         if (index != -1) {
-          tools[index] = Tools.create(parseTool(Tools.prefetchedTool));
+          tools[index] = Tool.fromObject(Tools.prefetchedTool);
         }
 
         setTimeout(() => {
@@ -758,35 +757,32 @@ class App extends React.Component {
     })
   }
 
-  fetchInvestorInfo() {
-    return new Promise((resolve, reject) => {
-      fetch("getInvestorInfo")
-        .then(this.applyInvestorInfo)
-        .then(response => {
-          const depo = response.data.deposit || 10_000;
-          return this.setStateAsync({ depo });
-        })
-        .then(this.syncToolsWithInvestorInfo)
-        .then(() => resolve())
-        .catch(reason => reject(reason))
-        .finally(() => {
-          if (dev) {
-            this.setStateAsync({
-              investorInfo: {
-                email:   "justbratka@ya.ru",
-                deposit: 50_000,
-                status:  "KSUR",
-                skill:   "SKILLED",
-                type:    this.state.percentage >= 0 ? "LONG" : "SHORT"
-              }
-            })
-              .then(this.syncToolsWithInvestorInfo);
-          }
-          else {
-            this.syncToolsWithInvestorInfo();
-          }
-        })
-    })
+  // ~~
+  async fetchInvestorInfo() {
+    try {
+      const response = await fetch("getInvestorInfo");
+      await this.applyInvestorInfo(response);
+      const depo = response.data?.deposit ?? 10_000;
+      await this.setStateAsync({ depo });
+      await this.syncToolsWithInvestorInfo();
+    }
+    catch (error) {
+      message.error(`Не удалось получить профиль инвестора: ${error}`);
+    }
+
+    if (dev) {
+      await this.setStateAsync({
+        investorInfo: {
+          email:   "justbratka@ya.ru",
+          deposit: 50_000,
+          status:  "KSUR",
+          skill:   s,
+          type:    this.state.percentage >= 0 ? "LONG" : "SHORT"
+        }
+      });
+      this.syncToolsWithInvestorInfo();
+    }
+    
   }
 
   updatePriceRange(tool, step = 0) {
@@ -899,15 +895,13 @@ class App extends React.Component {
       
       // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
       state.customTools = staticParsed.customTools || [];
-      state.customTools = state.customTools
-        .map(tool => Tools.create(tool, { investorInfo }));
+      state.customTools = state.customTools.map(tool => Tool.fromObject(tool, { investorInfo }));
 
       state.currentToolCode = staticParsed.currentToolCode || initialState.currentToolCode;
 
       state.id = save.id;
       state.saved = true;
       state.loading = false;
-      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       failed = true;
@@ -962,15 +956,11 @@ class App extends React.Component {
       });
   }
 
-  reset() {
-    return new Promise(resolve => {
-      const state = JSON.parse(JSON.stringify(this.initialState));
-      this.setStateAsync(state)
-        // .then(() => this.updatePriceRange(this.getCurrentTool()))
-        .then(() => this.setStateAsync({ shouldImportSG: true }))
-        .then(() => this.fetchCompanyQuotes())
-        .then(() => resolve());
-    })
+  async reset() {
+    const initialState = cloneDeep(this.initialState);
+    await this.setStateAsync(initialState);
+    await this.exportDataToSG();
+    await this.fetchCompanyQuotes();
   }
 
   save(name = "") {
@@ -1054,8 +1044,7 @@ class App extends React.Component {
               .catch(err => this.showAlert(err));
           }
           else {
-            this.reset()
-              .catch(err => this.showAlert(err));
+            this.reset();
 
             saved = changed = false;
           }
@@ -1095,7 +1084,7 @@ class App extends React.Component {
   }
 
   getCurrentTool() {
-    return this.getTools()[this.getCurrentToolIndex()] || Tools.create();
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.createArray()[0];
   }
   
   getToolByCode(code) {
@@ -1202,7 +1191,6 @@ class App extends React.Component {
       mode,
       page,
       risk,
-      chance,
       chartLoading,
       currentToolCode,
       percentage,
@@ -1221,7 +1209,7 @@ class App extends React.Component {
     } = this.state;
 
     // Вызывается в момент выбора пресета в МТС
-    const onAlgorythmChange = (index, subIndex) => {
+    const onAlgorythmChange = async (index, subIndex) => {
       const mode = index;
 
       const _presetSelection = [...presetSelection];
@@ -1232,28 +1220,23 @@ class App extends React.Component {
         profitRatio = this.state.profitRatio;
       }
 
-      return this.setStateAsync({
+      await this.setStateAsync({
         mode,
         presetSelection: _presetSelection,
         // scaleOffset: 0,
         profitRatio,
         changed: true
-      })
-        .then(() => {
-          // Ставим в гене такой же пресет, какой только что выбрали
-          const genaSave = cloneDeep(this.state.genaSave);
-          const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
-          const currentPreset = options[subIndex];
-          console.log("Ставим в гене такой же пресет, какой только что выбрали", options, currentPreset);
-          genaSave.currentPresetName = currentPreset.name;
-
-          return this.setStateAsync({ genaSave })
-        })
-        // Если выбираем дефолтный пресет - переносится данные в гену
-        // иначе скипаем этот шаг и переходим к импорту данных из гены
-        .then(() => (subIndex === 0 ? this.exportDataToSG() : Promise.resolve()))
-        .then(() => delay(100))
-        .then(() => this.setStateAsync({ shouldImportSG: true }))
+      });
+      // Ставим в гене такой же пресет, какой только что выбрали
+      const genaSave = cloneDeep(this.state.genaSave);
+      const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
+      const currentPreset = options[subIndex];
+      console.log("Ставим в гене такой же пресет, какой только что выбрали", options, currentPreset);
+      genaSave.currentPresetName = currentPreset.name;
+      await this.setStateAsync({ genaSave });
+      await (subIndex === 0 ? this.exportDataToSG() : Promise.resolve());
+      await delay(100);
+      return await this.setStateAsync({ shouldImportSG: true });
     }
 
     const tools = this.getTools();
@@ -1348,7 +1331,7 @@ class App extends React.Component {
                 this.setState({ currentSaveIndex });
 
                 if (currentSaveIndex === 0) {
-                  this.reset().catch(error => console.warn(error));
+                  this.reset();
                 }
                 else {
                   const id = saves[currentSaveIndex - 1].id;
@@ -1392,6 +1375,7 @@ class App extends React.Component {
 
                         <label>
                           <span className="visually-hidden">Торговый инструмент</span>
+                          
                           {/* Торговый инструмент */}
                           <Select
                             onFocus={() => this.setState({ isToolsDropdownOpen: true })}
@@ -1752,6 +1736,7 @@ class App extends React.Component {
                                 </Tooltip>
                               </span>
                               <NumericInput
+                                test="true"
                                 defaultValue={risk}
                                 min={0}
                                 max={100}
@@ -1759,12 +1744,11 @@ class App extends React.Component {
                                 suffix="%"
                                 format={number => formatNumber(round(number, fraction))}
                                 round={"false"}
-                                onBlur={risk => {
-                                  this.setStateAsync({ risk, changed: true })
-                                    .then(() => {
-                                      let possibleRisk = getPossibleRisk();
-                                      chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
-                                    });
+                                onBlur={async risk => {
+                                  await this.setStateAsync({ risk, changed: true });
+                                  let possibleRisk = getPossibleRisk();
+                                  chartModule?.updateChartMinMax(this.state.priceRange, isLong, possibleRisk);
+                                  await this.exportDataToSG();
                                 }}
                               />
                             </div>
@@ -1830,7 +1814,7 @@ class App extends React.Component {
                     {Chart &&
                       <Chart
                         className="mts__chart"
-                        key={currentTool.toString()}
+                        // key={currentTool.toString() + chartLoading}
                         min={min}
                         max={max}
                         priceRange={priceRange}
@@ -1966,7 +1950,7 @@ class App extends React.Component {
 
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
-                            disabled={toolsLoading || chartLoading}
+                            disabled={!dev && (toolsLoading || chartLoading)}
                             onClick={e => {
                               lastSavedSG = cloneDeep(genaSave);
                               sgChanged = false;
@@ -2407,7 +2391,7 @@ class App extends React.Component {
                   depo={depo}
                   tools={tools}
                   load={percentage}
-                  toolsLoading={toolsLoading || chartLoading}
+                  toolsLoading={toolsLoading}
                   investorInfo={investorInfo}
                   defaultToolCode={currentToolCode}
                   currentToolCode={currentToolCode}
@@ -2419,7 +2403,7 @@ class App extends React.Component {
                     this.saveGENA(genaSave);
                   }}
                   onUpdate={(genaSave, tableData, changed) => {
-                    // console.log("onUpdate", "changed", changed);
+                    // console.log("onUpdate", genaSave);
                     sgChanged = sgChanged || changed;
                     genaTable = tableData;
                     this.setStateAsync({ genaSave });
