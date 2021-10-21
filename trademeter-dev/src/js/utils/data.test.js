@@ -30,7 +30,7 @@ const settings = {
   $paymentInterval: 20,
   $payload:         0,
   $payloadInterval: 20,
-  $tool:            Tools.create()
+  $tool:            Tools.createArray()[0]
 };
 const data = new Data();
 data.build(settings);
@@ -108,7 +108,7 @@ test("Кейс второй режим, 3 дня, начиная с 1млн по
     $paymentInterval: 20,
     $payload:         0,
     $payloadInterval: 20,
-    $tool:            Tools.create()
+    $tool:            Tools.createArray()[0]
   };
   const data = new Data();
   data.build(settings);

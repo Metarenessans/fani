@@ -1,6 +1,15 @@
-export default function round(value, decimals = 0) {
-  if (value == null) return value;
+/**
+ * Округляет число до N знаков после запятой
+ *
+ * @param {number} number Число, которое нужно округлить
+ * @param {number} [decimals=0] Кол-во знаков, до которых нужно округлить
+ * @returns {number}
+ */
+export default function round(number, decimals = 0) {
+  if (number == null) {
+    return number;
+  }
 
   let dec = Math.pow(10, decimals);
-  return Math.round(value * dec) / dec;
+  return Math.round(number * dec) / dec;
 }

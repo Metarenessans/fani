@@ -3,21 +3,38 @@ import { render, fireEvent, getNodeText } from "@testing-library/react"
 
 import NumericInput from "./index"
 
-test("renders correctly", () => {
+describe("Первый рендер", () => {
   const { container } = render(<NumericInput/>);
+  expect(container).toBeInTheDocument();
   expect(container).toBeTruthy();
 
   const inputElement = container.querySelector("input");
   // console.dir(inputElement);
 
-  describe("По дефолту инпут пустой", () => {
+  test("По дефолту инпут пустой", () => {
     expect(inputElement.value).toEqual("");
   });
 
-  describe("В инпут помещается значение из props.defaultValue", () => {
-    const { container } = render(<NumericInput defaultValue={0} />);
-    const inputElement = container.querySelector("input");
-    expect(inputElement.value).toEqual("0");
+
+  test("В инпут помещается значение из props.defaultValue", () => {
+    for (let value of [0, -1, 1, 2, null, undefined]) {
+      const { container } = render(<NumericInput defaultValue={value} />);
+      const inputElement = container.querySelector("input");
+
+      let expected = String(value);
+      if (value == null) {
+        expected = "";
+      }
+      expect(inputElement.value).toEqual(expected);
+    }
   });
 
+})
+
+describe("defaultValue", () => {
+  test("NaN не ломает инпут", () => {
+    const { container } = render(<NumericInput defaultValue={NaN} />);
+    const inputElement = container.querySelector("input");
+    expect(inputElement.value).toEqual("");
+  });
 })

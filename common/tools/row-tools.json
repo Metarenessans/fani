@@ -1,0 +1,127 @@
+
+[
+  {
+    "toolType": "shareRu",
+    "code": "SBER",
+    "fullName": "Сбербанк России ПАО ао",
+    "priceStep": "0.01",
+    "guarantee": {
+      "default": "3648.4",
+      "KSUR": {
+        "LONG": "0",
+        "SHORT": "1074.08896"
+      },
+      "KPUR": {
+        "LONG": "0",
+        "SHORT": "583.744"
+      }
+    },
+    "averageProgress": null,
+    "currentPrice": "364.84",
+    "volumeAverage": "36238.017",
+    "currentAdrValue": "4.31",
+    "currentAdrPercent": "1.181",
+    "dailyAdrValue": "9.128",
+    "dailyAdrPercent": "2.408",
+    "weeklyAdrValue": "7.8195",
+    "weeklyAdrPercent": "2.2027",
+    "monthlyAdrValue": "5.7702",
+    "monthlyAdrPercent": "1.7109",
+    "lotSize": "10",
+    "dollarRate": "1",
+    "stepPrice": 0.1
+  },
+  {
+    "toolType": "shareUs",
+    "code": "AAPL",
+    "fullName": "Apple Inc",
+    "priceStep": "0.01",
+    "guarantee": {
+      "default": "10322.3847",
+      "KSUR": {
+        "LONG": "4516.04330625",
+        "SHORT": "5806.34139375"
+      },
+      "KPUR": {
+        "LONG": "2580.596175",
+        "SHORT": "2580.596175"
+      }
+    },
+    "averageProgress": null,
+    "currentPrice": "144.84",
+    "volumeAverage": "0",
+    "currentAdrValue": "1.16",
+    "currentAdrPercent": "0.801",
+    "dailyAdrValue": "1.411",
+    "dailyAdrPercent": "0.9896",
+    "weeklyAdrValue": "1.614",
+    "weeklyAdrPercent": "1.13",
+    "monthlyAdrValue": "1.6777",
+    "monthlyAdrPercent": "1.1415",
+    "lotSize": "1",
+    "dollarRate": "71.2675",
+    "stepPrice": 0.712675
+  },
+  {
+    "toolType": "shareUs",
+    "code": "DDD",
+    "fullName": "3D Systems Corp.",
+    "priceStep": "0.01",
+    "guarantee": {
+      "default": "1860.08175",
+      "KSUR": {
+        "LONG": "1860.08175",
+        "SHORT": "5580.24525"
+      },
+      "KPUR": {
+        "LONG": "1860.08175",
+        "SHORT": "1860.08175"
+      }
+    },
+    "averageProgress": null,
+    "currentPrice": "26.1",
+    "volumeAverage": "0",
+    "currentAdrValue": "0.76",
+    "currentAdrPercent": "2.912",
+    "dailyAdrValue": "0.746",
+    "dailyAdrPercent": "2.8126",
+    "weeklyAdrValue": "0.7338",
+    "weeklyAdrPercent": "2.6783",
+    "monthlyAdrValue": "1.0684",
+    "monthlyAdrPercent": "3.6553",
+    "lotSize": "1",
+    "dollarRate": "71.2675",
+    "stepPrice": 0.712675
+  },
+  {
+    "toolType": "shareUs",
+    "code": "ABBV",
+    "fullName": "Abbvie Inc",
+    "priceStep": "0.01",
+    "guarantee": {
+      "default": "7791.675775",
+      "KSUR": {
+        "LONG": "3408.8581515625",
+        "SHORT": "4382.8176234375"
+      },
+      "KPUR": {
+        "LONG": "1947.91894375",
+        "SHORT": "1947.91894375"
+      }
+    },
+    "averageProgress": null,
+    "currentPrice": "109.33",
+    "volumeAverage": "0",
+    "currentAdrValue": "0.53",
+    "currentAdrPercent": "0.485",
+    "dailyAdrValue": "0.909",
+    "dailyAdrPercent": "0.8332",
+    "weeklyAdrValue": "1.254",
+    "weeklyAdrPercent": "1.1573",
+    "monthlyAdrValue": "1.3234",
+    "monthlyAdrPercent": "1.1811",
+    "lotSize": "1",
+    "dollarRate": "71.2675",
+    "stepPrice": 0.712675
+  }
+]

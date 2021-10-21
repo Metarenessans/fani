@@ -164,6 +164,7 @@ export default function SGRow({
                       }
                       format={number => inputFormatter(number, customDataRow.inPercent ? 2 : undefined)}
                       unsigned="true"
+                      allowEmpty={true}
                       min={0}
                       onChange={(e, textValue, jsx) => {
                         const value = jsx.parse(textValue);
@@ -192,7 +193,7 @@ export default function SGRow({
                         // Ход больше хода из следующего диапазона (если он есть)
                         // удаляем все последующие диапазоны
                         else if (value >= arr[i + 1]?.preferredStep) {
-                          customDataCopy = customDataCopy.slice(0, i);
+                          customDataCopy = customDataCopy.slice(i + 1);
                           jsx.setErrorMsg("");
                         }
 
@@ -234,6 +235,7 @@ export default function SGRow({
                       placeholder={round(100 / (customDataRow.percentMode === "total" ? 1 : 1), 2)}
                       format={value => inputFormatter(value, 2)}
                       unsigned="true"
+                      allowEmpty={true}
                       min={0}
                       onBlur={percent => {
                         const customDataCopy = [...options.customData];
@@ -257,6 +259,7 @@ export default function SGRow({
                           placeholder={"1"}
                           format={inputFormatter}
                           unsigned="true"
+                          allowEmpty={true}
                           min={1}
                           onBlur={length => {
                             const customDataCopy = [...options.customData];
@@ -279,6 +282,7 @@ export default function SGRow({
                           placeholder={""}
                           format={number => inputFormatter(number, 2)}
                           unsigned="true"
+                          allowEmpty={true}
                           min={1}
                           onBlur={stepInPercent => {
                             const customDataCopy = [...options.customData];
@@ -337,10 +341,15 @@ export default function SGRow({
             <Button
               className="custom-btn settings-generator-content__opt-row-btn"
               onClick={e => {
-                const row = { ...optionsTemplate, length: 1 };
                 const lastRow = options.customData[options.customData.length - 1];
-                if (lastRow.preferredStep >= row.preferredStep) {
-                  row.preferredStep = lastRow.preferredStep + currentTool.priceStep
+                const lastRowStep = lastRow.preferredStep === "" ? currentTool.adrDay : lastRow.preferredStep;
+
+                const row = { ...optionsTemplate, length: 1 };
+                const currentRowStep = row.preferredStep === "" ? currentTool.adrDay : row.preferredStep;
+                
+                console.log(lastRowStep, currentRowStep);
+                if (lastRowStep >= currentRowStep) {
+                  row.preferredStep = lastRowStep + currentTool.priceStep;
                 }
 
                 onPropertyChange({
@@ -407,6 +416,7 @@ export default function SGRow({
                   }
                   format={number => inputFormatter(number, inPercent ? 2 : undefined)}
                   unsigned="true"
+                  allowEmpty={true}
                   min={0}
                   onBlur={preferredStep => {
                     onPropertyChange({
@@ -437,6 +447,7 @@ export default function SGRow({
                   }
                   format={inputFormatter}
                   unsigned="true"
+                  allowEmpty={true}
                   placeholder="1"
                   min={1}
                   onBlur={length => onPropertyChange({ length })}
@@ -455,6 +466,7 @@ export default function SGRow({
                   placeholder={round(100 / (length || 1), 2)}
                   format={value => inputFormatter(value, 2)}
                   unsigned="true"
+                  allowEmpty={true}
                   min={0}
                   onBlur={percent => onPropertyChange({ percent })}
                 />
@@ -475,6 +487,7 @@ export default function SGRow({
                     fraction
                   )}
                   unsigned="true"
+                  allowEmpty={true}
                   min={0}
                   onBlur={stepInPercent => onPropertyChange({ stepInPercent })}
                 />

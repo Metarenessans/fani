@@ -1,22 +1,26 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Input, Tooltip } from 'antd/es'
-import clsx from 'clsx';
+import clsx from 'clsx'
 import './style.scss'
 
 // TODO: Сделать так, чтобы условие было динамическим
 const isMobile = innerWidth <= 768;
 
 export default class NumericInput extends React.Component {
+
   constructor(props) {
     super(props);
+
+    const { defaultValue } = props;
 
     this.onInvalid = this.props.onInvalid || function () { return "" };
     this.className = this.props.className || "";
 
+    const value = (defaultValue === "" || defaultValue == null || isNaN(defaultValue)) ? "" : defaultValue;
     this.state = {
-      value: this.format(this.props.defaultValue === "" ? "" : this.props.defaultValue),
+      value: this.format(value),
       errMsg: "",
-      positive: this.props.defaultValue >= 0
     };
 
     if (this.props.onRef) {
@@ -36,13 +40,17 @@ export default class NumericInput extends React.Component {
     return this.props.unsigned == "true"
   }
 
+  get allowEmpty() {
+    return this.props.allowEmpty ?? false
+  }
+
   componentDidUpdate(prevProps) {
     const { defaultValue, test } = this.props;
     const { value } = this.state;
 
-    if ((isNaN(defaultValue) || defaultValue == null) && value != "0") {
-      console.warn("defaultValue equals NaN!");
-      this.setState({ value: 0 })
+    if ((isNaN(defaultValue) || defaultValue == null) && (value != "")) {
+      console.warn("defaultValue:", defaultValue, "state value:", value);
+      this.setState({ value: this.allowEmpty ? "" : 0 })
       return;
     }
     else if (prevProps.defaultValue != defaultValue) {
@@ -151,7 +159,7 @@ export default class NumericInput extends React.Component {
 
     let val = value;
 
-    if (val === "") {
+    if (val === "" && !this.allowEmpty) {
       val = 0;
     }
 
@@ -181,8 +189,9 @@ export default class NumericInput extends React.Component {
   }
 
   render() {
-    const { positive, value, errMsg } = this.state;
-    const { unsigned } = this.props;
+    const { value, errMsg } = this.state;
+
+    const positive = value >= 0;
 
     const safeProps = {...this.props};
     delete safeProps.format;
@@ -208,7 +217,7 @@ export default class NumericInput extends React.Component {
             value={value}
           />
 
-          {!unsigned && isMobile && (
+          {!this.unsigned && isMobile && (
             <button
               onClick={e => {
                 const parsedValue = +(String(value).replace(/\s+/g, ""));

@@ -182,7 +182,7 @@ const SettingsGenerator = memo(props => {
   const [changedToolManually, setChangedToolManually] = useState(false)
   const currentToolCode = currentPreset.options.currentToolCode || defaultToolCode;
   const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
-  const currentTool = tools[currentToolIndex] || Tools.create();
+  const currentTool = tools[currentToolIndex] || Tools.createArray()[0];
   const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
 
@@ -205,6 +205,10 @@ const SettingsGenerator = memo(props => {
     changedDueToAddPreset     = false;
 
     setPresets(presetsCopy);
+  }
+
+  function calcRisk(presetType) {
+    return presetType == "СМС + ТОР" ? 300 : 0.5
   }
 
   const [isRiskStatic, setIsRiskStatic] = useState(true);
@@ -252,10 +256,6 @@ const SettingsGenerator = memo(props => {
       ? round(step, fraction)
       : magnetToClosest(step, currentTool.priceStep);
   };
-
-  function calcRisk(presetType) {
-    return presetType == "СМС + ТОР" ? 300 : 0.5
-  }
 
   let root = React.createRef();
   let menu = React.createRef();
@@ -432,7 +432,7 @@ const SettingsGenerator = memo(props => {
   //   ? mainData[mainData.length - 1]?.incomeWithComission
   //   : 0;
 
-  const totalIncome = [...mainData].pop().incomeWithComission ?? 0;
+  const totalIncome = mainData[mainData.length - 1]?.incomeWithComission ?? 0;
   const totalLoss = round((depo + secondaryDepo) * risk / 100, fraction);
 
   function updatePresetProperty(subtype, property, value) {
@@ -492,7 +492,6 @@ const SettingsGenerator = memo(props => {
     return {
       isLong,
       comission,
-      risk,
       depo,
       secondaryDepo,
       load,
@@ -586,11 +585,9 @@ const SettingsGenerator = memo(props => {
 
         const currentToolCode = initialPresets[0].options.currentToolCode;
         const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
-        const currentTool = tools[currentToolIndex] || Tools.create();
+        const currentTool = tools[currentToolIndex] || Tools.createArray()[0];
 
         setSearchVal("");
-        // TODO: remove?
-        // setRisk(calcRisk(currentPreset.type))
         setIsRiskStatic(true);
         setComission(currentTool.dollarRate == 0 ? 1 : 45);
 
@@ -668,6 +665,7 @@ const SettingsGenerator = memo(props => {
 
       _presets = _presets.map(preset => {
         preset.percentMode = preset.percentMode ?? "total";
+        preset.options.risk = preset.options.risk ?? calcRisk(preset.type);
         return preset;
       })
 
@@ -677,10 +675,6 @@ const SettingsGenerator = memo(props => {
       const currentPresetIndex = _presets.indexOf(currentPreset);
       if (currentPresetIndex > 2) {
         setComission(comission);
-      }
-      // TODO: remove?
-      if (currentPreset) {
-        // setRisk(calcRisk(currentPreset.type));
       }
 
       setChangedToolManually(false);
@@ -1152,6 +1146,7 @@ const SettingsGenerator = memo(props => {
                     defaultValue={depo}
                     format={formatNumber}
                     unsigned="true"
+                    min={10_000}
                     onBlur={depo => {
                       setDepo(depo);
                       setChangedDepoManually(true);
