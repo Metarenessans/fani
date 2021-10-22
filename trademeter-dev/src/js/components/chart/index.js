@@ -1,7 +1,11 @@
 import React, { memo, useState, useEffect } from 'react'
 import { Radio } from "antd/es"
 
-import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-bundle.min.js");
+let chartLoaded = false;
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-bundle.min.js").then(_ => {
+  console.log("anychart loaded!");
+  chartLoaded = true;
+});
 
 import { flatten } from 'lodash'
 import roundUp from "../../../../../common/utils/round-up"
@@ -125,7 +129,7 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
         return entry.customName;
       });
     
-    scale.values(values);
+    scale?.values(values);
   }
   
   if (false) {
@@ -285,7 +289,14 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
 }
 
 function createChart() {
-  anychart?.onDocumentReady(() => {
+  if (!chartLoaded) {
+    setTimeout(() => {
+      createChart.call(this)
+    }, 500);
+    return;
+  }
+
+  anychart.onDocumentReady(() => {
     chart = anychart.line();
 
     updateChart.call(this, true);

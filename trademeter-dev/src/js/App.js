@@ -276,6 +276,8 @@ class App extends Component {
         currentSaveIndex: 0,
 
         passiveIncomeTools: [],
+
+        chartModuleLoaded: false,
       }
     );
 
@@ -346,8 +348,10 @@ class App extends Component {
     this.fetchInitialData();
 
     import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+      console.log("chart loaded!", module);
       chartModule = module;
       Chart = module.Chart;
+      this.setState({ chartModuleLoaded: true });
     });
 
     // TODO: использовать fetchBonds из common
@@ -373,6 +377,14 @@ class App extends Component {
           reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
         }
       })
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { chartModuleLoaded } = this.state;
+    if (prevState.chartModuleLoaded != chartModuleLoaded && chartModuleLoaded) {
+      // ~~
+      chartVisible && chartModule?.updateChart.call(this)
+    }
   }
 
   bindEvents() {
@@ -425,47 +437,55 @@ class App extends Component {
   }
 
   setFetchingToolsTimeout() {
+    const ms = dev ? 10_000 : 1 * 60 * 1_000;
     new Promise(resolve => {
       setTimeout(() => {
+        const currentTool = this.getCurrentTool();
         if (!document.hidden) {
-          this.prefetchTools()
-            .then(() => {
+          fetch("getCompanyTrademeterInfo", "GET", {
+            code: currentTool.code,
+            region: currentTool.dollarRate == 1 ? "RU" : "EN"
+          })
+            .then(response => {
+              Tools.prefetchedTool = response.data;
+
               const { isToolsDropdownOpen } = this.state;
               if (!isToolsDropdownOpen) {
-                this.imitateFetchcingTools()
+                this.imitateFetchingTools()
                   .then(() => resolve());
               }
               else {
-                console.log('no way!');
+                console.log('Не могу пропушить инструмент в стейт, буду ждать окно');
+                Tools.prefetchedTool = null;
                 resolve();
               }
-            });
+
+              resolve();
+            })
         }
         else resolve();
-
-      }, dev ? 60_000 : 1 * 60 * 1_000);
-
+      }, ms);
     }).then(() => this.setFetchingToolsTimeout())
   }
 
-  imitateFetchcingTools() {
-    return new Promise((resolve, reject) => {
-      if (Tools.storage?.length) {
-        let newTools = [...Tools.storage];
+  imitateFetchingTools() {
+    return new Promise(resolve => {
+      if (Tools.prefetchedTool) {
+        this.setState({ toolsLoading: true });
+
+        const tools = [...this.state.tools];
         const oldTool = this.getCurrentTool();
-        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
-        if (oldToolIndex == -1) {
-          console.warn(`No ${oldTool.code} in new tools list`, newTools);
-          newTools.push(oldTool);
+        const index = tools.indexOf(oldTool);
+        if (index != -1) {
+          tools[index] = Tool.fromObject(Tools.prefetchedTool);
         }
 
         setTimeout(() => {
           this.setState({
-            tools: newTools,
+            tools,
             toolsLoading: false,
           }, () => {
-            Tools.storage = [];
-            Tools.storageReady = false;
+            Tools.prefetchedTool = null;
             resolve()
           });
         }, 2_000);
@@ -892,7 +912,8 @@ class App extends Component {
       if (!failed) {
         this.overrideData(dynamicParsed)
           .then(() => this.updateData())
-          .then(() => chartVisible && chartModule?.updateChart.call(this))
+          // ~~
+          // .then(() => chartVisible && chartModule?.updateChart.call(this))
           .then(() => this.setCurrentDay(currentDay))
           .catch(error => {
             console.warn(error);
@@ -2551,7 +2572,7 @@ class App extends Component {
                           onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                           onBlur={() => {
                             this.setStateAsync({ isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchcingTools());
+                              .then(() => this.imitateFetchingTools());
                           }}
                           toolsLoading={this.state.toolsLoading}
                           disabled={this.state.toolsLoading}
@@ -2603,7 +2624,7 @@ class App extends Component {
                               depoPersentageStart
                             }, () => {
                               this.updateData(days[mode])
-                                .then(() => this.imitateFetchcingTools())
+                                .then(() => this.imitateFetchingTools())
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
