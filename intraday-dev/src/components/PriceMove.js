@@ -32,6 +32,7 @@ export const PriceMove = () => {
     setCurrentSaveIdx,
     getSaves,
     getSave,
+    getLastModifiedSave,
     snapshotIsChanged,
     snapshotIsSaved,
     addSave,
@@ -64,7 +65,7 @@ export const PriceMove = () => {
     } else {
       setCurrentSaveIdx(currentSaveIdx);
       let id = saves[currentSaveIdx - 1].id;
-      getSave(id);
+      getLastModifiedSave()
     }
   }, [loading]);
 

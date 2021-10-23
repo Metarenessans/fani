@@ -145,20 +145,40 @@ export const GlobalProvider = ({ children }) => {
         payload: err.response,
       });
     }
+  }
 
+  async function getLastModifiedSave() {
     try {
       const res = await axios.get(
-        "https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedIntradaySnapshot"
+        `https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedIntradaySnapshot`
       );
       if (!res.data.error) {
-        let sortedSaves = res.data.data.sort(
-          (a, b) => b.dateUpdate - a.dateUpdate
-        );
+        let expectedKeys = [
+          "adrMode",
+          "iterationQty",
+          "stopValue",
+          "minYield",
+          "yieldStep",
+          "loadTables",
+          "customTools",
+          "investorInfo",
+        ];
+        let save = JSON.parse(res.data.data.static);
+        let keys = Object.keys(save);
+        let isMatch = true;
 
-        dispatch({
-          type: "GET_SAVES",
-          payload: sortedSaves,
+        keys.map((key) => {
+          if (!expectedKeys.includes(key)) isMatch = false;
         });
+
+        if (isMatch) {
+          dispatch({
+            type: "GET_SAVE",
+            payload: save,
+          });
+        } else {
+          deleteSave(res.data.data.id);
+        }
       }
     } catch (err) {
       dispatch({
@@ -166,7 +186,9 @@ export const GlobalProvider = ({ children }) => {
         payload: err.response,
       });
     }
+
   }
+
 
   async function getSave(id) {
     try {
@@ -569,6 +591,7 @@ export const GlobalProvider = ({ children }) => {
         getInvestorInfo,
         getSaves,
         getSave,
+        getLastModifiedSave,
         addSave,
         updateSave,
         deleteSave,
