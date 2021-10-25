@@ -252,9 +252,11 @@ class App extends React.Component {
       })
       .catch(reason => {
         message.error(`Не удалось получить график для ${code}: ${reason}`);
-        console.warn(`Не удалось получить график для ${code}: ${reason}`);
+        console.warn(`Не удалось получить график для ${code}`, reason);
 
         this.setStateAsync({ chartLoading: false });
+        return Promise.resolve();
+        
         // Пробуем отправить запрос снова 2 секунды
         return new Promise(resolve => {
           setTimeout(() => {
@@ -1314,6 +1316,7 @@ class App extends React.Component {
 
     return (
       <Provider value={this}>
+        <h1>Hey again</h1>
         <div className="page">
 
           <main className="main">
