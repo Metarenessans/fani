@@ -1,13 +1,13 @@
 const path = require("path");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const webpack = require("webpack");
+/* Plugins */
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
 
   const entry = "./src/js/index.js";
-  const output = "index";
-  const devtool = prod ? "source-map" : "eval-sourcemap";
+  const devtool = prod ? "source-map" : "eval-source-map";
   const publicPath = "public";
 
   // Rules
@@ -44,79 +44,28 @@ module.exports = (env, options) => {
     }
   ];
 
-  const fontRule = {
-    test: /\.(woff|woff2|eot|ttf|otf)$/,
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  };
-
-  const imageRule = {
-    test: /\.(png|jpe?g|gif|webp)$/,
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  };
-
   const plugins = [
     new webpack.DefinePlugin({ dev: !prod }),
-    new ExtractTextPlugin("css/style.css"),
+    new MiniCssExtractPlugin({
+      filename:      "css/style.css",
+      chunkFilename: "css/[name].css"
+    })
   ];
 
-  const old = {
-    entry,
-    output: {
-      path: path.resolve(__dirname, publicPath),
-      filename: `${output}.js`,
-      publicPath
-    },
-    module: {
-      rules: [
-        {
-          test: /\.js$/,
-          exclude: "/node_modules/",
-          use: {
-            loader: "babel-loader",
-            options: {
-              presets: [
-                "@babel/preset-env",
-                "@babel/preset-react"
-              ]
-            }
-          }
-        },
-        {
-          test: /\.s[ac]ss$/i,
-          use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
-            : ["style-loader"].concat(cssPipeline)
-        },
-        fontRule,
-        imageRule,
-      ]
-    },
-    plugins
-  };
-
-  const modern = {
+  return {
     entry,
     devtool,
-    output: {
-      path: path.resolve(__dirname, publicPath),
-      filename: `${output}-es6.js`,
-      publicPath
-    },
     devServer: {
       contentBase: path.join(__dirname, ""),
       overlay: true,
       hot: true,
+      // host: '192.168.0.129'
+    },
+    output: {
+      path: path.resolve(__dirname, publicPath),
+      filename: `js/index.js`,
+      chunkFilename: 'js/[name].js',
+      publicPath: publicPath + "/"
     },
     module: {
       rules: [
@@ -126,29 +75,33 @@ module.exports = (env, options) => {
           use: {
             loader: "babel-loader",
             options: {
-              presets: [
-                "@babel/preset-react"
-              ]
+              rootMode: "upward",
+              compact: false,
             }
           }
         },
         {
           test: /\.s[ac]ss$/i,
-          use: prod
-            ?
-              ExtractTextPlugin.extract({
-                publicPath: "/public",
-                use: cssPipeline,
-                fallback: "style-loader",
-              })
-            : ["style-loader"].concat(cssPipeline)
+          use: [prod ? MiniCssExtractPlugin.loader : "style-loader"].concat(cssPipeline)
         },
-        fontRule,
-        imageRule,
+        // Fonts
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        },
+        // Graphics
+        {
+          test: /\.(png|jpe?g|gif|webp)$/,
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
+        }
       ]
     },
-    plugins
+    plugins,
   };
-
-  return [prod && old, modern].filter(value => !!value)
 };

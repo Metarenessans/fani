@@ -3,6 +3,7 @@ const { Provider, Consumer } = React.createContext();
 import ReactDOM from 'react-dom'
 
 import clsx from 'clsx'
+import Header from "./components/header"
 
 import {
   Button,
@@ -18,8 +19,6 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
-import fetch from "../../../common/api/fetch"
-
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
 
@@ -34,6 +33,17 @@ import TradeLog              from "./components/trade-log"
 import SecondStep            from "./components/second-step"
 import ThirdStep             from "./components/third-step"
 
+/* API */
+import fetch from "../../../common/api/fetch"
+import { applyTools } from "../../../common/api/fetch/tools"
+import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import fetchSavesFor from "../../../common/api/fetch-saves"
+import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id"
+import { Dialog, dialogAPI } from "../../../common/components/dialog"
+
+
+
+
 import "../sass/style.sass"
 import { message } from 'antd';
 
@@ -45,6 +55,8 @@ class App extends React.Component {
       step:           1,
       extraStep:  false,
       extraSaved: false,
+      loading:    false,
+      customTools:   [],
 
       // DashboardData
       rowData: new Array(5).fill(0).map( _ => {
@@ -86,38 +98,37 @@ class App extends React.Component {
           compassionDuring:     0,
           compassionAfter:      0,
           
-          greedinessBefore:      0,
-          greedinessDuring: 0,
-          greedinessAfter:            0,
+          greedinessBefore:     0,
+          greedinessDuring:     0,
+          greedinessAfter:      0,
           
-          egoBefore:             0,
-          egoDuring:             0,
-          egoAfter:              0,
+          egoBefore:            0,
+          egoDuring:            0,
+          egoAfter:             0,
           
-          euphoriaBefore:                 0,
-          euphoriaDuring:                 0,
-          euphoriaAfter:                 0,
+          euphoriaBefore:       0,
+          euphoriaDuring:       0,
+          euphoriaAfter:        0,
           
-          faultBefore:                    0,
-          faultDuring:                    0,
-          faultAfter:                    0,
+          faultBefore:          0,
+          faultDuring:          0,
+          faultAfter:           0,
           
-          resentmentBefore:               0,
-          resentmentDuring:               0,
-          resentmentAfter:               0,
+          resentmentBefore:     0,
+          resentmentDuring:     0,
+          resentmentAfter:      0,
           
-          angerBefore:                    0,
-          angerDuring:                    0,
-          angerAfter:                    0,
+          angerBefore:          0,
+          angerDuring:          0,
+          angerAfter:           0,
           
-          // ~~
-          apathyBefore:                   0,
-          apathyDuring:                   0,
-          apathyAfter:                   0,
+          apathyBefore:         0,
+          apathyDuring:         0,
+          apathyAfter:          0,
 
-          stagnationBefore:               0,
-          stagnationDuring:               0,
-          stagnationAfter:               0,
+          stagnationBefore:     0,
+          stagnationDuring:     0,
+          stagnationAfter:      0,
 
 
 
@@ -157,7 +168,18 @@ class App extends React.Component {
       tools: [],
       currentRowIndex: 0,
       searchVal:           "",
+
+
+      tools: [],
+
+      toolsStorage: [],
+
+      saves: [],
     };
+
+    // Bindings
+    this.applyInvestorInfo = applyInvestorInfo.bind(this);
+    this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -173,14 +195,106 @@ class App extends React.Component {
     if (prevState.step !== this.state.step && this.state.step == 3) {
       document.getElementById("trade-slider").scrollIntoView();
     }
+
+
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
+    }
   }
 
   componentDidMount() {
+    this.fetchInitialData();
     this.fetchTools();
   }
 
   setStateAsync(state = {}) {
     return new Promise(resolve => this.setState(state, resolve))
+  }
+
+  // Fetching everithing we need to start working
+  fetchInitialData() {
+    this.fetchTools()
+      // .then(() => this.setFetchingToolsTimeout())
+      .then(() => this.fetchSaves())
+      .catch(error => console.error(error))
+  }
+
+  setFetchingToolsTimeout() {
+    const ms = dev ? 10_000 : 1 * 60 * 1_000;
+    new Promise(resolve => {
+      setTimeout(() => {
+        const currentTool = this.getCurrentTool();
+        if (!document.hidden) {
+          fetch("getCompanyTrademeterInfo", "GET", {
+            code: currentTool.code,
+            region: currentTool.dollarRate == 1 ? "RU" : "EN"
+          })
+            .then(response => {
+              Tools.prefetchedTool = response.data;
+
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('Не могу пропушить инструмент в стейт, буду ждать окно');
+                Tools.prefetchedTool = null;
+                resolve();
+              }
+
+              resolve();
+            })
+        }
+        else resolve();
+      }, ms);
+    }).then(() => this.setFetchingToolsTimeout())
+  }
+
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
+      const { toolsStorage } = this.state;
+      if (toolsStorage?.length) {
+        console.warn('fake fetching');
+        this.setStateAsync({ toolsLoading: true });
+        setTimeout(() => {
+          this.setState({
+            tools: toolsStorage,
+            toolsStorage: [],
+            toolsLoading: false,
+          }, () => resolve());
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      let toolsStorage = [];
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
+            .then(tools => Tools.sort(toolsStorage.concat(tools)))
+            .then(tools => {
+              toolsStorage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsStorage }))
+        .then(() => resolve(toolsStorage))
+    })
   }
 
   fetchTools() {
@@ -205,6 +319,271 @@ class App extends React.Component {
     })
   }
 
+  fetchSaves() {
+    return new Promise((resolve, reject) => {
+      fetch("getTradelogSnapshots")
+        .then(response => {
+          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+          this.setState({ saves, loading: false });
+        })
+
+      fetch("getLastModifiedTradelogSnapshot")
+        .then(response => {
+          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+          if (!response.error && response.data?.name) {
+            const pure = params.get("pure") === "true";
+            if (!pure) {
+              this.setState({ loading: true });
+              return this.extractSave(response.data)
+                .then(resolve)
+                .catch(error => reject(error));
+            }
+          }
+          resolve();
+        })
+        .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
+          if (dev) {
+            const response = {
+              "error": false,
+              "data": {
+                "id": 0,
+                "name": null,
+                "dateCreate": 0,
+                "dateUpdate": 0,
+                "static": null
+              }
+            };
+
+            const saves = [{
+              "id": response.data.id,
+              "name": response.data.name,
+              "dateCreate": response.data.dateCreate,
+            }];
+
+            this.setStateAsync({ saves, loading: false }).then(() => {
+              if (!response.error && response.data?.name) {
+                this.extractSave(response.data)
+              }
+            })
+          }
+        })
+    });
+  }
+
+  showMessageDialog(msg = "") {
+    console.log(`%c${msg}`, "background: #222; color: #bada55");
+    if (!dev) {
+      this.setState({ errorMessage: msg }, () => {
+        dialogAPI.open("dialog-msg");
+      });
+    }
+  }
+
+  // TODO:
+  packSave() {
+    const {
+      isLong,
+      data,
+      depo,
+      customTools,
+    } = this.state;
+
+    const json = {
+      static: {
+        isLong,
+        data,
+        depo,
+        customTools,
+      },
+    };
+
+    console.log("Packed save:", json);
+    return json;
+  }
+
+  extractSave(save) {
+    const { saves, investorInfo } = this.state;
+    let staticParsed;
+
+    let state = {};
+
+    try {
+      let lastUpdated = save.dateUpdate || save.dateCreate;
+      console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
+
+      staticParsed = JSON.parse(save.static);
+      console.log("Parsed static", staticParsed);
+
+      const initialState = cloneDeep(this.initialState);
+
+      // TODO:
+      state.depo = staticParsed.depo ?? initialState.depo;
+      state.isLong = staticParsed.isLong ?? initialState.isLong;
+      state.data = staticParsed.data ?? initialState.data;
+      state.customTools = staticParsed.customTools ?? initialState.customTools;
+
+      state.id = save.id;
+      state.saved = true;
+      state.loading = false;
+    }
+    catch (e) {
+      state = {
+        id: save?.id || 0,
+        saved: true
+      };
+    }
+
+    console.log('Parsing save finished!', state);
+    return this.setStateAsync(state);
+  }
+
+  reset() {
+    const initialState = cloneDeep(this.initialState);
+    console.log(initialState);
+    return this.setStateAsync(initialState);
+  }
+
+  save(name = "") {
+    return new Promise((resolve, reject) => {
+      if (!name) {
+        reject("Name is empty!");
+      }
+
+      const json = this.packSave();
+      const data = {
+        name,
+        static: JSON.stringify(json.static),
+      };
+
+      fetch("addTradelogSnapshot", "POST", data)
+        .then(res => {
+          console.log(res);
+
+          let id = Number(res.id);
+          if (id) {
+            console.log("Saved with id = ", id);
+            this.setState({ id }, () => resolve(id));
+          }
+          else {
+            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
+          }
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  update(name = "") {
+    const { id } = this.state;
+    return new Promise((resolve, reject) => {
+      if (dev) {
+        resolve();
+      }
+
+      if (!id) {
+        reject("id must be present!");
+      }
+
+      const json = this.packSave();
+      const data = {
+        id,
+        name,
+        static: JSON.stringify(json.static),
+      };
+      fetch("updateTradelogSnapshot", "POST", data)
+        .then(response => {
+          console.log("Updated!", response);
+          resolve();
+        })
+        .catch(error => console.error(error));
+    })
+  }
+
+  delete(id = 0) {
+    console.log(`Deleting id: ${id}`);
+
+    return new Promise((resolve, reject) => {
+      fetch("deleteTradelogSnapshot", "POST", { id })
+        .then(() => {
+          let {
+            id,
+            saves,
+            saved,
+            changed,
+            currentSaveIndex,
+          } = this.state
+
+          saves.splice(currentSaveIndex - 1, 1);
+
+          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
+
+          if (saves.length > 0) {
+            id = saves[currentSaveIndex - 1].id;
+            this.fetchSaveById(id)
+              .then(save => this.extractSave(Object.assign(save, { id })))
+              .then(() => this.setState({ id }))
+              .catch(err => this.showAlert(err));
+          }
+          else {
+            this.reset();
+
+            saved = changed = false;
+          }
+
+          this.setState({
+            saves,
+            saved,
+            changed,
+            currentSaveIndex,
+          }, resolve);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  showAlert(errorMessage = "") {
+    console.log(`%c${errorMessage}`, "background: #222; color: #bada55");
+    message.error(errorMessage);
+    // if (!dev) {
+    //   this.setState({ errorMessage }, () => dialogAPI.open("dialog-msg"));
+    // }
+  }
+
+  getTools() {
+    const { tools, customTools } = this.state;
+    return [].concat(tools).concat(customTools);
+  }
+
+  getOptions() {
+    return this.getTools().map((tool, idx) => {
+      return {
+        idx: idx,
+        label: String(tool),
+      };
+    });
+  }
+
+
+  getTitleJSX() {
+    const { saves, currentSaveIndex } = this.state;
+    let titleJSX = <span>Журнал сделок</span>;
+    if (saves && saves[currentSaveIndex - 1]) {
+      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
+    }
+
+    return titleJSX;
+  }
+
+  /**
+   * Возвращает название текущего сейва (по дефолту возвращает строку "Калькулятор Инвестиционных Стратегий") */
+  getTitle() {
+    return this.getTitleJSX().props.children;
+  }
+
+
   render() {
     let { 
       step, 
@@ -212,6 +591,15 @@ class App extends React.Component {
       currentRowIndex, 
       rowData,
       extraSaved,
+      data,
+      sortProp,
+      sortDESC,
+      lineConfigIndex,
+      loading,
+      saves,
+      currentSaveIndex,
+      saved,
+      changed
     } = this.state;
 
     let { currentToolCode, isSaved } = rowData[currentRowIndex];
@@ -229,10 +617,41 @@ class App extends React.Component {
                     document.querySelector(".trade-slider-active") ? "hidden" : ""
                 }}
               >
-                <div className="page-header">
-                  <h2>Бинарный журнал сделок</h2>
-                </div>
+                <Header
+                  title={this.getTitleJSX()}
+                  loading={loading}
+                  saves={saves}
+                  currentSaveIndex={currentSaveIndex}
+                  changed={changed}
+                  saved={saved}
+                  onSaveChange={currentSaveIndex => {
+                    const { saves } = this.state;
 
+                    this.setState({ currentSaveIndex });
+
+                    if (currentSaveIndex === 0) {
+                      this.reset();
+                    }
+                    else {
+                      const id = saves[currentSaveIndex - 1].id;
+                      this.setState({ loading: true });
+                      this.fetchSaveById(id)
+                        .then(response => this.extractSave(response.data))
+                        .then(() => this.fetchCompanyQuotes())
+                        .catch(error => this.showAlert(error));
+                    }
+                  }}
+                  onSave={e => {
+                    const { saved, changed } = this.state;
+                    if (saved && changed) {
+                      this.update(this.getTitle());
+                      this.setState({ changed: false });
+                    }
+                    else {
+                      dialogAPI.open("dialog1", e.target);
+                    }
+                  }}
+                />
                 <div className="container">
 
                   <Dashboard
