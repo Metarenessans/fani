@@ -1,34 +1,40 @@
+/** @type {import("webpack").Configuration} */
+
 const webpack = require("webpack");
+
 const path = require("path");
-// Plugins
+/* Plugins */
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
-
-  const fileLoaderOptions = {
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  }
+  const publicPath = "public/";
 
   return {
     entry: "./src/js/index.js",
+    devtool: prod ? "source-map" : "source-map",
     output: {
-      path: path.resolve(__dirname, "public"),
-      filename: "index.js"
+      path: path.resolve(__dirname, "public/"),
+      filename:      "js/index.js",
+      chunkFilename: "js/[name].js"
     },
+    cache: false,
     devServer: {
-      contentBase: "./public",
-      publicPath: "/public/js/",
-      overlay: true
+      static: {
+        directory: path.resolve(__dirname, publicPath),
+        publicPath: "/",
+        watch: {
+          ignored: "/node_modules/",
+          usePolling: true,
+        },
+      },
+      port: 3000,
+      host: '192.168.0.129'
     },
-    devtool: prod ? "source-map" : "eval-sourcemap",
-    target: "web",
     module: {
       rules: [
+        // JS
         {
           test: /\.js$/,
           exclude: /node_modules/,
@@ -36,64 +42,65 @@ module.exports = (env, options) => {
             loader: "babel-loader",
             options: {
               rootMode: "upward",
-              compact: false,
             }
           }
         },
+        // CSS
         {
           test: /\.s[ac]ss$/i,
           use: [
-            process.env.NODE_ENV !== "production"
-              ? "style-loader"
-              : MiniCssExtractPlugin.loader,
+            prod ? MiniCssExtractPlugin.loader : "style-loader",
             // Translates CSS into CommonJS
             "css-loader?url=false",
             // PostCSS
             {
               loader: "postcss-loader",
               options: {
-                plugins: [
-                  require("postcss-custom-properties")(),
-                  require("autoprefixer")({
-                    overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                  }),
-                  require("postcss-csso"),
-                ],
+                postcssOptions: {
+                  plugins: [
+                    require("postcss-custom-properties")({ preserve: true }),
+                    require("autoprefixer")(),
+                    prod && require("cssnano")()
+                  ],
+                },
                 sourceMap: true
               }
             },
             "resolve-url-loader",
-            // Compiles Sass to CSS
+            // Compiles SASS to CSS
             {
               loader: "sass-loader",
               options: {
-                prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
                 webpackImporter: false,
-                sassOptions: {
-                  publicPath: "./",
-                  outputStyle: "expanded",
-                },
+                sassOptions: { outputStyle: "expanded" },
               },
             }
           ]
         },
+        // Fonts
         {
           test: /\.(woff|woff2|eot|ttf|otf)$/,
-          ...fileLoaderOptions
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
         },
+        // Graphics
         {
           test: /\.(png|jpe?g|gif|webp)$/,
-          ...fileLoaderOptions
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
         }
       ]
     },
     plugins: [
       new webpack.DefinePlugin({ dev: !prod }),
       new MiniCssExtractPlugin({
-        filename: "[name].css",
-        chunkFilename: "[name].css",
-      }),
-      new CleanWebpackPlugin(["public/js/*"])
+        filename:      "css/style.css",
+        chunkFilename: "css/[name].css"
+      })
     ]
   }
 };
