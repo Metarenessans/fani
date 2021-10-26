@@ -217,20 +217,12 @@ const SettingsGenerator = memo(props => {
 
   const [investorDepo, setInvestorDepo] = useState(props.depo || 1_000_000);
   const [changedDepoManually, setChangedDepoManually] = useState(false);
-  const [depo, setDepo] = useState(
-    investorDepo != null
-      ? currentPreset.type == "Лимитник"
-        ? Math.floor(investorDepo)
-        : Math.floor(investorDepo * .25)
-      : 0
-  );
-  const [secondaryDepo, setSecondaryDepo] = useState(
-    investorDepo != null
-      ? currentPreset.type == "Лимитник"
-        ? 0
-        : Math.floor(investorDepo * .75)
-      : 0
-  );
+  // [Forwarded from Павел Зименков], 26 октября 12:58pm
+  // Привет! Возникает недопонимание при работе с СМС + ТОР.
+  // Предложение подставлять значение депо в раздел "Основное депо", а "Плечевой" дефолтом ставить 0.
+  // Тогда все вопросы снимуться.
+  const [depo, setDepo] = useState(investorDepo ?? 0);
+  const [secondaryDepo, setSecondaryDepo] = useState(0);
   const depoSum = depo + secondaryDepo;
   const depoAvailable = (depo + secondaryDepo) * (load / 100);
 
@@ -703,15 +695,8 @@ const SettingsGenerator = memo(props => {
       base = depoSum;
     }
 
-    // Плечевой депо есть только в режиме СМС + ТОР
-    if (currentPreset.type == "СМС + ТОР") {
-      setDepo(Math.floor(base * .25));
-      setSecondaryDepo(Math.floor(base * .75));
-    }
-    else {
-      setDepo(base);
-      setSecondaryDepo(0);
-    }
+    setDepo(base);
+    setSecondaryDepo(0);
 
     setReversedBying(currentPreset.type == "СМС + ТОР");
 
@@ -732,15 +717,8 @@ const SettingsGenerator = memo(props => {
       base = depoSum;
     }
 
-    // Плечевой депо есть только в режиме СМС + ТОР
-    if (currentPreset.type == "СМС + ТОР") {
-      setDepo(Math.floor(base * .25));
-      setSecondaryDepo(Math.floor(base * .75));
-    }
-    else {
-      setDepo(base);
-      setSecondaryDepo(0);
-    }
+    setDepo(base);
+    setSecondaryDepo(0);
 
     changedDueToCurrentPreset = false;
     changedDueToAddPreset     = false;
