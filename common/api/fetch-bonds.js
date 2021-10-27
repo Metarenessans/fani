@@ -10,9 +10,9 @@ export default async function fetchBonds() {
   const { data } = response;
   if (data) {
     const tools = data
-      // Берем годовую ставку из поля `yield`
+      // Берем годовую ставку из поля `couponYieldYear`
       .map(tool => {
-        let rate = Number(tool?.yield);
+        let rate = Number(tool?.couponYieldYear);
         if (rate == null || isNaN(rate)) {
           rate = 0;
         }
