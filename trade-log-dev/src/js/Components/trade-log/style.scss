@@ -4,44 +4,65 @@
     padding-top: 1em;
   }
   
-  .ant-time {
-    &-picker {
-      // width: 11em;
-      // &-input {
-      //   width: 10.6em!important;
-      //   height: 2.7em!important;
-      // }
+  .ant {
 
-      &-input-input {
-        height: 2.313em!important;
-      }
-  
-      &-clear {
-        right: 3px!important;
-      }
+    &-time {
+      &-picker {
+        width:  100%;
+        height: 100%;
+        
+        &-input {
+          font-size: .9em;
+          width:  100%;
+          height: 100%;
+        }
     
-      &-icon {
-        right: 3px!important;
+        &-clear {
+          font-size: 1em;
+          right: 8px!important;
+        }
+      
+        &-icon {
+          font-size: 1em;
+          right: 8px!important;
+        }
       }
     }
+    
+    &-checkbox {
+      height: 100%;
+      width:  100%;
 
-  }
-  
-  .ant-input {
-    font-size: 1em!important;
-    padding-top: .2em;
-    padding-right: .6em!important;
-    width: 4.8em!important;
-  
-    &-suffix {
-      font-size: 1em!important;
-      right: 3.2em!important;
+      top: -0.39em!important;
+
+      &-inner {
+        height: 100%;
+        width:  100%;
+      }
+      &-wrapper {
+        font-size: inherit;
+        width: 1em;
+        height: 1em;
+      }
     }
-  }
-  
-  .ant-select {
-    font-size: 0.8em!important;
-    font-weight: 500;
+    
+    &-input {
+      font-size: 1em!important;
+      padding-top: .2em;
+      padding-right: .6em!important;
+      width: 4.8em!important;
+    
+      &-suffix {
+        font-size: 1em!important;
+        right: 3.2em!important;
+      }
+    }
+    
+    
+    &-select {
+      font-size: 0.8em!important;
+      font-weight: 500;
+    }
   }
 }
 
@@ -74,7 +95,7 @@
     box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.03), 0px 0px 8px rgba(12, 12, 12, 0.06);
 
     &-col {
-      width: 16.66%;
+      min-width: 16.66%;
       display: inline-flex;
       flex-direction: column;
 
@@ -85,6 +106,7 @@
     &-key {
       font-size: 0.8em;
       padding: .5em 3.1em;
+      white-space: nowrap;
       
       font-weight: bold;
       border-bottom: 0.03em solid #cacaca;
@@ -97,18 +119,19 @@
 
     &-val {
 
+      &--base {
+        font-weight: 700;
+        padding: .8em .6em 2.6em;
+        border-right: .03em solid #cacaca;
+      }
+
       &-tool {
         padding-top: .9em!important;
       }
 
       &-time {
-        padding-top: 1em!important;
-      }
-
-      &--base {
-        font-weight: 700;
-        padding: .8em .6em 2.6em;
-        border-right: .03em solid #cacaca;
+        padding-top: 0.95em!important;
+        padding: .8em 1.7em 2.82em;
       }
 
       &--long {
@@ -127,7 +150,7 @@
 
 
       &--first {
-        font-size: .85em;
+        font-size: .8em;
         padding: 1.45em 1em 0 2.1em;
 
         text-align: left;
@@ -141,7 +164,7 @@
       }
 
       &--second {
-        font-size: .85em;
+        font-size: .8em;
         padding: 0 1em .7em 2.1em;
 
         text-align: left;

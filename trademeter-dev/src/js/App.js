@@ -432,7 +432,7 @@ class App extends Component {
         return this.setStateAsync({ depoStart, depoEnd });
       })
       .then(this.syncToolsWithInvestorInfo)
-      .then(this.recalc)
+      .then(() => this.recalc())
       .catch(error => console.error(error))
   }
 
@@ -536,7 +536,7 @@ class App extends Component {
         .then(() => resolve())
     })
   }
-  // ~~
+  
   fetchSaves() {
     return new Promise((resolve, reject) => {
       fetch("getTrademeterSnapshots")
@@ -545,7 +545,7 @@ class App extends Component {
           this.setState({ saves, loading: false });
         })
 
-      fetch("getLastModifiedTradelogSnapshot")
+      fetch("getLastModifiedTrademeterSnapshot")
         .then(response => {
           // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
           if (!response.error && response.data?.name) {
@@ -956,7 +956,7 @@ class App extends Component {
     }
 
     console.log('parsing save finished!', state);
-    this.setState(state, () => {
+    return this.setStateAsync(state, () => {
       if (!failed) {
         this.overrideData(dynamicParsed)
           .then(() => this.updateData())
@@ -1189,7 +1189,7 @@ class App extends Component {
     let annualIncome = val * 12;
     let depoEnd = Math.round(annualIncome * 100 / rate);
 
-    this.setState({ depoEnd }, this.recalc);
+    this.setState({ depoEnd }, () => this.recalc());
   }
 
   // API
@@ -1313,7 +1313,7 @@ class App extends Component {
     let withdrawal = [...this.state.withdrawal];
 
     withdrawal[mode] = val;
-    this.setState({ withdrawal }, this.recalc);
+    this.setState({ withdrawal }, () => this.recalc());
   }
 
   setCurrentDay(currentDay = 1) {
@@ -1828,7 +1828,7 @@ class App extends Component {
                             }
 
                             depoStart[mode] = Number(val);
-                            this.setState({ depoStart }, this.recalc)
+                            this.setState({ depoStart }, () => this.recalc())
                           }}
                           onChange={(e, val) => {
                             if (isNaN(val)) {
@@ -1883,7 +1883,7 @@ class App extends Component {
                                   passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                                 }
 
-                                this.setState({ depoEnd: val, passiveIncomeMonthly }, this.recalc);
+                                this.setState({ depoEnd: val, passiveIncomeMonthly }, () => this.recalc());
                               }}
                               format={formatNumber}
                             />
@@ -1991,7 +1991,7 @@ class App extends Component {
                             const data = this.buildData(value, true);
                             const dataLength = data.length;
 
-                            this.setState({ days, dataLength, currentDay }, this.recalc);
+                            this.setState({ days, dataLength, currentDay }, () => this.recalc());
 
                             // validation
                             let withdrawal = this.state.withdrawal[mode];
@@ -2269,7 +2269,7 @@ class App extends Component {
                               }
 
                               withdrawalInterval[mode] = value;
-                              this.setState({ withdrawalInterval }, this.recalc);
+                              this.setState({ withdrawalInterval }, () => this.recalc());
                             }}
                           />
                         </label>
@@ -2308,7 +2308,7 @@ class App extends Component {
                               
                               payload[mode] = val;
 
-                              this.setState({ payload }, this.recalc);
+                              this.setState({ payload }, () => this.recalc());
                             }}
                           />
                         </label>
@@ -2326,7 +2326,7 @@ class App extends Component {
                             onChange={value => {
                               let { mode, payloadInterval } = this.state;
                               payloadInterval[mode] = value;
-                              this.setState({ payloadInterval }, this.recalc);
+                              this.setState({ payloadInterval }, () => this.recalc());
                             }}
                           />
                         </label>

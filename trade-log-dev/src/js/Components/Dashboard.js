@@ -92,6 +92,7 @@ export default class Dashboard extends React.Component {
                           <div className="dashboard-val">
                             <NumericInput
                               defaultValue={rowData[index].practiceStep }
+                              unsigned="true"
                               onBlur={value => {
                                 if(index == 0) {
                                   allPracticeStepsModify(value)
