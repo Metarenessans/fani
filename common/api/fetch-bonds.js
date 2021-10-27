@@ -1,7 +1,7 @@
 import fetch from "./fetch"
 
 /**
- * Делает GET-запрос с помощью кастомной функции-обертки fetch
+ * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}
  * 
  * @returns {Promise<Array<{ name: string, rate: number }>>}
  */
@@ -10,9 +10,9 @@ export default async function fetchBonds() {
   const { data } = response;
   if (data) {
     const tools = data
-      // Берём годовую ставку из поля `yield`
+      // Берем годовую ставку из поля `couponYieldYear`
       .map(tool => {
-        let rate = Number(tool?.yield);
+        let rate = Number(tool?.couponYieldYear);
         if (rate == null || isNaN(rate)) {
           rate = 0;
         }
@@ -20,15 +20,12 @@ export default async function fetchBonds() {
         delete tool.yield;
         return tool;
       })
-      // убирает все инструменты с годовой ставкой меньше или равной нулю
+      // Убираем все инструменты с годовой ставкой меньше или равной нулю
       .filter(tool => tool.rate > 0)
-      // сортировка по убыванию годовой ставки
+      // Сортировка по убыванию годовой ставки
       .sort((a, b) => b.rate - a.rate);
 
     return tools;
   }
   else throw "Произошла ошибка при попытке получить ОФЗ!";
 }
-
-fetchBonds().then(tools => {
-})
