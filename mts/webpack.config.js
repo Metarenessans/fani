@@ -1,36 +1,25 @@
-/** @type {import("webpack").Configuration} */
-
 const webpack = require("webpack");
-
 const path = require("path");
 /* Plugins */
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const TerserPlugin = require("terser-webpack-plugin");
+const CleanWebpackPlugin = require("clean-webpack-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
-  const publicPath = "public/";
 
   return {
     entry: "./src/js/index.js",
-    devtool: prod ? "source-map" : "source-map",
+    devtool: prod ? "source-map" : "eval-sourcemap",
     output: {
-      path: path.resolve(__dirname, "public/"),
-      filename:      "js/index.js",
+      path: path.resolve(__dirname, "public"),
+      filename: "js/index.js",
       chunkFilename: "js/[name].js"
     },
-    cache: false,
     devServer: {
-      static: {
-        directory: path.resolve(__dirname, publicPath),
-        publicPath: "/",
-        watch: {
-          ignored: "/node_modules/",
-          usePolling: true,
-        },
-      },
-      port: 3000,
-      host: '192.168.0.129'
+      contentBase: path.join(__dirname, "public"),
+      publicPath: "/",
+      overlay: true,
+      // host: '192.168.0.129'
     },
     module: {
       rules: [
@@ -56,13 +45,11 @@ module.exports = (env, options) => {
             {
               loader: "postcss-loader",
               options: {
-                postcssOptions: {
-                  plugins: [
-                    require("postcss-custom-properties")({ preserve: true }),
-                    require("autoprefixer")(),
-                    prod && require("cssnano")()
-                  ],
-                },
+                plugins: [
+                  require("postcss-custom-properties")({ preserve: true }),
+                  require("autoprefixer")(),
+                  prod && require("postcss-csso")()
+                ],
                 sourceMap: true
               }
             },
@@ -85,7 +72,7 @@ module.exports = (env, options) => {
             name: "[path][name].[ext]"
           }
         },
-        // Graphics
+        // Images
         {
           test: /\.(png|jpe?g|gif|webp)$/,
           loader: "file-loader",
@@ -98,9 +85,14 @@ module.exports = (env, options) => {
     plugins: [
       new webpack.DefinePlugin({ dev: !prod }),
       new MiniCssExtractPlugin({
-        filename:      "css/style.css",
+        filename: "css/style.css",
         chunkFilename: "css/[name].css"
-      })
-    ]
+      }),
+      new CleanWebpackPlugin(["public/js/*"])
+    ],
+    optimization: {
+      namedModules: true,
+      namedChunks: true
+    }
   }
 };

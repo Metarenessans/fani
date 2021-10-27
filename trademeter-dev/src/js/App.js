@@ -29,6 +29,7 @@ import objToPlainText from "object-plain-string"
 import fetch             from "../../../common/api/fetch"
 import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import fetchBonds        from "../../../common/api/fetch-bonds"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
@@ -342,7 +343,7 @@ class App extends Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this.bindEvents();
 
     this.fetchInitialData();
@@ -354,29 +355,14 @@ class App extends Component {
       this.setState({ chartModuleLoaded: true });
     });
 
-    // TODO: использовать fetchBonds из common
-    // вызов метода под инструмент ОФЗ
-    fetch("getBonds")
-      .then(response => {
-        const { data } = response;
-        if (data) {
-          const passiveIncomeTools = data
-            .map(tool => {
-              tool.rate = Number(tool.yield);
-              delete tool.yield;
-              return tool;
-            })
-            // убирает все инструменты с годовой ставкой <= нуля
-            .filter(tool => tool.rate > 0)
-            // сортировка по убыванию годовой ставки
-            .sort((a, b) => b.rate - a.rate);
-
-          this.setState({ passiveIncomeTools });
-        }
-        else {
-          reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-        }
-      })
+    try {
+      const passiveIncomeTools = await fetchBonds();
+      console.log(passiveIncomeTools);
+      this.setState({ passiveIncomeTools });
+    }
+    catch (e) {
+      message.error(e);
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -2100,7 +2086,7 @@ class App extends Component {
                           </Tooltip>
                         </header>
 
-                        {/* <Select
+                        <Select
                           id="passive-tools"
                           value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
                           loading={this.state.toolsLoading}
@@ -2141,7 +2127,7 @@ class App extends Component {
                                 </Option>
                               )
                           }
-                        </Select> */}
+                        </Select>
                       </div>
 
                     </div>
