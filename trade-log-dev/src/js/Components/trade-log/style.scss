@@ -1,32 +1,48 @@
-.tool-select {
-  padding-top: 1em;
-}
+.trade-log {
 
-.ant-time-picker {
-  &-input-input {
-    height: 2.313em!important;
+  .tool-select {
+    padding-top: 1em;
   }
+  
+  .ant-time {
+    &-picker {
+      // width: 11em;
+      // &-input {
+      //   width: 10.6em!important;
+      //   height: 2.7em!important;
+      // }
 
-  &-icon {
-    right: 11px!important;
+      &-input-input {
+        height: 2.313em!important;
+      }
+  
+      &-clear {
+        right: 3px!important;
+      }
+    
+      &-icon {
+        right: 3px!important;
+      }
+    }
+
   }
-}
-
-.ant-input {
-  font-size: 1em!important;
-  padding-top: .2em;
-  padding-right: .6em!important;
-  width: 4.8em!important;
-
-  &-suffix {
+  
+  .ant-input {
     font-size: 1em!important;
-    right: 3.2em!important;
+    padding-top: .2em;
+    padding-right: .6em!important;
+    width: 4.8em!important;
+  
+    &-suffix {
+      font-size: 1em!important;
+      right: 3.2em!important;
+    }
   }
-}
-
-.ant-select {
-  font-size: 0.8em!important;
-  font-weight: 500;
+  
+  .ant-select {
+    font-size: 0.8em!important;
+    font-weight: 500;
+  }
 }
 
 .trade-log {
@@ -91,7 +107,7 @@
 
       &--base {
         font-weight: 700;
-        padding: .8em .6em 2.9em;
+        padding: .8em .6em 2.6em;
         border-right: .03em solid #cacaca;
       }
 
@@ -112,7 +128,7 @@
 
       &--first {
         font-size: .85em;
-        padding: 1.3em 1em 0 2.1em;
+        padding: 1.45em 1em 0 2.1em;
 
         text-align: left;
         font-weight: 500;

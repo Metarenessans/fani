@@ -380,7 +380,7 @@ class App extends React.Component {
     return json;
   }
 
-  extractSave(save) {
+   extractSave(save) {
     const { saves, investorInfo } = this.state;
     let staticParsed;
 

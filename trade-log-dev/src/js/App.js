@@ -7,6 +7,7 @@ import Header from "./components/header"
 
 import {
   Button,
+  Input,
 } from 'antd/es'
 
 import {
@@ -19,6 +20,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 
+import params from "../../../common/utils/params"
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
 
@@ -33,16 +35,14 @@ import TradeLog              from "./components/trade-log"
 import SecondStep            from "./components/second-step"
 import ThirdStep             from "./components/third-step"
 
+import { Dialog, dialogAPI } from "../../../common/components/dialog"
+
 /* API */
 import fetch from "../../../common/api/fetch"
 import { applyTools } from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSavesFor from "../../../common/api/fetch-saves"
 import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id"
-import { Dialog, dialogAPI } from "../../../common/components/dialog"
-
-
-
 
 import "../sass/style.sass"
 import { message } from 'antd';
@@ -57,11 +57,16 @@ class App extends React.Component {
       extraSaved: false,
       loading:    false,
       customTools:   [],
+      currentSaveIndex: 0,
+
+      loading: false,
+      saved:   false,
+      id:       null,
 
       // DashboardData
       rowData: new Array(5).fill(0).map( _ => {
         return {
-          // значения для тул селекта
+          // значения для селекта с инструментами
           currentToolCode: "SBER",
 
           isSaved: false,
@@ -163,26 +168,27 @@ class App extends React.Component {
 
     this.state = {
       ...this.initialState,
+      
+      currentRowIndex:   0,
+      toolsLoading:  false,
+      changed:       false,
+      searchVal:        "",
 
-      toolsLoading: false,
-      tools: [],
-      currentRowIndex: 0,
-      searchVal:           "",
-
-
-      tools: [],
-
-      toolsStorage: [],
-
-      saves: [],
+      tools:        [],
+      saves:        [],
     };
 
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
   }
-
+  
   componentDidUpdate(prevProps, prevState) {
+    const { 
+      id, 
+      saves, 
+      rowData, 
+    } = this.state;
 
     if (prevState.step == 2 && this.state.step == 1) {
       document.getElementById("trade-slider").scrollIntoView();
@@ -196,8 +202,10 @@ class App extends React.Component {
       document.getElementById("trade-slider").scrollIntoView();
     }
 
+    if (prevState.rowData != rowData) {
+      this.setState({ changed: true });
+    }
 
-    const { id, saves } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
@@ -208,7 +216,6 @@ class App extends React.Component {
 
   componentDidMount() {
     this.fetchInitialData();
-    this.fetchTools();
   }
 
   setStateAsync(state = {}) {
@@ -218,83 +225,8 @@ class App extends React.Component {
   // Fetching everithing we need to start working
   fetchInitialData() {
     this.fetchTools()
-      // .then(() => this.setFetchingToolsTimeout())
       .then(() => this.fetchSaves())
       .catch(error => console.error(error))
-  }
-
-  setFetchingToolsTimeout() {
-    const ms = dev ? 10_000 : 1 * 60 * 1_000;
-    new Promise(resolve => {
-      setTimeout(() => {
-        const currentTool = this.getCurrentTool();
-        if (!document.hidden) {
-          fetch("getCompanyTrademeterInfo", "GET", {
-            code: currentTool.code,
-            region: currentTool.dollarRate == 1 ? "RU" : "EN"
-          })
-            .then(response => {
-              Tools.prefetchedTool = response.data;
-
-              const { isToolsDropdownOpen } = this.state;
-              if (!isToolsDropdownOpen) {
-                this.imitateFetchingTools()
-                  .then(() => resolve());
-              }
-              else {
-                console.log('Не могу пропушить инструмент в стейт, буду ждать окно');
-                Tools.prefetchedTool = null;
-                resolve();
-              }
-
-              resolve();
-            })
-        }
-        else resolve();
-      }, ms);
-    }).then(() => this.setFetchingToolsTimeout())
-  }
-
-  imitateFetchcingTools() {
-    return new Promise((resolve, reject) => {
-      const { toolsStorage } = this.state;
-      if (toolsStorage?.length) {
-        console.warn('fake fetching');
-        this.setStateAsync({ toolsLoading: true });
-        setTimeout(() => {
-          this.setState({
-            tools: toolsStorage,
-            toolsStorage: [],
-            toolsLoading: false,
-          }, () => resolve());
-        }, 2_000);
-      }
-      else {
-        resolve();
-      }
-    })
-  }
-
-  prefetchTools() {
-    return new Promise(resolve => {
-      let toolsStorage = [];
-      const requests = [];
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo: this.state.investorInfo }))
-            .then(tools => Tools.sort(toolsStorage.concat(tools)))
-            .then(tools => {
-              toolsStorage = [...tools];
-            })
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        )
-      }
-
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ toolsStorage }))
-        .then(() => resolve(toolsStorage))
-    })
   }
 
   fetchTools() {
@@ -346,6 +278,8 @@ class App extends React.Component {
           reject(reason);
         })
         .finally(() => {
+          const {changed} = this.state;
+          this.setState({ changed: false });
           if (dev) {
             const response = {
               "error": false,
@@ -385,19 +319,11 @@ class App extends React.Component {
 
   // TODO:
   packSave() {
-    const {
-      isLong,
-      data,
-      depo,
-      customTools,
-    } = this.state;
+    const { rowData } = this.state;
 
     const json = {
       static: {
-        isLong,
-        data,
-        depo,
-        customTools,
+        rowData
       },
     };
 
@@ -417,14 +343,10 @@ class App extends React.Component {
 
       staticParsed = JSON.parse(save.static);
       console.log("Parsed static", staticParsed);
-
+      
       const initialState = cloneDeep(this.initialState);
-
-      // TODO:
-      state.depo = staticParsed.depo ?? initialState.depo;
-      state.isLong = staticParsed.isLong ?? initialState.isLong;
-      state.data = staticParsed.data ?? initialState.data;
-      state.customTools = staticParsed.customTools ?? initialState.customTools;
+      
+      state.rowData = staticParsed.rowData ?? initialState.rowData;
 
       state.id = save.id;
       state.saved = true;
@@ -569,7 +491,7 @@ class App extends React.Component {
 
   getTitleJSX() {
     const { saves, currentSaveIndex } = this.state;
-    let titleJSX = <span>Журнал сделок</span>;
+    let titleJSX = <span>Бинарный журнал сделок</span>;
     if (saves && saves[currentSaveIndex - 1]) {
       titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
     }
@@ -583,7 +505,6 @@ class App extends React.Component {
     return this.getTitleJSX().props.children;
   }
 
-
   render() {
     let { 
       step, 
@@ -591,15 +512,11 @@ class App extends React.Component {
       currentRowIndex, 
       rowData,
       extraSaved,
-      data,
-      sortProp,
-      sortDESC,
-      lineConfigIndex,
       loading,
       saves,
       currentSaveIndex,
       saved,
-      changed
+      changed,
     } = this.state;
 
     let { currentToolCode, isSaved } = rowData[currentRowIndex];
@@ -637,7 +554,6 @@ class App extends React.Component {
                       this.setState({ loading: true });
                       this.fetchSaveById(id)
                         .then(response => this.extractSave(response.data))
-                        .then(() => this.fetchCompanyQuotes())
                         .catch(error => this.showAlert(error));
                     }
                   }}
@@ -697,7 +613,7 @@ class App extends React.Component {
                       <div className="trade-slider-top">
                         <Button
                           className={"day-button"}
-                          onClick={e => this.setState({ currentRowIndex: currentRowIndex - 1, step: 1})}
+                          onClick={e => this.setState({ currentRowIndex: currentRowIndex - 1, step: 1, extraStep: false})}
                           disabled={currentRowIndex == 0}
                         >
                           {"<< Предыдущий день"}
@@ -713,8 +629,10 @@ class App extends React.Component {
                             let rowDataClone = [...rowData];
                             rowDataClone.splice(currentRowIndex, 1);
 
-                            this.setState({ 
+                            this.setState({  
                               rowData: rowDataClone,
+                              extraStep: false,
+                              step:          1,
                               currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
                             });
                           }}
@@ -723,7 +641,7 @@ class App extends React.Component {
                         <Button
                           className={"day-button"}
                           disabled={currentRowIndex + 1 == rowData.length}
-                          onClick={e => this.setState({ currentRowIndex: currentRowIndex + 1, step: 1})}
+                          onClick={e => this.setState({ currentRowIndex: currentRowIndex + 1, step: 1, extraStep: false})}
                         >
                           {"Следующий день >>"}
                         </Button>
@@ -804,6 +722,9 @@ class App extends React.Component {
                               rowDataClone[index][prop] = value;
                               this.setState({ rowData: rowDataClone })
                             }}
+                            isToolsDropdownOpen={ value => {
+                              this.setState({ isToolsDropdownOpen: value })
+                            }}
                           />
                         )}
 
@@ -881,7 +802,12 @@ class App extends React.Component {
                                 onClick={() => {
                                   const rowDataClone = [...rowData];
                                   rowDataClone[currentRowIndex].isSaved = true;
-                                  this.setState({ rowData: rowDataClone, extraStep: true, extraSaved: true  })
+                                  this.update(this.getTitle());
+                                  this.setState({
+                                    rowData: rowDataClone, 
+                                    extraStep: true, 
+                                    extraSaved: true,
+                                  })
                                 }}
                               >
                                 Сохранить
@@ -894,7 +820,7 @@ class App extends React.Component {
                               <Button
                                 className="custom-btn custom-btn--slider"
                                 onClick={e => {
-                                  this.setState({ step: 1, extraStep: false, extraSaved: false});
+                                  this.setState({ step: 1, extraStep: false, extraSaved: false, changed: false});
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                   document.querySelector(".dashboard").classList.remove("dashboard-active");
                                 }}
@@ -916,6 +842,210 @@ class App extends React.Component {
 
           </main>
           {/* /.main */}
+
+          {(() => {
+            const { saves, id } = this.state;
+            const currentTitle = this.getTitle();
+            let namesTaken = saves.slice().map(save => save.name);
+            let name = id ? currentTitle : "Новое сохранение";
+
+            /**
+             * Проверяет, может ли данная строка быть использована как название сейва
+             * 
+             * @param {String} nameToValidate
+             * 
+             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
+             */
+            const validate = (nameToValidate = "") => {
+              nameToValidate = nameToValidate.trim();
+
+              let errors = [];
+              if (nameToValidate != currentTitle) {
+                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
+                if (nameToValidate.length < 3) {
+                  errors.push("Имя должно содержать не меньше трех символов!");
+                }
+                else if (test) {
+                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
+                }
+                if (namesTaken.indexOf(nameToValidate) > -1) {
+                  console.log();
+                  errors.push(`Сохранение с таким именем уже существует!`);
+                }
+              }
+              return errors;
+            }
+
+            class ValidatedInput extends React.Component {
+
+              constructor(props) {
+                super(props);
+
+                let { defaultValue } = props;
+
+                this.state = {
+                  error: "",
+                  value: defaultValue || ""
+                }
+              }
+              vibeCheck() {
+                const { validate } = this.props;
+                let { value } = this.state;
+
+                let errors = validate(value);
+                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                return errors;
+              }
+
+              render() {
+                const { validate, label } = this.props;
+                const { value, error } = this.state;
+
+                return (
+                  <label className="save-modal__input-wrap">
+                    {
+                      label
+                        ? <span className="save-modal__input-label">{label}</span>
+                        : null
+                    }
+                    <Input
+                      className={
+                        ["save-modal__input"]
+                          .concat(error ? "error" : "")
+                          .join(" ")
+                          .trim()
+                      }
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      value={value}
+                      maxLength={30}
+                      onChange={e => {
+                        let { value } = e.target;
+                        let { onChange } = this.props;
+
+                        this.setState({ value });
+
+                        if (onChange) {
+                          onChange(value);
+                        }
+                      }}
+                      onKeyDown={e => {
+                        // Enter
+                        if (e.keyCode === 13) {
+                          let { value } = e.target;
+                          let { onBlur } = this.props;
+
+                          let errors = validate(value);
+                          if (errors.length === 0) {
+                            if (onBlur) {
+                              onBlur(value);
+                            }
+                          }
+
+                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
+                        }
+                      }}
+                      onBlur={() => {
+                        this.vibeCheck();
+                      }} />
+
+                    <span className={
+                      ["save-modal__error"]
+                        .concat(error ? "visible" : "")
+                        .join(" ")
+                        .trim()
+                    }>
+                      {error}
+                    </span>
+                  </label>
+                )
+              }
+            }
+            let onConfirm = () => {
+              let { id, data, saves, currentSaveIndex } = this.state;
+
+              if (id) {
+                this.update(name)
+                  .then(() => {
+                    saves[currentSaveIndex - 1].name = name;
+                    this.setState({
+                      saves,
+                      changed: false,
+                    })
+                  })
+                  .catch(err => this.showAlert(err));
+              }
+              else {
+                const onResolve = (id) => {
+                  let index = saves.push({ id, name });
+
+                  this.setState({
+                    data,
+                    saves,
+                    saved: true,
+                    changed: false,
+                    currentSaveIndex: index,
+                  });
+                };
+
+                this.save(name)
+                  .then(onResolve)
+                  .catch(err => this.showAlert(err));
+
+                if (dev) {
+                  onResolve();
+                }
+              }
+            }
+
+            let inputJSX = (
+              <ValidatedInput
+                label="Название сохранения"
+                validate={validate}
+                defaultValue={name}
+                onChange={val => name = val}
+                onBlur={() => { }} />
+            );
+            let modalJSX = (
+              <Dialog
+                id="dialog1"
+                className="save-modal"
+                title={"Сохранение"}
+                onConfirm={() => {
+                  if (validate(name).length) {
+                    console.error(validate(name)[0]);
+                  }
+                  else {
+                    onConfirm();
+                    return true;
+                  }
+                }}
+              >
+                {inputJSX}
+              </Dialog>
+            );
+
+            return modalJSX;
+          })()}
+          {/* Save Popup */}
+
+          <Dialog
+            id="dialog4"
+            title="Удаление сохранения"
+            confirmText={"Удалить"}
+            onConfirm={() => {
+              const { id } = this.state;
+              this.delete(id)
+                .then(() => console.log("Deleted!"))
+                .catch(err => console.warn(err));
+              return true;
+            }}
+          >
+            Вы уверены, что хотите удалить {this.getTitle()}?
+          </Dialog>
+          {/* Delete Popup */}
 
         </div>
       </Provider>

@@ -15,7 +15,7 @@
   }
 
   .numeric-input {
-    font-size: 0.9em!important;
+    font-size: .5em!important;
 
     input {
       width: 5.5em!important;
@@ -27,7 +27,7 @@
   & .ant-input {
 
     &-suffix {
-      right: 7.75em!important;
+      right: .35em!important;
       top: 1.05em;
     }
   }
@@ -70,28 +70,45 @@
 
   &-val {
     font-size: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 1em 0 1em 0;
+
     height: 3.5em;
     font-weight: 500;
+
+    
 
     background-color: #f4f7fb;
   }
 }
 
-
-.custom-btn {
-  font-size: .8em!important;
-
-  min-width: 8.1em;
-  padding: 0.6em 1.1em .7em;
+.dashboard {
+  .custom-btn {
+    font-size: .8em!important;
+  
+    min-width: 8.1em;
+    padding: 0.6em 1.1em .7em;
+  }
+  
+  .key-height-fix {
+    height: 2.45em;
+  }
+  
 }
 
-.key-height-fix {
-  height: 2.45em;
+.trade-slider-bottom {
+   .custom-btn {
+    font-size: .8em!important;
+  
+    min-width: 8.1em;
+    padding: 0.6em 1.1em .7em;
+  }
 }
 
 .add-button-container {
-  font-size: 1.6em;
+  font-size: 1.25em;
   margin-top: 2em;
   display: flex;
   justify-content: center;

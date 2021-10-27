@@ -72,6 +72,7 @@ export default class TradeLog extends React.Component {
       tools, 
       setSeachVal,
       toolsLoading,
+      isToolsDropdownOpen,
     } = this.props;
 
     let {
@@ -111,6 +112,10 @@ export default class TradeLog extends React.Component {
                     const currentToolCode = currentTool.code;
                     onChange("currentToolCode", currentToolCode, currentRowIndex)
                   }}
+                  // onFocus={() => {
+                  //   isToolsDropdownOpen(true)
+                  // }}
+                  // onBlur={() => isToolsDropdownOpen(false)}
                   disabled={toolsLoading}
                   loading ={toolsLoading}
                   showSearch
