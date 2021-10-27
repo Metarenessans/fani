@@ -1,8 +1,6 @@
-import React from 'react'
-
-import clsx from 'clsx'
-
-import './style.scss'
+import React from "react"
+import clsx from "clsx"
+import "./style.scss"
 
 export default function Stack(props) {
   return (
