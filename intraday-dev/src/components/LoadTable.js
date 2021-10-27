@@ -7,7 +7,7 @@ import { ExtraStepInput } from "./ExtraStepInput";
 
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 
-import { Row, Col, Button, Switch } from "antd";
+import { Row, Col, Button } from "antd";
 import { InputNumber } from "antd4";
 
 export const LoadTable = ({ tableIdx }) => {
@@ -23,16 +23,30 @@ export const LoadTable = ({ tableIdx }) => {
     minYield,
     yieldStep,
     adrMode,
-    setGuaranteeMode,
     updateSteps,
     addStepColumn,
+    loading
   } = useContext(GlobalContext);
 
   const table = loadTables[tableIdx];
 
+  const scrollBottom = () => {
+    document.body.scrollTop = 99999;
+    document.documentElement.scrollTop = 99999;
+  }
+
   useEffect(() => {
     updateSteps(tableIdx, updatedSteps(table.steps.length));
   }, [minYield, yieldStep]);
+
+  const scrollTop = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+
+  useEffect(() => {
+    scrollTop();
+  }, [loading])
 
   const tableRef = useRef(null);
   const inputRef = useRef(null);
@@ -44,7 +58,7 @@ export const LoadTable = ({ tableIdx }) => {
     }
 
     return steps;
-  };
+  }; 
 
   const load = (investorInfo.deposit * table.loadValue) / 100;
 
@@ -65,25 +79,7 @@ export const LoadTable = ({ tableIdx }) => {
         tool.code === selectedTool.code &&
         tool.ref.toolType === selectedTool.toolType
       ) {
-        let guarantee;
-        if (tool.ref.toolType !== "futures") {
-          if (investorInfo.status === "KSUR" && tool.ref.guarantee.KSUR) {
-            guarantee =
-              table.guaranteeMode === "LONG"
-                ? +tool.ref.guarantee.KSUR.LONG
-                : +tool.ref.guarantee.KSUR.SHORT;
-          } else if (
-            investorInfo.status === "KPUR" &&
-            tool.ref.guarantee.KPUR
-          ) {
-            guarantee =
-              table.guaranteeMode === "LONG"
-                ? +tool.ref.guarantee.KPUR.LONG
-                : +tool.ref.guarantee.KPUR.SHORT;
-          } else guarantee = +tool.ref.guarantee.default;
-        } else {
-          guarantee = +tool.guarantee;
-        }
+        const guarantee = +tool.guarantee;
 
         const contracts = Math.floor(
           (investorInfo.deposit * table.loadValue) / 100 / guarantee
@@ -131,6 +127,10 @@ export const LoadTable = ({ tableIdx }) => {
   const [loadsVisible, setLoadsVisible] = useState(false);
   const [loadValueLocal, setLoadValueLocal] = useState(table.loadValue);
 
+  useEffect(() => {
+    setLoadValueLocal(table.loadValue);
+  }, [table]);
+
   return (
     <div className="container load-table">
       <Row gutter={[20]}>
@@ -139,23 +139,11 @@ export const LoadTable = ({ tableIdx }) => {
           lg={12}
           className={`tools ${toolsVisible ? "xsVisible" : ""}`}
         >
-          <Row gutter={[20]} className="load-header">
-            <Col center="xs" xs={24} md={6}>
+          <Row gutter={[20]} align="top" className="load-header">
+            <Col center="xs" xs={8}>
               <p className="load-header_title">Загрузка</p>
             </Col>
-            <Col xs={8} md={6} className="load-header_switch">
-              <Switch
-                checkedChildren="LONG"
-                unCheckedChildren="SHORT"
-                defaultChecked
-                onChange={(checked) => {
-                  const mode = checked ? "LONG" : "SHORT";
-                  setGuaranteeMode(tableIdx, mode);
-                }}
-                disabled={!investorInfo.status && true}
-              />
-            </Col>
-            <Col xs={8} md={8}>
+            <Col xs={8}>
               <InputNumber
                 ref={inputRef}
                 size="large"
@@ -172,10 +160,19 @@ export const LoadTable = ({ tableIdx }) => {
                 }}
                 value={loadValueLocal}
                 onChange={setLoadValueLocal}
-                onKeyDown={(key) => {
-                  const codes = ["Enter", "NumpadEnter", "Escape"];
-                  if (codes.includes(key.code)) {
-                    inputRef.current.blur();
+                // onKeyDown={(key) => {
+                //   const codes = ["Enter", "NumpadEnter", "Escape"];
+                //   if (codes.includes(key.code)) {
+                //     inputRef.current.blur();
+                //   }
+                // }}
+                onKeyDown={e => {
+                  if (e.keyCode == 13) {
+                    inputRef.current.blur()
+                  }
+
+                  if (e.keyCode == 27) {
+                    inputRef.current.blur()
                   }
                 }}
                 onStep={async (value) => {
@@ -185,7 +182,7 @@ export const LoadTable = ({ tableIdx }) => {
                 onBlur={() => setLoadValue(tableIdx, loadValueLocal)}
               />
             </Col>
-            <Col xs={8} md={4}>
+            <Col xs={8}>
               <p className="load-value">{numWithSpaces(load.toFixed())}</p>
             </Col>
           </Row>
@@ -316,14 +313,17 @@ export const LoadTable = ({ tableIdx }) => {
           {tableIdx == loadTables.length - 1 ? (
             <Button
               className="func-button add-load-table-btn"
-              onClick={(e) => addLoadTable()}
+              onClick={() => {
+                addLoadTable()
+                  .then(() => scrollBottom())
+              }}
             >
               <PlusOutlined aria-label="Добавить загрузку" />
               Добавить загрузку
             </Button>
           ) : (
             <div style={{ width: 255 }}></div>
-          )}
+            )}
         </Col>
 
         <Col xs={24} md={8}>

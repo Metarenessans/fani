@@ -3,18 +3,16 @@ import { GlobalContext } from "../context/GlobalState";
 import { InputNumber } from "antd";
 
 export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
-  const { loadTables, setExtraStep, deleteExtraStep, loading } = useContext(
-    GlobalContext
-  );
+  const { loadTables, setExtraStep, deleteExtraStep, loading } = useContext(GlobalContext);
   const [stepValue, setStepValue] = useState(step);
 
   const inputRef = useRef(null);
 
   const table = loadTables[tableIdx];
 
-  useEffect(async () => {
+  useEffect(() => {
     setStepValue(step);
-  }, [table.extraSteps.length]);
+  }, [table.extraSteps]);
 
   const handleKeyboard = (key) => {
     const codes = ["Enter", "NumpadEnter", "Escape"];
@@ -28,7 +26,8 @@ export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
       deleteExtraStep(tableIdx, columnIdx);
       inputRef.current.focus();
     } else {
-      setExtraStep(tableIdx, columnIdx, stepValue);
+      if (stepValue !== table.extraSteps[columnIdx])
+        setExtraStep(tableIdx, columnIdx, stepValue);
     }
   };
 
@@ -51,7 +50,16 @@ export const ExtraStepInput = ({ tableIdx, columnIdx, step }) => {
         }}
         value={stepValue}
         onChange={setStepValue}
-        onKeyDown={handleKeyboard}
+        // onKeyDown={handleKeyboard}
+        onKeyDown={ e => {
+          if (e.keyCode == 13) {
+            inputRef.current.blur()
+          }
+
+          if (e.keyCode == 27) {
+            inputRef.current.blur()
+          }
+        }}
         onStep={async (value) => {
           await setStepValue(value);
           await inputRef.current.blur();

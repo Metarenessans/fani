@@ -7,6 +7,8 @@ import {} from '@ant-design/icons'
 import params       from "../../../common/utils/params";
 import formatNumber from "../../../common/utils/format-number"
 
+import { cloneDeep, isEqual } from "lodash"
+
 import NumericInput          from "../../../common/components/numeric-input"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
@@ -82,6 +84,8 @@ constructor(props) {
       toolsLoading: true,
 
       isFocused: false,
+
+      currentToolIndex:  0,
     };
 
     this.state = {
@@ -104,6 +108,16 @@ constructor(props) {
   componentDidMount() {
     this.bindEvents();
     this.fetchInitialData();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
+    }
   }
 
   setStateAsync(state = {}) {
@@ -155,7 +169,6 @@ constructor(props) {
     }, 1500);
   }
 
-  // ~~
   fetchInvestorInfo() {
     fetch("getInvestorInfo")
       .then(response => this.applyInvestorInfo(response))
@@ -166,7 +179,7 @@ constructor(props) {
       .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
-
+  // ~~
   setFetchingToolsTimeout() {
     new Promise(resolve => {
       setTimeout(() => {
@@ -230,7 +243,7 @@ constructor(props) {
       Promise.all(requests).then(() => resolve())
     })
   }
-  
+
   fetchTools() {
     return new Promise(resolve => {
       let first = true;
@@ -260,26 +273,59 @@ constructor(props) {
   }
 
   fetchSaves() {
-    fetchSavesFor("tor")
-      .then(response => {
-        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-        return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-      })
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            const save = saves[0];
-            const { id } = save;
+    return new Promise((resolve, reject) => {
 
-            this.setState({ loading: true });
-            this.fetchSaveById(id)
-              .then(response => this.extractSave(response.data))
-              .catch(error => console.error(error));
+      fetchSavesFor("tor")
+        .then(response => {
+          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+          return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
+        })
+  
+      fetch("getLastModifiedTorSnapshot")
+        .then(response => {
+          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+          if (!response.error && response.data?.name) {
+            const pure = params.get("pure") === "true";
+            if (!pure) {
+              this.setState({ loading: true });
+              return this.extractSave(response.data)
+                .then(resolve())
+                .catch(error => reject(error));
+            }
           }
-        }
-      })
-      .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
+          resolve();
+        })
+        .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
+          if (dev) {
+            const response = {
+              "error": false,
+              "data": {
+                "id": 0,
+                "name": null,
+                "dateCreate": 0,
+                "dateUpdate": 0,
+                "static": null
+              }
+            };
+  
+            const saves = [{
+              "id": response.data.id,
+              "name": response.data.name,
+              "dateCreate": response.data.dateCreate,
+            }];
+  
+            this.setStateAsync({ saves }).then(() => {
+              if (!response.error && response.data?.name) {
+                this.extractSave(response.data)
+              }
+            })
+          }
+        })
+    })
   }
 
   showAlert(msg = "") {
@@ -354,7 +400,7 @@ constructor(props) {
       onError(e);
     }
 
-    this.setState(state);
+    return this.setStateAsync(state)
   }
 
   reset() {
@@ -470,10 +516,40 @@ constructor(props) {
 
     return title;
   }
+  
+  /**
+  * Возвращает массив имён выбранных инструментов
+  */
+  getCurrentSelectedToolsName() {
+    const names = [];
+    const { items } = this.state;
+    items.map(item => names.push(item.selectedToolName));
+    return names;
+  }
+  
+  /**
+  * Возвращает массив индексов выбранных инструментов
+  */
+  getCurrentToolsIndex() {
+    const selectedToolsIndexArr = [];
+    const currentToolsName = this.getCurrentSelectedToolsName();
+    currentToolsName.map((item, index) => {
+      selectedToolsIndexArr.push(Tools.getToolIndexByCode(this.getTools(), currentToolsName[index]))
+    })
+    return selectedToolsIndexArr
+  }
+
+  getCurrentTools() {
+    const currentToolsArr = [];
+    const toolsIndexArr = this.getCurrentToolsIndex()
+    toolsIndexArr.map((item, index) => {
+      currentToolsArr.push(this.getTools()[index])
+    })
+    return currentToolsArr
+  }
 
   render() {
-    console.log(this.state.depo);
-
+    console.log(this.getCurrentTools());
     return (
       <Provider value={this}>
         <div className="page">
@@ -559,10 +635,13 @@ constructor(props) {
                           items.splice(index, 1);
                           this.setState({ items });
                         }
-
+                      }}
+                      onChangeTool={ value => {
+                        const { currentToolIndex } = this.state;
+                        this.setState({ currentToolIndex: value });
                       }}
                     />
-                  )
+                  ) 
                 }
               
               </div>

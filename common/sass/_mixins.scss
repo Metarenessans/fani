@@ -10,9 +10,15 @@
   }
 }
 
+@mixin xlg() {
+  @media (max-width: 1280px) {
+    @content
+  }
+}
+
 @mixin md() {
   @media (max-width: 992px) {
-    @content;
+    @content
   }
 }
 

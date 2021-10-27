@@ -276,6 +276,8 @@ class App extends Component {
         currentSaveIndex: 0,
 
         passiveIncomeTools: [],
+
+        chartModuleLoaded: false,
       }
     );
 
@@ -346,8 +348,10 @@ class App extends Component {
     this.fetchInitialData();
 
     import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+      console.log("chart loaded!", module);
       chartModule = module;
       Chart = module.Chart;
+      this.setState({ chartModuleLoaded: true });
     });
 
     // TODO: использовать fetchBonds из common
@@ -373,6 +377,14 @@ class App extends Component {
           reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
         }
       })
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { chartModuleLoaded } = this.state;
+    if (prevState.chartModuleLoaded != chartModuleLoaded && chartModuleLoaded) {
+      // ~~
+      chartVisible && chartModule?.updateChart.call(this)
+    }
   }
 
   bindEvents() {
@@ -425,50 +437,58 @@ class App extends Component {
   }
 
   setFetchingToolsTimeout() {
+    const ms = dev ? 10_000 : 1 * 60 * 1_000;
     new Promise(resolve => {
       setTimeout(() => {
+        const currentTool = this.getCurrentTool();
         if (!document.hidden) {
-          this.prefetchTools()
-            .then(() => {
+          fetch("getCompanyTrademeterInfo", "GET", {
+            code: currentTool.code,
+            region: currentTool.dollarRate == 1 ? "RU" : "EN"
+          })
+            .then(response => {
+              Tools.prefetchedTool = response.data;
+
               const { isToolsDropdownOpen } = this.state;
               if (!isToolsDropdownOpen) {
-                this.imitateFetchcingTools()
+                this.imitateFetchingTools()
                   .then(() => resolve());
               }
               else {
-                console.log('no way!');
+                console.log('Не могу пропушить инструмент в стейт, буду ждать окно');
+                Tools.prefetchedTool = null;
                 resolve();
               }
-            });
+
+              resolve();
+            })
         }
         else resolve();
-
-      }, dev ? 60_000 : 1 * 60 * 1_000);
-
+      }, ms);
     }).then(() => this.setFetchingToolsTimeout())
   }
 
-  imitateFetchcingTools() {
-    return new Promise((resolve, reject) => {
-      if (Tools.storage?.length) {
-        let newTools = [...Tools.storage];
+  imitateFetchingTools() {
+    return new Promise(resolve => {
+      if (Tools.prefetchedTool) {
+        this.setState({ toolsLoading: true });
+
+        const tools = [...this.state.tools];
         const oldTool = this.getCurrentTool();
-        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
-        if (oldToolIndex == -1) {
-          console.warn(`No ${oldTool.code} in new tools list`, newTools);
-          newTools.push(oldTool);
+        const index = tools.indexOf(oldTool);
+        if (index != -1) {
+          tools[index] = Tool.fromObject(Tools.prefetchedTool);
         }
 
         setTimeout(() => {
           this.setState({
-            tools: newTools,
+            tools,
             toolsLoading: false,
           }, () => {
-            Tools.storage = [];
-            Tools.storageReady = false;
+            Tools.prefetchedTool = null;
             resolve()
           });
-        }, 2_000);
+        }, 1_000);
       }
       else {
         resolve();
@@ -516,48 +536,96 @@ class App extends Component {
         .then(() => resolve())
     })
   }
-
+  // ~~
   fetchSaves() {
-    fetchSavesFor("trademeter")
-      .then(response => {
-        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-        return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-      })
-      .then(saves => {
-        if (saves.length) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            const save = saves[0];
-            const { id } = save;
+    return new Promise((resolve, reject) => {
+      fetch("getTrademeterSnapshots")
+        .then(response => {
+          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+          this.setState({ saves, loading: false });
+        })
 
-            this.setState({ loading: true });
-            this.fetchSaveById(id).then(response => this.extractSave(response.data));
+      fetch("getLastModifiedTradelogSnapshot")
+        .then(response => {
+          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+          if (!response.error && response.data?.name) {
+            const pure = params.get("pure") === "true";
+            if (!pure) {
+              this.setState({ loading: true });
+              return this.extractSave(response.data)
+                .then(() => this.setStateAsync({ loading: false }))
+                .then(resolve)
+                .catch(error => reject(error));
+            }
           }
-        }
-      })
-      .catch(reason => {
-        console.log(reason);
-        this.showAlert(`Не удалось получить сохранения! ${reason}`);
-      })
-      .finally(() => {
-        if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
-          const { saves } = this.state;
-          const response = require("./api/fake-save.js").default;
-          const { data } = response;
-          const { id, name } = data;
-          const index = 0;
+          resolve();
+        })
+        .catch(reason => {
+          this.showAlert(`Не удалось получить сохранения! ${reason}`);
+          reject(reason);
+        })
+        .finally(() => {
+          if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
+            const { saves } = this.state;
+            const response = require("./api/fake-save.js").default;
+            const { data } = response;
+            const { id, name } = data;
+            const index = 0;
 
-          this.extractSave(data);
+            this.extractSave(data);
 
-          saves[index] = { id, name };
-          this.setState({
-            saves,
-            currentSaveIndex: index + 1,
-            loading: false
-          });
-        }
-      })
+            saves[index] = { id, name };
+            this.setState({
+              saves,
+              currentSaveIndex: index + 1,
+              loading: false
+            });
+          }
+        })
+    });
   }
+
+  // fetchSaves() {
+    // fetchSavesFor("trademeter")
+  //     .then(response => {
+  //       const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+  //       return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
+  //     })
+  //     .then(saves => {
+  //       if (saves.length) {
+  //         const pure = params.get("pure") === "true";
+  //         if (!pure) {
+  //           const save = saves[0];
+  //           const { id } = save;
+
+  //           this.setState({ loading: true });
+  //           this.fetchSaveById(id).then(response => this.extractSave(response.data));
+  //         }
+  //       }
+  //     })
+  //     .catch(reason => {
+  //       console.log(reason);
+  //       this.showAlert(`Не удалось получить сохранения! ${reason}`);
+  //     })
+  //     .finally(() => {
+  //       if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
+  //         const { saves } = this.state;
+  //         const response = require("./api/fake-save.js").default;
+  //         const { data } = response;
+  //         const { id, name } = data;
+  //         const index = 0;
+
+  //         this.extractSave(data);
+
+  //         saves[index] = { id, name };
+  //         this.setState({
+  //           saves,
+  //           currentSaveIndex: index + 1,
+  //           loading: false
+  //         });
+  //       }
+  //     })
+  // }
 
   fetchInitialData() {
     this.fetchInvestorInfo();
@@ -892,7 +960,8 @@ class App extends Component {
       if (!failed) {
         this.overrideData(dynamicParsed)
           .then(() => this.updateData())
-          .then(() => chartVisible && chartModule?.updateChart.call(this))
+          // ~~
+          // .then(() => chartVisible && chartModule?.updateChart.call(this))
           .then(() => this.setCurrentDay(currentDay))
           .catch(error => {
             console.warn(error);
@@ -2551,7 +2620,7 @@ class App extends Component {
                           onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                           onBlur={() => {
                             this.setStateAsync({ isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchcingTools());
+                              .then(() => this.imitateFetchingTools());
                           }}
                           toolsLoading={this.state.toolsLoading}
                           disabled={this.state.toolsLoading}
@@ -2603,7 +2672,7 @@ class App extends Component {
                               depoPersentageStart
                             }, () => {
                               this.updateData(days[mode])
-                                .then(() => this.imitateFetchcingTools())
+                                .then(() => this.imitateFetchingTools())
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}

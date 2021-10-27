@@ -18,6 +18,8 @@ import {
 
 import "../../../common/api/fetch";
 
+import { cloneDeep, isEqual } from "lodash"
+
 import params              from "../../../common/utils/params"
 import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
@@ -27,7 +29,6 @@ import { Tools, Tool, template } from "../../../common/tools"
 import Header                from "./components/header"
 import CrossButton           from "../../../common/components/cross-button"
 import NumericInput          from "../../../common/components/numeric-input"
-import CustomSlider          from "../../../common/components/custom-slider"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import Stack                 from "../../../common/components/stack"
@@ -143,8 +144,16 @@ class App extends React.Component {
     window.addEventListener( "scroll", () => onScroll.call(this) );
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps, prevState) {
     onScroll.call(this);
+
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
+    }
   }
 
   setStateAsync(state = {}) {
@@ -305,21 +314,68 @@ class App extends React.Component {
         const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
-      .then(saves => {
-        if (saves.length) {
+    
+    fetch("getLastModifiedKsdSnapshot")
+      .then(response => {
+        // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+        if (!response.error && response.data?.name) {
           const pure = params.get("pure") === "true";
           if (!pure) {
-            const save = saves[0];
-            const { id } = save;
-
             this.setState({ loading: true });
-            this.fetchSaveById(id)
-              .then(response => this.extractSave(response.data))
-              .catch(error => console.error(error));
+            return this.extractSave(response.data)
+              .then(resolve)
+              .catch(error => reject(error));
           }
         }
+        resolve();
       })
-      .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
+      .catch(reason => {
+        this.showAlert(`Не удалось получить сохранения! ${reason}`);
+        reject(reason);
+      })
+      .finally(() => {
+        if (dev) {
+          const response = {
+            "error": false,
+            "data": {
+              "id": 0,
+              "name": null,
+              "dateCreate": 0,
+              "dateUpdate": 0,
+              "static": null
+            }
+          };
+
+          const saves = [{
+            "id": response.data.id,
+            "name": response.data.name,
+            "dateCreate": response.data.dateCreate,
+          }];
+
+          this.setStateAsync({ saves }).then(() => {
+            if (!response.error && response.data?.name) {
+              this.extractSave(response.data)
+            }
+          })
+        }
+      })
+
+      
+      // .then(saves => {
+      //   if (saves.length) {
+      //     const pure = params.get("pure") === "true";
+      //     if (!pure) {
+      //       const save = saves[0];
+      //       const { id } = save;
+
+      //       this.setState({ loading: true });
+      //       this.fetchSaveById(id)
+      //         .then(response => this.extractSave(response.data))
+      //         .catch(error => console.error(error));
+      //     }
+      //   }
+      // })
+      // .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
   }
 
   showMessageDialog(msg = "") {

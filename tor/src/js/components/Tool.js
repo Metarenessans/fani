@@ -133,6 +133,7 @@ export default class Item extends React.Component {
       onBlur,
       onFocus,
       toolsLoading,
+      onChangeTool,
     } = this.props;
 
     const drawdown           = this.state.drawdown;
@@ -228,6 +229,7 @@ export default class Item extends React.Component {
                 onChange={index => {
                   let name = this.props.tools[index].getSortProperty();
                   onChange("selectedToolName", name, this);
+                  onChangeTool(index);
                 }}
                 showSearch
                 onSearch={(value) => this.setState({ searchVal: value })}
@@ -371,6 +373,7 @@ export default class Item extends React.Component {
                 <span className="tool-pair-val">
                   <Value format={val => formatNumber(val) + "%"}>
                     {(() => {
+                      // ~~
                       let val = (drawdown / depo) * 100;
                       val = Math.min(val, 100);
 
