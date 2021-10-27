@@ -1,34 +1,29 @@
 const webpack = require("webpack");
 const path = require("path");
-// Plugins
+/* Plugins */
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const CleanWebpackPlugin = require("clean-webpack-plugin");
 
 module.exports = (env, options) => {
   const prod = options.mode === "production";
 
-  const fileLoaderOptions = {
-    loader: "file-loader",
-    query: {
-      name: "[path][name].[ext]"
-    }
-  }
-
   return {
     entry: "./src/js/index.js",
+    devtool: prod ? "source-map" : "eval-sourcemap",
     output: {
       path: path.resolve(__dirname, "public"),
-      filename: "js/index.js"
+      filename: "js/index.js",
+      chunkFilename: "js/[name].js"
     },
     devServer: {
-      contentBase: "./public",
-      publicPath: "/public/js/",
-      overlay: true
+      contentBase: path.join(__dirname, "public"),
+      publicPath: "/",
+      overlay: true,
+      // host: '192.168.0.129'
     },
-    devtool: prod ? "source-map" : "eval-sourcemap",
-    target: "web",
     module: {
       rules: [
+        // JS
         {
           test: /\.js$/,
           exclude: /node_modules/,
@@ -36,16 +31,14 @@ module.exports = (env, options) => {
             loader: "babel-loader",
             options: {
               rootMode: "upward",
-              compact: false,
             }
           }
         },
+        // CSS
         {
           test: /\.s[ac]ss$/i,
           use: [
-            process.env.NODE_ENV !== "production"
-              ? "style-loader"
-              : MiniCssExtractPlugin.loader,
+            prod ? MiniCssExtractPlugin.loader : "style-loader",
             // Translates CSS into CommonJS
             "css-loader?url=false",
             // PostCSS
@@ -53,47 +46,54 @@ module.exports = (env, options) => {
               loader: "postcss-loader",
               options: {
                 plugins: [
-                  require("postcss-custom-properties")(),
-                  require("autoprefixer")({
-                    overrideBrowserslist: ["ie >= 8", "last 4 version"]
-                  }),
-                  require("postcss-csso"),
+                  require("postcss-custom-properties")({ preserve: true }),
+                  require("autoprefixer")(),
+                  prod && require("postcss-csso")()
                 ],
                 sourceMap: true
               }
             },
             "resolve-url-loader",
-            // Compiles Sass to CSS
+            // Compiles SASS to CSS
             {
               loader: "sass-loader",
               options: {
                 prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
                 webpackImporter: false,
-                sassOptions: {
-                  publicPath: "./",
-                  outputStyle: "expanded",
-                },
+                sassOptions: { outputStyle: "expanded" },
               },
             }
           ]
         },
+        // Fonts
         {
           test: /\.(woff|woff2|eot|ttf|otf)$/,
-          ...fileLoaderOptions
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
         },
+        // Images
         {
           test: /\.(png|jpe?g|gif|webp)$/,
-          ...fileLoaderOptions
+          loader: "file-loader",
+          options: {
+            name: "[path][name].[ext]"
+          }
         }
       ]
     },
     plugins: [
       new webpack.DefinePlugin({ dev: !prod }),
       new MiniCssExtractPlugin({
-        filename: "[name].css",
-        chunkFilename: "[name].css",
+        filename: "css/style.css",
+        chunkFilename: "css/[name].css"
       }),
       new CleanWebpackPlugin(["public/js/*"])
-    ]
+    ],
+    optimization: {
+      namedModules: true,
+      namedChunks: true
+    }
   }
 };
