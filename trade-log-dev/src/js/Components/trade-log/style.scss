@@ -3,6 +3,10 @@
   .tool-select {
     padding-top: 1em;
   }
+
+  .time-picker-container {
+    height: 1.6em;
+  }
   
   .ant {
 
@@ -12,7 +16,9 @@
         height: 100%;
         
         &-input {
-          font-size: .9em;
+          font-size:     1.1em;
+          padding-right: 1.3em;
+
           width:  100%;
           height: 100%;
         }
@@ -130,7 +136,7 @@
       }
 
       &-time {
-        padding-top: 0.95em!important;
+        padding-top: 0.98em!important;
         padding: .8em 1.7em 2.82em;
       }
 

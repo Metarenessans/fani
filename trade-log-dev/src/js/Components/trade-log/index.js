@@ -155,20 +155,22 @@ export default class TradeLog extends React.Component {
               </div>
 
               <div className="trade-log-table-val trade-log-table-val--base trade-log-table-val-time">
-                <TimePicker 
-                  key={currentRowIndex}
-                  format={'HH:mm'}
-                  allowClear={true}
-                  onChange={onChangeTime}
-                  defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
-                  placeholder="Введите время"
-                  onChange={time => {
-                    let value = +time;
-                    console.log(value);
-                    onChange("enterTime", value, currentRowIndex);
-                  }}
-                  placeholder="введите время"
-                />
+                <div className="time-picker-container">
+                  <TimePicker 
+                    key={currentRowIndex}
+                    format={'HH:mm'}
+                    allowClear={true}
+                    onChange={onChangeTime}
+                    defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
+                    placeholder="Введите время"
+                    onChange={time => {
+                      let value = +time;
+                      console.log(value);
+                      onChange("enterTime", value, currentRowIndex);
+                    }}
+                    placeholder="введите время"
+                  />
+                </div>
               </div>
             </div>
             {/* col */}

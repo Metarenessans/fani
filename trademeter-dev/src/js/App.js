@@ -561,7 +561,7 @@ class App extends Component {
             this.extractSave(data);
 
             saves[index] = { id, name };
-            this.setState({
+            this.setStateAsync({
               saves,
               currentSaveIndex: index + 1,
               loading: false

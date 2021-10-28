@@ -1,0 +1,272 @@
+*,
+*::before,
+*::after
+  box-sizing: border-box
+
+body
+  background: pink
+
+button,
+input,
+a
+  &:focus
+    outline: none
+    box-shadow: 0
+
+a
+  display: inline-flex
+  color: inherit
+  text-decoration: none
+
+.visually-hidden
+  +visually-hidden
+
+html
+  -webkit-font-smoothing: antialiased
+  text-rendering: optimizeLegibility
+  text-size-adjust: 100%
+
+body
+  +font("Circe")
+
+  min-width: 320px
+  overflow-x: hidden
+  background-color: $bgColor
+
+  &.scroll-disabled
+    overflow: hidden
+
+    main
+      filter: blur(.4em)
+
+  // &::-webkit-scrollbar
+  //   background-color: $bgColor
+  //   width: 16px
+
+  // &::-webkit-scrollbar-track
+  //   background-color: $bgColor
+
+  // &::-webkit-scrollbar-thumb
+  //   background-color: #babac0
+  //   border-radius: 16px
+  //   border: 4px solid $bgColor
+
+  // &::-webkit-scrollbar-button
+  //   display: none
+
+.page
+  font-size: 0.80357em
+
+  +lg
+    font-size: 0.9vw
+  
+  +sm
+    font-size: 1.45vw
+
+  +xs
+    font-size: 2.25vw
+
+
+/* Components */
+
+@import "components/index"
+
+/* Sections */
+
+@import "sections/index"
+
+/* Layout */
+
+@import "layout/index"
+
+.tor
+  &-config
+    &__depo
+
+      .input-group__label
+        +sm
+          font-size: 1.4em !important
+
+      .ant-input
+        font-size: 1em
+
+.save-modal
+  .dialog-content
+    max-width: 40em
+
+  &__error
+    display: block
+    min-height: 0
+    margin-top: .5em
+
+    font-size: .9em
+    color: var( --danger-color )
+
+    visibility: hidden
+    transition: min-height .2s ease-in
+
+    &.visible
+      min-height:  1.5em
+      visibility: visible
+
+  &__input
+    height: 2.2em
+    font-size: 1em !important
+    
+    &-wrap
+      font-size: 1.2em
+
+    &-label
+      padding-left: .6em
+      font-size: .8em
+      color: #999
+
+.delete-btn
+  display: inline-flex
+  background: none
+  border: none
+  padding: 0
+  border-radius: 50%
+  width:  1em
+  height: 1em
+  opacity: .4
+
+  cursor: pointer
+
+  transform: scale(.85)
+  transition: transform .15s ease-in-out
+  will-change: transform
+
+  user-select: none
+
+  &:hover
+    transform: scale(1)
+    background-color: rgba(black, .2)
+    opacity: 1
+
+    color: lighten($dangerColor, 5)
+  
+  span
+    position: absolute
+    line-height: 0
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    margin-top: .1em
+
+.x-button
+  display: inline-flex
+  background: none
+  border: none
+  padding: 0
+  border-radius: 50%
+  width:  1em
+  height: 1em
+  opacity: .4
+
+  cursor: pointer
+
+  transform: scale(.85)
+  transition: transform .15s ease-in-out
+  will-change: transform
+
+  user-select: none
+
+  &:hover
+    transform: scale(1)
+    background-color: rgba(black, .2)
+    opacity: 1
+
+    color: lighten($dangerColor, 5)
+  
+  span
+    position: absolute
+    line-height: 0
+    left: 50%
+    top:  50%
+    transform: translate(-50%, -50%)
+    margin-top: .1em
+
+.ant
+  &-select-search__field
+    box-shadow: none !important
+  
+  &-typography
+    font-size: 1.8em
+
+  &-radio,
+  &-radio-wrapper
+    // font-size: 1.3em
+
+  &-slider
+
+    &-rail
+      background-color: #ccc
+
+    &-rail,
+    &-step,
+    &-track
+      height: .3em
+    
+    &:hover &-track,
+    &-track
+      // background-color: #ac1337
+    
+    &-handle
+      // width:  2rem
+      // height: 2rem
+      // box-shadow: 0 0.2rem 0.6rem 0.1rem rgba(0, 0, 0, 0.3)
+      // border: 0.2rem solid #780d26 !important
+      // background-color: #fff
+
+      margin-top:  -0.35em
+      margin-left: 0
+  &-input
+    &.error
+      border-color: var(--danger-color)!important
+      box-shadow: 0 0 0 var(--focus-outline-width) var(--danger-color)!important
+
+.item
+  position: relative
+
+  &-add,
+  &-delete
+    position: absolute
+    right: -1.5em
+    top:   -1.9em
+    width:  1.25em
+    height: 1.25em
+    background: rgba(tomato, .5)
+    border: none
+    border-radius: 50%
+    padding: 0
+
+    font-size: 2.6em
+    font-weight: bold
+    line-height: 1.5
+
+    transition: background .2s ease-in
+
+    cursor: pointer
+
+    &:hover
+      background: tomato
+  
+  &-add
+    left:    50%
+    top: initial
+    bottom: -2.25em
+    transform: rotate(45deg) translateX(-50%)
+
+    background: rgba(lightgreen, .5)
+
+    &:hover
+      background: lightgreen
+
+.hide-xs
+  +xs
+    display: none
+
+.hide-sm
+  +sm
+    display: none
