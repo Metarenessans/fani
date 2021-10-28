@@ -357,7 +357,6 @@ class App extends Component {
 
     try {
       const passiveIncomeTools = await fetchBonds();
-      console.log(passiveIncomeTools);
       this.setState({ passiveIncomeTools });
     }
     catch (e) {
