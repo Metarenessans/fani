@@ -31,6 +31,7 @@ import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import extRateReal         from "./utils/rate"
 import isEqual             from "./utils/is-equal"
@@ -205,7 +206,6 @@ class App extends Component {
       // --------------------
       // Passive income tools
       // --------------------
-      passiveIncomeTools: [],
       customPassiveIncomeTools: [],
       currentPassiveIncomeToolIndex: [-1, -1],
 
@@ -247,6 +247,10 @@ class App extends Component {
       pitError: "",
 
       errorMessage: "",
+      
+      toolsLoading: false,
+
+      isToolsDropdownOpen: false
     };
 
     this.state = merge(
@@ -270,10 +274,13 @@ class App extends Component {
         // -----
         tools: [],
 
+
         /**
          * Индекс текущего сохранения
          */
         currentSaveIndex: 0,
+
+        passiveIncomeTools: [],
       }
     );
 
@@ -285,6 +292,7 @@ class App extends Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
+    this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
     if (dev) {
       this.fetchSaveById = () => {
         console.log('executing custom fetchSaveById');
@@ -349,7 +357,7 @@ class App extends Component {
     // вызов метода под инструмент ОФЗ
     fetch("getBonds")
       .then(response => {
-        const data = response.data;
+        const { data } = response;
         if (data) {
           const passiveIncomeTools = data
             .map(tool => {
@@ -418,16 +426,9 @@ class App extends Component {
     }, 1500);
   }
 
-  syncToolsWithInvestorInfo(investorInfo = {}) {
-    const { tools } = this.state;
-    investorInfo = investorInfo || this.state.investorInfo;
-    return this.setStateAsync({ tools: tools.map(tool => tool.update(investorInfo)) })
-  }
-
   fetchInvestorInfo() {
     fetchInvestorInfo()
-      .then(this.applyInvestorInfo)
-      .then(() => this.syncToolsWithInvestorInfo())   
+      .then(this.applyInvestorInfo)  
       .then(response => {
         let { deposit } = response.data;
         let { depoStart, depoEnd } = this.state;
@@ -443,30 +444,109 @@ class App extends Component {
 
         return this.setStateAsync({ depoStart, depoEnd });
       })
+      .then(this.syncToolsWithInvestorInfo)
       .then(this.recalc)
       .catch(error => console.error(error))
   }
 
-  fetchTools() {
-    for (let request of [
-      "getFutures",
-      "getTrademeterInfo"
-    ]) {
-      fetch(request)
-        .then(this.applyTools)
-        .then(() => this.syncToolsWithInvestorInfo())
-        .then(() => this.updateDepoPersentageStart())
-        .catch(error => console.error(error));
-    }
+  setFetchingToolsTimeout() {
+    new Promise(resolve => {
+      setTimeout(() => {
+        if (!document.hidden) {
+          this.prefetchTools()
+            .then(() => {
+              const { isToolsDropdownOpen } = this.state;
+              if (!isToolsDropdownOpen) {
+                this.imitateFetchcingTools()
+                  .then(() => resolve());
+              }
+              else {
+                console.log('no way!');
+                resolve();
+              }
+            });
+        }
+        else resolve();
+
+      }, dev ? 60_000 : 1 * 60 * 1_000);
+
+    }).then(() => this.setFetchingToolsTimeout())
   }
 
+  imitateFetchcingTools() {
+    return new Promise((resolve, reject) => {
+      if (Tools.storage?.length) {
+        let newTools = [...Tools.storage];
+        const oldTool = this.getCurrentTool();
+        const oldToolIndex = newTools.indexOf(newTools.find(tool => tool.code == oldTool.code));
+        if (oldToolIndex == -1) {
+          console.warn(`No ${oldTool.code} in new tools list`, newTools);
+          newTools.push(oldTool);
+        }
+
+        setTimeout(() => {
+          this.setState({
+            tools: newTools,
+            toolsLoading: false,
+          }, () => {
+            Tools.storage = [];
+            Tools.storageReady = false;
+            resolve()
+          });
+        }, 2_000);
+      }
+      else {
+        resolve();
+      }
+    })
+  }
+
+  prefetchTools() {
+    return new Promise(resolve => {
+      Tools.storage = [];
+      const { investorInfo } = this.state;
+      const requests = [];
+      for (let request of ["getFutures", "getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
+            .then(tools => Tools.sort(Tools.storage.concat(tools)))
+            .then(tools => {
+              Tools.storage = [...tools];
+            })
+            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+        )
+      }
+
+      Promise.all(requests).then(() => resolve())
+    })
+  }
+
+  fetchTools() {
+    return new Promise(resolve => {
+      const requests = [];
+      this.setState({ toolsLoading: true })
+      for (let request of ["getFutures","getTrademeterInfo"]) {
+        requests.push(
+          fetch(request)
+            .then(this.applyTools)
+            .then(this.syncToolsWithInvestorInfo)
+            .then(() => this.updateDepoPersentageStart())
+            .catch(error => console.error(error))
+        )
+      }
+
+      Promise.all(requests)
+        .then(() => this.setStateAsync({ toolsLoading: false }))
+        .then(() => resolve())
+    })
+  }
+  
+
   fetchSaves() {
-    console.log("fetch saves");
-    
     fetchSavesFor("trademeter")
       .then(response => {
-        const saves = response.data;
-        console.log(saves);
+        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
         return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
       })
       .then(saves => {
@@ -489,9 +569,11 @@ class App extends Component {
 
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools();
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout());
+    
     if (dev) {
-      if (shouldLoadFakeSave) {
+      if (shouldLoadFakeSave && !(params.get("pure") === "true")) {
         this.loadFakeSave();
       }
       return;
@@ -628,6 +710,8 @@ class App extends Component {
    * Распаковывает данные из сейва и записывает их в стейт
    **/
   extractSave(save) {
+    console.log('extracting save', save);
+
     const onError = e => {
       this.showAlert(String(e));
 
@@ -640,21 +724,7 @@ class App extends Component {
 
     const { depoEnd, saves } = this.state;
 
-    const getSaveIndex = save => {
-      for (let i = 0; i < saves.length; i++) {
-        let currentSave = saves[i];
-        if (Object.keys(currentSave).every(key => currentSave[key] == save[key])) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
     saveToDownload = { ...save };
-
-    const savePure = clone(save);
-    delete savePure.static;
-    delete savePure.dynamic;
 
     let staticParsed;
     let dynamicParsed;
@@ -757,12 +827,12 @@ class App extends Component {
       state.customTools = staticParsed.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
-      // TODO IMPORTANT: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
+      // TODO: у инструмента не может быть ГО <=0, по идее надо удалять такие инструменты
       
       // Кастомные инструменты пассивного дохода
       state.customPassiveIncomeTools = fallbackProp(staticParsed, ["customPassiveIncomeTools", "passiveIncomeTools"], initialState.passiveIncomeTools);
-      // TODO IMPORTANT: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
-      
+      // TODO: у инструмента не может быть годовая ставка <=0, по идее надо удалять такие инструменты
+
       // Индекс выбранного инструмента пассивного дохода
       state.currentPassiveIncomeToolIndex = staticParsed.currentPassiveIncomeToolIndex || [-1, -1];
       if (typeOf(state.currentPassiveIncomeToolIndex) !== "array") {
@@ -796,6 +866,11 @@ class App extends Component {
         state.customPassiveIncomeTools = [];
       }
 
+      // Предотвращаем ситуацию, когда в массиве нет объекта под сохраненным индексом
+      if (state.currentPassiveIncomeToolIndex[m] > state.customPassiveIncomeTools?.length - 1) {
+        state.currentPassiveIncomeToolIndex[m] = 0;
+      }
+
       // В старых сейвах указан currentToolIndex (number)
       state.currentToolCode = staticParsed.currentToolCode;
       if (staticParsed.currentToolIndex != null) {
@@ -815,7 +890,7 @@ class App extends Component {
       state.id = save.id;
       state.saved = true;
       state.loading = false;
-      state.currentSaveIndex = getSaveIndex(savePure) + 1;
+      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       failed = true;
@@ -1251,6 +1326,22 @@ class App extends Component {
       incomePersantageCustom,
     } = this.state;
 
+    const pit = this.getCurrentPassiveIncomeTool();
+    let bond;
+    if (false && pit != null) {
+      bond = {
+        // цена ОФЗ 
+        price:      pit.price,
+        // ставка выплаты по купону в день, например, 0.01.
+        // Если установлена, то "coupon", "frequency", "startDateCoupon" не используются
+        couponRate: pit.rate / 100,
+        // величина выплаты по купону
+        coupon:     pit.coupon, 
+        // периодичность выплаты по купону в днях
+        frequency:  pit.frequency, 
+      }
+    }
+
     if (!options.length) {
       options.length = dataLength;
     }
@@ -1276,17 +1367,19 @@ class App extends Component {
         customBaseRate: options?.customBaseRate,
         customFuture:   options?.customFuture,
         tax,
-        getAverage: true
+        getAverage: true,
+        bond: bond
       }
     ];
 
-    const result = extRateReal(...args);
+    const result = extRateReal(...clone(args));
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
+    result.ratewithoutbond *= 100;
 
-    if (options.test) {
-      console.log(...args, "=", result);
+    if (dev && options.test) {
+      console.log(...args, "returns:", result);
     }
 
     return result;
@@ -1300,10 +1393,10 @@ class App extends Component {
       return;
     }
 
-    const persantage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
+    const percentage = currentPassiveIncomeTool.rate / 365 * (365 / 260) / 100;
     const depoEnd = this.getDepoEnd();
 
-    passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
+    passiveIncomeMonthly[mode] = Math.round(percentage * depoEnd * 21.6667);
     return this.setStateAsync({ passiveIncomeMonthly });
   }
 
@@ -1361,7 +1454,18 @@ class App extends Component {
       if (data.length) {
         depo += data
           .slice(0, days[mode])
-          .map(d => d.incomePlan + (corrected ? (d.payload || 0) - (d.payment || 0) : 0))
+          .map(d => {
+            let value = d.incomePlan;
+            if (corrected) {
+              if (!d.payloadPlan) {
+                value += (d.payload || 0);
+              }
+              if (!d.paymentPlan) {
+                value -= (d.payment || 0);
+              }
+            }
+            return value;
+          })
           .reduce((acc, curr) => acc + curr);
       }
       return depo;
@@ -1419,7 +1523,7 @@ class App extends Component {
    * Возращает текущий инструмент пассивного дохода 
    */
   getCurrentPassiveIncomeTool() {
-    const {currentPassiveIncomeToolIndex, mode} = this.state
+    const { currentPassiveIncomeToolIndex, mode } = this.state
     return this.getPassiveIncomeTools()[currentPassiveIncomeToolIndex[mode]];
   }
 
@@ -1473,7 +1577,6 @@ class App extends Component {
         ? data[day - 1].scale 
         : fallbackRate;
 
-    // let value = Math.round( depoStart * (scale / 100) );
     let value = depoStart * (scale / 100);
 
     if (data[day - 1].customIncome != null ) {
@@ -1511,6 +1614,7 @@ class App extends Component {
       saved,
       dataLength,
       depoEndFormat,
+      investorInfo,
     } = this.state;
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
@@ -1518,6 +1622,7 @@ class App extends Component {
     const realData = this._getRealData();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
+      // rate = this.useRate({ length: days[mode], test: true }).ratewithoutbond;
 
       const rateObj = this.useRate({ 
         customBaseRate: rate / 100,
@@ -1544,6 +1649,7 @@ class App extends Component {
           : undefined
       });
       rate            = rateObj.rate;
+      // rate            = rateObj.ratewithoutbond;
       rateRecommended = rateObj.rateRecommended;
       daysDiff        = rateObj.daysDiff;
       averageProf     = rateObj.averageProf;
@@ -1558,11 +1664,12 @@ class App extends Component {
     daysDiff  = Math.max(daysDiff -  daysAdded, 0);
     if ((data.lastFilledDay?.day || 1) == days[mode]) {
       daysDiff = 0;
-    }    
+    }
 
     const placeholder = "—";
 
     const tools = this.getTools();
+    const currentTool = this.getCurrentTool();
 
     return (
       <Provider value={this}>
@@ -1956,27 +2063,27 @@ class App extends Component {
                         <Select
                           id="passive-tools"
                           value={this.state.currentPassiveIncomeToolIndex[this.state.mode]}
+                          loading={this.state.toolsLoading}
+                          disabled={this.state.toolsLoading}
                           onChange={index => {
                             let { mode, currentPassiveIncomeToolIndex } = this.state;
                             currentPassiveIncomeToolIndex[mode] = index;
-                            this.setState({
+                            this.setStateAsync({
                               currentPassiveIncomeToolIndex,
                               pitError: "",
                               changed: true
-                            }, () => {
-                              const {
-                                mode,
-                                passiveIncomeMonthly
-                              } = this.state;
-
-                              if (index < 0) {
-                                passiveIncomeMonthly[mode] = 0;
-                                this.setState({ passiveIncomeMonthly });
-                                return;
-                              }
-
-                              this.updatePassiveIncomeMonthly();
                             })
+                              .then(() => {
+                                const { mode, passiveIncomeMonthly } = this.state;
+
+                                if (index < 0) {
+                                  passiveIncomeMonthly[mode] = 0;
+                                  return this.setStateAsync({ passiveIncomeMonthly });
+                                }
+
+                                return this.updatePassiveIncomeMonthly();
+                              })
+                              .then(() => chartVisible && updateChart.call(this))
                           }}
                           showSearch
                           optionFilterProp="children"
@@ -2205,17 +2312,20 @@ class App extends Component {
 
                   // Вывод
                   let paymentTotal = 0;
-                  let paymentTax   = 0;
+                  let paymentTaxTotal = 0;
                   if (days[mode] > withdrawalInterval[mode]) {
-                    const multiplier = Math.floor(days[mode] / payloadInterval[mode]);
-                    paymentTotal = (withdrawal[mode] - withdrawal[mode] * (tax / 100)) * multiplier;
-                    paymentTax = (withdrawal[mode] * (tax / 100)) * multiplier;
+                    const numberOfPayments = Math.floor(days[mode] / withdrawalInterval[mode]);
+                    const paymentTax = withdrawal[mode] * (tax / 100);
+                    const paymentWithTax = withdrawal[mode] - paymentTax;
+                    paymentTotal = paymentWithTax * numberOfPayments;
+                    paymentTaxTotal = paymentTax * numberOfPayments;
                   }
                   
                   // Пополнение
                   let payloadTotal = 0;
                   if (days[mode] > payloadInterval[mode]) {
-                    payloadTotal = payload[mode] * Math.floor(days[mode] / payloadInterval[mode]);
+                    const numberOfPayloads = Math.floor(days[mode] / payloadInterval[mode]);
+                    payloadTotal = payload[mode] * numberOfPayloads;
                   }
 
                   return (
@@ -2335,7 +2445,7 @@ class App extends Component {
                               { `Выведено за ${days[mode]} ${num2str(days[mode], ["день",   "дня", "дней"])}` }
                             </h3>
 
-                            <Tooltip title={paymentTax != 0 && "Удержан НДФЛ: " + formatNumber(Math.round(paymentTax))}>
+                            <Tooltip title={paymentTaxTotal != 0 && "Удержан НДФЛ: " + formatNumber(Math.round(paymentTaxTotal))}>
                               <div className="stats-val">
                                 {
                                   paymentTotal != 0
@@ -2382,7 +2492,7 @@ class App extends Component {
 
                         {(() => {
                           const { mode, depoStart, depoPersentageStart } = this.state;
-                          let step = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
+                          let step = currentTool.guarantee / data[currentDay - 1].depoStart * 100;
                           if (step > 100) {
                             console.warn('step > 100');
                             for (let i = 0; i < tools.length; i++) {
@@ -2466,11 +2576,16 @@ class App extends Component {
                             </button>
                           </Tooltip>
                         </header>
-                        
                         <ToolSelect
+                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                          onBlur={() => {
+                            this.setStateAsync({ isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchcingTools());
+                          }}
+                          toolsLoading={this.state.toolsLoading}
+                          disabled={this.state.toolsLoading}
                           tools={tools}
-                          value={this.getCurrentToolIndex()}
-                          disabled={tools.length == 0}
+                          value={this.state.toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
                             const currentTool = tools[currentToolIndex]; 
@@ -2509,14 +2624,15 @@ class App extends Component {
                             depoPersentageStart = Math.min(depoPersentageStart, 100);
 
                             // console.log("to search", currentTool, currentTool.getSortProperty());
-
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
+                              isToolsDropdownOpen: false,
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
                             }, () => {
                               this.updateData(days[mode])
+                                .then(() => this.imitateFetchcingTools())
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
@@ -2529,14 +2645,13 @@ class App extends Component {
                   <Col className="card card--column section3-col2">
                     {
                       (() => {
-                        let tool = this.getCurrentTool();
                         let pointsForIteration = this.getPointsForIteration();
 
                         return (
                           <Riskometer
                             key={pointsForIteration}
                             value={pointsForIteration}
-                            tool={tool}
+                            tool={currentTool}
                           />
                         )
                       })()
@@ -2544,7 +2659,6 @@ class App extends Component {
 
                     {(() => {
                       let pointsForIteration = this.getPointsForIteration();
-                      let currentTool = this.getCurrentTool();
 
                       return (
                         <Row 
@@ -2619,7 +2733,7 @@ class App extends Component {
                             </div>
                             <div className="section4-r">
                               {
-                                formatNumber(Math.round(data[currentDay - 1].depoStartReal * (depoPersentageStart / 100)))
+                                formatNumber(Math.round(data[currentDay - 1].depoStart * (depoPersentageStart / 100)))
                                 +
                                 ` (${ round(depoPersentageStart, 3) }%)`
                               }
@@ -2628,7 +2742,7 @@ class App extends Component {
                           {/* /.row */}
                           <div className="section4-row">
                             <div className="section4-l">Целевой депо</div>
-                            <div className="section4-r">{formatNumber(data[currentDay - 1].getRealDepoEnd(mode))}</div>
+                            <div className="section4-r">{formatNumber(data[currentDay - 1].getRealDepoEnd(mode, true))}</div>
                           </div>
                           {/* /.row */}
                           <div className="section4-row">
@@ -2700,23 +2814,26 @@ class App extends Component {
                                 onChange={directUnloading => this.setState({ directUnloading }, () => this.recalc(false))}
                               />
                             </label>
-                            <Tooltip title={"Направление позиции"}>
-                              <Switch
-                                className="section4__switch-long-short"
-                                checked={isLong}
-                                checkedChildren="LONG"
-                                unCheckedChildren="SHORT"
-                                onChange={isLong => {
-                                  const investorInfo = { ...this.state.investorInfo };
-                                  investorInfo.type = isLong ? "LONG" : "SHORT";
 
-                                  this.setStateAsync({ isLong, investorInfo })
-                                    .then(() => this.syncToolsWithInvestorInfo())
-                                    .then(() => this.updateDepoPersentageStart())
-                                    .then(() => this.recalc(false))
-                                }}
-                              />
-                            </Tooltip>
+                            {false &&
+                              <Tooltip title={"Направление позиции"}>
+                                <Switch
+                                  className="section4__switch-long-short"
+                                  checked={isLong}
+                                  checkedChildren="LONG"
+                                  unCheckedChildren="SHORT"
+                                  onChange={isLong => {
+                                    const investorInfo = { ...this.state.investorInfo };
+                                    investorInfo.type = isLong ? "LONG" : "SHORT";
+
+                                    this.setStateAsync({ isLong, investorInfo })
+                                      .then(this.syncToolsWithInvestorInfo)
+                                      .then(() => this.updateDepoPersentageStart())
+                                      .then(() => this.recalc(false))
+                                  }}
+                                />
+                              </Tooltip>
+                            }
                           </header>
                           <div className="section4-content card">
                             <div className="section4-row">
@@ -3504,7 +3621,7 @@ class App extends Component {
                                     }
                                     {" "}/{" "}
                                     {
-                                      formatNumber(data[currentDay - 1].getRealDepoEnd(mode))
+                                      formatNumber(data[currentDay - 1].getRealDepoEnd(mode, true))
                                     }
                                   </span>
 

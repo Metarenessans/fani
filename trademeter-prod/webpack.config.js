@@ -7,7 +7,7 @@ module.exports = (env, options) => {
 
   const entry = "./src/js/index.js";
   const output = "index";
-  const devtool = false ? false : "eval-sourcemap";
+  const devtool = prod ? "source-map" : "eval-sourcemap";
   const publicPath = "public";
 
   // Rules
@@ -117,6 +117,7 @@ module.exports = (env, options) => {
       contentBase: path.join(__dirname, ""),
       overlay: true,
       hot: true,
+      //host: '192.168.0.129'
     },
     module: {
       rules: [
