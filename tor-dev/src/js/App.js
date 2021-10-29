@@ -26,6 +26,7 @@ import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import "../sass/style.sass"
+import { resolve } from 'core-js/fn/promise';
 
 class App extends React.Component {
 
@@ -82,7 +83,7 @@ constructor(props) {
 
       currentSaveIndex: 0,
 
-      toolsLoading: true,
+      toolsLoading: false,
 
       isFocused: false,
 
@@ -93,6 +94,8 @@ constructor(props) {
       ...this.initialState,
       ...{
         tools: [],
+
+        toolsStorage: [],
 
         saves: [],
       }
@@ -105,42 +108,46 @@ constructor(props) {
     this.applyTools        = applyTools.bind(this);
     this.fetchSaveById     = fetchSaveById.bind(this, "tor");
   }
-  
+
   componentDidMount() {
     this.bindEvents();
-    this.fetchInitialData();
+    this.fetchInitialData()
   }
 
-  // ~~
   componentDidUpdate(prevProps, prevState) {
-    const { id, saves, items } = this.state;
+    const { id, saves, items, currentSaveIndex, toolsLoading } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
         this.setStateAsync({ currentSaveIndex });
       }
     }
+
+    if (prevState.currentSaveIndex !== currentSaveIndex) {
+      if (currentSaveIndex === 0) {
+        this.getContracts();
+      }
+    }
   }
 
-  // ~~
   getContracts() {
-    const { items, depo, tools} = this.state;
+    // ~~
+    const { items, depo, currentSaveIndex} = this.state;
+    console.log("STARTED");
+  
+    if (items && depo &&  currentSaveIndex == 0) {
+      const tools = this.getTools();
+      const selectedToolName = items[0].selectedToolName;
+      const currentToolindex = Tools.getIndexByCode(selectedToolName, tools);
+      const currentTool = tools[currentToolindex];
+      const contracts   = round((depo * 0.1) / (currentTool?.guarantee));
 
-    if (items, depo, tools) {
-      items.map((item, index) => {
-        const selectedToolName = items[index].selectedToolName;
-        const selectedToolindex = Tools.getIndexByCode(selectedToolName, tools);
-        const currentTool = tools[selectedToolindex];
-        const contracts = round((depo * 0.1) / (currentTool?.guarantee));
-
-        let itemsClone = [...items];
-        itemsClone[index] = contracts;
-        
-        if (contracts != null) {
-          this.setState({ items: 12 });
-          // this.setState({ items: itemsClone });
-        }
-      })
+      let itemsClone = [...items];
+      itemsClone[0].contracts = contracts;
+      if (contracts !== null) {
+        this.setStateAsync({ items: itemsClone });
+        console.log("END");
+      }
     }
   }
 
@@ -151,17 +158,20 @@ constructor(props) {
   bindEvents() {
 
   }
-
+  // ~~
   fetchInitialData() {
-    this.fetchInvestorInfo();
-    this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout())
+    new Promise(() => {
+      this.fetchInvestorInfo();
+      this.fetchTools()
+        .then(() => this.setFetchingToolsTimeout())
       if (dev) {
         // this.loadFakeSave();
+        setTimeout(() => this.setState({ loading: false }), 1_000);
         return;
       }
       this.fetchSaves()
-        .then(() => this.getContracts())
+    })
+    .then(() => this.getContracts())
   }
 
   loadFakeSave() {
@@ -543,7 +553,6 @@ constructor(props) {
   }
 
   render() {
-    // console.log(this.getContracts(0), "getContracts")
     return (
       <Provider value={this}>
         <div className="page">
@@ -559,6 +568,7 @@ constructor(props) {
                   this.reset();
                 }
                 else {
+                  // ~~~~
                   const id = saves[currentSaveIndex - 1].id;
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
@@ -581,9 +591,9 @@ constructor(props) {
 
             <div className="main-content">
               <div className="container">
-
                 {
                   this.state.items.map((obj, index) =>
+
                     <Dashboard
                       toolsLoading={this.state.toolsLoading}
                       onFocus={() => this.setState({ isToolsDropdownOpen: true })}
@@ -609,7 +619,7 @@ constructor(props) {
                         items[index][prop] = val;
                         this.setState({ items, changed: true });
                       }}
-                      // ~~
+                      
                       onContractsChange={ (index, value, name) => {
                         const { items } = this.state
                         const itemsClone = [...items];

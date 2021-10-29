@@ -123,7 +123,7 @@ export default class Dashboard extends React.Component {
   getContracts() {
     const { onContractsChange, items, depo, tools, index } = this.props;
     
-    if (items != null && depo != null) {
+    if (items && depo) {
       const selectedToolName = items[index].selectedToolName;
       const currentToolindex = Tools.getIndexByCode(selectedToolName, tools)
       const currentTool = tools[currentToolindex]
@@ -247,6 +247,7 @@ export default class Dashboard extends React.Component {
                   onChange("selectedToolName", name, this);
                   onChangeTool(index);
                   this.getContracts(index, "contracts");
+                  onBlur();
                 }}
                 showSearch
                 onSearch={(value) => this.setState({ searchVal: value })}
@@ -308,7 +309,7 @@ export default class Dashboard extends React.Component {
               </span>
               <NumericInput
                 className="input-group__input"
-                // key={contracts}
+                key={contracts}
                 defaultValue={contracts}
                 round
                 unsigned="true"
