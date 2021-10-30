@@ -22,7 +22,7 @@
  * @this {import("react").Component}
  */
 export default function extractSnapshot(snapshot, parseFn) {
-  const { id } = snapshot;
+  const { id, name } = snapshot;
 
   let state;
   try {
@@ -42,6 +42,6 @@ export default function extractSnapshot(snapshot, parseFn) {
     };
   }
 
-  console.log("Parsing snapshot finished!", state);
-  return new Promise(resolve => this.setState(state, () => resolve()))
+  console.log(`Сохранение ${name} распаршено!`);
+  return new Promise(resolve => this.setState(state, () => resolve(state)))
 }
