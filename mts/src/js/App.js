@@ -861,47 +861,45 @@ class App extends BaseComponent {
     }
   }
 
+  priceRangeMinMax(priceRange) {
+    let range = [...priceRange].sort((l, r) => l - r);
+
+    const { days, scaleOffset } = this.state;
+    // Проверка на выход за диапазоны
+    const currentTool = this.getCurrentTool();
+    const price = currentTool.currentPrice;
+    let percent = currentTool.adrDay;
+    if (days == 5) {
+      percent = currentTool.adrWeek;
+    }
+    else if (days == 20) {
+      percent = currentTool.adrMonth;
+    }
+
+    const max = price + percent - scaleOffset;
+    const min = price - percent + scaleOffset;
+
+    if (priceRange[1] > max || priceRange[0] < min) {
+      range = [price, price];
+    }
+
+    return this.setStateAsync({ priceRange: range });
+  }
+
   /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
-  extractSnapshot = snapshot => {
-    return super.extractSnapshot(snapshot, this.parseSnapshot)
-      .then(this.syncToolsWithInvestorInfo)
-      .then(() => {
-        const priceRangeMinMax = priceRange => {
-          let range = [...priceRange].sort((l, r) => l - r);
-
-          const { days, scaleOffset } = this.state;
-          // Проверка на выход за диапазоны
-          const currentTool = this.getCurrentTool();
-          const price = currentTool.currentPrice;
-          let percent = currentTool.adrDay;
-          if (days == 5) {
-            percent = currentTool.adrWeek;
-          }
-          else if (days == 20) {
-            percent = currentTool.adrMonth;
-          }
-
-          const max = price + percent - scaleOffset;
-          const min = price - percent + scaleOffset;
-
-          if (priceRange[1] > max || priceRange[0] < min) {
-            range = [price, price];
-          }
-
-          return range;
-        };
-
-        const priceRange = priceRangeMinMax(state.priceRange);
-        return this.setStateAsync({ priceRange });
-      })
-      .then(() => {
-        // TODO: что-то тут не так...
-        setTimeout(() => {
-          // console.log("Ready to push good old presetSelection", state.presetSelection);
-          return this.setStateAsync({ presetSelection: state.presetSelection })
-        }, 250);
-      })
-      .catch(error => message.error(error))
+  async extractSnapshot(snapshot) {
+    try {
+      const state = await super.extractSnapshot(snapshot, this.parseSnapshot);
+      await this.syncToolsWithInvestorInfo();
+      await this.priceRangeMinMax(state.priceRange);
+      // TODO: что-то тут не так...
+      await delay(250);
+      // console.log("Ready to push good old presetSelection", state.presetSelection);
+      return this.setStateAsync({ presetSelection: state.presetSelection })
+    }
+    catch (error) {
+      message.error(error)
+    }
   };
 
   /** @deprecated Use {@link extractSnapshot} instead */
