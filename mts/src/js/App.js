@@ -839,7 +839,7 @@ class App extends BaseComponent {
     return json;
   }
 
-  parseSnapshot(data) {
+  parseSnapshot = data => {
     const { investorInfo } = this.state; 
     const initialState = cloneDeep(this.initialState);
     const percentage = data.percentage      ?? initialState.percentage;
