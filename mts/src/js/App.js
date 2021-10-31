@@ -41,6 +41,7 @@ import { Dialog, dialogAPI }   from "../../../common/components/dialog"
 
 import "../sass/style.sass";
 
+import BaseComponent           from "../../../common/components/BaseComponent"
 import Config                  from "../../../common/components/config"
 import NumericInput            from "../../../common/components/numeric-input"
 import Header                  from "./components/header"
@@ -69,7 +70,7 @@ let unsavedGena = null;
 let lastSavedSG = null;
 let sgChanged = false;
 
-class App extends React.Component {
+class App extends BaseComponent {
 
   constructor(props) {
     super(props);
@@ -138,6 +139,7 @@ class App extends React.Component {
 
     /** @type {applyInvestorInfo} */
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
+    /** @type {fetchSaveById} */
     this.fetchSaveById = fetchSaveById.bind(this, "Mts");
     /** @type {syncToolsWithInvestorInfo} */
     this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
@@ -174,10 +176,6 @@ class App extends React.Component {
         this.importDataFromGENA(this.state.genaSave)
       }, 100)
     }
-  }
-
-  setStateAsync(state = {}) {
-    return new Promise(resolve => this.setState(state, resolve))
   }
 
   fallbackToBasePreset() {
@@ -674,7 +672,7 @@ class App extends React.Component {
             const pure = params.get("pure") === "true";
             if (!pure) {
               this.setState({ loading: true });
-              return this.extractSave(response.data)
+              return this.extractSnapshot(response.data)
                 .then(resolve)
                 .catch(error => reject(error));
             }
@@ -697,7 +695,7 @@ class App extends React.Component {
 
             this.setStateAsync({ saves }).then(() => {
               if (!response.error && response.data?.name) {
-                this.extractSave(response.data)
+                this.extractSnapshot(response.data)
               }
             })
           }
@@ -841,10 +839,70 @@ class App extends React.Component {
     return json;
   }
 
-  validateSave() {
-    return true;
+  parseSnapshot = data => {
+    const { investorInfo } = this.state; 
+    const initialState = cloneDeep(this.initialState);
+    const percentage = data.percentage      ?? initialState.percentage;
+    return {
+      depo:            data.depo            ?? initialState.depo,
+      priceRange:      data.priceRange      ?? initialState.priceRange,
+      percentage,
+      profitRatio:     data.profitRatio     ?? initialState.profitRatio,
+      risk:            data.risk            ?? initialState.risk,
+      mode:            data.mode            ?? initialState.mode,
+      presetSelection: data.presetSelection ?? initialState.presetSelection,
+      days:            data.days            ?? initialState.days,
+      scaleOffset:     data.scaleOffset     ?? initialState.scaleOffset,
+      kodTable:        data.kodTable        ?? initialState.kodTable,
+      // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
+      customTools:    (data.customTools || []).map(tool => Tool.fromObject(tool, { investorInfo })),
+      currentToolCode: data.currentToolCode ?? initialState.currentToolCode,
+      investorInfo:   { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
+    }
   }
 
+  priceRangeMinMax(priceRange) {
+    let range = [...priceRange].sort((l, r) => l - r);
+
+    const { days, scaleOffset } = this.state;
+    // Проверка на выход за диапазоны
+    const currentTool = this.getCurrentTool();
+    const price = currentTool.currentPrice;
+    let percent = currentTool.adrDay;
+    if (days == 5) {
+      percent = currentTool.adrWeek;
+    }
+    else if (days == 20) {
+      percent = currentTool.adrMonth;
+    }
+
+    const max = price + percent - scaleOffset;
+    const min = price - percent + scaleOffset;
+
+    if (priceRange[1] > max || priceRange[0] < min) {
+      range = [price, price];
+    }
+
+    return this.setStateAsync({ priceRange: range });
+  }
+
+  /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
+  async extractSnapshot(snapshot) {
+    try {
+      const state = await super.extractSnapshot(snapshot, this.parseSnapshot);
+      await this.syncToolsWithInvestorInfo();
+      await this.priceRangeMinMax(state.priceRange);
+      // TODO: что-то тут не так...
+      await delay(250);
+      // console.log("Ready to push good old presetSelection", state.presetSelection);
+      return this.setStateAsync({ presetSelection: state.presetSelection })
+    }
+    catch (error) {
+      message.error(error)
+    }
+  };
+
+  /** @deprecated Use {@link extractSnapshot} instead */
   extractSave(save) {
     const onError = e => {
       this.showAlert(String(e));
@@ -957,8 +1015,7 @@ class App extends React.Component {
   }
 
   async reset() {
-    const initialState = cloneDeep(this.initialState);
-    await this.setStateAsync(initialState);
+    await super.reset();
     await this.exportDataToSG();
     await this.fetchCompanyQuotes();
   }
@@ -1039,7 +1096,7 @@ class App extends React.Component {
           if (saves.length > 0) {
             id = saves[currentSaveIndex - 1].id;
             this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
+              .then(response => this.extractSnapshot({ ...response, data: { ...response.data, id }}))
               .then(() => this.setState({ id }))
               .catch(err => this.showAlert(err));
           }
@@ -1337,7 +1394,7 @@ class App extends React.Component {
                   const id = saves[currentSaveIndex - 1].id;
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
-                    .then(response => this.extractSave(response.data))
+                    .then(response => this.extractSnapshot(response.data))
                     .then(() => this.fetchCompanyQuotes())
                     .catch(error => this.showAlert(error));
                 }

@@ -1,12 +1,12 @@
-const webpack = require("webpack");
 const path = require("path");
-/* Plugins */
+const webpack = require("webpack");
+// Plugins
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 
+/** @return {import("webpack").Configuration} */
 module.exports = (env, options) => {
   const prod = options.mode === "production";
-
   return {
     entry: "./src/js/index.js",
     devtool: prod ? "source-map" : "eval-sourcemap",
@@ -18,8 +18,7 @@ module.exports = (env, options) => {
     devServer: {
       contentBase: path.join(__dirname, "public"),
       publicPath: "/",
-      overlay: true,
-      // host: '192.168.0.129'
+      overlay: true
     },
     module: {
       rules: [
@@ -48,7 +47,7 @@ module.exports = (env, options) => {
                 plugins: [
                   require("postcss-custom-properties")({ preserve: true }),
                   require("autoprefixer")(),
-                  prod && require("postcss-csso")()
+                  require("postcss-csso")()
                 ],
                 sourceMap: true
               }
