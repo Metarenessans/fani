@@ -1,11 +1,15 @@
 import React, { memo, useState, useEffect } from 'react'
 import { Radio } from "antd/es"
 
-let chartLoaded = false;
-import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-bundle.min.js").then(_ => {
-  console.log("anychart loaded!");
-  chartLoaded = true;
-});
+// let chartLoaded = false;
+// import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart").then(_ => {
+//   console.log("anychart loaded!");
+//   chartLoaded = true;
+// });
+
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-core.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-stock.min.js");
+import( /* webpackChunkName: "anychart", webpackPrefetch: true */ "anychart/dist/js/anychart-annotations.min.js");
 
 import { flatten } from 'lodash'
 import roundUp from "../../../../../common/utils/round-up"
@@ -289,12 +293,12 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
 }
 
 function createChart() {
-  if (!chartLoaded) {
-    setTimeout(() => {
-      createChart.call(this)
-    }, 500);
-    return;
-  }
+  // if (!chartLoaded) {
+  //   setTimeout(() => {
+  //     createChart.call(this)
+  //   }, 500);
+  //   return;
+  // }
 
   anychart.onDocumentReady(() => {
     chart = anychart.line();

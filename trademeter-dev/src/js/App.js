@@ -64,6 +64,7 @@ import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import "../sass/style.sass"
 
 import IterationsContainer from "./components/iterations-container"
+import { message } from "antd";
 
 let chartModule;
 let Chart;
@@ -417,7 +418,7 @@ class App extends Component {
         return this.setStateAsync({ depoStart, depoEnd });
       })
       .then(this.syncToolsWithInvestorInfo)
-      .then(() => this.recalc())
+      .then(this.recalc)
       .catch(error => console.error(error))
   }
 
@@ -521,53 +522,45 @@ class App extends Component {
         .then(() => resolve())
     })
   }
-  
+
   fetchSaves() {
-    return new Promise((resolve, reject) => {
-      fetch("getTrademeterSnapshots")
-        .then(response => {
-          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          this.setState({ saves, loading: false });
-        })
+    fetch("getTrademeterSnapshots")
+      .then(response => {
+        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+        this.setState({ saves, loading: false });
+      })
 
-      fetch("getLastModifiedTrademeterSnapshot")
-        .then(response => {
-          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-          if (!response.error && response.data?.name) {
-            const pure = params.get("pure") === "true";
-            if (!pure) {
-              this.setState({ loading: true });
-              return this.extractSave(response.data)
-                .then(() => this.setStateAsync({ loading: false }))
-                .then(resolve)
-                .catch(error => reject(error));
-            }
+    fetch("getLastModifiedTrademeterSnapshot")
+      .then(async response => {
+        // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
+        if (!response.error && response.data?.name) {
+          const pure = params.get("pure") === "true";
+          if (!pure) {
+            await this.setStateAsync({ loading: true });
+            await this.extractSave(response.data)
+            this.setStateAsync({ loading: false });
           }
-          resolve();
-        })
-        .catch(reason => {
-          this.showAlert(`Не удалось получить сохранения! ${reason}`);
-          reject(reason);
-        })
-        .finally(() => {
-          if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
-            const { saves } = this.state;
-            const response = require("./api/fake-save.js").default;
-            const { data } = response;
-            const { id, name } = data;
-            const index = 0;
+        }
+      })
+      .catch(reason => message.error(`Не удалось получить сохранения! ${reason}`))
+      .finally(() => {
+        if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
+          const { saves } = this.state;
+          const response = require("./api/fake-save.js").default;
+          const { data } = response;
+          const { id, name } = data;
+          const index = 0;
 
-            this.extractSave(data);
+          this.extractSave(data);
 
-            saves[index] = { id, name };
-            this.setStateAsync({
-              saves,
-              currentSaveIndex: index + 1,
-              loading: false
-            });
-          }
-        })
-    });
+          saves[index] = { id, name };
+          this.setState({
+            saves,
+            currentSaveIndex: index + 1,
+            loading: false
+          });
+        }
+      })
   }
 
   // fetchSaves() {
@@ -941,19 +934,21 @@ class App extends Component {
     }
 
     console.log('parsing save finished!', state);
-    return this.setStateAsync(state, () => {
-      if (!failed) {
-        this.overrideData(dynamicParsed)
-          .then(() => this.updateData())
-          // ~~
-          // .then(() => chartVisible && chartModule?.updateChart.call(this))
-          .then(() => this.setCurrentDay(currentDay))
-          .catch(error => {
-            console.warn(error);
-            this.showAlert("Error occured in 'extractSave':" + error)
-          });
-      }
-    });
+    return new Promise(resolve => 
+      this.setState(state, () => {
+        if (!failed) {
+          this.overrideData(dynamicParsed)
+            .then(() => this.updateData())
+            .then(() => chartVisible && chartModule?.updateChart.call(this))
+            .then(() => this.setCurrentDay(currentDay))
+            .then(() => resolve())
+            .catch(error => {
+              console.warn(error);
+              this.showAlert("Error occured in 'extractSave':" + error)
+            });
+        }
+      })
+    )
   }
 
   buildData(length = 0, rebuild = false, start = 0, options = {}) {
@@ -1174,7 +1169,7 @@ class App extends Component {
     let annualIncome = val * 12;
     let depoEnd = Math.round(annualIncome * 100 / rate);
 
-    this.setState({ depoEnd }, () => this.recalc());
+    this.setState({ depoEnd }, this.recalc);
   }
 
   // API
@@ -1298,7 +1293,7 @@ class App extends Component {
     let withdrawal = [...this.state.withdrawal];
 
     withdrawal[mode] = val;
-    this.setState({ withdrawal }, () => this.recalc());
+    this.setState({ withdrawal }, this.recalc);
   }
 
   setCurrentDay(currentDay = 1) {
@@ -1813,7 +1808,7 @@ class App extends Component {
                             }
 
                             depoStart[mode] = Number(val);
-                            this.setState({ depoStart }, () => this.recalc())
+                            this.setState({ depoStart }, this.recalc)
                           }}
                           onChange={(e, val) => {
                             if (isNaN(val)) {
@@ -1868,7 +1863,7 @@ class App extends Component {
                                   passiveIncomeMonthly[mode] = Math.round(persantage * depoEnd * 21.6667);
                                 }
 
-                                this.setState({ depoEnd: val, passiveIncomeMonthly }, () => this.recalc());
+                                this.setState({ depoEnd: val, passiveIncomeMonthly }, this.recalc);
                               }}
                               format={formatNumber}
                             />
@@ -1976,7 +1971,7 @@ class App extends Component {
                             const data = this.buildData(value, true);
                             const dataLength = data.length;
 
-                            this.setState({ days, dataLength, currentDay }, () => this.recalc());
+                            this.setState({ days, dataLength, currentDay }, this.recalc);
 
                             // validation
                             let withdrawal = this.state.withdrawal[mode];
@@ -2254,7 +2249,7 @@ class App extends Component {
                               }
 
                               withdrawalInterval[mode] = value;
-                              this.setState({ withdrawalInterval }, () => this.recalc());
+                              this.setState({ withdrawalInterval }, this.recalc);
                             }}
                           />
                         </label>
@@ -2293,7 +2288,7 @@ class App extends Component {
                               
                               payload[mode] = val;
 
-                              this.setState({ payload }, () => this.recalc());
+                              this.setState({ payload }, this.recalc);
                             }}
                           />
                         </label>
@@ -2311,7 +2306,7 @@ class App extends Component {
                             onChange={value => {
                               let { mode, payloadInterval } = this.state;
                               payloadInterval[mode] = value;
-                              this.setState({ payloadInterval }, () => this.recalc());
+                              this.setState({ payloadInterval }, this.recalc);
                             }}
                           />
                         </label>
