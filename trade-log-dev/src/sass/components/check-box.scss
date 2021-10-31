@@ -14,12 +14,39 @@
 
 .ant-checkbox {
   &-inner {
-    width:  19px;
-    height: 19px;
     border-radius: 4px;
   }
 
   &::after {
     border: initial;
+  }
+}
+
+.trade-slider-steps {
+  label {
+    font-size: inherit!important;
+    display: flex;
+    align-items: center;
+    width:  1em!important;
+    height: 1em!important;
+  
+    .ant-checkbox {
+      top: 0.01em!important;
+      
+      font-size: inherit!important;
+      height: 100%!important;
+      width:  100%!important;
+  
+      .checkbox {
+        font-size: inherit!important;
+        height: 100%!important;
+        width:  100%!important;
+      }
+      .ant-checkbox-inner {
+        font-size: inherit!important;
+        height: 100%!important;
+        width:  100%!important;
+      }
+    }
   }
 }

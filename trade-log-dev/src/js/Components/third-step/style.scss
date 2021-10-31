@@ -26,10 +26,12 @@
     &-check-box {
       display: flex;
       justify-content: center;
+      align-items: center;
       border-left: .03em solid #cacaca;
       width: 20%;
 
       padding-top: .6em;
+      padding-bottom: .6em;
 
       .ant-check-box {
         &-inner {

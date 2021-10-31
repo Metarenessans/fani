@@ -124,13 +124,11 @@ export default class Dashboard extends React.Component {
     const { onContractsChange, items, depo, tools, index } = this.props;
     
     if (items && depo) {
-      const selectedToolName = items[index].selectedToolName;
-      const currentToolindex = Tools.getIndexByCode(selectedToolName, tools)
-      const currentTool = tools[currentToolindex]
-      const contracts = round( (depo * 0.1) / (currentTool?.guarantee) )
+      const currentTool = this.getCurrentTool();
+      const contracts = round( (depo * 0.1) / (currentTool?.guarantee) );
 
-      if (contracts) {
-        onContractsChange(index, contracts, "contracts")
+      if (contracts !== null) {
+        onContractsChange(index, contracts, "contracts");
       }
     }
   }
@@ -237,17 +235,17 @@ export default class Dashboard extends React.Component {
             <label className="tool-header__select">
               <span className="input-group__title search__title">Торговый инструмент</span>
               <Select
+                key={toolsLoading || selectedToolName}
                 onBlur={onBlur}
                 onFocus={onFocus}
                 value={toolsLoading && this.props.tools.length == 0 ? 0 : currentToolIndex}
-                loading={toolsLoading}
+                loading={this.props.tools.length == 0 || toolsLoading}
                 disabled={this.props.tools.length == 0 || toolsLoading}
                 onChange={index => {
                   let name = this.props.tools[index].getSortProperty();
                   onChange("selectedToolName", name, this);
                   onChangeTool(index);
                   this.getContracts(index, "contracts");
-                  onBlur();
                 }}
                 showSearch
                 onSearch={(value) => this.setState({ searchVal: value })}
@@ -258,7 +256,7 @@ export default class Dashboard extends React.Component {
                 style={{ width: "100%" }}
               >
                 {(() => {
-                  if (toolsLoading && this.props.tools.length == 0) {
+                  if (toolsLoading || this.props.tools.length == 0) {
                     return (
                       <Option key={0} value={0}>
                         <LoadingOutlined style={{ marginRight: ".2em" }} />

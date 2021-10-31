@@ -9,7 +9,6 @@
   }
   
   .ant {
-
     &-time {
       &-picker {
         width:  100%;
@@ -35,35 +34,17 @@
       }
     }
     
-    &-checkbox {
-      height: 100%;
-      width:  100%;
-
-      top: -0.39em!important;
-
-      &-inner {
-        height: 100%;
-        width:  100%;
-      }
-      &-wrapper {
-        font-size: inherit;
-        width: 1em;
-        height: 1em;
-      }
-    }
-    
     &-input {
       font-size: 1em!important;
       padding-top: .2em;
-      padding-right: .6em!important;
+      padding-right: 1.1em!important;
       width: 4.8em!important;
     
       &-suffix {
         font-size: 1em!important;
-        right: 3.2em!important;
+        right: .2em!important;
       }
     }
-    
     
     &-select {
       font-size: 0.8em!important;
@@ -79,16 +60,19 @@
   justify-content: center;
 
   .check-box-container {
-    display: inline-flex;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding-right: .3em;
+    padding-left:  .3em;
     border-right: 0.03em solid #cacaca;
     
-    &--first {
-      padding: 1.2em 0.3em 1em 0.3em; 
-    }
-
     &--second {
-      padding: 0em 0.3em 1em 0.3em; 
+      align-items: flex-start;
+      padding-right: .3em;
+      padding-left:  .3em;
+      padding-bottom: 0;
     }
   }
 
@@ -127,17 +111,22 @@
 
       &--base {
         font-weight: 700;
-        padding: .8em .6em 2.6em;
+        padding-bottom: 0;
+        min-height: 5.2em;
         border-right: .03em solid #cacaca;
       }
 
       &-tool {
-        padding-top: .9em!important;
+        height: 100%;
+        padding-top:   .9em!important;
+        padding-right: .6em;
+        padding-left:  .6em;
       }
 
       &-time {
-        padding-top: 0.98em!important;
-        padding: .8em 1.7em 2.82em;
+        height: 100%;
+        padding: 0.98em 1.7em 2.69em;
+        padding-bottom: 0;
       }
 
       &--long {
@@ -157,7 +146,7 @@
 
       &--first {
         font-size: .8em;
-        padding: 1.45em 1em 0 2.1em;
+        padding: 0em 1em 0 2.1em;
 
         text-align: left;
         font-weight: 500;
@@ -171,26 +160,41 @@
 
       &--second {
         font-size: .8em;
-        padding: 0 1em .7em 2.1em;
+        padding: 0 1em 0 2.1em;
 
         text-align: left;
         font-weight: 500;
       }
 
       &--final {
-        padding-top: 1.7em;
-
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        // ~~
         input {
           text-align: left!important;
           border: initial;
           background-color: inherit;
+        }
+        
+        .ant-input-suffix {
+          right: .2em!important;
         }
       }
     }
 
     &-row {
       display: flex;
+      align-items: center;
       justify-content: space-between;
+
+      height: 3.6em;
+      
+      &:last-of-type {
+        align-items: flex-start;
+        height: 2em;
+      }
 
       .check-box-container {
         border-left: .03em solid #cacaca;

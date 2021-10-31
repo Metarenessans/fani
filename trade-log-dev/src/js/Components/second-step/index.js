@@ -187,10 +187,17 @@ export default class SecondStep extends React.Component {
 
             {/* col */}
             <div className="second-step-table-second-column">
-              <div className="second-column-title-container">
-                <p>До входа</p>
-                <p>Во время<br/>сделки  </p>
-                <p>После   <br/>закрытия</p>
+              <div className="second-column-title-row">
+                <div className="second-column-title-container">
+                  <p>До входа</p>
+                </div>
+                <div className="second-column-title-container">
+                  <p>Во время<br />сделки  </p>
+                </div>
+                <div className="second-column-title-container">
+                  <p>После   <br />закрытия</p>
+                </div>
+               
               </div>
               
               <div className="second-column-empty-row"/>

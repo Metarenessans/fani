@@ -26,7 +26,6 @@ import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import "../sass/style.sass"
-import { resolve } from 'core-js/fn/promise';
 
 class App extends React.Component {
 
@@ -115,7 +114,7 @@ constructor(props) {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { id, saves, items, currentSaveIndex, toolsLoading } = this.state;
+    const { id, saves, items, currentSaveIndex, toolsLoading, tools, loading } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
@@ -128,26 +127,32 @@ constructor(props) {
         this.getContracts();
       }
     }
+
+    if (prevState.loading !== loading && toolsLoading === false && currentSaveIndex === 0) {
+      this.getContracts();
+    }
   }
 
   getContracts() {
-    // ~~
-    const { items, depo, currentSaveIndex} = this.state;
-    console.log("STARTED");
-  
-    if (items && depo &&  currentSaveIndex == 0) {
-      const tools = this.getTools();
-      const selectedToolName = items[0].selectedToolName;
-      const currentToolindex = Tools.getIndexByCode(selectedToolName, tools);
-      const currentTool = tools[currentToolindex];
-      const contracts   = round((depo * 0.1) / (currentTool?.guarantee));
+    const { items, depo, currentSaveIndex, tools} = this.state;
+    const currentToolindex = Tools.getIndexByCode("SBER", tools);
 
-      let itemsClone = [...items];
-      itemsClone[0].contracts = contracts;
-      if (contracts !== null) {
-        this.setStateAsync({ items: itemsClone });
-        console.log("END");
+    if (tools.length !== 0 && currentToolindex) {
+      if (items && depo &&  currentSaveIndex == 0) {
+        const tools = this.getTools();
+        const currentToolindex = Tools.getIndexByCode("SBER", tools);
+        const currentTool = tools[currentToolindex];
+        const contracts   = round( round((depo * 0.1)) / round((currentTool?.guarantee)));
+  
+        let itemsClone = [...items];
+        itemsClone[0].contracts = contracts;
+        if (contracts !== null) {
+          this.setStateAsync({ items: itemsClone });
+        }
       }
+    }
+    else {
+      setTimeout(() => this.getContracts(), 1_000);
     }
   }
 
@@ -158,20 +163,17 @@ constructor(props) {
   bindEvents() {
 
   }
-  // ~~
+  
   fetchInitialData() {
-    new Promise(() => {
-      this.fetchInvestorInfo();
-      this.fetchTools()
-        .then(() => this.setFetchingToolsTimeout())
-      if (dev) {
-        // this.loadFakeSave();
-        setTimeout(() => this.setState({ loading: false }), 1_000);
-        return;
-      }
-      this.fetchSaves()
-    })
-    .then(() => this.getContracts())
+    this.fetchInvestorInfo();
+    this.fetchTools()
+      .then(() => this.setFetchingToolsTimeout())
+    if (dev) {
+      // this.loadFakeSave();
+      setTimeout(() => this.setState({ loading: false }), 1_000);
+      return;
+    }
+    this.fetchSaves()
   }
 
   loadFakeSave() {
@@ -568,7 +570,6 @@ constructor(props) {
                   this.reset();
                 }
                 else {
-                  // ~~~~
                   const id = saves[currentSaveIndex - 1].id;
                   this.setState({ loading: true });
                   this.fetchSaveById(id)
