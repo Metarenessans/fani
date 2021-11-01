@@ -3,7 +3,7 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("Трейдометр");
 ?>
   <!-- Include CSS -->
-  <link rel="stylesheet" href="public/css/style.css?hash=0f397995ac471d97d0db558e0df424dc">
+  <link rel="stylesheet" href="css/style.css?hash=0f397995ac471d97d0db558e0df424dc">
 
   <!-- Yandex.Metrika counter -->
   <script type="text/javascript" >
@@ -39,8 +39,8 @@ $APPLICATION->SetTitle("Трейдометр");
   <noscript>You need to enable JavaScript to run this app</noscript>
   <div id="root"></div>
 
-  <script src="public/js/jstat.min.js"></script>
-  <script src="public/js/index.js?hash=0f397995ac471d97d0db558e0df424dc"></script>
+  <script src="js/jstat.min.js"></script>
+  <script src="js/index.js?hash=0f397995ac471d97d0db558e0df424dc"></script>
 
   <?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>
 
