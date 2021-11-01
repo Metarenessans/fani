@@ -1,16 +1,18 @@
 import fetch from "../fetch"
 
+/**
+ * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}
+ * 
+ * @param {string} page Строковый идентификатор страницы (`"Trademeter"|"Mts"|"Tor"...`)
+ * @param {number} id ID запрашиваемого сохранения
+ * @returns {Promise<import("../../utils/extract-snapshot").SnapshotResponse>}
+ */
 export default function fetchSaveById(page, id) {
-  return new Promise((resolve, reject) => {
-    if (typeof id !== "number") {
-      reject("id is not a number!");
-    }
+  if (typeof id !== "number") {
+    throw "Аргумент id должен быть числом!";
+  }
 
-    // Capitalizing the first letter
-    page = page[0].toUpperCase() + page.slice(1);
-    
-    fetch(`get${page}Snapshot`, "GET", { id })
-      .then(resolve)
-      .catch(reject)
-  });
+  // Делаем первую букву заглавной
+  page = page[0].toUpperCase() + page.slice(1);
+  return fetch(`get${page}Snapshot`, "GET", { id })
 }
