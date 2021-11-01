@@ -147,6 +147,11 @@ export default function CodePanel(props) {
           return null
         }
 
+        // Не выводим зеркальные докупки
+        if (key == "Зеркальные докупки") {
+          return null
+        }
+
         const alwaysVisible = ["Прямые профитные докупки", "Обратные профитные докупки"];
         if ((alwaysVisible.indexOf(key) == -1) && !arr.on) {
           return null;
