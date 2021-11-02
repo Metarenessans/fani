@@ -289,7 +289,9 @@
         }
 
         > * {
-          width: 14em;
+          // TODO: УБРАТЬ
+          // 02.11.21 фикс перехода
+          // width: 14em;
 
           &:first-of-type,
           &:last-of-type {

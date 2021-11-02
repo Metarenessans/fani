@@ -148,6 +148,7 @@ export default class Dashboard extends React.Component {
       toolsLoading,
       onChangeTool,
       onContractsChange,
+      loading
     } = this.props;
 
     const drawdown           = this.state.drawdown;
@@ -239,13 +240,13 @@ export default class Dashboard extends React.Component {
                 onBlur={onBlur}
                 onFocus={onFocus}
                 value={toolsLoading && this.props.tools.length == 0 ? 0 : currentToolIndex}
-                loading={this.props.tools.length == 0 || toolsLoading}
-                disabled={this.props.tools.length == 0 || toolsLoading}
+                loading= {toolsLoading || loading || tools.length == 0}
+                disabled={toolsLoading || loading || tools.length == 0}
                 onChange={index => {
                   let name = this.props.tools[index].getSortProperty();
                   onChange("selectedToolName", name, this);
                   onChangeTool(index);
-                  this.getContracts(index, "contracts");
+                  // this.getContracts(index, "contracts");
                 }}
                 showSearch
                 onSearch={(value) => this.setState({ searchVal: value })}
@@ -256,7 +257,7 @@ export default class Dashboard extends React.Component {
                 style={{ width: "100%" }}
               >
                 {(() => {
-                  if (toolsLoading || this.props.tools.length == 0) {
+                  if (this.props.tools.length == 0) {
                     return (
                       <Option key={0} value={0}>
                         <LoadingOutlined style={{ marginRight: ".2em" }} />
@@ -284,8 +285,7 @@ export default class Dashboard extends React.Component {
               <NumericInput
                 className="input-group__input tool__drawdown"
                 key={drawdown}
-                defaultValue={drawdown}
-                round
+                defaultValue={round(drawdown, 1)}
                 unsigned="true"
                 min={1}
                 onBlur={drawdown => {
@@ -392,7 +392,7 @@ export default class Dashboard extends React.Component {
                       let val = (drawdown / depo) * 100;
                       val = Math.min(val, 100);
 
-                      return -round(val, 3)
+                      return -round(val, 1)
                     })()}
                   </Value>
                 </span>
@@ -401,7 +401,7 @@ export default class Dashboard extends React.Component {
               <div className="tool-pair">
                 <h3 className="tool-pair-key">
                   <Tooltip title="Остаток на счёте с учетом просадки и загрузки">
-                      Депозит:
+                      Свободный депозит:
                   </Tooltip>
                 </h3>
                 <span className="tool-pair-val">

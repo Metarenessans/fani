@@ -49,10 +49,10 @@ constructor(props) {
       items: [{
         id: 1,
         selectedToolName: "SBER",
-        drawdown:         null,
+        drawdown:           null,
 
         // Контрактов
-        contracts: 1,
+        contracts: 40,
         // Просадка
 
         // Догрузка (в процентах)
@@ -122,15 +122,15 @@ constructor(props) {
       }
     }
 
-    if (prevState.currentSaveIndex !== currentSaveIndex) {
-      if (currentSaveIndex === 0) {
-        this.getContracts();
-      }
-    }
+    // if (prevState.currentSaveIndex !== currentSaveIndex) {
+    //   if (currentSaveIndex === 0) {
+    //     this.getContracts();
+    //   }
+    // }
 
-    if (prevState.loading !== loading && toolsLoading === false && currentSaveIndex === 0) {
-      this.getContracts();
-    }
+    // if (prevState.loading !== loading && toolsLoading === false && currentSaveIndex === 0) {
+    //   this.getContracts();
+    // }
   }
 
   getContracts() {
