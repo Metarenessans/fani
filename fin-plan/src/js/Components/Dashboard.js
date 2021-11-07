@@ -23,6 +23,8 @@ import clsx from 'clsx'
 
 const { Option } = Select;
 
+let scrollInitiator;
+
 function onScroll() {
   if (innerWidth <= 768 || this.props.index > 0) {
     return;
@@ -103,19 +105,46 @@ export default class DashboardRow extends React.Component {
       goal,
       progressGoalPrimary,
       progressGoalSecondary,
+      minRows
     } = this.props;
     onChange = onChange || (() => console.log("Oh nein cringe"));
     showSum = showSum ?? true;
     canRemoveLastRow = canRemoveLastRow ?? false;
+    minRows = minRows ?? 0;
 
     const containerElement = React.createRef();
+
+    const Footer = props => (
+      <div className="row-modify__container">
+        <Button
+          className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+          disabled={!onAddRow}
+          onClick={() => onAddRow()}
+        >
+          <span className="dashboard__icon dashboard__icon--plus">+</span>
+          {rowButton}
+        </Button>
+
+        {data.length > 0 &&
+          <Button
+            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+            disabled={!onRemoveRow || data.length == minRows}
+            onClick={() => onRemoveRow()}
+          >
+            <span className="dashboard__icon">—</span>
+            {rowButton}
+          </Button>
+        }
+      </div>
+    );
 
     return (
       <div 
         className={clsx(
           "dashboard",
           extraPeriodColumns && "extended-height",
-          !showSum && "no-sum"
+          !showSum && "no-sum",
+          data.length == 0 && "empty"
         )}
         ref={containerElement}
       >
@@ -123,6 +152,7 @@ export default class DashboardRow extends React.Component {
         {!stats &&
           <div className="dashboard-header">
             <p>{firstTitle   || ""}</p>
+            {data.length == 0 && <Footer />}
             <p >{secondTitle || ""}</p>
             <p className={thirdTitleVerticalLine && "trird-title-before-element"}>
               {thirdTitle  || ""}
@@ -283,12 +313,6 @@ export default class DashboardRow extends React.Component {
                   "scroll-hide",
                   (fixedWidth || extraPeriodColumns) && "fixed-width"
                 )}
-                onScroll={e => {
-                  const scrollLeft = e.target.scrollLeft;
-                  [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                    element.scrollLeft = scrollLeft;
-                  });
-                }}
               >
                 {(() => {
                   const numericKeys = Object.keys(currentData)
@@ -417,15 +441,7 @@ export default class DashboardRow extends React.Component {
                   </div>
                   {/* col */}
 
-                  <div
-                    className="dashboard-extra-container scroll-hide"
-                    onScroll={e => {
-                      const scrollLeft = e.target.scrollLeft;
-                      [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                        element.scrollLeft = scrollLeft;
-                      });
-                    }}
-                  >
+                  <div className="dashboard-extra-container scroll-hide">
                     {(() => {
                       const numericKeys = Object.keys(data[rowIndex])
                         .map(key => !isNaN(+key) && key)
@@ -517,25 +533,7 @@ export default class DashboardRow extends React.Component {
           )}
         </div>
    
-        <div className={"row-modify__container"}>
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onAddRow}
-            onClick={() => onAddRow()}
-          >
-            <span className="dashboard__icon dashboard__icon--plus">+</span>
-            {rowButton}
-          </Button>
-
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onRemoveRow || (!canRemoveLastRow ? data.length == 1 : data.length == 0)}
-            onClick={() => onRemoveRow()}
-          >
-            <span className="dashboard__icon">—</span>
-            {rowButton}
-          </Button>
-        </div>
+        {data.length > 0 && <Footer />}
       </div>
     )
   }

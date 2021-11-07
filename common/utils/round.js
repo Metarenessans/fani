@@ -5,11 +5,8 @@
  * @param {number} [decimals=0] Кол-во знаков, до которых нужно округлить
  * @returns {number}
  */
-export default function round(number, decimals = 0) {
-  if (number == null) {
-    return number;
-  }
-
-  let dec = Math.pow(10, decimals);
-  return Math.round(number * dec) / dec;
+export default function round(number, decimals) {
+  if (decimals >= 6) throw "Точность не может быть больше 6 знаков!"
+  const factorOfTen = 10 ** decimals;
+  return Math.round(number * factorOfTen) / factorOfTen;
 }
