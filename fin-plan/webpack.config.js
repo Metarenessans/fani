@@ -74,14 +74,16 @@ module.exports = (env, options) => {
     },
     module: {
       rules: [
-        // JS
         {
           test: /\.js$/,
-          exclude: /node_modules/,
+          exclude: "/node_modules/",
           use: {
             loader: "babel-loader",
             options: {
-              rootMode: "upward",
+              presets: [
+                "@babel/preset-env",
+                "@babel/preset-react"
+              ]
             }
           }
         },

@@ -128,10 +128,14 @@ export default class Stats extends React.Component {
                 </div>
                 {/* col */}
 
-                <div className={clsx(
-                  "dashboard-extra-container",
-                  "scroll-hide",
-                  extraPeriodColumns && "fixed-width")}
+                <div 
+                  className={clsx("dashboard-extra-container", "scroll-hide", extraPeriodColumns && "fixed-width")}
+                  onScroll={e => {
+                    const scrollLeft = e.target.scrollLeft;
+                    [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                      element.scrollLeft = scrollLeft;
+                    });
+                  }}
                 >
                   {(() => {
                     return (
@@ -160,7 +164,15 @@ export default class Stats extends React.Component {
                     </div>
                     {/* col */}
 
-                    <div className="dashboard-extra-container scroll-hide">
+                    <div
+                      className="dashboard-extra-container scroll-hide"
+                      onScroll={e => {
+                        const scrollLeft = e.target.scrollLeft;
+                        [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
+                          element.scrollLeft = scrollLeft;
+                        });
+                      }}
+                    >
                       {(() => {
                         {/* Перебор массива и рендеринг каждой отдельного стобца */ }
                         return (
