@@ -68,18 +68,8 @@ import $ from "jquery"
 
 import { message } from 'antd';
 
+// DOM-Element, который инициирует скролл
 let scrollInitiator;
-const scrollHandler = e => {
-  if (e.target !== scrollInitiator) return;
-  console.log("scroll");
-  document.querySelectorAll(".dashboard-extra-container").forEach(element => {
-    if (element === scrollInitiator) {
-      return;
-    }
-
-    element.scrollLeft = scrollInitiator.scrollLeft;
-  });
-}
 
 class App extends React.Component {
 
@@ -335,25 +325,16 @@ class App extends React.Component {
     return new Promise(resolve => this.setState(state, resolve))
   }
 
-  rebindScrollListeners() {
-    console.log("rebind", document.querySelectorAll(".dashboard-extra-container"));
-    document.querySelectorAll(".dashboard-extra-container").forEach(element => {
-      element.removeEventListener("scroll", scrollHandler);
-      element.addEventListener("scroll", scrollHandler);
-    })
-  }
-
   bindEvents() {
+    // При наведении мыши на .dashboard-extra-container, элемент записывается в `scrollInitiator`
     $(document).on("mouseenter", ".dashboard-extra-container", function (e) {
-      console.log("scrollInitiator", e.target.closest(".dashboard-extra-container"));
       scrollInitiator = e.target.closest(".dashboard-extra-container");
     })
 
     document.addEventListener("scroll", function(e) {
       if (e?.target?.classList?.contains("dashboard-extra-container")) {
-        // console.log('scrolling', e.target);
         if (e.target !== scrollInitiator) return;
-        console.log("scroll");
+        
         document.querySelectorAll(".dashboard-extra-container").forEach(element => {
           if (element === scrollInitiator) {
             return;
@@ -386,23 +367,6 @@ class App extends React.Component {
         this.setStateAsync({ currentSaveIndex });
       }
     }
-
-    // const {
-    //   incomeArr,
-    //   paymentArr,
-    //   desirableArr,
-    //   loanArr,
-    //   savingsArr
-    // } = this.state;
-    // if (
-    //   !isEqual(prevState.incomeArr, incomeArr)       ||
-    //   !isEqual(prevState.paymentArr, paymentArr)     ||
-    //   !isEqual(prevState.desirableArr, desirableArr) ||
-    //   !isEqual(prevState.loanArr, loanArr)           ||
-    //   !isEqual(prevState.savingsArr, savingsArr)
-    // ) {
-    //   this.rebindScrollListeners();
-    // }
   }
 
   /* API */
