@@ -1,4 +1,117 @@
+
 .trade-log {
+  .pages-link-buttons {
+    display: flex;
+    align-items: center;
+    margin: 1em 0;
+    gap:    2em;
+  }
+
+  .stats-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    gap: 2em;
+
+    p {
+      font-size:   0.9em;
+      line-height: 1.9em;
+      text-align: center;
+    }
+
+    span {
+      font-size: 1.2em;
+    }
+  }
+
+  &-combine-table {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    // box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
+    
+    .combine-table-row {
+      display: flex;
+      width: 100%;
+
+      border:  0.03em solid #cacaca;
+      border-bottom: none;
+      border-top:    none;
+
+
+      &-col {
+        display: flex;
+        flex-direction: column;
+        width: 37%;
+
+        border-right: 0.03em solid #cacaca;
+
+        &:last-child {
+          border: none;
+        }
+      }
+      &-key {
+        font-size: 1em;
+        padding: .2em;
+        font-weight: 600;
+        text-align: center;
+        align-items: center;
+
+        border-top: 0.03em solid #cacaca;
+        border-bottom: 0.03em solid #cacaca;
+      }
+      &-val {
+        display: flex;
+        font-size: 0.8em;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+
+        border-bottom: 0.03em solid #cacaca;
+
+        &-slider {
+          display: flex;
+          flex-direction: column;
+          padding: 0.3em;
+
+          span {
+            font-size: .9em;
+            margin-bottom: -0.7em;
+          }
+        }
+
+        &-row {
+          width: 85%;
+        }
+
+        &--tool {
+          padding: 0 1.3em;
+        }
+
+        &--final {
+          display: flex;
+          white-space: nowrap;
+          text-align: center;
+          width: 100%;
+          gap: 4em;
+
+          p {
+            font-size: 1em;
+            margin:  0;
+            padding: 0;
+
+            line-height: 2em;
+          }
+        }
+
+        &-row {
+          display: flex;
+          flex-direction: column;
+          text-align: center;
+        }
+      }
+    }
+  }
 
   .tool-select {
     padding-top: 1em;
@@ -75,14 +188,20 @@
       padding-bottom: 0;
     }
   }
-
-  &-table {
+  
+  .transaction-register-table {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.03), 0px 0px 8px rgba(12, 12, 12, 0.06);
+  }
+  
+  &-row {
     font-size: 1em;
     display: flex;
-
+    
     width: 100%;
     border-top: 0.03em solid #cacaca;
-    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.03), 0px 0px 8px rgba(12, 12, 12, 0.06);
 
     &-col {
       min-width: 16.66%;
@@ -132,14 +251,14 @@
       &--long {
         font-size: .8em!important;
         text-transform: uppercase;
-        color: green;
+        color: #7bcb7b;
         font-weight: 900;
       }
 
       &--short {
         font-size: .8em!important;
         text-transform: uppercase;
-        color: red;
+        color: #ef6163;
         font-weight: 900;
       }
 
@@ -200,5 +319,23 @@
         border-left: .03em solid #cacaca;
       }
     }
+  }
+}
+
+.add-btn-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1em;
+  padding-left: 4em;
+  width: 100%;
+  min-height: 2.8em;
+
+  .custom-btn {
+    min-width: 4.5em;
+    padding: .5em 1.3em;
+    &:hover {
+    color: #fff;
+    background: #5a6dce;
+  }
   }
 }

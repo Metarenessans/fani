@@ -34,6 +34,7 @@ import Dashboard             from "./components/Dashboard"
 import TradeLog              from "./components/trade-log"
 import SecondStep            from "./components/second-step"
 import ThirdStep             from "./components/third-step"
+import FourthStep             from "./components/fourth-step"
 
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
@@ -570,7 +571,7 @@ class App extends React.Component {
                 />
                 <div className="container">
 
-                  <Dashboard
+                  {/* <Dashboard
                     key={rowData}
                     rowData={rowData}
                     currentRowIndex={currentRowIndex}
@@ -604,9 +605,9 @@ class App extends React.Component {
                       <PlusOutlined aria-label="Добавить день" />
                       Добавить день
                     </Button>
-                  </div>
+                  </div> */}
 
-                  <div className="trade-slider" id="trade-slider">
+                  <div className="trade-slider-active" id="trade-slider">
                     <div className="trade-slider-container">
 
 
@@ -657,7 +658,7 @@ class App extends React.Component {
 
                           <span
                             style={{ color: step >= 1 ? "#4859b4" : "#cacaca" }}
-                          >Информация<br /> о сделке</span>
+                          >Торговая<br />стратегия</span>
                         </div>
 
                         <div 
@@ -707,7 +708,7 @@ class App extends React.Component {
                       </div>
 
                       <div className="trade-slider-steps">
-                        {step == 1 && (
+                        {/* {step == 1 && (
                           <TradeLog
                             key={rowData}
                             rowData={rowData}
@@ -726,11 +727,10 @@ class App extends React.Component {
                               this.setState({ isToolsDropdownOpen: value })
                             }}
                           />
-                        )}
+                        )} */}
 
-                        {step == 2 && (
+                        {/* {step == 2 && (
                           <SecondStep
-                            // key={currentRowIndex}
                             rowData={rowData}
                             currentRowIndex={currentRowIndex}
                             onChange={(prop, value, index) => {
@@ -739,23 +739,26 @@ class App extends React.Component {
                               this.setState({ rowData: rowDataClone })
                             }}
                           />
+                        )} */}
+
+                        {true && (
+                        // {step == 3 && (
+                          // <ThirdStep
+                          //   rowData={rowData}
+                          //   currentRowIndex={currentRowIndex}
+                          //   onChange={(prop, value, index) => {
+                          //     const rowDataClone = [...rowData];
+                          //     rowDataClone[index][prop] = value;
+                          //     this.setState({ rowData: rowDataClone })
+                          //   }}
+                          //   onClickTab={(boolean) => this.setState({ extraStep: boolean })}
+                          // />
+                           <FourthStep/>
                         )}
 
-                        {step == 3 && (
-                          <ThirdStep
-                            rowData={rowData}
-                            currentRowIndex={currentRowIndex}
-                            onChange={(prop, value, index) => {
-                              const rowDataClone = [...rowData];
-                              rowDataClone[index][prop] = value;
-                              this.setState({ rowData: rowDataClone })
-                            }}
-                            onClickTab={(boolean) => this.setState({ extraStep: boolean })}
-                          />
-                        )}
                       </div>
 
-                      <div className="trade-slider-bottom">
+                      {/* <div className="trade-slider-bottom">
                         {step == 1 && (
                           <Button
                             className="custom-btn custom-btn--slider"
@@ -831,7 +834,7 @@ class App extends React.Component {
                           }
 
                         })()}
-                      </div>
+                      </div> */}
 
                     </div>
                   </div>

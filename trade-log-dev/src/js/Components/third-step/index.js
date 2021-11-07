@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Tooltip, Select, Progress, Checkbox } from 'antd/es'
+import { Button, Tooltip, Select, Progress, Checkbox, Input } from 'antd/es'
 
 import {
   PlusOutlined,
@@ -30,14 +30,26 @@ export default class ThirdStep extends React.Component {
     super(props);
 
     this.state = {
-      data: []
+      firstColumnExtraRows: [
+        {
+          name:  "",
+          value: false,
+        }
+      ],
+      secondColumnExtraRows: [
+        {
+          name:  "",
+          value: false,
+        }
+      ]
+      
     };
   }
 
   render() {
     let { onClickTab, onChange, currentRowIndex, rowData } = this.props;
 
-    let { data } = this.state
+    let { firstColumnExtraRows, secondColumnExtraRows } = this.state
 
     let {
       amy,
@@ -57,246 +69,334 @@ export default class ThirdStep extends React.Component {
 
     return (
       <div className="third-step">
-
-        {/* col */}
-        <div 
-          className="third-step-column"
-          onClick={() => onClickTab(false)}
-        >
-
-          <div className="title third-step-column-title">
-            Внутренняя проработка
-          </div>
-
-          <div className="third-step-table">
-
-            <div className="third-step-table-title">
-              Технология
-            </div>
-
-            <div className="third-step-table-row-container">
-
-              <div className="third-step-table-row-container-row">
-                <p>ЭМИ</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={amy}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("amy", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="third-step-table-row-container-row">
-                <p>ТМО</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={tmo}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("tmo", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="third-step-table-row-container-row">
-                <p>Перепросмотр</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={recapitulation}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("recapitulation", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="third-step-table-row-container-row">
-                <p>Работа с архетипами</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={archetypesWork}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("archetypesWork", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
+        <div className="title">
+          Внутренняя проработка
         </div>
-        {/* col */}
 
-        {/* col */}
-        <div
-          className="third-step-column"
-          onClick={() => onClickTab(true)}
-        >
-
-          <div className="title">
-            Внесение корректировок в тс
-          </div>
-
-          <div className="third-step-table">
-
-            <div className="third-step-table-title">
-              Практические шаги
-            </div>
-            
-            <div className="third-step-table-row-container">
-
-              <div className="third-step-table-row-container-row">
-                <p>Изменить время на сделку</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={transactionTimeChange}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("transactionTimeChange", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Не снимать отложенные заявки, выставленные до этого</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={noneWithdrawPendingApplications}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("noneWithdrawPendingApplications", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Не перезаходить после закрытия по Stop-Loss</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={noReenterAfterClosingStopLoss}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("noReenterAfterClosingStopLoss", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Не выключать робота</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={noDisablingRobot}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("noDisablingRobot", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Контролировать объём входа</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={inputVolumeControl}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("inputVolumeControl", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Делать расчёты ФАНИ</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={makeFaniCalculate}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("makeFaniCalculate", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Заносить результаты в ФАНИ</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={enterResultsInFani}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("enterResultsInFani", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Фиксировать сделки в скриншотах</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={screenshotTransactions}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("screenshotTransactions", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            
-              <div className="third-step-table-row-container-row">
-                <p>Выделять ключевые поведенченские паттерны и модели</p>
-                <div className="third-step-table-check-box">
-                  <Checkbox
-                    className="check-box"
-                    key={currentRowIndex}
-                    checked={keyBehavioralPatternsIdentify}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("keyBehavioralPatternsIdentify", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-          </div>
+        <div className="pactice-container">
+          <a className="trade-log-button" href="https://www.youtube.com/">
+            Техники внутренней проработки
+          </a>
         </div>
-        {/* col */}
+        <div className="column-container">
+          {/* col */}
+          <div 
+            className="third-step-column"
+            onClick={() => onClickTab(false)}
+          >
+            <div className="third-step-table">
+
+              <div className="third-step-table-title">
+                Технология
+              </div>
+
+              <div className="third-step-table-row-container">
+
+                <div className="third-step-table-row-container-row">
+                  <p>ЭМИ</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={amy}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("amy", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="third-step-table-row-container-row">
+                  <p>ТМО</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={tmo}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("tmo", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="third-step-table-row-container-row">
+                  <p>Перепросмотр</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={recapitulation}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("recapitulation", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="third-step-table-row-container-row">
+                  <p>Работа с архетипами</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={archetypesWork}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("archetypesWork", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {firstColumnExtraRows.map((item, index) => {
+                  const { name, value } = firstColumnExtraRows[index]
+                  return (
+                    // ~~
+                    <div className="third-step-table-row-container-row">
+                      <Input
+                        defaultValue={name}
+                        onBlur={e => {
+                          let val = e.target.value;
+                          const dataClone = [...firstColumnExtraRows];
+                          dataClone[index]["name"] = val
+                          this.setState({ firstColumnExtraRows: dataClone });
+                        }}  
+                        onEnter={e => {
+                          let val = e.target.value;
+                          const dataClone = [...firstColumnExtraRows];
+                          dataClone[index]["name"] = val
+                          this.setState({ firstColumnExtraRows: dataClone });
+                        }}  
+                      />
+                      <div className="third-step-table-check-box">
+                        <Checkbox
+                          className="green"
+                          key={value}
+                          checked={value}
+                          onChange={(val) => {
+                            let value = val.target.checked;
+                            const dataClone = [...firstColumnExtraRows];
+                            dataClone[index]["value"] = value;
+                            this.setState({ firstColumnExtraRows: dataClone });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+
+              </div>
+            </div>
+              <div className="third-step-add-button-container">
+                <Button 
+                  className="trade-log-button"
+                  onClick={() => {
+                    const dataClone = [...firstColumnExtraRows];
+                    dataClone.push({ ...firstColumnExtraRows });
+                    this.setState({ firstColumnExtraRows: dataClone });
+                  }}
+                >Добавить</Button>
+              </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div
+            className="third-step-column"
+            onClick={() => onClickTab(true)}
+          >
+            <div className="third-step-table">
+
+              <div className="third-step-table-title">
+                Практические задачи на отработку
+              </div>
+              
+              <div className="third-step-table-row-container">
+
+                <div className="third-step-table-row-container-row">
+                  <p>Изменить время на сделку</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={transactionTimeChange}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("transactionTimeChange", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Не снимать отложенные заявки, выставленные до этого</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={noneWithdrawPendingApplications}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("noneWithdrawPendingApplications", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Не перезаходить после закрытия по Stop-Loss</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={noReenterAfterClosingStopLoss}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("noReenterAfterClosingStopLoss", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Не выключать робота</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={noDisablingRobot}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("noDisablingRobot", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Контролировать объём входа</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={inputVolumeControl}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("inputVolumeControl", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Делать расчёты ФАНИ</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={makeFaniCalculate}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("makeFaniCalculate", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Заносить результаты в ФАНИ</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={enterResultsInFani}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("enterResultsInFani", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Фиксировать сделки в скриншотах</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={screenshotTransactions}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("screenshotTransactions", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+              
+                <div className="third-step-table-row-container-row">
+                  <p>Выделять ключевые поведенченские паттерны и модели</p>
+                  <div className="third-step-table-check-box">
+                    <Checkbox
+                      className="green"
+                      key={currentRowIndex}
+                      checked={keyBehavioralPatternsIdentify}
+                      onChange={(val) => {
+                        let value = val.target.checked
+                        onChange("keyBehavioralPatternsIdentify", value, currentRowIndex)
+                      }}
+                    />
+                  </div>
+                </div>
+
+              {secondColumnExtraRows.map((item, index) => {
+                const { name, value } = secondColumnExtraRows[index]
+                return (
+                  // ~~
+                  <div className="third-step-table-row-container-row">
+                    <Input
+                      defaultValue={name}
+                      onBlur={e => {
+                        let val = e.target.value;
+                        const dataClone = [...secondColumnExtraRows];
+                        dataClone[index]["name"] = val
+                        this.setState({ secondColumnExtraRows: dataClone });
+                      }}
+                    />
+                    <div className="third-step-table-check-box">
+                      <Checkbox
+                        className="green"
+                        key={value}
+                        checked={value}
+                        onChange={(val) => {
+                          let value = val.target.checked;
+                          const dataClone = [...secondColumnExtraRows];
+                          dataClone[index]["value"] = value;
+                          this.setState({ secondColumnExtraRows: dataClone });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          <div className="third-step-add-button-container">
+            <Button
+              className="trade-log-button"
+              onClick={() => {
+                const dataClone = [...secondColumnExtraRows];
+                dataClone.push({ ...secondColumnExtraRows });
+                this.setState({ secondColumnExtraRows: dataClone });
+              }}
+            >Добавить</Button>
+          </div>
+          </div>
+          {/* col */}
+        </div>
       </div>
     )
   }

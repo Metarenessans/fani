@@ -1,7 +1,21 @@
 .ant-checkbox-checked
 .ant-checkbox-inner {
-  background-color: #2ab92a!important;
-  border-color: #cacaca!important;
+  background-color: #b2b0b2!important;
+  border-color: #c6c7c6!important;
+}
+
+.green {
+  .ant-checkbox-checked
+  .ant-checkbox-inner {
+    background-color: #65c565!important;
+  }
+}
+
+.red {
+  .ant-checkbox-checked
+  .ant-checkbox-inner {
+    background-color: #e77a79!important;
+  }
 }
 
 .ant-checkbox-input:focus+.ant-checkbox-inner,
@@ -14,7 +28,7 @@
 
 .ant-checkbox {
   &-inner {
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   &::after {
@@ -46,6 +60,10 @@
         font-size: inherit!important;
         height: 100%!important;
         width:  100%!important;
+
+        &::after {
+          display: none;
+        }
       }
     }
   }

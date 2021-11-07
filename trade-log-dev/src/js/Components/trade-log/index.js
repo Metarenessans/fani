@@ -14,6 +14,8 @@ import {
 } from '@ant-design/icons'
 
 import { Tools, Tool, template, parseTool } from "../../../../../common/tools"
+import CustomSlider from "../custom-slider"
+
 
 import NumericInput from "../../../../../common/components/numeric-input"
 import sortInputFirst from "../../../../../common/utils/sort-input-first"
@@ -39,7 +41,32 @@ export default class TradeLog extends React.Component {
   constructor(props) {
     super(props);
     
-    this.state = {};
+    this.state = {
+      combineTable: [
+        {
+          load: 0.01,
+          iterations: 1,
+        },
+        {
+          load: 0.01,
+          iterations: 1,
+        },
+      ],
+
+      transactionRegister: [
+        {
+          enterTime:  null,
+          short:     false,
+          long:      false,
+          impulse:   false,
+          postponed: false,
+          levels:    false,
+          breakout:  false,
+          result:        0,
+          practiceStep:  0,
+        },
+      ]
+    };
   }
 
   getOptions() {
@@ -65,6 +92,7 @@ export default class TradeLog extends React.Component {
   }
 
   render() {
+    let { combineTable, transactionRegister } = this.state
     let { 
       onChange, 
       currentRowIndex, 
@@ -91,225 +119,433 @@ export default class TradeLog extends React.Component {
         <div className="trade-log">
 
           <div className="title">
-            Информация о сделке
+            Инсрументы предварительной выборки
           </div>
 
-          <div className="trade-log-table">
-
-            {/* col */}
-            <div className="trade-log-table-col">
-              <div className="trade-log-table-key">
-                Инструмент
-              </div>
-
-              <div className="trade-log-table-val trade-log-table-val--base trade-log-table-val-tool">
-                {/* Торговый инструмент */}
-                <Select
-                  key={currentRowIndex}
-                  value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
-                  onChange={currentToolIndex => {
-                    const currentTool = tools[currentToolIndex];
-                    const currentToolCode = currentTool.code;
-                    onChange("currentToolCode", currentToolCode, currentRowIndex)
-                  }}
-                  // onFocus={() => {
-                  //   isToolsDropdownOpen(true)
-                  // }}
-                  // onBlur={() => isToolsDropdownOpen(false)}
-                  disabled={toolsLoading}
-                  loading ={toolsLoading}
-                  showSearch
-                  onSearch={(value) => setSeachVal(value)}
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }
-                  style={{ width: "100%" }}
-                >
-                  {(() => {
-                    if (toolsLoading && tools.length == 0) {
-                      return (
-                        <Option key={0} value={0}>
-                          <LoadingOutlined style={{ marginRight: ".2em" }} />
-                          Загрузка...
-                        </Option>
-                      )
-                    }
-                    else {
-                      return this.getSortedOptions().map((option) => (
-                        <Option key={option.idx} value={option.idx}>
-                          {option.label}
-                        </Option>
-                      ));
-                    }
-                  })()}
-                </Select>
-              </div>
-            </div>
-            {/* col */}
-
-            {/* col */}
-            <div className="trade-log-table-col">
-              <div className="trade-log-table-key">
-                Время входа
-              </div>
-
-              <div className="trade-log-table-val trade-log-table-val--base trade-log-table-val-time">
-                <div className="time-picker-container">
-                  <TimePicker 
-                    key={currentRowIndex}
-                    format={'HH:mm'}
-                    allowClear={true}
-                    onChange={onChangeTime}
-                    defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
-                    placeholder="Введите время"
-                    onChange={time => {
-                      let value = +time;
-                      console.log(value);
-                      onChange("enterTime", value, currentRowIndex);
-                    }}
-                    placeholder="введите время"
-                  />
-                </div>
-              </div>
-            </div>
-            {/* col */}
-
-            {/* col */}
-            <div className="trade-log-table-col">
-              <div className="trade-log-table-key">
-                Направление
-              </div>
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--first trade-log-table-val--long">
-                  Long
-                </div>
-                <div className="check-box-container check-box-container--first">
-                  <Checkbox
-                    key={currentRowIndex}
-                    checked={long}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("long", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--second trade-log-table-val--short">
-                  Short
-                </div>
-                <div className="check-box-container check-box-container--second">
-                  <Checkbox
-                    checked={short}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("short", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* col */}
-
-            {/* col */}
-            <div className="trade-log-table-col">
-              <div className="trade-log-table-key">
-                Метод входа
-              </div>
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--first">
-                  Импульс
-                </div>
-                <div className="check-box-container check-box-container--first">
-                  <Checkbox
-                    checked={impulse}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("impulse", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--second">
-                  Отложенный
-                </div>
-
-                <div className="check-box-container check-box-container--second">
-                  <Checkbox
-                    checked={postponed}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("postponed", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* col */}
-
-            {/* col */}
-            <div className="trade-log-table-col">
-              <div className="trade-log-table-key">
-                Сигнал
-              </div>
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--first">
-                  Уровни
-                </div>
-                <div className="check-box-container check-box-container--first">
-                  <Checkbox
-                    checked={levels}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("levels", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="trade-log-table-row">
-                <div className="trade-log-table-val trade-log-table-val--second">
-                  Пробои
-                </div>
-                <div className="check-box-container check-box-container--second">
-                  <Checkbox
-                    checked={breakout}
-                    onChange={(val) => {
-                      let value = val.target.checked
-                      onChange("breakout", value, currentRowIndex)
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* col */}
-
-            {/* col */}
-            <div className="trade-log-table-col trade-log-table-col--final">
-
-              <div className="trade-log-table-key trade-log-table-key--final">
-                Итог
-              </div>
-
-              <div className="trade-log-table-val trade-log-table-val--final">
-                <NumericInput
-                  defaultValue={result || 0}
-                  onBlur={(val) => {
-                    onChange("result", val, currentRowIndex)
-                  }}
-                  unsigned="true"
-                  min={0}
-                  suffix={"%"}
-                />
-              </div>
-
-            </div>
-            {/* col */}
+          <div className="pages-link-buttons">
             
+            <a className="trade-log-button" href="https://fani144.ru/trademeter/">
+              Трейдометр
+            </a>
+
+            <a className="trade-log-button" href="https://fani144.ru/intraday/">
+              Интрадей портфель
+            </a>
+
+            <a className="trade-log-button" href="https://fani144.ru/mts/">
+              Мтс
+            </a>
+
+            <a className="trade-log-button" href="https://fani144.ru/ksd/">
+              Ксд
+            </a>
+          </div>
+
+
+          <div className="title">
+            Интрадей Трейдометр
+          </div>
+
+          <div className="trade-log-combine-table">
+            {combineTable.map((item, index) => {
+              const {load, iterations} = combineTable[index]
+              return (
+                <div className="combine-table-row">
+                  <div className="combine-table-row-col">
+                    {index === 0 && (
+                      <div className="combine-table-row-key">
+                        Инструмент
+                      </div>
+                    )}
+                    <div className="combine-table-row-val combine-table-row-val--tool">
+                      {/* Торговый инструмент */}
+                      <Select
+                        key={currentRowIndex}
+                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                        onChange={currentToolIndex => {
+                          const currentTool = tools[currentToolIndex];
+                          const currentToolCode = currentTool.code;
+                          onChange("currentToolCode", currentToolCode, currentRowIndex)
+                        }}
+                        disabled={toolsLoading}
+                        loading={toolsLoading}
+                        showSearch
+                        onSearch={(value) => setSeachVal(value)}
+                        optionFilterProp="children"
+                        filterOption={(input, option) =>
+                          option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                        style={{ width: "100%" }}
+                      >
+                        {(() => {
+                          if (toolsLoading && tools.length == 0) {
+                            return (
+                              <Option key={0} value={0}>
+                                <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                Загрузка...
+                              </Option>
+                            )
+                          }
+                          else {
+                            return this.getSortedOptions().map((option) => (
+                              <Option key={option.idx} value={option.idx}>
+                                {option.label}
+                              </Option>
+                            ));
+                          }
+                        })()}
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="combine-table-row-col">
+                    {index === 0 && (
+                      <div className="combine-table-row-key">
+                        Калибровка
+                      </div>
+                    )}
+                    <div className="combine-table-row-val combine-table-row-val-slider">
+                      {/* <div className="sliders-container">
+                      </div> */}
+                      <div className="combine-table-row-val-row">
+                        <span>Загрузка</span>
+                        <div className="slider-container">
+                          <CustomSlider
+                            value={load}
+                            min={0.01}
+                            max={100}
+                            step={.01}
+                            precision={100}
+                            filter={val => round(val, 2) + "%"}
+                            onChange={val => {
+                              let copy = [...combineTable];
+                              copy[index]["load"] = val;
+                              this.setState({ combineTable: copy });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="combine-table-row-val-row">
+                        <span>Итераций</span>
+                        <div className="slider-container">
+                          <CustomSlider
+                            value={iterations}
+                            min={1}
+                            max={100}
+                            step={1}
+                            precision={100}
+                            filter={val => round(val)}
+                            onChange={val => {
+                              let copy = [...combineTable];
+                              copy[index]["iterations"] = val;
+                              this.setState({ combineTable: copy });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="combine-table-row-col">
+                    {index === 0 && (
+                      <div className="combine-table-row-key">
+                        Выходные данные
+                      </div>
+                    )}
+                    <div className="combine-table-row-val combine-table-row-val--final">
+                      {/* <div className="">
+                      </div> */}
+                      <p>
+                        Длина хода<br />
+                        <span style={{ color: "#736d6b" }}>125 п.</span>
+                      </p>
+                      <p>
+                        Вероятность взять ход<br/>
+                        <span style={{ color: "#bdb284" }}>68%</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            <div className={"add-btn-container"}>
+              <Button 
+                className="trade-log-button"
+                onClick={() => {
+                  const dataClone = [...combineTable];
+                  dataClone.push({...combineTable});
+                  // dataClone[dataClone.length - 1].practiceStep = dataClone[0].practiceStep
+                  this.setState({ combineTable: dataClone });
+                }}
+              >
+                Добавить
+              </Button>
+            </div>
+          </div>
+
+
+          <div className="title">
+            Регистр сделок
+          </div>
+
+          <div className="stats-container">
+            <p>
+              Общая дохолность<br />
+              <span style={{ color: "#65c565" }}>0,38%</span>
+            </p>
+            <p>
+              Выполнение плана<br />
+              <span style={{ color: "#5a6dce" }}>76%</span>
+            </p>
+            <p>
+              Внутридневной КОД<br />
+              <span style={{ color: "#65c565" }}>0,095%</span>
+            </p>
+          </div>
+
+
+          <div className="transaction-register-table">
+            {transactionRegister.map((item, index) => {
+              return (
+                <div className="trade-log-row">
+                  {/* col */}
+                  <div className="trade-log-row-col">
+                    {index == 0 && (
+                      <div className="trade-log-row-key">
+                        Инструмент
+                      </div>
+                    )}
+
+                    <div className="trade-log-row-val trade-log-row-val--base trade-log-row-val-tool">
+                      {/* Торговый инструмент */}
+                      <Select
+                        key={currentRowIndex}
+                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                        onChange={currentToolIndex => {
+                          const currentTool = tools[currentToolIndex];
+                          const currentToolCode = currentTool.code;
+                          onChange("currentToolCode", currentToolCode, currentRowIndex)
+                        }}
+                        disabled={toolsLoading}
+                        loading ={toolsLoading}
+                        showSearch
+                        onSearch={(value) => setSeachVal(value)}
+                        optionFilterProp="children"
+                        filterOption={(input, option) =>
+                          option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                        style={{ width: "100%" }}
+                      >
+                        {(() => {
+                          if (toolsLoading && tools.length == 0) {
+                            return (
+                              <Option key={0} value={0}>
+                                <LoadingOutlined style={{ marginRight: ".2em" }} />
+                                Загрузка...
+                              </Option>
+                            )
+                          }
+                          else {
+                            return this.getSortedOptions().map((option) => (
+                              <Option key={option.idx} value={option.idx}>
+                                {option.label}
+                              </Option>
+                            ));
+                          }
+                        })()}
+                      </Select>
+                    </div>
+                  </div>
+                  {/* col */}
+
+                  {/* col */}
+                  <div className="trade-log-row-col">
+                    {index == 0 && (
+                      <div className="trade-log-row-key">
+                        Время входа
+                      </div>
+                    )}
+
+                    <div className="trade-log-row-val trade-log-row-val--base trade-log-row-val-time">
+                      <div className="time-picker-container">
+                        <TimePicker 
+                          key={currentRowIndex}
+                          format={'HH:mm'}
+                          allowClear={true}
+                          onChange={onChangeTime}
+                          defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
+                          placeholder="Введите время"
+                          onChange={time => {
+                            let value = +time;
+                            console.log(value);
+                            onChange("enterTime", value, currentRowIndex);
+                          }}
+                          placeholder="введите время"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* col */}
+
+                  {/* col */}
+                  <div className="trade-log-row-col">
+                    {index == 0 && (
+                      <div className="trade-log-row-key">
+                        Направление
+                      </div>
+                    )}
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--first trade-log-row-val--long">
+                        Long
+                      </div>
+                      <div className="check-box-container check-box-container--first">
+                        <Checkbox
+                          className={"green"}
+                          key={currentRowIndex}
+                          checked={long}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("long", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--second trade-log-row-val--short">
+                        Short
+                      </div>
+                      <div className="check-box-container check-box-container--second">
+                        <Checkbox
+                          className={"red"}
+                          checked={short}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("short", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* col */}
+
+                  {/* col */}
+                  <div className="trade-log-row-col">
+                    {index == 0 && (
+                      <div className="trade-log-row-key">
+                        Метод входа
+                      </div>
+                    )}
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--first">
+                        Импульс
+                      </div>
+                      <div className="check-box-container check-box-container--first">
+                        <Checkbox
+                          checked={impulse}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("impulse", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--second">
+                        Отложенный
+                      </div>
+
+                      <div className="check-box-container check-box-container--second">
+                        <Checkbox
+                          checked={postponed}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("postponed", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* col */}
+
+                  {/* col */}
+                  <div className="trade-log-row-col">
+                    {index == 0 && (
+                      <div className="trade-log-row-key">
+                        Сигнал
+                      </div>
+                    )}
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--first">
+                        Уровни
+                      </div>
+                      <div className="check-box-container check-box-container--first">
+                        <Checkbox
+                          checked={levels}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("levels", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="trade-log-row-row">
+                      <div className="trade-log-row-val trade-log-row-val--second">
+                        Пробои
+                      </div>
+                      <div className="check-box-container check-box-container--second">
+                        <Checkbox
+                          checked={breakout}
+                          onChange={(val) => {
+                            let value = val.target.checked
+                            onChange("breakout", value, currentRowIndex)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* col */}
+
+                  {/* col */}
+                  <div className="trade-log-row-col trade-log-row-col--final">
+                    {index == 0 && (
+                      <div className="trade-log-row-key trade-log-row-key--final">
+                        Итог
+                      </div>
+                    )}
+
+                    <div className="trade-log-row-val trade-log-row-val--final">
+                      <NumericInput
+                        defaultValue={result || 0}
+                        onBlur={(val) => {
+                          onChange("result", val, currentRowIndex)
+                        }}
+                        unsigned="true"
+                        min={0}
+                        suffix={"%"}
+                      />
+                    </div>
+
+                  </div>
+                  {/* col */}
+                </div>
+              )
+            })}
+          </div>
+          <div className={"add-btn-container"}>
+            <Button
+              className="trade-log-button"
+              // ~~
+              onClick={() => {
+                const dataClone = [...transactionRegister];
+                dataClone.push({ ...transactionRegister });
+                this.setState({ transactionRegister: dataClone });
+              }}
+            >
+              Добавить
+            </Button>
           </div>
         </div>
       </>
