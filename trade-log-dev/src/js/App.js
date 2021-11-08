@@ -1,5 +1,6 @@
 import React from 'react'
-const { Provider, Consumer } = React.createContext();
+/** @type {import("react").Context<App>} */
+export const StateContext = React.createContext();
 import ReactDOM from 'react-dom'
 import $ from "jquery"
 
@@ -79,15 +80,11 @@ class App extends React.Component {
       data: [
         // Данные для конкретного дня
         {
-          // date
-
           // Выполнение плана
           // successRate
-
           // kod
 
           // Массив Инстрадей трейдометр
-          // ~~
           expectedDeals: [
             {
               currentToolCode: "SBER",
@@ -103,7 +100,6 @@ class App extends React.Component {
 
           // Регистр сделок
           deals: [
-            // 1-ая сделака
             {
               currentToolCode: "SBER",
               enterTime:  null,
@@ -115,9 +111,41 @@ class App extends React.Component {
               levels:    false,
               breakout:  false,
 
-              result:        12,
+              result:        0,
             }
-          ]
+          ],
+
+          reportMonitor: [
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+          ],
+          
+          technology: {
+            amy:            false,
+            tmo:            false,
+            recapitulation: false,
+            archetypesWork: false,
+          },
+          customTechnology: [],
+
+          practiceWorkTasks: {
+            transactionTimeChange:           false,
+            noneWithdrawPendingApplications: false,
+            noReenterAfterClosingStopLoss:   false,
+            noDisablingRobot:                false,
+            inputVolumeControl:              false,
+            makeFaniCalculate:               false,
+            enterResultsInFani:              false,
+            screenshotTransactions:          false,
+            keyBehavioralPatternsIdentify:   false,
+          },
+          customPracticeWorkTasks: [],
         }
       ],
 
@@ -141,7 +169,6 @@ class App extends React.Component {
           currentToolCode: "SBER",
 
           isSaved: false,
-
 
           // second step
           calmnessBefore:       0,
@@ -235,6 +262,7 @@ class App extends React.Component {
       changed:       false,
       searchVal:        "",
 
+      /** @type {Tool[]} */
       tools:        [],
       saves:        [],
     };
@@ -607,7 +635,7 @@ class App extends React.Component {
     let { currentToolCode, isSaved } = rowData[currentRowIndex];
 
     return (
-      <Provider value={this}>
+      <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
@@ -722,8 +750,9 @@ class App extends React.Component {
                             >
                               {"<< Предыдущий день"}
                             </Button>
-
-                            <p>День {currentRowIndex + 1}</p>
+                            <div className="trade-slider-day-container">
+                              <p>День {currentRowIndex + 1}</p>
+                            </div>
                             <CrossButton
                               className="cross-button"
                               disabled={rowData.length == 1}
@@ -821,7 +850,6 @@ class App extends React.Component {
 
                           <div className="trade-slider-steps">
                             {step == 1 && (
-                              // ~~
                               <FirstStep
                                 key={data}
                                 data={data[currentRowIndex]}
@@ -830,22 +858,6 @@ class App extends React.Component {
                                 setSeachVal={ val => this.setState({searchVal: val}) }
                                 currentRowIndex={currentRowIndex}
                                 toolsLoading={this.state.toolsLoading}
-
-                                onChange={(firstLevelProp, secondLevelProp ,value, index) => {
-                                  const rowDataClone = [...data];
-                                  rowDataClone[currentRowIndex][firstLevelProp][index][secondLevelProp] = value;
-                                  this.setState({ data: rowDataClone });
-                                }}
-                              // const dataClone= [...combineTable];
-                              // dataClone.push({...combineTable[combineTable.length - 1]});
-                              // this.setState({combineTable: dataClone });
-                                // onAddRow={(prop, index) => {
-                                //   const rowDataClone = [...data];
-                                //   const changeArr = rowDataClone[currentRowIndex][prop];
-                                //   rowDataClone
-                                //   rowDataClone.push({..})
-                                //   this.setState({ data: rowDataClone });
-                                // }}
                               />
                             )}
 
@@ -855,14 +867,6 @@ class App extends React.Component {
 
                             {step == 3 && (
                               <ThirdStep/>
-                          //   rowData={rowData}
-                          //   currentRowIndex={currentRowIndex}
-                          //   onChange={(prop, value, index) => {
-                          //     const rowDataClone = [...rowData];
-                          //     rowDataClone[index][prop] = value;
-                          //     this.setState({ rowData: rowDataClone })
-                          //   }}
-                          //   onClickTab={(boolean) => this.setState({ extraStep: boolean })}
                             )}
 
                             {step == 4 && (
@@ -1175,9 +1179,9 @@ class App extends React.Component {
           {/* Delete Popup */}
 
         </div>
-      </Provider>
+      </StateContext.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App }

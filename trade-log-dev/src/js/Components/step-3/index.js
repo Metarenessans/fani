@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { Button, Tooltip, Select, Progress, Checkbox, Input } from 'antd/es'
 
+import { StateContext } from "../../App"
+import { cloneDeep } from "lodash"
 import ResultPanel from "../result-panel"
 
 
@@ -32,197 +34,192 @@ export default class ThirdStep extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      extraRows: [
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-        { result: false, firstRow: null, secondRow: null, thirdRow: null},
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-        { result: false, firstRow: null, secondRow: null, thirdRow: null},
-        { result:  true, firstRow: null, secondRow: null, thirdRow: null},
-      ]
-    }
+    this.state = {}
   }
 
-  
   render() {
-    let { extraRows } = this.state
-
     return (
-      <div className="third-step">
-        <ResultPanel/>
-        <div className="title">
-          Мониторинг рапорта
-        </div>
-
-        <div className="third-step-table">
-          {/* row */}
-          <div className="table-row">
-            <div className="table-base-column">
-              <div className="table-base-column-key">
-                Параметры на отслеживание
+      <StateContext.Consumer>
+        {context => {
+          const { state } = context;
+          const { data, currentRowIndex } = state
+          const { reportMonitor } = data[currentRowIndex];
+          return (
+            <div className="third-step">
+              <ResultPanel/>
+              <div className="title">
+                Мониторинг рапорта
               </div>
 
-              <div className="table-base-column-value">
-                Восприяте общего направления тренда
+              <div className="third-step-table">
+                {/* row */}
+                <div className="table-row">
+                  <div className="table-base-column">
+                    <div className="table-base-column-key">
+                      Параметры на отслеживание
+                    </div>
+
+                    <div className="table-base-column-value">
+                      Восприяте общего направления тренда
+                    </div>
+                  </div>
+                  <div className="table-extra-column-container scroll-hide">
+                    {reportMonitor.map((item, index) => {
+                      const { baseTrendDirection } = item;
+                      return (
+                        <div className="table-extra-column">
+                          <div className="table-extra-column-key">
+                            {(index + 1) + " " + "сделка"}
+                          </div>
+
+                          <div className="table-extra-column-value">
+                            <div className="table-extra-column-value-row">
+                              <p>Long</p>
+                              <Checkbox
+                                className="green"
+                                checked={baseTrendDirection === true}
+                                onChange={e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].baseTrendDirection = true;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                            <div className="table-extra-column-value-row">
+                              <p>Short</p>
+                              <Checkbox
+                                className="red"
+                                checked={baseTrendDirection === false}
+                                onChange={e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].baseTrendDirection = false;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {/* row */}
+
+                {/* row */}
+                <div className="table-row">
+                  <div className="table-base-column">
+                    <div className="table-base-column-value">
+                      Восприятие направления в моменте
+                    </div>
+                  </div>
+                  <div className="table-extra-column-container scroll-hide">
+                    {reportMonitor.map((item, index) => {
+                      const { momentDirection } = item;
+                      return (
+                        <div className="table-extra-column">
+                          <div className="table-extra-column-value">
+                            <div className="table-extra-column-value-row">
+                              <p>Long</p>
+                              <Checkbox
+                                className="green"
+                                checked={momentDirection === true}
+                                onChange={ e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].momentDirection = true;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                            <div className="table-extra-column-value-row">
+                              <p>Short</p>
+                              <Checkbox
+                                className="red"
+                                checked={momentDirection === false}
+                                onChange={ e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].momentDirection = false;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {/* row */}
+
+                {/* row */}
+                <div className="table-row">
+                  <div className="table-base-column">
+                    <div className="table-base-column-value">
+                      Сомнения в принятом решении
+                    </div>
+                  </div>
+                  <div className="table-extra-column-container scroll-hide">
+                    {reportMonitor.map((item, index) => {
+                      const { doubts } = item;
+                      return (
+                        <div className="table-extra-column">
+                          <div className="table-extra-column-value">
+                            <div className="table-extra-column-value-row">
+                              <p>Нет</p>
+                              <Checkbox
+                                className="green"
+                                checked={doubts === true}
+                                onChange={e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].doubts = true;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                            <div className="table-extra-column-value-row">
+                              <p>Да</p>
+                              <Checkbox
+                                className="red"
+                                checked={doubts === false}
+                                onChange={e => {
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].reportMonitor[index].doubts = false;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {/* row */}
+
+                {/* row */}
+                <div className="table-row">
+                  <div className="table-base-column table-base-column--result">
+                    <p>Результат сделки</p>
+                  </div>
+                  <div className="table-extra-column-container">
+                    {reportMonitor.map((item, index) => {
+                      const { result } = reportMonitor[index]
+                      return (
+                        <div className="table-extra-column">
+                          <div className="table-extra-column-value table-extra-column-value--result">
+                            <span className={clsx("circle", result ? "positive" : "negative")} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {/* row */}
               </div>
-            </div>
-            <div className="table-extra-column-container scroll-hide">
-              {extraRows.map((item, index) => {
-                const { firstRow } = extraRows[index]
-                return (
-                  <div className="table-extra-column">
-                    <div className="table-extra-column-key">
-                      {(index + 1) + " " + "сделка"}
-                    </div>
 
-                    <div className="table-extra-column-value">
-                      <div className="table-extra-column-value-row">
-                        <p>Long</p>
-                        <Checkbox
-                          className="green"
-                          checked={firstRow == "long"}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["firstRow"] = "long";
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                      <div className="table-extra-column-value-row">
-                        <p>Short</p>
-                        <Checkbox
-                          className="red"
-                          checked={firstRow == "short"}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["firstRow"] = "short";
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
             </div>
-          </div>
-          {/* row */}
-
-          {/* row */}
-          <div className="table-row">
-            <div className="table-base-column">
-              <div className="table-base-column-value">
-                Восприятие направления в моменте
-              </div>
-            </div>
-            <div className="table-extra-column-container scroll-hide">
-              {extraRows.map((item, index) => {
-                const { secondRow } = extraRows[index]
-                return (
-                  <div className="table-extra-column">
-                    <div className="table-extra-column-value">
-                      <div className="table-extra-column-value-row">
-                        <p>Long</p>
-                        <Checkbox
-                          className="green"
-                          checked={secondRow == "long"}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["secondRow"] = "long";
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                      <div className="table-extra-column-value-row">
-                        <p>Short</p>
-                        <Checkbox
-                          className="red"
-                          checked={secondRow == "short"}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["secondRow"] = "short";
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-          {/* row */}
-
-          {/* row */}
-          <div className="table-row">
-            <div className="table-base-column">
-              <div className="table-base-column-value">
-                Сомнения в принятом решении
-              </div>
-            </div>
-            <div className="table-extra-column-container scroll-hide">
-              {extraRows.map((item, index) => {
-                const { thirdRow } = extraRows[index]
-                return (
-                  <div className="table-extra-column">
-                    <div className="table-extra-column-value">
-                      <div className="table-extra-column-value-row">
-                        <p>Нет</p>
-                        <Checkbox
-                          className="green"
-                          checked={thirdRow == true}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["thirdRow"] = true;
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                      <div className="table-extra-column-value-row">
-                        <p>Да</p>
-                        <Checkbox
-                          className="red"
-                          checked={thirdRow == false}
-                          onChange={e => {
-                            const extraRowsClone = [...extraRows];
-                            extraRowsClone[index]["thirdRow"] = false;
-                            this.setState({ extraRows: extraRowsClone });
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-          {/* row */}
-
-          {/* row */}
-          <div className="table-row">
-            <div className="table-base-column table-base-column--result">
-              <p>Результат сделки</p>
-            </div>
-            <div className="table-extra-column-container">
-              {extraRows.map((item, index) => {
-                const { result } = extraRows[index]
-                return (
-                  <div className="table-extra-column">
-                    <div className="table-extra-column-value table-extra-column-value--result">
-                      <span className={clsx("circle", result ? "positive" : "negative")} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-          {/* row */}
-        </div>
-
-      </div>
+          )
+        }}
+      </StateContext.Consumer>
     )
   }
 }
