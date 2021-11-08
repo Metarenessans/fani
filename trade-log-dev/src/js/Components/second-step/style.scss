@@ -2,24 +2,26 @@
 
 
 .title--green {
+  font-size: inherit!important;
   padding: 0;
-  margin: 0!important;
-  min-height: 2.190em;
+  margin:  0!important;
   padding: 0!important;
-  min-height: 2.76em;
+  min-height: 2.2em;
   
   color: white;
   background-color: #afc5a4;
   opacity: .9;
   box-shadow: none;
+  border-top:    0.03em solid #cacaca;
+  border-bottom: 0.03em solid #cacaca;
 }
 
 .title--red {
+  font-size: inherit!important;
   padding: 0;
-  margin: 0!important;
-  min-height: 2.190em;
+  margin:  0!important;
   padding: 0!important;
-  min-height: 2.75em;
+  min-height: 2.2em;
   
   color: white;
   background-color: red;
@@ -27,37 +29,40 @@
   box-shadow: none;
 }
 
-
 .second-step {
-  font-size: 1.8em;
+  .state-registry {
+    width: 100%;
+  }
+
+  p {
+    font-size: 0.8em;
+  }
 
   &-table {
     display: flex;
+    width: 100%;
+
 
     box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.03), 0px 0px 8px rgba(12, 12, 12, 0.06);
 
     &-first-column {
-      width: 35%;
+      min-width: 35%;
       height: 100%;
 
-      &-row-container {
-        border-right: 0.03em solid #cacaca;
-      }
-
       &-title {
-        font-size: .9em;
+        font-size: inherit;
         display: flex;
         justify-content: center;
         align-items: center;
 
         width: 100%;
+        min-height: 2.7em;
         font-weight: bold;
-        padding: .8em;
-        border-right:  0.03em solid #cacaca;
       }
 
       &-row {
         padding: .5em;
+        height: 2.2em!important;
 
         font-weight: bold;
         background-color: #e7f0f9;
@@ -67,7 +72,6 @@
         }
 
         p {
-          font-size: .8em;
           margin: 0;
           font-weight: 500;
         }
@@ -75,52 +79,61 @@
     }
 
     &-second-column {
-      width: 29.9%;
+      min-width: 30%;
+      border-left:  0.03em solid #cacaca;
+      border-right: 0.03em solid #cacaca;
     }
 
     .second-column {
-      &-title-container {
+
+      &-title-row {
+        font-size: inherit;
         display: flex;
-        width: 100%;
         align-items: center;
-        min-height: 2.8em;
-  
+        width: 100%;
+        min-height: 2.7em;
+      }
+      
+      &-title-container {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        
+        width: 33.33%;
+        min-height: 2.7em;
+        
+        &:nth-child(2n) {
+          border-left:  0.03em solid #cacaca;
+          border-right: 0.03em solid #cacaca;
+        }
+
         p {
-          font-size: .9em;
-          width: 33.33%;
-          height: 3.1em;
-          margin: 0;
-          padding-top: 0.5em;
-
-          line-height: 1.1em;
           text-align: center;
+          line-height: 1.1em;
           font-weight: 500;
-
-          border-right:  0.03em solid #cacaca;
-          border-bottom: 0.03em solid #cacaca;
-
-          &:first-of-type {
-            padding-top: 0.9em;
-          }
+          height: 100%;
+          margin:  0;
+          padding: 0;
         }
       }
 
       &-empty-row {
-        min-height: 2.190em;
-        border-right:  0.03em solid #cacaca;
+        min-height: 2.2em;
+        border-top:  0.03em solid #cacaca;
         border-bottom:  0.03em solid #cacaca;
 
         &--second {
-          min-height: 2.190em;
-          border-top:  0.03em solid #cacaca;
+          min-height: 2.2em;
+          border-top:  none;
           background-color: #e7f0f9;
-          border-bottom: initial;
+          border-bottom: none;
+          border-top:    0.03em solid #cacaca;
         }
       }
 
       &-row-container {
         display: flex;
-        min-height: 2.19em;
+        min-height: 2.2em;
 
         &:nth-child(2n-1) {
           background-color: #e7f0f9;
@@ -128,30 +141,34 @@
       }
 
       &-row-check-box {
-        padding-top: 0.2em;
+        height: 2.2em!important;
         width: 33.33%;
-        height: 2.19em;
-        text-align: center;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
 
-        border-right:  0.03em solid #cacaca;
+        &:nth-child(2n) {
+          border-left:   0.03em solid #cacaca;
+          border-right:  0.03em solid #cacaca;
+        }
+
       }
     }
 
     &-third-column {
-      width: 35.1%;
+      min-width: 35%;
     }
 
     .table-third-column {
       &-title {
-        font-size: .9em;
+        font-size: inherit;
         display: flex;
         justify-content: center;
         align-items: center;
+        min-height: 2.7em;
 
         width: 100%;
         font-weight: bold;
-        padding: .8em;
-        border-right:  0.03em solid #cacaca;
       }
 
       &-row-container {
@@ -161,7 +178,7 @@
         &-row {
           display: flex;
           justify-content: space-between;
-          min-height: 2.19em;
+          min-height: 2.2em;
 
           font-weight: 700;
 
@@ -170,7 +187,6 @@
           }
 
            p {
-            font-size: .8em;
             margin: 0;
             font-weight: 500;
 
@@ -181,9 +197,10 @@
           .third-column-row-check-box {
             display: flex;
             justify-content: center;
+            align-items: center;
+            border-left: 0.03em solid #cacaca;
+            height: 2.2em;
 
-            border-left:  0.03em solid #cacaca;
-            padding-top: 0.6em;
             width: 20%;
           }
         }

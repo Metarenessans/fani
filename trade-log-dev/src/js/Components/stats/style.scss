@@ -1,0 +1,103 @@
+.stats {
+  // TODO: удалить перез сборкой
+  margin-top: 5em;
+
+  &-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+
+    gap: 2em;
+
+    > * {
+      flex-grow: 1;
+    }
+  }
+
+  .association-list {
+    width: 100%;
+
+    > * {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5em;
+
+      margin-bottom: 1em;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      dt,
+      dd {
+        font-size: 1.6em;
+      }
+
+      dd {
+        margin: 0;
+        margin-left: auto;
+        min-width: 8ch;
+
+        text-align: center;
+      }
+    }
+  }
+
+  .panel5 {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th,
+      td {
+        padding: .5em 3em;
+        border: 1px solid black;
+
+        font-size: 1.6em;
+        text-align: center;
+      }
+
+      th {
+        width: 25%;
+
+        &:first-of-type {
+          width: 45%;
+        }
+      }
+
+      td:first-child {
+        text-align: left;
+      }
+
+      tr {
+        &:not(:last-child) {
+          td {
+            border-bottom-color: transparent;
+          }
+        }
+
+        &:first-child {
+          th:not(:last-child) {
+            border-right-color: transparent;
+          }  
+        }
+
+        &:nth-child(2n) {
+          background-color: #f4f7fb
+        }
+      }
+    }
+
+    .ant-progress {
+      &-outer {
+        margin: 0;
+        padding: 0;
+      }
+
+      &-text {
+        display: none;
+      }
+    }
+  }
+}

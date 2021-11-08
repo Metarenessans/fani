@@ -1,0 +1,18 @@
+.trade-log-button {
+  font-size: 0.8em;
+  white-space: nowrap;
+  transition: all 0.3s ;
+
+  padding: 0.2em 1em;
+  border-radius: 1.1em;
+  border: 0.1em solid #5a6dce;
+
+  font-weight: 600;
+  color: #5a6dce;
+  text-transform: uppercase;
+
+  &:hover {
+    color: #fff;
+    background: #5a6dce;
+  }
+}

@@ -1,0 +1,22 @@
+.control-panel {
+
+  .stats-panel-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 4em;
+  }
+
+  .stack {
+    .input-wrapper {
+      width: 100%;
+    }
+  }
+
+  .label-with-fixed-width {
+    min-width: 40ch;
+  }
+
+  .switch {
+    font-size: 1.6em;
+  }
+}
