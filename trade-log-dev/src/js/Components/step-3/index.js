@@ -1,6 +1,9 @@
 import React from 'react'
 import { Button, Tooltip, Select, Progress, Checkbox, Input } from 'antd/es'
 
+import ResultPanel from "../result-panel"
+
+
 import {
   PlusOutlined,
   MinusOutlined,
@@ -25,7 +28,7 @@ import "./style.scss"
 
 const { Option } = Select;
 
-export default class FourthStep extends React.Component {
+export default class ThirdStep extends React.Component {
   constructor(props) {
     super(props);
 
@@ -43,16 +46,18 @@ export default class FourthStep extends React.Component {
     }
   }
 
+  
   render() {
     let { extraRows } = this.state
 
     return (
-      <div className="fourth-step">
+      <div className="third-step">
+        <ResultPanel/>
         <div className="title">
           Мониторинг рапорта
         </div>
 
-        <div className="fourth-step-table">
+        <div className="third-step-table">
           {/* row */}
           <div className="table-row">
             <div className="table-base-column">

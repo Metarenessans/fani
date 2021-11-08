@@ -1,0 +1,106 @@
+.state-registry {
+
+  &-content {
+    margin-top: 1.5em;
+    padding: 0;
+  }
+
+  .table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    // width: 100%;
+    border-collapse: collapse;
+
+    .positive {
+      .ant-checkbox-checked .ant-checkbox-inner {
+        background-color: var(--success-color) !important;
+      }
+    }
+
+    .negative {
+      .ant-checkbox-checked .ant-checkbox-inner {
+        background-color: var(--danger-color) !important;
+      }
+    }
+
+    th,
+    td {
+      padding: .75em 0;
+      border: 1px solid black;
+
+      font-size: 1.6em;
+      text-align: center;
+    }
+
+    th {
+      min-width: 10.67ch;
+
+      &:first-of-type {
+        min-width: 40ch;
+      }
+    }
+
+    td {
+      padding: .75em 1.25em;
+
+      text-align: center;
+
+      &:first-child {
+        text-align: left;
+      }
+
+      &.category-title {
+        background: black;
+
+        color: white;
+        font-weight: 800;
+        text-align: center;
+        text-transform: uppercase;
+
+        opacity: .35;
+
+        &--positive {
+          background: var(--success-color);
+        }
+
+        &--negative {
+          background: var(--danger-color);
+        }
+      }
+    }
+
+    tr {
+      &:not(:last-child) {
+        td {
+          // border-bottom-color: transparent;
+        }
+      }
+
+      &:nth-child(2n) {
+        background-color: #f4f7fb
+      }
+    }
+  }
+
+  &-footer {
+    margin-top: 1.5em;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5em;
+
+    button {
+      font-size: 1.2em;
+    }
+  }
+}
+
+// TODO: Удалить
+.state-registry {
+  margin-top: 2em;
+}

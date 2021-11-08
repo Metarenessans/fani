@@ -1,0 +1,60 @@
+.table-panel {
+
+  &-table-wrapper {
+    width: 100%;
+    max-height: 54.6ch;
+    overflow-y: scroll;
+  }
+
+  table {
+    width: 100%;
+
+    th,
+    td {
+      padding: 0.4em ;
+
+      font-size: 1.6em;
+      text-align: center;
+
+      &:first-child {
+        text-align: left;
+      }
+    }
+
+    th {
+      width: 15ch;
+
+      font-weight: 800;
+
+      &:first-child {
+        width: 10ch;
+      }
+    }
+
+    tr {
+      margin-top: .5em;
+      border-bottom: .15em solid var(--primary-color);
+
+      &:first-of-type {
+        border-bottom: none;
+
+        th {
+          position: sticky;
+          z-index: 1;
+          top: 0;
+          background: white;
+        }
+      }
+    }
+
+    button {
+      font-size: 0.8em;
+    }
+  }
+
+  &__add-button {
+    margin-top: 1.5em;
+
+    font-size: 1.2em;
+  }
+}

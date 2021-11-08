@@ -25,23 +25,13 @@ import "./style.scss"
 
 const { Option } = Select;
 
-export default class ThirdStep extends React.Component {
+export default class FourthStep extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      firstColumnExtraRows: [
-        {
-          name:  "",
-          value: false,
-        }
-      ],
-      secondColumnExtraRows: [
-        {
-          name:  "",
-          value: false,
-        }
-      ]
+      firstColumnExtraRows: [],
+      secondColumnExtraRows: []
       
     };
   }
@@ -68,7 +58,7 @@ export default class ThirdStep extends React.Component {
     } = rowData[currentRowIndex]
 
     return (
-      <div className="third-step">
+      <div className="fourth-step">
         <div className="title">
           Внутренняя проработка
         </div>
@@ -81,20 +71,20 @@ export default class ThirdStep extends React.Component {
         <div className="column-container">
           {/* col */}
           <div 
-            className="third-step-column"
+            className="fourth-step-column"
             onClick={() => onClickTab(false)}
           >
-            <div className="third-step-table">
+            <div className="fourth-step-table">
 
-              <div className="third-step-table-title">
+              <div className="fourth-step-table-title">
                 Технология
               </div>
 
-              <div className="third-step-table-row-container">
+              <div className="fourth-step-table-row-container">
 
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>ЭМИ</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -107,9 +97,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
 
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>ТМО</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -122,9 +112,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
 
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Перепросмотр</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -137,9 +127,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
 
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Работа с архетипами</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -156,7 +146,7 @@ export default class ThirdStep extends React.Component {
                   const { name, value } = firstColumnExtraRows[index]
                   return (
                     // ~~
-                    <div className="third-step-table-row-container-row">
+                    <div className="fourth-step-table-row-container-row">
                       <Input
                         defaultValue={name}
                         onBlur={e => {
@@ -172,7 +162,7 @@ export default class ThirdStep extends React.Component {
                           this.setState({ firstColumnExtraRows: dataClone });
                         }}  
                       />
-                      <div className="third-step-table-check-box">
+                      <div className="fourth-step-table-check-box">
                         <Checkbox
                           className="green"
                           key={value}
@@ -191,12 +181,12 @@ export default class ThirdStep extends React.Component {
 
               </div>
             </div>
-              <div className="third-step-add-button-container">
+              <div className="fourth-step-add-button-container">
                 <Button 
                   className="trade-log-button"
                   onClick={() => {
                     const dataClone = [...firstColumnExtraRows];
-                    dataClone.push({ ...firstColumnExtraRows });
+                    dataClone.push({ name: "", value: null });
                     this.setState({ firstColumnExtraRows: dataClone });
                   }}
                 >Добавить</Button>
@@ -206,20 +196,20 @@ export default class ThirdStep extends React.Component {
 
           {/* col */}
           <div
-            className="third-step-column"
+            className="fourth-step-column"
             onClick={() => onClickTab(true)}
           >
-            <div className="third-step-table">
+            <div className="fourth-step-table">
 
-              <div className="third-step-table-title">
+              <div className="fourth-step-table-title">
                 Практические задачи на отработку
               </div>
               
-              <div className="third-step-table-row-container">
+              <div className="fourth-step-table-row-container">
 
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Изменить время на сделку</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -232,9 +222,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Не снимать отложенные заявки, выставленные до этого</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -248,9 +238,9 @@ export default class ThirdStep extends React.Component {
                 </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Не перезаходить после закрытия по Stop-Loss</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -263,9 +253,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Не выключать робота</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -278,9 +268,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Контролировать объём входа</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -293,9 +283,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Делать расчёты ФАНИ</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -308,9 +298,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Заносить результаты в ФАНИ</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -323,9 +313,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Фиксировать сделки в скриншотах</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -338,9 +328,9 @@ export default class ThirdStep extends React.Component {
                   </div>
                 </div>
               
-                <div className="third-step-table-row-container-row">
+                <div className="fourth-step-table-row-container-row">
                   <p>Выделять ключевые поведенченские паттерны и модели</p>
-                  <div className="third-step-table-check-box">
+                  <div className="fourth-step-table-check-box">
                     <Checkbox
                       className="green"
                       key={currentRowIndex}
@@ -357,7 +347,7 @@ export default class ThirdStep extends React.Component {
                 const { name, value } = secondColumnExtraRows[index]
                 return (
                   // ~~
-                  <div className="third-step-table-row-container-row">
+                  <div className="fourth-step-table-row-container-row">
                     <Input
                       defaultValue={name}
                       onBlur={e => {
@@ -367,7 +357,7 @@ export default class ThirdStep extends React.Component {
                         this.setState({ secondColumnExtraRows: dataClone });
                       }}
                     />
-                    <div className="third-step-table-check-box">
+                    <div className="fourth-step-table-check-box">
                       <Checkbox
                         className="green"
                         key={value}
@@ -384,7 +374,7 @@ export default class ThirdStep extends React.Component {
                 )
               })}
             </div>
-          <div className="third-step-add-button-container">
+          <div className="fourth-step-add-button-container">
             <Button
               className="trade-log-button"
               onClick={() => {

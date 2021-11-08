@@ -37,36 +37,11 @@ function onChangeTime(time, timeString) {
   console.log(timeString, "timeString");
 }
 
-export default class TradeLog extends React.Component {
+export default class FirstStep extends React.Component {
   constructor(props) {
     super(props);
     
-    this.state = {
-      combineTable: [
-        {
-          load: 0.01,
-          iterations: 1,
-        },
-        {
-          load: 0.01,
-          iterations: 1,
-        },
-      ],
-
-      transactionRegister: [
-        {
-          enterTime:  null,
-          short:     false,
-          long:      false,
-          impulse:   false,
-          postponed: false,
-          levels:    false,
-          breakout:  false,
-          result:        0,
-          practiceStep:  0,
-        },
-      ]
-    };
+    this.state = {}
   }
 
   getOptions() {
@@ -79,9 +54,7 @@ export default class TradeLog extends React.Component {
     });
   }
 
-  getCurrentToolIndex() {
-    const { currentToolCode } = this.props;
-    
+  getCurrentToolIndex(currentToolCode) {
     let { tools } = this.props;
     return Tools.getToolIndexByCode(tools, currentToolCode);
   }
@@ -96,27 +69,16 @@ export default class TradeLog extends React.Component {
     let { 
       onChange, 
       currentRowIndex, 
-      rowData, 
       tools, 
       setSeachVal,
       toolsLoading,
-      isToolsDropdownOpen,
     } = this.props;
 
-    let {
-      enterTime,
-      long,
-      short,
-      impulse,
-      postponed,
-      levels,
-      breakout,
-      result,
-    } = rowData[currentRowIndex];
+    const { expectedDeals, deals } = this.props.data;
 
     return (
       <>
-        <div className="trade-log">
+        <div className="first-step">
 
           <div className="title">
             Инсрументы предварительной выборки
@@ -146,9 +108,10 @@ export default class TradeLog extends React.Component {
             Интрадей Трейдометр
           </div>
 
-          <div className="trade-log-combine-table">
-            {combineTable.map((item, index) => {
-              const {load, iterations} = combineTable[index]
+          <div className="first-step-combine-table">
+            {/* ~~ */}
+            {expectedDeals.map((item, index) => {
+              const { currentToolCode ,load, iterations } = item;
               return (
                 <div className="combine-table-row">
                   <div className="combine-table-row-col">
@@ -161,11 +124,11 @@ export default class TradeLog extends React.Component {
                       {/* Торговый инструмент */}
                       <Select
                         key={currentRowIndex}
-                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
-                        onChange={currentToolIndex => {
+                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex(currentToolCode)}
+                        onChange={ currentToolIndex => {
                           const currentTool = tools[currentToolIndex];
                           const currentToolCode = currentTool.code;
-                          onChange("currentToolCode", currentToolCode, currentRowIndex)
+                          onChange("expectedDeals", "currentToolCode", currentToolCode, index)
                         }}
                         disabled={toolsLoading}
                         loading={toolsLoading}
@@ -218,9 +181,7 @@ export default class TradeLog extends React.Component {
                             precision={100}
                             filter={val => round(val, 2) + "%"}
                             onChange={val => {
-                              let copy = [...combineTable];
-                              copy[index]["load"] = val;
-                              this.setState({ combineTable: copy });
+                              onChange("expectedDeals", "load", val, index)
                             }}
                           />
                         </div>
@@ -236,9 +197,7 @@ export default class TradeLog extends React.Component {
                             precision={100}
                             filter={val => round(val)}
                             onChange={val => {
-                              let copy = [...combineTable];
-                              copy[index]["iterations"] = val;
-                              this.setState({ combineTable: copy });
+                              onChange("expectedDeals", "iterations", val, index)
                             }}
                           />
                         </div>
@@ -253,8 +212,6 @@ export default class TradeLog extends React.Component {
                       </div>
                     )}
                     <div className="combine-table-row-val combine-table-row-val--final">
-                      {/* <div className="">
-                      </div> */}
                       <p>
                         Длина хода<br />
                         <span style={{ color: "#736d6b" }}>125 п.</span>
@@ -271,12 +228,9 @@ export default class TradeLog extends React.Component {
             <div className={"add-btn-container"}>
               <Button 
                 className="trade-log-button"
-                onClick={() => {
-                  const dataClone = [...combineTable];
-                  dataClone.push({...combineTable});
-                  // dataClone[dataClone.length - 1].practiceStep = dataClone[0].practiceStep
-                  this.setState({ combineTable: dataClone });
-                }}
+                // onClick={() => {
+                //   onAddRow("expectedDeals",)
+                // }}
               >
                 Добавить
               </Button>
@@ -305,26 +259,36 @@ export default class TradeLog extends React.Component {
 
 
           <div className="transaction-register-table">
-            {transactionRegister.map((item, index) => {
+            {deals.map((item, index) => {
+              let {
+                currentToolCode, 
+                enterTime, 
+                isLong, 
+                impulse, 
+                postponed,
+                levels,
+                breakout,
+                result,
+              } = item
               return (
-                <div className="trade-log-row">
+                <div className="first-step-row">
                   {/* col */}
-                  <div className="trade-log-row-col">
+                  <div className="first-step-row-col">
                     {index == 0 && (
-                      <div className="trade-log-row-key">
+                      <div className="first-step-row-key">
                         Инструмент
                       </div>
                     )}
 
-                    <div className="trade-log-row-val trade-log-row-val--base trade-log-row-val-tool">
+                    <div className="first-step-row-val first-step-row-val--base first-step-row-val-tool">
                       {/* Торговый инструмент */}
                       <Select
                         key={currentRowIndex}
-                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                        value={toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex(currentToolCode)}
                         onChange={currentToolIndex => {
                           const currentTool = tools[currentToolIndex];
                           const currentToolCode = currentTool.code;
-                          onChange("currentToolCode", currentToolCode, currentRowIndex)
+                          onChange("deals", "currentToolCode", currentToolCode, index)
                         }}
                         disabled={toolsLoading}
                         loading ={toolsLoading}
@@ -359,14 +323,14 @@ export default class TradeLog extends React.Component {
                   {/* col */}
 
                   {/* col */}
-                  <div className="trade-log-row-col">
+                  <div className="first-step-row-col">
                     {index == 0 && (
-                      <div className="trade-log-row-key">
+                      <div className="first-step-row-key">
                         Время входа
                       </div>
                     )}
 
-                    <div className="trade-log-row-val trade-log-row-val--base trade-log-row-val-time">
+                    <div className="first-step-row-val first-step-row-val--base first-step-row-val-time">
                       <div className="time-picker-container">
                         <TimePicker 
                           key={currentRowIndex}
@@ -377,8 +341,7 @@ export default class TradeLog extends React.Component {
                           placeholder="Введите время"
                           onChange={time => {
                             let value = +time;
-                            console.log(value);
-                            onChange("enterTime", value, currentRowIndex);
+                            onChange("deals", "enterTime", value, index);
                           }}
                           placeholder="введите время"
                         />
@@ -388,40 +351,38 @@ export default class TradeLog extends React.Component {
                   {/* col */}
 
                   {/* col */}
-                  <div className="trade-log-row-col">
+                  <div className="first-step-row-col">
                     {index == 0 && (
-                      <div className="trade-log-row-key">
+                      <div className="first-step-row-key">
                         Направление
                       </div>
                     )}
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--first trade-log-row-val--long">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--first first-step-row-val--long">
                         Long
                       </div>
                       <div className="check-box-container check-box-container--first">
                         <Checkbox
                           className={"green"}
                           key={currentRowIndex}
-                          checked={long}
-                          onChange={(val) => {
-                            let value = val.target.checked
-                            onChange("long", value, currentRowIndex)
+                          checked={isLong === true}
+                          onChange={ ()=> {
+                            onChange("deals", "isLong", true, index);
                           }}
                         />
                       </div>
                     </div>
 
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--second trade-log-row-val--short">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--second first-step-row-val--short">
                         Short
                       </div>
                       <div className="check-box-container check-box-container--second">
                         <Checkbox
                           className={"red"}
-                          checked={short}
-                          onChange={(val) => {
-                            let value = val.target.checked
-                            onChange("short", value, currentRowIndex)
+                          checked={isLong === false}
+                          onChange={() => {
+                            onChange("deals", "isLong", false, index);
                           }}
                         />
                       </div>
@@ -430,38 +391,38 @@ export default class TradeLog extends React.Component {
                   {/* col */}
 
                   {/* col */}
-                  <div className="trade-log-row-col">
+                  <div className="first-step-row-col">
                     {index == 0 && (
-                      <div className="trade-log-row-key">
+                      <div className="first-step-row-key">
                         Метод входа
                       </div>
                     )}
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--first">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--first">
                         Импульс
                       </div>
                       <div className="check-box-container check-box-container--first">
                         <Checkbox
                           checked={impulse}
-                          onChange={(val) => {
-                            let value = val.target.checked
-                            onChange("impulse", value, currentRowIndex)
+                          onChange={ val => {
+                            let value = val.target.checked;
+                            onChange("deals", "impulse", value, index);
                           }}
                         />
                       </div>
                     </div>
 
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--second">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--second">
                         Отложенный
                       </div>
 
                       <div className="check-box-container check-box-container--second">
                         <Checkbox
                           checked={postponed}
-                          onChange={(val) => {
+                          onChange={ val => {
                             let value = val.target.checked
-                            onChange("postponed", value, currentRowIndex)
+                            onChange("deals", "postponed", value, index)
                           }}
                         />
                       </div>
@@ -470,37 +431,39 @@ export default class TradeLog extends React.Component {
                   {/* col */}
 
                   {/* col */}
-                  <div className="trade-log-row-col">
+                  <div className="first-step-row-col">
                     {index == 0 && (
-                      <div className="trade-log-row-key">
+                      <div className="first-step-row-key">
                         Сигнал
                       </div>
                     )}
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--first">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--first">
                         Уровни
                       </div>
                       <div className="check-box-container check-box-container--first">
                         <Checkbox
                           checked={levels}
-                          onChange={(val) => {
+                          onChange={ val => {
                             let value = val.target.checked
-                            onChange("levels", value, currentRowIndex)
+                            onChange("deals", "levels", value, index)
                           }}
                         />
                       </div>
                     </div>
 
-                    <div className="trade-log-row-row">
-                      <div className="trade-log-row-val trade-log-row-val--second">
+                    <div className="first-step-row-row">
+                      <div className="first-step-row-val first-step-row-val--second">
                         Пробои
                       </div>
                       <div className="check-box-container check-box-container--second">
                         <Checkbox
+                          key={breakout}
+                          // ~~
                           checked={breakout}
-                          onChange={(val) => {
-                            let value = val.target.checked
-                            onChange("breakout", value, currentRowIndex)
+                          onChange={ e => {
+                            let value = e.target.checked
+                            onChange("deals", "breakout", value, index)
                           }}
                         />
                       </div>
@@ -509,18 +472,18 @@ export default class TradeLog extends React.Component {
                   {/* col */}
 
                   {/* col */}
-                  <div className="trade-log-row-col trade-log-row-col--final">
+                  <div className="first-step-row-col first-step-row-col--final">
                     {index == 0 && (
-                      <div className="trade-log-row-key trade-log-row-key--final">
+                      <div className="first-step-row-key first-step-row-key--final">
                         Итог
                       </div>
                     )}
 
-                    <div className="trade-log-row-val trade-log-row-val--final">
+                    <div className="first-step-row-val first-step-row-val--final">
                       <NumericInput
                         defaultValue={result || 0}
-                        onBlur={(val) => {
-                          onChange("result", val, currentRowIndex)
+                        onBlur={ val => {
+                          onChange("deals", "result", val, index)
                         }}
                         unsigned="true"
                         min={0}
@@ -537,7 +500,6 @@ export default class TradeLog extends React.Component {
           <div className={"add-btn-container"}>
             <Button
               className="trade-log-button"
-              // ~~
               onClick={() => {
                 const dataClone = [...transactionRegister];
                 dataClone.push({ ...transactionRegister });

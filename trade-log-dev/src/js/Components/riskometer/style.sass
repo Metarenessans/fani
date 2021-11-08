@@ -1,0 +1,80 @@
+@import "../../../../../common/sass/mixins"
+
+.gauge
+
+  canvas
+    width:  30em !important
+    height: 18em !important
+  
+  figcaption
+    display: flex
+    flex-direction: column
+    align-items: center
+
+    font-size: 2em
+    font-weight: 800
+    line-height: 2
+    text-transform: uppercase
+
+    b
+      &.success
+        color: var(--success-color)
+
+      &.danger
+        color: var(--danger-color)
+  
+.__riskometer
+  display: flex
+  flex-direction: column
+  align-items: center
+
+  margin: 0
+  width:  100%
+  height: 24em
+
+  +md
+    height: 26.5em
+
+  &__caption
+    margin-top: -3.5em
+    position: relative
+
+    font-size: 1.6em
+    text-transform: uppercase
+    text-align: center
+
+    +sm
+      margin-top: -3em
+
+      font-size: 2.2em
+    
+    +xs
+      margin-top: -4em
+
+      font-size: 2em
+
+  &__value
+    display: block
+    margin-top: -2em
+
+    font-size: 1.8em
+
+  &__label
+    font-size: 1.6em
+    font-weight: bold
+
+  .anychart-credits
+    display: none
+  
+  [id="container"]
+    width:  100%
+    height: 100%
+    margin:  0
+    padding: 0
+  
+  tspan:first-letter
+    display: none
+    color: red
+  
+  canvas
+    background: none

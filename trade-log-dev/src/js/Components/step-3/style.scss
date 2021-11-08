@@ -1,7 +1,11 @@
-.fourth-step {
+.third-step {
   font-size: 1.8em;
   overflow: hidden;
   width: 100%;
+
+  .result-panel {
+    font-size: .6em;
+  }
 
   &-table {
     width: 100%;
@@ -116,7 +120,7 @@
           font-size: 0.9em;
           display: flex;
           height: 100%;
-          text-align: start;
+          text-align: left;
           align-items: center;
           padding: .3em 1em;
           white-space: nowrap;
@@ -130,7 +134,7 @@
           position: relative;
           width: 65%;
           display: inline-flex;
-          justify-content: start;
+          justify-content: flex-start;
           overflow: auto;
         }
 
@@ -251,4 +255,76 @@
       }
     }
   }
+}
+
+.third-step {
+  .ant-checkbox-checked
+  .ant-checkbox-inner {
+    background-color: #b2b0b2!important;
+    border-color: #c6c7c6!important;
+  }
+
+  .green {
+    .ant-checkbox-checked
+    .ant-checkbox-inner {
+      background-color: var(--success-color) !important;
+    }
+  }
+
+  .red {
+    .ant-checkbox-checked
+    .ant-checkbox-inner {
+      background-color: var(--danger-color) !important;
+    }
+  }
+
+  .ant-checkbox-input:focus+.ant-checkbox-inner,
+  .ant-checkbox-wrapper:hover
+  .ant-checkbox-inner,
+  // .ant-checkbox:hover
+  .ant-checkbox-inner {
+    border-color: rgb(170, 166, 166)!important;
+  }
+
+  .ant-checkbox {
+    &-inner {
+      border-radius: 6px;
+    }
+
+    &::after {
+      border: initial;
+    }
+  }
+
+  label {
+    font-size: inherit!important;
+    display: flex;
+    align-items: center;
+    width:  1em!important;
+    height: 1em!important;
+  
+    .ant-checkbox {
+      top: 0.01em!important;
+      
+      font-size: inherit!important;
+      height: 100%!important;
+      width:  100%!important;
+  
+      .checkbox {
+        font-size: inherit!important;
+        height: 100%!important;
+        width:  100%!important;
+      }
+      .ant-checkbox-inner {
+        font-size: inherit!important;
+        height: 100%!important;
+        width:  100%!important;
+
+        &::after {
+          display: none;
+        }
+      }
+    }
+  }
+
 }
