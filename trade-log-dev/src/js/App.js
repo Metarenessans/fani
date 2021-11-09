@@ -38,6 +38,85 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
 
+    this.dayTemplate = {
+      // date
+
+      // Выполнение плана
+      // successRate
+
+      // kod
+
+      /**
+       * @typedef ExpectedDeal
+       * @property {string} currentToolCode Код торгового инструмента
+       * @property {number} load Загрузка (в %)
+       * @property {number} iterations Количество итераций
+       */
+
+      /**
+       * Массив Инстрадей трейдометр 
+       * 
+       * @type {ExpectedDeal[]} 
+       */
+      expectedDeals: [
+        {
+          currentToolCode: "SBER",
+          load: 0,
+          iterations: 0,
+        }
+      ],
+
+      // Регистр сделок
+      deals: [
+        {
+          currentToolCode: "SBER",
+          enterTime: null,
+          isLong: "",
+
+          impulse: false,
+          postponed: false,
+
+          levels: false,
+          breakout: false,
+
+          result: 0,
+        }
+      ],
+
+      reportMonitor: [
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+      ],
+
+      technology: {
+        amy: false,
+        tmo: false,
+        recapitulation: false,
+        archetypesWork: false,
+      },
+
+      customTechnology: [],
+
+      practiceWorkTasks: {
+        transactionTimeChange: false,
+        noneWithdrawPendingApplications: false,
+        noReenterAfterClosingStopLoss: false,
+        noDisablingRobot: false,
+        inputVolumeControl: false,
+        makeFaniCalculate: false,
+        enterResultsInFani: false,
+        screenshotTransactions: false,
+        keyBehavioralPatternsIdentify: false,
+      },
+      customPracticeWorkTasks: [],
+    }
+
     this.initialState = {
 
       /**
@@ -63,88 +142,7 @@ export default class App extends React.Component {
 
       data: [
         // Данные для конкретного дня
-        {
-          // date
-
-          // Выполнение плана
-          // successRate
-
-          // kod
-
-          /**
-           * @typedef ExpectedDeal
-           * @property {string} currentToolCode Код торгового инструмента
-           * @property {number} load Загрузка (в %)
-           * @property {number} iterations Количество итераций
-           */
-
-          /**
-           * Массив Инстрадей трейдометр 
-           * 
-           * @type {ExpectedDeal[]} 
-           */
-          expectedDeals: [
-            {
-              currentToolCode: "SBER",
-              load:       0,
-              iterations: 0,
-            },
-            {
-              currentToolCode: "SBER",
-              load:       0,
-              iterations: 0,
-            },
-          ],
-
-          // Регистр сделок
-          deals: [
-            {
-              currentToolCode: "SBER",
-              enterTime:  null,
-              isLong:      "",
-
-              impulse:   false,
-              postponed: false, 
-
-              levels:    false,
-              breakout:  false,
-
-              result:        0,
-            }
-          ],
-
-          reportMonitor: [
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-          ],
-          
-          technology: {
-            amy:            false,
-            tmo:            false,
-            recapitulation: false,
-            archetypesWork: false,
-          },
-          customTechnology: [],
-
-          practiceWorkTasks: {
-            transactionTimeChange:           false,
-            noneWithdrawPendingApplications: false,
-            noReenterAfterClosingStopLoss:   false,
-            noDisablingRobot:                false,
-            inputVolumeControl:              false,
-            makeFaniCalculate:               false,
-            enterResultsInFani:              false,
-            screenshotTransactions:          false,
-            keyBehavioralPatternsIdentify:   false,
-          },
-          customPracticeWorkTasks: [],
-        }
+        cloneDeep(this.dayTemplate)
       ],
 
       /**
