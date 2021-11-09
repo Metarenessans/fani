@@ -72,7 +72,7 @@ function updateChartScaleY(start, end) {
   // Y axis
   
   const startIndex = roundUp(planData.length * start);
-  const endIndex   = roundUp(planData.length * end) + 1;
+  const endIndex   = roundUp(planData.length * end);
 
   const DEPO_START = planData[0].value;
 
@@ -85,8 +85,12 @@ function updateChartScaleY(start, end) {
     ...recommendDataCopy.slice(startIndex, endIndex),
   ].map(entry => entry.value);
 
-  let minY = Math.round( Math.min(...dataCombined) - 50_000 );
-  let maxY = Math.round( Math.max(...dataCombined) + 50_000 );
+  let minY = Math.round( Math.min(...dataCombined) );
+  let maxY = Math.round( Math.max(...dataCombined) );
+  const minMaxDifference = Math.round( Math.abs(minY - maxY) * .05 );
+  minY -= minMaxDifference;
+  minY = Math.max(minY, 0);
+  maxY += minMaxDifference;
 
   chart.yScale().minimum( minY );
   chart.yScale().maximum( maxY );
@@ -170,9 +174,12 @@ function createChart() {
           break;
         }
       }
-      index = Number(index);
       
-      const fraction = getFraction(index);
+      let fraction = 0;
+      if (String(index).indexOf(".") > -1) {
+        fraction = String(index).split(".")[1];
+      }
+
       if (fraction > 0) {
         return `День ${Math.floor(index)}, итерация номер ${fraction}`
       }
@@ -304,7 +311,6 @@ function createChart() {
           scaleEnd = 1;
         }
 
-        console.log(scaleStart, scaleEnd);
         chart.xZoom().setTo(scaleStart, scaleEnd);
         updateChartScaleY(scaleStart, scaleEnd);
         updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
@@ -418,8 +424,8 @@ function updateChart(isInit = false) {
   });
   factData.map(item => {
 
-    // Прибавляет 1 только если к числу до точки
-    if (item.x.indexOf('.') > -1) {
+    // Прибавляет 1 только к числу до точки
+    if (String(item.x).indexOf('.') > -1) {
       const halfs = item.x.split('.');
       item.x = (+(halfs[0]) + 1) + "." + halfs[1];
     }
@@ -432,6 +438,7 @@ function updateChart(isInit = false) {
     }
     return item;
   });
+
   if (factData.length) {
     // Добавляем первый дефолтный день
     factData.unshift({
@@ -474,7 +481,6 @@ function updateChart(isInit = false) {
     );
   }
 
-  // TODO: return after release
   planData.map(item => {
     item.x = String(Number(item.x) + 1);
     return item;
@@ -491,20 +497,41 @@ function updateChart(isInit = false) {
   // то подставляется интерполированное между двумя ближайшими
   for (let i = 0; i < planData.length;) {
     if (factData[i]) {
-      
+
       if (planData[i].x == factData[i].x) {
         planData[i].customName = factData[i].customName;
         i++;
         continue;
       }
 
+      const currentDayData = data.find(row => row.day == planData[i].x - 1);
+      const payment = currentDayData.payment || 0;
+      const payload = currentDayData.payload || 0;
+      const paymentPlan = currentDayData.paymentPlan || 0;
+      const payloadPlan = currentDayData.payloadPlan || 0;
       const weight = factData[i].weight;
-      const step = (planData[i].value - planData[i-1].value) * weight; 
-      
+      let step = planData[i].value - planData[i - 1].value;
+
+      if (payment) {
+        step += payment;
+      }
+      else if (paymentPlan) {
+        step += paymentPlan;
+      }
+
+      if (payload) {
+        step -= payload;
+      }
+      else if (payloadPlan) {
+        step -= payloadPlan;
+      }
+
+      step *= weight;
+
       const length = (1 / weight) - 1;
-      const items = new Array(length).fill(0).map((v, j) => ({
+      const items = new Array(length).fill(0).map((v, j, arr) => ({
         x:          factData[i + j].x,
-        value:      planData[i - 1].value + step * (j + 1),
+        value:      planData[i - 1].value + (step * (j + 1)),
         customName: factData[i].customName,
       }));
       planData.splice(i, 0, ...items);
@@ -642,7 +669,7 @@ let Chart = memo(props => {
           
           let actualScale = chartScaleMode;
           const len = getLen(data) - 1;
-          if (chartScaleMode == data.length) {
+          if (chartScaleMode >= data.length) {
             actualScale = planData.length;
           }
 

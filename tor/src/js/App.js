@@ -12,9 +12,10 @@ import { cloneDeep, isEqual } from "lodash"
 import NumericInput          from "../../../common/components/numeric-input"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import { Tools, Tool as ToolConstructor, template }   from "../../../common/tools"
-import Tool                  from "./components/Tool"
+import { Tools, Tool, template }   from "../../../common/tools"
+import Dashboard             from "./components/Dashboard"
 import Header                from "./components/header"
+import round                 from "../../../common/utils/round"
 
 /* API */
 import fetch             from "../../../common/api/fetch"
@@ -48,7 +49,7 @@ constructor(props) {
       items: [{
         id: 1,
         selectedToolName: "SBER",
-        drawdown:         null,
+        drawdown:           null,
 
         // Контрактов
         contracts: 40,
@@ -81,7 +82,7 @@ constructor(props) {
 
       currentSaveIndex: 0,
 
-      toolsLoading: true,
+      toolsLoading: false,
 
       isFocused: false,
 
@@ -92,6 +93,8 @@ constructor(props) {
       ...this.initialState,
       ...{
         tools: [],
+
+        toolsStorage: [],
 
         saves: [],
       }
@@ -104,19 +107,52 @@ constructor(props) {
     this.applyTools        = applyTools.bind(this);
     this.fetchSaveById     = fetchSaveById.bind(this, "tor");
   }
-  
+
   componentDidMount() {
     this.bindEvents();
-    this.fetchInitialData();
+    this.fetchInitialData()
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { id, saves } = this.state;
+    const { id, saves, items, currentSaveIndex, toolsLoading, tools, loading } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
         this.setStateAsync({ currentSaveIndex });
       }
+    }
+
+    // if (prevState.currentSaveIndex !== currentSaveIndex) {
+    //   if (currentSaveIndex === 0) {
+    //     this.getContracts();
+    //   }
+    // }
+
+    // if (prevState.loading !== loading && toolsLoading === false && currentSaveIndex === 0) {
+    //   this.getContracts();
+    // }
+  }
+
+  getContracts() {
+    const { items, depo, currentSaveIndex, tools} = this.state;
+    const currentToolindex = Tools.getIndexByCode("SBER", tools);
+
+    if (tools.length !== 0 && currentToolindex) {
+      if (items && depo &&  currentSaveIndex == 0) {
+        const tools = this.getTools();
+        const currentToolindex = Tools.getIndexByCode("SBER", tools);
+        const currentTool = tools[currentToolindex];
+        const contracts   = round( round((depo * 0.1)) / round((currentTool?.guarantee)));
+  
+        let itemsClone = [...items];
+        itemsClone[0].contracts = contracts;
+        if (contracts !== null) {
+          this.setStateAsync({ items: itemsClone });
+        }
+      }
+    }
+    else {
+      setTimeout(() => this.getContracts(), 1_000);
     }
   }
 
@@ -127,16 +163,17 @@ constructor(props) {
   bindEvents() {
 
   }
-
+  
   fetchInitialData() {
     this.fetchInvestorInfo();
     this.fetchTools()
       .then(() => this.setFetchingToolsTimeout())
     if (dev) {
       // this.loadFakeSave();
+      setTimeout(() => this.setState({ loading: false }), 1_000);
       return;
     }
-    this.fetchSaves();
+    this.fetchSaves()
   }
 
   loadFakeSave() {
@@ -179,7 +216,7 @@ constructor(props) {
       .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
       .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
   }
-  // ~~
+  
   setFetchingToolsTimeout() {
     new Promise(resolve => {
       setTimeout(() => {
@@ -384,7 +421,7 @@ constructor(props) {
 
       state.customTools = staticParsed.customTools || [];
       state.customTools = state.customTools
-        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
+        .map(tool => Tool.fromObject(tool, { investorInfo: this.state.investorInfo }));
 
       state.id      = save.id;
       state.saved   = true;
@@ -516,40 +553,8 @@ constructor(props) {
 
     return title;
   }
-  
-  /**
-  * Возвращает массив имён выбранных инструментов
-  */
-  getCurrentSelectedToolsName() {
-    const names = [];
-    const { items } = this.state;
-    items.map(item => names.push(item.selectedToolName));
-    return names;
-  }
-  
-  /**
-  * Возвращает массив индексов выбранных инструментов
-  */
-  getCurrentToolsIndex() {
-    const selectedToolsIndexArr = [];
-    const currentToolsName = this.getCurrentSelectedToolsName();
-    currentToolsName.map((item, index) => {
-      selectedToolsIndexArr.push(Tools.getToolIndexByCode(this.getTools(), currentToolsName[index]))
-    })
-    return selectedToolsIndexArr
-  }
-
-  getCurrentTools() {
-    const currentToolsArr = [];
-    const toolsIndexArr = this.getCurrentToolsIndex()
-    toolsIndexArr.map((item, index) => {
-      currentToolsArr.push(this.getTools()[index])
-    })
-    return currentToolsArr
-  }
 
   render() {
-    console.log(this.getCurrentTools());
     return (
       <Provider value={this}>
         <div className="page">
@@ -587,10 +592,10 @@ constructor(props) {
 
             <div className="main-content">
               <div className="container">
-
                 {
                   this.state.items.map((obj, index) =>
-                    <Tool
+
+                    <Dashboard
                       toolsLoading={this.state.toolsLoading}
                       onFocus={() => this.setState({ isToolsDropdownOpen: true })}
                       onBlur={() => {
@@ -599,6 +604,8 @@ constructor(props) {
                       }}
                       index={index}
                       investorInfo={this.state.investorInfo}
+                      items={this.state.items}
+                      loading={this.state.loading}
                       tools={this.getTools()}
                       data={obj}
                       depo={this.state.depo}
@@ -612,6 +619,14 @@ constructor(props) {
                         }
                         items[index][prop] = val;
                         this.setState({ items, changed: true });
+                      }}
+                      
+                      onContractsChange={ (index, value, name) => {
+                        const { items } = this.state
+                        const itemsClone = [...items];
+                        itemsClone[index][name] = value;
+
+                        this.setState({ items: itemsClone })
                       }}
                       onDrawdownChange={(val, cb) => {
                         this.setState({ drawdown: val }, cb);
@@ -854,7 +869,7 @@ constructor(props) {
             id="config"
             title="Инструменты"
             template={template}
-            templateContructor={ToolConstructor}
+            templateContructor={Tool}
             tools={this.state.tools}
             toolsInfo={[
               { name: "Инструмент",   prop: "name"         },

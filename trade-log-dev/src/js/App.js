@@ -71,40 +71,79 @@ export default class App extends React.Component {
 
           // kod
 
-          // Массив Инстрадей трейдометр
+          /**
+           * @typedef ExpectedDeal
+           * @property {string} currentToolCode Код торгового инструмента
+           * @property {number} load Загрузка (в %)
+           * @property {number} iterations Количество итераций
+           */
+
+          /**
+           * Массив Инстрадей трейдометр 
+           * 
+           * @type {ExpectedDeal[]} 
+           */
           expectedDeals: [
-            // 1-ая сделка
             {
-              // Код инструмента
-              // code
-
-              // load
-
-              // iterations
-
-              // stepLength
-
-              // successChange
-            }
+              currentToolCode: "SBER",
+              load:       0,
+              iterations: 0,
+            },
+            {
+              currentToolCode: "SBER",
+              load:       0,
+              iterations: 0,
+            },
           ],
 
           // Регистр сделок
           deals: [
-            // 1-ая сделака
             {
-              // code
+              currentToolCode: "SBER",
+              enterTime:  null,
+              isLong:      "",
 
-              // time
+              impulse:   false,
+              postponed: false, 
 
-              // isLong
+              levels:    false,
+              breakout:  false,
 
-              // enterMethod
-
-              // signal,
-
-              // result
+              result:        0,
             }
-          ]
+          ],
+
+          reportMonitor: [
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+          ],
+          
+          technology: {
+            amy:            false,
+            tmo:            false,
+            recapitulation: false,
+            archetypesWork: false,
+          },
+          customTechnology: [],
+
+          practiceWorkTasks: {
+            transactionTimeChange:           false,
+            noneWithdrawPendingApplications: false,
+            noReenterAfterClosingStopLoss:   false,
+            noDisablingRobot:                false,
+            inputVolumeControl:              false,
+            makeFaniCalculate:               false,
+            enterResultsInFani:              false,
+            screenshotTransactions:          false,
+            keyBehavioralPatternsIdentify:   false,
+          },
+          customPracticeWorkTasks: [],
         }
       ],
 
@@ -123,7 +162,7 @@ export default class App extends React.Component {
        * 
        * @type {0|1|2|3|4}
        */
-      step:           0,
+      step: 0,
 
       extraStep:  false,
       extraSaved: false,
@@ -142,17 +181,6 @@ export default class App extends React.Component {
           currentToolCode: "SBER",
 
           isSaved: false,
-
-          // firstStep
-          enterTime:   null,
-          long:       false,
-          short:      false,
-          impulse:    false,
-          postponed:  false,
-          levels:     false,
-          breakout:   false,
-          result:         0,
-          practiceStep:   0,
 
           // second step
           calmnessBefore:       0,
@@ -241,11 +269,18 @@ export default class App extends React.Component {
     this.state = {
       ...cloneDeep(this.initialState),
       
+      /**
+       * Индекс текущего выбранного дня
+       * 
+       * @type {number}
+       */
       currentRowIndex:   0,
+      
       toolsLoading:  false,
       changed:       false,
       searchVal:        "",
 
+      /** @type {Tool[]} */
       tools:        [],
       saves:        [],
     };
@@ -612,6 +647,7 @@ export default class App extends React.Component {
       currentSaveIndex,
       saved,
       changed,
+      data
     } = this.state;
 
     let { currentToolCode, isSaved } = rowData[currentRowIndex];
@@ -623,13 +659,7 @@ export default class App extends React.Component {
           <main className="main">
 
             <div className="hdOptimize" >
-              <div 
-                className="main-content"
-                style={{
-                  // overflow:
-                  //   document.querySelector(".trade-slider-active") ? "hidden" : ""
-                }}
-              >
+              <div className="main-content">
                 <Header
                   title={this.getTitleJSX()}
                   loading={loading}
@@ -666,6 +696,7 @@ export default class App extends React.Component {
                 />
                 <div className="container">
 
+                  {/* TODO: удалить */}
                   {/* <Dashboard
                     key={rowData}
                     rowData={rowData}
@@ -686,7 +717,6 @@ export default class App extends React.Component {
                       this.setState({ rowData: rowDataClone })
                     }}
                   /> */}
-                  {/* ~~ */}
 
                   {
                     step === 0
@@ -712,8 +742,9 @@ export default class App extends React.Component {
                       </>
                     )
                     : (
-                      <div className="trade-slider" id="trade-slider">
-                      {/* <div className="trade-slider-active" id="trade-slider"> */}
+                      // TODO: это вернуть
+                      // <div className="trade-slider" id="trade-slider">
+                      <div className="trade-slider-active" id="trade-slider">
                         <div className="trade-slider-container">
 
 
@@ -725,8 +756,9 @@ export default class App extends React.Component {
                             >
                               {"<< Предыдущий день"}
                             </Button>
-
-                            <p>День {currentRowIndex + 1}</p>
+                            <div className="trade-slider-day-container">
+                              <p>День {currentRowIndex + 1}</p>
+                            </div>
                             <CrossButton
                               className="cross-button"
                               disabled={rowData.length == 1}
@@ -825,22 +857,13 @@ export default class App extends React.Component {
                           <div className="trade-slider-steps">
                             {step == 1 && (
                               <FirstStep
-                                key={rowData}
-                                rowData={rowData}
+                                key={data}
+                                data={data[currentRowIndex]}
                                 tools={this.state.tools}
                                 searchVal={this.state.searchVal}
                                 setSeachVal={ val => this.setState({searchVal: val}) }
-                                currentToolCode={currentToolCode}
                                 currentRowIndex={currentRowIndex}
                                 toolsLoading={this.state.toolsLoading}
-                                onChange={(prop, value, index) => {
-                                  const rowDataClone = [...rowData];
-                                  rowDataClone[index][prop] = value;
-                                  this.setState({ rowData: rowDataClone })
-                                }}
-                                isToolsDropdownOpen={ value => {
-                                  this.setState({ isToolsDropdownOpen: value })
-                                }}
                               />
                             )}
 
@@ -850,14 +873,6 @@ export default class App extends React.Component {
 
                             {step == 3 && (
                               <ThirdStep/>
-                          //   rowData={rowData}
-                          //   currentRowIndex={currentRowIndex}
-                          //   onChange={(prop, value, index) => {
-                          //     const rowDataClone = [...rowData];
-                          //     rowDataClone[index][prop] = value;
-                          //     this.setState({ rowData: rowDataClone })
-                          //   }}
-                          //   onClickTab={(boolean) => this.setState({ extraStep: boolean })}
                             )}
 
                             {step == 4 && (

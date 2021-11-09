@@ -368,8 +368,17 @@ class App extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { chartModuleLoaded } = this.state;
     if (prevState.chartModuleLoaded != chartModuleLoaded && chartModuleLoaded) {
-      // ~~
       chartVisible && chartModule?.updateChart.call(this)
+    }
+
+    const { id, saves } = this.state;
+    if (prevState.id != id || !isEqual(prevState.saves, saves)) {
+      if (id != null) {
+        const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+        // TODO: проверить, работает ли
+        // const currentSaveIndex = saves.findIndex(snapshot => snapshot.id === id) + 1;
+        this.setStateAsync({ currentSaveIndex });
+      }
     }
   }
 
@@ -562,48 +571,6 @@ class App extends Component {
         }
       })
   }
-
-  // fetchSaves() {
-    // fetchSavesFor("trademeter")
-  //     .then(response => {
-  //       const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-  //       return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-  //     })
-  //     .then(saves => {
-  //       if (saves.length) {
-  //         const pure = params.get("pure") === "true";
-  //         if (!pure) {
-  //           const save = saves[0];
-  //           const { id } = save;
-
-  //           this.setState({ loading: true });
-  //           this.fetchSaveById(id).then(response => this.extractSave(response.data));
-  //         }
-  //       }
-  //     })
-  //     .catch(reason => {
-  //       console.log(reason);
-  //       this.showAlert(`Не удалось получить сохранения! ${reason}`);
-  //     })
-  //     .finally(() => {
-  //       if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
-  //         const { saves } = this.state;
-  //         const response = require("./api/fake-save.js").default;
-  //         const { data } = response;
-  //         const { id, name } = data;
-  //         const index = 0;
-
-  //         this.extractSave(data);
-
-  //         saves[index] = { id, name };
-  //         this.setState({
-  //           saves,
-  //           currentSaveIndex: index + 1,
-  //           loading: false
-  //         });
-  //       }
-  //     })
-  // }
 
   fetchInitialData() {
     this.fetchInvestorInfo();
@@ -921,7 +888,6 @@ class App extends Component {
       state.id = save.id;
       state.saved = true;
       state.loading = false;
-      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
     catch (e) {
       failed = true;

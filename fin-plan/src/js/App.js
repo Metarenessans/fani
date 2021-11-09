@@ -64,8 +64,6 @@ import Stats                  from "./Components/Stats"
 import Footer                 from "./components/footer"
 import ActiveIncomeCalculator from "./components/ActiveIncomeCalculator"
 
-import $ from "jquery"
-
 import { message } from 'antd';
 
 // DOM-Element, который инициирует скролл
@@ -346,8 +344,6 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.bindEvents();
-    
     this.updateLoanArr();
 
     // TODO: убрать после презентации
@@ -357,6 +353,794 @@ class App extends React.Component {
     // this.fetchInvestorInfo();
     this.fetchSnapshots();
     this.fetchLastModifiedSnapshot();
+  }
+
+  fetchBonds() {
+    fetchBonds()
+      .then(passiveIncomeTools => passiveIncomeTools && this.setStateAsync({ passiveIncomeTools }))
+      .catch(error => message.error(error))
+
+    return;
+
+    const response = {
+      "error": false,
+      "data": [
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 24020",
+          "yearsLeft": "0",
+          "yield": "0",
+          "attention": "",
+          "couponYieldYear": "0",
+          "couponYieldLast": "0",
+          "price": "99.98",
+          "volume": "189136",
+          "coupon": "0",
+          "frequency": "91",
+          "income": "12.67",
+          "duration": "0",
+          "dateRedemption": "1658869200",
+          "dateCoupon": "1635282000",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 24021",
+          "yearsLeft": "0",
+          "yield": "0",
+          "attention": "",
+          "couponYieldYear": "0",
+          "couponYieldLast": "0",
+          "price": "99.295",
+          "volume": "162444",
+          "coupon": "0",
+          "frequency": "91",
+          "income": "12.67",
+          "duration": "0",
+          "dateRedemption": "1713906000",
+          "dateCoupon": "1635282000",
+          "updateDate": "1633625430"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 25083",
+          "yearsLeft": "0",
+          "yield": "7.07",
+          "attention": "",
+          "couponYieldYear": "7",
+          "couponYieldLast": "0",
+          "price": "100",
+          "volume": "799040",
+          "coupon": "34.9",
+          "frequency": "182",
+          "income": "21.86",
+          "duration": "69",
+          "dateRedemption": "1639515600",
+          "dateCoupon": "1639515600",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 25084",
+          "yearsLeft": "0",
+          "yield": "7.49",
+          "attention": "",
+          "couponYieldYear": "5.3",
+          "couponYieldLast": "0",
+          "price": "96.418",
+          "volume": "107318",
+          "coupon": "26.43",
+          "frequency": "182",
+          "income": "0.29",
+          "duration": "699",
+          "dateRedemption": "1696366800",
+          "dateCoupon": "1649192400",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 25085",
+          "yearsLeft": "0",
+          "yield": "0",
+          "attention": "",
+          "couponYieldYear": "6.4",
+          "couponYieldLast": "0",
+          "price": "0",
+          "volume": "0",
+          "coupon": "31.91",
+          "frequency": "182",
+          "income": "1.58",
+          "duration": "0",
+          "dateRedemption": "1758661200",
+          "dateCoupon": "1648587600",
+          "updateDate": "1633624338"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26207",
+          "yearsLeft": "0",
+          "yield": "7.43",
+          "attention": "",
+          "couponYieldYear": "8.15",
+          "couponYieldLast": "0",
+          "price": "103.346",
+          "volume": "1477414",
+          "coupon": "40.64",
+          "frequency": "182",
+          "income": "12.95",
+          "duration": "1604",
+          "dateRedemption": "1801602000",
+          "dateCoupon": "1644354000",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26209",
+          "yearsLeft": "0",
+          "yield": "7.25",
+          "attention": "",
+          "couponYieldYear": "7.6",
+          "couponYieldLast": "0",
+          "price": "100.299",
+          "volume": "310355",
+          "coupon": "37.9",
+          "frequency": "182",
+          "income": "16.45",
+          "duration": "279",
+          "dateRedemption": "1658264400",
+          "dateCoupon": "1642539600",
+          "updateDate": "1633626241"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26211",
+          "yearsLeft": "0",
+          "yield": "7.33",
+          "attention": "",
+          "couponYieldYear": "7",
+          "couponYieldLast": "0",
+          "price": "99.72",
+          "volume": "17853",
+          "coupon": "34.9",
+          "frequency": "182",
+          "income": "13.81",
+          "duration": "457",
+          "dateRedemption": "1674594000",
+          "dateCoupon": "1643144400",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26212",
+          "yearsLeft": "0",
+          "yield": "7.39",
+          "attention": "",
+          "couponYieldYear": "7.05",
+          "couponYieldLast": "0",
+          "price": "98.407",
+          "volume": "135722",
+          "coupon": "35.15",
+          "frequency": "182",
+          "income": "13.91",
+          "duration": "1865",
+          "dateRedemption": "1831842000",
+          "dateCoupon": "1643144400",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26215",
+          "yearsLeft": "0",
+          "yield": "7.42",
+          "attention": "",
+          "couponYieldYear": "7",
+          "couponYieldLast": "0",
+          "price": "99.518",
+          "volume": "48051",
+          "coupon": "34.9",
+          "frequency": "182",
+          "income": "9.78",
+          "duration": "642",
+          "dateRedemption": "1692133200",
+          "dateCoupon": "1644958800",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26218",
+          "yearsLeft": "0",
+          "yield": "7.43",
+          "attention": "",
+          "couponYieldYear": "8.5",
+          "couponYieldLast": "0",
+          "price": "107.581",
+          "volume": "393327",
+          "coupon": "42.38",
+          "frequency": "182",
+          "income": "2.1",
+          "duration": "2563",
+          "dateRedemption": "1947358800",
+          "dateCoupon": "1648587600",
+          "updateDate": "1633626113"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26219",
+          "yearsLeft": "0",
+          "yield": "7.49",
+          "attention": "",
+          "couponYieldYear": "7.75",
+          "couponYieldLast": "0",
+          "price": "101.592",
+          "volume": "159182",
+          "coupon": "38.64",
+          "frequency": "182",
+          "income": "3.4",
+          "duration": "1531",
+          "dateRedemption": "1789506000",
+          "dateCoupon": "1647982800",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26220",
+          "yearsLeft": "0",
+          "yield": "7.27",
+          "attention": "",
+          "couponYieldYear": "7.4",
+          "couponYieldLast": "0",
+          "price": "100.232",
+          "volume": "765491",
+          "coupon": "36.9",
+          "frequency": "182",
+          "income": "24.53",
+          "duration": "407",
+          "dateRedemption": "1670360400",
+          "dateCoupon": "1638910800",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26221",
+          "yearsLeft": "0",
+          "yield": "7.59",
+          "attention": "",
+          "couponYieldYear": "7.7",
+          "couponYieldLast": "0",
+          "price": "101.102",
+          "volume": "115205",
+          "coupon": "38.39",
+          "frequency": "182",
+          "income": "0.42",
+          "duration": "2865",
+          "dateRedemption": "1995138000",
+          "dateCoupon": "1649192400",
+          "updateDate": "1633626234"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26222",
+          "yearsLeft": "0",
+          "yield": "7.4",
+          "attention": "",
+          "couponYieldYear": "7.1",
+          "couponYieldLast": "0",
+          "price": "99.37",
+          "volume": "19421",
+          "coupon": "35.4",
+          "frequency": "182",
+          "income": "33.07",
+          "duration": "981",
+          "dateRedemption": "1729026000",
+          "dateCoupon": "1634677200",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26223",
+          "yearsLeft": "0",
+          "yield": "7.43",
+          "attention": "",
+          "couponYieldYear": "6.5",
+          "couponYieldLast": "0",
+          "price": "98.099",
+          "volume": "291451",
+          "coupon": "32.41",
+          "frequency": "182",
+          "income": "6.59",
+          "duration": "818",
+          "dateRedemption": "1709067600",
+          "dateCoupon": "1646168400",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26224",
+          "yearsLeft": "0",
+          "yield": "7.4",
+          "attention": "",
+          "couponYieldYear": "6.9",
+          "couponYieldLast": "0",
+          "price": "96.887",
+          "volume": "103843",
+          "coupon": "34.41",
+          "frequency": "182",
+          "income": "24.2",
+          "duration": "2151",
+          "dateRedemption": "1874178000",
+          "dateCoupon": "1638306000",
+          "updateDate": "1633626002"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26225",
+          "yearsLeft": "0",
+          "yield": "7.64",
+          "attention": "",
+          "couponYieldYear": "7.25",
+          "couponYieldLast": "0",
+          "price": "97.3",
+          "volume": "381185",
+          "coupon": "36.15",
+          "frequency": "182",
+          "income": "26.81",
+          "duration": "2993",
+          "dateRedemption": "2030821200",
+          "dateCoupon": "1637701200",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26226",
+          "yearsLeft": "0",
+          "yield": "7.38",
+          "attention": "",
+          "couponYieldYear": "7.95",
+          "couponYieldLast": "0",
+          "price": "102.303",
+          "volume": "344116",
+          "coupon": "39.64",
+          "frequency": "182",
+          "income": "38.55",
+          "duration": "1489",
+          "dateRedemption": "1791320400",
+          "dateCoupon": "1634072400",
+          "updateDate": "1633626068"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26227",
+          "yearsLeft": "0",
+          "yield": "7.4",
+          "attention": "",
+          "couponYieldYear": "7.4",
+          "couponYieldLast": "0",
+          "price": "100.112",
+          "volume": "54958",
+          "coupon": "36.9",
+          "frequency": "182",
+          "income": "16.02",
+          "duration": "921",
+          "dateRedemption": "1721163600",
+          "dateCoupon": "1642539600",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26228",
+          "yearsLeft": "0",
+          "yield": "7.41",
+          "attention": "",
+          "couponYieldYear": "7.65",
+          "couponYieldLast": "0",
+          "price": "101.547",
+          "volume": "44783",
+          "coupon": "38.15",
+          "frequency": "182",
+          "income": "35.63",
+          "duration": "2269",
+          "dateRedemption": "1901998800",
+          "dateCoupon": "1634677200",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26229",
+          "yearsLeft": "0",
+          "yield": "7.48",
+          "attention": "",
+          "couponYieldYear": "7.15",
+          "couponYieldLast": "0",
+          "price": "99.258",
+          "volume": "165548",
+          "coupon": "35.65",
+          "frequency": "182",
+          "income": "27.81",
+          "duration": "1288",
+          "dateRedemption": "1762894800",
+          "dateCoupon": "1637096400",
+          "updateDate": "1633626215"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26230",
+          "yearsLeft": "0",
+          "yield": "7.64",
+          "attention": "",
+          "couponYieldYear": "7.7",
+          "couponYieldLast": "0",
+          "price": "101.035",
+          "volume": "1116579",
+          "coupon": "38.39",
+          "frequency": "182",
+          "income": "0.42",
+          "duration": "3625",
+          "dateRedemption": "2183835600",
+          "dateCoupon": "1649192400",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26232",
+          "yearsLeft": "0",
+          "yield": "7.43",
+          "attention": "",
+          "couponYieldYear": "6",
+          "couponYieldLast": "0",
+          "price": "93.458",
+          "volume": "465033",
+          "coupon": "29.92",
+          "frequency": "182",
+          "income": "29.1",
+          "duration": "1803",
+          "dateRedemption": "1822770000",
+          "dateCoupon": "1634072400",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26233",
+          "yearsLeft": "0",
+          "yield": "7.65",
+          "attention": "",
+          "couponYieldYear": "6.1",
+          "couponYieldLast": "0",
+          "price": "87.09",
+          "volume": "603045",
+          "coupon": "30.42",
+          "frequency": "182",
+          "income": "10.86",
+          "duration": "3316",
+          "dateRedemption": "2068318800",
+          "dateCoupon": "1643749200",
+          "updateDate": "1633626242"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26234",
+          "yearsLeft": "0",
+          "yield": "7.4",
+          "attention": "",
+          "couponYieldYear": "4.5",
+          "couponYieldLast": "0",
+          "price": "90.714",
+          "volume": "7563",
+          "coupon": "22.44",
+          "frequency": "182",
+          "income": "9.74",
+          "duration": "1264",
+          "dateRedemption": "1752613200",
+          "dateCoupon": "1642539600",
+          "updateDate": "1633626242"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26235",
+          "yearsLeft": "0",
+          "yield": "7.48",
+          "attention": "",
+          "couponYieldYear": "5.9",
+          "couponYieldLast": "0",
+          "price": "89.836",
+          "volume": "617305",
+          "coupon": "29.42",
+          "frequency": "182",
+          "income": "2.59",
+          "duration": "2634",
+          "dateRedemption": "1931029200",
+          "dateCoupon": "1647982800",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26236",
+          "yearsLeft": "0",
+          "yield": "7.39",
+          "attention": "",
+          "couponYieldYear": "5.7",
+          "couponYieldLast": "0",
+          "price": "91.4",
+          "volume": "56615",
+          "coupon": "28.42",
+          "frequency": "182",
+          "income": "21.08",
+          "duration": "1980",
+          "dateRedemption": "1842123600",
+          "dateCoupon": "1637701200",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26237",
+          "yearsLeft": "0",
+          "yield": "7.54",
+          "attention": "",
+          "couponYieldYear": "6.7",
+          "couponYieldLast": "0",
+          "price": "95.8",
+          "volume": "304471",
+          "coupon": "33.41",
+          "frequency": "182",
+          "income": "2.94",
+          "duration": "2162",
+          "dateRedemption": "1868130000",
+          "dateCoupon": "1647982800",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26238",
+          "yearsLeft": "0",
+          "yield": "7.74",
+          "attention": "",
+          "couponYieldYear": "7.1",
+          "couponYieldLast": "0",
+          "price": "93.826",
+          "volume": "441381",
+          "coupon": "34.04",
+          "frequency": "175",
+          "income": "22.17",
+          "duration": "3785",
+          "dateRedemption": "2252178000",
+          "dateCoupon": "1638910800",
+          "updateDate": "1633626243"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26239",
+          "yearsLeft": "0",
+          "yield": "7.52",
+          "attention": "",
+          "couponYieldYear": "6.9",
+          "couponYieldLast": "0",
+          "price": "95.862",
+          "volume": "2097195",
+          "coupon": "43.67",
+          "frequency": "231",
+          "income": "21.55",
+          "duration": "2583",
+          "dateRedemption": "1942520400",
+          "dateCoupon": "1643749200",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 26240",
+          "yearsLeft": "0",
+          "yield": "7.71",
+          "attention": "",
+          "couponYieldYear": "7",
+          "couponYieldLast": "0",
+          "price": "94.15",
+          "volume": "1365125",
+          "coupon": "44.3",
+          "frequency": "231",
+          "income": "19.18",
+          "duration": "3325",
+          "dateRedemption": "2100978000",
+          "dateCoupon": "1644958800",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 29009",
+          "yearsLeft": "0",
+          "yield": "5.03",
+          "attention": "",
+          "couponYieldYear": "5.74",
+          "couponYieldLast": "0",
+          "price": "106.399",
+          "volume": "7814",
+          "coupon": "28.62",
+          "frequency": "182",
+          "income": "22.33",
+          "duration": "2919",
+          "dateRedemption": "1967317200",
+          "dateCoupon": "1637096400",
+          "updateDate": "1633626160"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 29012",
+          "yearsLeft": "0",
+          "yield": "5.76",
+          "attention": "",
+          "couponYieldYear": "4.64",
+          "couponYieldLast": "0",
+          "price": "98.932",
+          "volume": "9899",
+          "coupon": "23.14",
+          "frequency": "182",
+          "income": "18.05",
+          "duration": "393",
+          "dateRedemption": "1668546000",
+          "dateCoupon": "1637096400",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 29019",
+          "yearsLeft": "0",
+          "yield": "0",
+          "attention": "",
+          "couponYieldYear": "0",
+          "couponYieldLast": "0",
+          "price": "98.201",
+          "volume": "50",
+          "coupon": "0",
+          "frequency": "91",
+          "income": "12.67",
+          "duration": "0",
+          "dateRedemption": "1879016400",
+          "dateCoupon": "1635282000",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 46012",
+          "yearsLeft": "0",
+          "yield": "6.74",
+          "attention": "",
+          "couponYieldYear": "6.573",
+          "couponYieldLast": "0",
+          "price": "99.998",
+          "volume": "22",
+          "coupon": "62.27",
+          "frequency": "364",
+          "income": "3.93",
+          "duration": "2076",
+          "dateRedemption": "1883250000",
+          "dateCoupon": "1663102800",
+          "updateDate": "1633626072"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 46018",
+          "yearsLeft": "0",
+          "yield": "6.72",
+          "attention": "",
+          "couponYieldYear": "6.5",
+          "couponYieldLast": "0",
+          "price": "100.004",
+          "volume": "5350",
+          "coupon": "6.48",
+          "frequency": "91",
+          "income": "3.13",
+          "duration": "48",
+          "dateRedemption": "1637701200",
+          "dateCoupon": "1637701200",
+          "updateDate": "1633626240"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 46020",
+          "yearsLeft": "0",
+          "yield": "7.6",
+          "attention": "",
+          "couponYieldYear": "6.9",
+          "couponYieldLast": "0",
+          "price": "95.238",
+          "volume": "164939",
+          "coupon": "34.41",
+          "frequency": "182",
+          "income": "10.97",
+          "duration": "3209",
+          "dateRedemption": "2085858000",
+          "dateCoupon": "1644354000",
+          "updateDate": "1633626225"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 46023",
+          "yearsLeft": "0",
+          "yield": "6.77",
+          "attention": "",
+          "couponYieldYear": "8.16",
+          "couponYieldLast": "0",
+          "price": "103.157",
+          "volume": "11",
+          "coupon": "20.34",
+          "frequency": "182",
+          "income": "7.93",
+          "duration": "782",
+          "dateRedemption": "1784754000",
+          "dateCoupon": "1643230800",
+          "updateDate": "1633626241"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 52001",
+          "yearsLeft": "0",
+          "yield": "2.54",
+          "attention": "",
+          "couponYieldYear": "2.5",
+          "couponYieldLast": "0",
+          "price": "100.06",
+          "volume": "12819",
+          "coupon": "16.63",
+          "frequency": "182",
+          "income": "4.65",
+          "duration": "665",
+          "dateRedemption": "1692133200",
+          "dateCoupon": "1644958800",
+          "updateDate": "1633624928"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 52002",
+          "yearsLeft": "0",
+          "yield": "2.99",
+          "attention": "",
+          "couponYieldYear": "2.5",
+          "couponYieldLast": "0",
+          "price": "97.238",
+          "volume": "1500",
+          "coupon": "14.71",
+          "frequency": "182",
+          "income": "4.68",
+          "duration": "2138",
+          "dateRedemption": "1833051600",
+          "dateCoupon": "1644354000",
+          "updateDate": "1633625179"
+        },
+        {
+          "toolType": "bond",
+          "name": "ОФЗ 52003",
+          "yearsLeft": "0",
+          "yield": "3",
+          "attention": "",
+          "couponYieldYear": "2.5",
+          "couponYieldLast": "0",
+          "price": "96.161",
+          "volume": "5093",
+          "coupon": "13.37",
+          "frequency": "182",
+          "income": "5.28",
+          "duration": "2875",
+          "dateRedemption": "1910466000",
+          "dateCoupon": "1643144400",
+          "updateDate": "1633625378"
+        }
+      ]
+    };
+
+    const { data } = response;
+    if (data) {
+      const tools = data
+        // годовая ставка берется из поля `yield`
+        .map(tool => {
+          tool.rate = Number(tool.yield);
+          delete tool.yield;
+          return tool;
+        })
+        // убирает все инструменты с годовой ставкой меньше или равной нулю
+        .filter(tool => tool.rate > 0)
+        // сортировка по убыванию годовой ставки
+        .sort((a, b) => b.rate - a.rate);
+
+      this.setStateAsync({ passiveIncomeTools: tools });
+    }
+
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -370,11 +1154,6 @@ class App extends React.Component {
   }
 
   /* API */
-
-  async fetchBonds() {
-    const passiveIncomeTools = await fetchBonds();
-    return this.setStateAsync({ passiveIncomeTools });
-  }
 
   fetchInvestorInfo() {
     return new Promise((resolve, reject) => {
@@ -845,7 +1624,6 @@ class App extends React.Component {
                       thirdTitleVerticalLine={false}
                       extraPeriodColumns={false}
                       extendable={true}
-                      minRows={1}
                       onChange={(prop, value, index) => {
                         const incomeArr = [...this.state.incomeArr];
                         incomeArr[index][prop] = value;
@@ -882,11 +1660,7 @@ class App extends React.Component {
                           row[prop] = 0;
                           return row;
                         });
-                        const savingsArr = [...this.state.savingsArr].map(row => {
-                          row[prop] = 0;
-                          return row;
-                        });
-                        this.setState({ incomeArr, paymentArr, desirableArr, savingsArr });
+                        this.setState({ incomeArr, paymentArr, desirableArr });
                       }}
                       onPeriodChange={(prop, prevProp) => {
                         const incomeArr = [...this.state.incomeArr].map(row => {
@@ -958,7 +1732,6 @@ class App extends React.Component {
                       rowModifyButtons={true}
                       extraPeriodColumns={desirableArr}
                       goal={targetPassiveIncome}
-                      minRows={1}
                       progressGoalPrimary={["now", 1, ...numericKeys].map(prop =>
                         incomeArr
                           .filter(row => row.currentTool == "Пассивный доход")

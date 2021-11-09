@@ -5,7 +5,8 @@
 
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  // TODO: удалить?
+  // align-items: flex-start;
 
   &:only-child {
     height: 100%;
