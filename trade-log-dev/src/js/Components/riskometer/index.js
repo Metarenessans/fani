@@ -1,13 +1,15 @@
-//TODO: cleanup
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { Gauge } from "@ant-design/charts"
-import clsx from "clsx"
 
 import "./style.sass"
 
-export default function Riskometer(props) {
+/**
+ * @param {object} props
+ * @param {number} props.value Значение рискометра (от 0 до 100)
+ */
+export default function Riskometer({ value }) {
   const config = {
-    percent: (props?.value ?? 0) / 100,
+    percent: (value ?? 0) / 100,
     range: {
       ticks: [0, 0.5, 0.5, 1],
       color: ["#F5222D", "#87d068"],

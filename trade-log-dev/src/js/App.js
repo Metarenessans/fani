@@ -894,8 +894,8 @@ export default class App extends React.Component {
                             {step == 1 && (
                               <Button
                                 className="custom-btn custom-btn--slider"
-                                onClick={e => {
-                                  this.setState({ step: 1, extraStep: false });
+                                onClick={async e => {
+                                  await this.setStateAsync({ step: 0, extraStep: false });
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                   document.querySelector(".dashboard").classList.remove("dashboard-active");
                                 }}
@@ -909,7 +909,7 @@ export default class App extends React.Component {
                               <Button
                                 className="custom-btn custom-btn--slider"
                                 onClick={e => {
-                                  this.setState({ step: step - 1, extraStep: false })
+                                  this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
                                 }}
                                 disabled={step == 1}
                               >
@@ -921,7 +921,7 @@ export default class App extends React.Component {
                               <Button 
                                 className="custom-btn custom-btn--slider next-button"
                                 onClick={e => {
-                                  this.setState({ step: step + 1 })
+                                  this.setState(prevState => ({ step: prevState.step + 1 }))
                                 }}
                                 disabled={step == 3}
                               >
@@ -964,7 +964,6 @@ export default class App extends React.Component {
                                   </Button>
                                 )
                               }
-
                             })()}
                           </div>
 
