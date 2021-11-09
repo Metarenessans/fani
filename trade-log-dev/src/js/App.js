@@ -17,10 +17,10 @@ import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import CrossButton           from "../../../common/components/cross-button"
 
 import Header      from "./components/header"
-import FirstStep   from "./components/first-step"
-import SecondStep  from "./components/second-step"
-import ThirdStep   from "./components/third-step"
-import FourthStep  from "./components/fourth-step"
+import FirstStep   from "./components/step-1"
+import SecondStep  from "./components/step-2"
+import ThirdStep   from "./components/step-3"
+import FourthStep  from "./components/step-4"
 import Stats       from "./components/stats"
 
 /* API */
