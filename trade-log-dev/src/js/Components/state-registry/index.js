@@ -40,97 +40,99 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
     >
       <div className="table-wrapper">
         <table>
-          <tr>
-            <th>Состояния</th>
-            {deals.map((deal, index) => 
-              <th key={index}>{index + 1} сделка</th>
+          <tbody>
+            <tr>
+              <th>Состояния</th>
+              {deals.map((deal, index) => 
+                <th key={index}>{index + 1} сделка</th>
+              )}
+            </tr>
+            <tr>
+              <td className="category-title category-title--positive">Нормальные</td>
+            </tr>
+            {[
+              "Спокойствие",
+              "Собранность",
+              "Смелость",
+              "Уверенность"
+            ].map((label, i) =>
+              <tr key={i}>
+                <td>{label}</td>
+                {/* TODO: deal должен как-то задействоваться */}
+                {deals.map((deal, index) =>
+                  <td key={index}>
+                    <Checkbox className="positive" />
+                  </td>
+                )}
+              </tr>
             )}
-          </tr>
-          <tr>
-            <td className="category-title category-title--positive">Нормальные</td>
-          </tr>
-          {[
-            "Спокойствие",
-            "Собранность",
-            "Смелость",
-            "Уверенность"
-          ].map((label, i) =>
-            <tr key={i}>
-              <td>{label}</td>
-              {/* TODO: deal должен как-то задействоваться */}
-              {deals.map((deal, index) =>
-                <td key={index}>
-                  <Checkbox className="positive" />
-                </td>
-              )}
+            <tr>
+              <td className="category-title category-title--negative">Искаженные</td>
             </tr>
-          )}
-          <tr>
-            <td className="category-title category-title--negative">Искаженные</td>
-          </tr>
-          {[
-            "Жалость",
-            "Жадность",
-            "Эго (я прав)",
-            "Эйфория",
-            "Вина",
-            "Обида",
-            "Гнев",
-            "Апатия",
-            "Стагнация"
-          ].map((label, i) =>
-            <tr key={i}>
-              <td>{label}</td>
-              {/* TODO: deal должен как-то задействоваться */}
-              {deals.map((deal, index) =>
-                <td key={index}>
-                  <Checkbox className="negative" />
-                </td>
-              )}
+            {[
+              "Жалость",
+              "Жадность",
+              "Эго (я прав)",
+              "Эйфория",
+              "Вина",
+              "Обида",
+              "Гнев",
+              "Апатия",
+              "Стагнация"
+            ].map((label, i) =>
+              <tr key={i}>
+                <td>{label}</td>
+                {/* TODO: deal должен как-то задействоваться */}
+                {deals.map((deal, index) =>
+                  <td key={index}>
+                    <Checkbox className="negative" />
+                  </td>
+                )}
+              </tr>
+            )}
+            <tr>
+              <th>Мотивационные драйверы</th>
             </tr>
-          )}
-          <tr>
-            <th>Мотивационные драйверы</th>
-          </tr>
-          <tr>
-            <td className="category-title category-title--positive">Нормальные</td>
-          </tr>
-          {[
-            "Видение рынка",
-            "Отработка навыка входа",
-            "Отработка навыка выхода",
-            "Отработка пребывания в сделке",
-            "Отработка среднесрочного анализа",
-            "Создание торгового алгоритма"
-          ].map((label, i) =>
-            <tr key={i}>
-              <td>{label}</td>
-              {/* TODO: deal должен как-то задействоваться */}
-              {deals.map((deal, index) =>
-                <td key={index}>
-                  <Checkbox className="positive" />
-                </td>
-              )}
+            <tr>
+              <td className="category-title category-title--positive">Нормальные</td>
             </tr>
-          )}
-          <tr>
-            <td className="category-title category-title--negative">Искаженные</td>
-          </tr>
-          {[
-            "Скука",
-            "Азарт",
-            "Желание торговать"
-          ].map((label, i) =>
-            <tr key={i}>
-              <td>{label}</td>
-              {/* TODO: deal должен как-то задействоваться */}
-              {deals.map((deal, index) =>
-                <td key={index}>
-                  <Checkbox className="negative" />
-                </td>
-              )}
+            {[
+              "Видение рынка",
+              "Отработка навыка входа",
+              "Отработка навыка выхода",
+              "Отработка пребывания в сделке",
+              "Отработка среднесрочного анализа",
+              "Создание торгового алгоритма"
+            ].map((label, i) =>
+              <tr key={i}>
+                <td>{label}</td>
+                {/* TODO: deal должен как-то задействоваться */}
+                {deals.map((deal, index) =>
+                  <td key={index}>
+                    <Checkbox className="positive" />
+                  </td>
+                )}
+              </tr>
+            )}
+            <tr>
+              <td className="category-title category-title--negative">Искаженные</td>
             </tr>
-          )}
+            {[
+              "Скука",
+              "Азарт",
+              "Желание торговать"
+            ].map((label, i) =>
+              <tr key={i}>
+                <td>{label}</td>
+                {/* TODO: deal должен как-то задействоваться */}
+                {deals.map((deal, index) =>
+                  <td key={index}>
+                    <Checkbox className="negative" />
+                  </td>
+                )}
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
       <div className="state-registry-footer">

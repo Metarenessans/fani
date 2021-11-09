@@ -104,11 +104,10 @@ export default class FirstStep extends React.Component {
               </div>
 
               <div className="first-step-combine-table">
-                {/* ~~ */}
                 {expectedDeals.map((item, index) => {
                   const { currentToolCode ,load, iterations } = item;
                   return (
-                    <div className="combine-table-row">
+                    <div className="combine-table-row" key={index}>
                       <div className="combine-table-row-col">
                         {index === 0 && (
                           <div className="combine-table-row-key">
@@ -121,9 +120,9 @@ export default class FirstStep extends React.Component {
                             value={
                               toolsLoading && tools.length == 0 
                                 ? 0
-                                : Tools.getToolIndexByCode(tools, state.data[currentRowIndex].expectedDeals[index].currentToolCode)
+                                : Tools.getToolIndexByCode(tools, currentToolCode)
                             }
-                            onChange={ currentToolIndex => {
+                            onChange={currentToolIndex => {
                               const currentTool = tools[currentToolIndex];
                               const currentToolCode = currentTool.code;
 
@@ -280,9 +279,9 @@ export default class FirstStep extends React.Component {
                     levels,
                     breakout,
                     result,
-                  } = item
+                  } = item;
                   return (
-                    <div className="first-step-row">
+                    <div className="first-step-row" key={index}>
                       {/* col */}
                       <div className="first-step-row-col">
                         {index == 0 && (
@@ -294,11 +293,10 @@ export default class FirstStep extends React.Component {
                         <div className="first-step-row-val first-step-row-val--base first-step-row-val-tool">
                           {/* Торговый инструмент */}
                           <Select
-                            key={currentRowIndex}
                             value={
                               toolsLoading && tools.length == 0
                                 ? 0
-                                : Tools.getToolIndexByCode(tools, state.data[currentRowIndex].deals[index].currentToolCode)
+                                : Tools.getToolIndexByCode(tools, currentToolCode)
                             }
                             onChange={currentToolIndex => {
                               const currentTool = tools[currentToolIndex];

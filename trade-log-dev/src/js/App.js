@@ -630,11 +630,7 @@ export default class App extends React.Component {
   }
 
   render() {
-    let {
-      dailyRate,
-      limitUnprofitableDeals,
-      allowedNumberOfUnprofitableDeals,
-
+    const {
       step, 
       extraStep, 
       currentRowIndex, 
@@ -647,8 +643,6 @@ export default class App extends React.Component {
       changed,
       data
     } = this.state;
-
-    let { currentToolCode, isSaved } = rowData[currentRowIndex];
 
     return (
       <StateContext.Provider value={this}>
