@@ -758,24 +758,24 @@ export default class App extends React.Component {
                             </Button>
                             <div className="trade-slider-day-container">
                               <p>День {currentRowIndex + 1}</p>
-                            </div>
-                            <CrossButton
-                              className="cross-button"
-                              disabled={rowData.length == 1}
-                              onClick={() => {
-                                document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                let rowDataClone = [...rowData];
-                                rowDataClone.splice(currentRowIndex, 1);
+                              <CrossButton
+                                className="cross-button"
+                                disabled={rowData.length == 1}
+                                onClick={() => {
+                                  document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                  document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                  let rowDataClone = [...rowData];
+                                  rowDataClone.splice(currentRowIndex, 1);
 
-                                this.setState({  
-                                  rowData: rowDataClone,
-                                  extraStep: false,
-                                  step:          1,
-                                  currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
-                                });
-                              }}
-                            />
+                                  this.setState({  
+                                    rowData: rowDataClone,
+                                    extraStep: false,
+                                    step:          1,
+                                    currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                                  });
+                                }}
+                              />
+                            </div>
 
                             <Button
                               className={"day-button"}
