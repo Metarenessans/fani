@@ -768,7 +768,12 @@ export default class App extends React.Component {
                             <Button
                               className={"day-button"}
                               disabled={currentRowIndex == 0}
-                              onClick={e => this.setState({ currentRowIndex: currentRowIndex - 1, step: 1, extraStep: false})}
+                              onClick={e => {
+                                this.setState(prevState => ({
+                                  currentRowIndex: prevState.currentRowIndex - 1,
+                                  extraStep: false
+                                }))
+                              }}
                             >
                               {"<< Предыдущий день"}
                             </Button>
@@ -796,7 +801,12 @@ export default class App extends React.Component {
                             <Button
                               className={"day-button"}
                               disabled={currentRowIndex + 1 > data.length - 1}
-                              onClick={e => this.setState({ currentRowIndex: currentRowIndex + 1, step: 1, extraStep: false})}
+                              onClick={e => {
+                                this.setState(prevState => ({
+                                  currentRowIndex: prevState.currentRowIndex + 1,
+                                  extraStep: false
+                                }))
+                              }}
                             >
                               {"Следующий день >>"}
                             </Button>
