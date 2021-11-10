@@ -1,15 +1,22 @@
-import React from "react"
+import React, { useContext } from "react"
 import { Checkbox, Progress } from "antd"
+import { mean as average } from "lodash"
 
 import Stack from "../../../../../common/components/stack"
+import round from "../../../../../common/utils/round"
 
 import ControlPanel from "./control-panel"
 import TablePanel   from "./table-panel"
 import StatsPanel   from "../panel"
 
+import { StateContext } from "../../App"
+
 import "./style.scss"
 
 export default function Stats() {
+  const context = useContext(StateContext);
+  const { state } = context;
+  const { data } = state;
   return (
     <Stack className="stats" space="2em">
 
@@ -25,39 +32,81 @@ export default function Stats() {
           <dl className="association-list">
             <div>
               <dt>Торговых дней</dt>
-              <dd>50</dd>
+              <dd>{data.length}</dd>
             </div>
             <div>
               <dt>Сделок</dt>
-              <dd>0</dd>
+              <dd>{data.reduce((acc, day) => acc + day.deals.length, 0)}</dd>
             </div>
             <div>
               <dt>Общий результат</dt>
-              <dd>0%</dd>
+              <dd>{
+                data.reduce((acc, day) =>
+                  acc + day.deals.reduce((acc, deal) => acc + deal.result, 0), 0
+                )
+              }%</dd>
             </div>
             <div>
               <dt>Позиций Long</dt>
-              <dd>0</dd>
+              <dd>
+                {
+                  data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => deal.isLong).length, 0
+                  )
+                }
+              </dd>
             </div>
             <div>
               <dt>Позиций Short</dt>
-              <dd>0</dd>
+              <dd>
+                {
+                  data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => !deal.isLong).length, 0
+                  )
+                }
+              </dd>
             </div>
             <div>
               <dt>Положительных сделок</dt>
-              <dd>0</dd>
+              <dd>
+                {
+                  data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => deal.result > 0).length, 0
+                  )
+                }
+              </dd>
             </div>
             <div>
               <dt>Отрицательных сделок</dt>
-              <dd>0</dd>
+              <dd>
+                {
+                  data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => deal.result <= 0).length, 0
+                  )
+                }
+              </dd>
             </div>
             <div>
               <dt>Средняя положительная сделка</dt>
-              <dd>0%</dd>
+              <dd>{(() => {
+                const positiveResults = data
+                   .map(day => day.deals.flat())[0]
+                  ?.filter(deal => deal.result > 0)
+                   .map(deal => deal.result)
+
+                return ~~round(average(positiveResults), 1);
+              })()}%</dd>
             </div>
             <div>
               <dt>Средняя отрицательная сделка</dt>
-              <dd>0%</dd>
+              <dd>{(() => {
+                const negativeResults = data
+                   .map(day => day.deals.flat())[0]
+                  ?.filter(deal => deal.result <= 0)
+                   .map(deal => deal.result)
+
+                return ~~round(average(negativeResults), 1);
+              })()}%</dd>
             </div>
           </dl>
         </StatsPanel>
