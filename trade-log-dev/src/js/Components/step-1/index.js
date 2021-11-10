@@ -517,7 +517,6 @@ export default class FirstStep extends React.Component {
                               data[currentRowIndex].deals[index].result = val;
                               context.setState({ data });
                             }}
-                            unsigned="true"
                             min={0}
                             suffix={"%"}
                           />
