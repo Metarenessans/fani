@@ -2,6 +2,7 @@ import React, { useContext } from "react"
 import { Button } from "antd"
 import { cloneDeep } from "lodash"
 import StatsPanel from "../../panel"
+import formatUnitTime from "./format-unix-time"
 
 import { StateContext } from "../../../App"
 
@@ -24,7 +25,7 @@ export default function TablePanel() {
           </tr>
           {state.data.map((day, index) =>
             <tr key={index}>
-              <td>10.10.2021</td>
+              <td>{formatUnitTime(day.date)}</td>
               <td>{index + 1}</td>
               <td>0.38%</td>
               <td>76%</td>
@@ -53,7 +54,10 @@ export default function TablePanel() {
         className="table-panel__add-button custom-btn"
         onClick={async e => {
           const data = cloneDeep(state.data);
-          data.push(cloneDeep(context.dayTemplate));
+          const day = cloneDeep(context.dayTemplate);
+          // Обновляем дату
+          day.date = Number(new Date());
+          data.push(day);
           await context.setStateAsync({ data });
           document.querySelector(".table-panel-table-wrapper").scrollTop = 99999;
         }}

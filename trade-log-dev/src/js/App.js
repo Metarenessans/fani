@@ -33,89 +33,93 @@ import "../sass/style.sass"
 
 let scrollInitiator;
 
+const dayTemplate = {
+
+  /**
+   * Дата создания в формате Unix-time
+   * 
+   * @property {number}
+   */
+  date: 0,
+
+  /**
+   * @typedef ExpectedDeal
+   * @property {string} currentToolCode Код торгового инструмента
+   * @property {number} load Загрузка (в %)
+   * @property {number} iterations Количество итераций
+   */
+
+  /**
+   * Массив Интрадей трейдометр 
+   * 
+   * @type {ExpectedDeal[]} 
+   */
+  expectedDeals: [
+    {
+      currentToolCode: "SBER",
+      load: 0,
+      iterations: 0,
+    }
+  ],
+
+  /**
+   * Регистр сделок
+   * //TODO: добавить описание
+   */
+  deals: [
+    {
+      currentToolCode: "SBER",
+      enterTime: null,
+      isLong: "",
+
+      impulse: false,
+      postponed: false,
+
+      levels: false,
+      breakout: false,
+
+      result: 0,
+    }
+  ],
+
+  reportMonitor: [
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+  ],
+
+  technology: {
+    amy: false,
+    tmo: false,
+    recapitulation: false,
+    archetypesWork: false,
+  },
+
+  customTechnology: [],
+
+  practiceWorkTasks: {
+    transactionTimeChange: false,
+    noneWithdrawPendingApplications: false,
+    noReenterAfterClosingStopLoss: false,
+    noDisablingRobot: false,
+    inputVolumeControl: false,
+    makeFaniCalculate: false,
+    enterResultsInFani: false,
+    screenshotTransactions: false,
+    keyBehavioralPatternsIdentify: false,
+  },
+  customPracticeWorkTasks: [],
+}
+
 export default class App extends React.Component {
 
   constructor(props) {
     super(props);
-
-    this.dayTemplate = {
-      // date
-
-      // Выполнение плана
-      // successRate
-
-      // kod
-
-      /**
-       * @typedef ExpectedDeal
-       * @property {string} currentToolCode Код торгового инструмента
-       * @property {number} load Загрузка (в %)
-       * @property {number} iterations Количество итераций
-       */
-
-      /**
-       * Массив Инстрадей трейдометр 
-       * 
-       * @type {ExpectedDeal[]} 
-       */
-      expectedDeals: [
-        {
-          currentToolCode: "SBER",
-          load: 0,
-          iterations: 0,
-        }
-      ],
-
-      // Регистр сделок
-      deals: [
-        {
-          currentToolCode: "SBER",
-          enterTime: null,
-          isLong: "",
-
-          impulse: false,
-          postponed: false,
-
-          levels: false,
-          breakout: false,
-
-          result: 0,
-        }
-      ],
-
-      reportMonitor: [
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-        { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-      ],
-
-      technology: {
-        amy: false,
-        tmo: false,
-        recapitulation: false,
-        archetypesWork: false,
-      },
-
-      customTechnology: [],
-
-      practiceWorkTasks: {
-        transactionTimeChange: false,
-        noneWithdrawPendingApplications: false,
-        noReenterAfterClosingStopLoss: false,
-        noDisablingRobot: false,
-        inputVolumeControl: false,
-        makeFaniCalculate: false,
-        enterResultsInFani: false,
-        screenshotTransactions: false,
-        keyBehavioralPatternsIdentify: false,
-      },
-      customPracticeWorkTasks: [],
-    }
 
     this.initialState = {
 
@@ -140,10 +144,8 @@ export default class App extends React.Component {
        */
       allowedNumberOfUnprofitableDeals: 2,
 
-      data: [
-        // Данные для конкретного дня
-        cloneDeep(this.dayTemplate)
-      ],
+      /** @type {dayTemplate[]} */
+      data: [],
 
       /**
        * Номер текущей страницы, где:
@@ -286,6 +288,10 @@ export default class App extends React.Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
+  }
+
+  get dayTemplate() {
+    return dayTemplate;
   }
   
   componentDidUpdate(prevProps, prevState) {
