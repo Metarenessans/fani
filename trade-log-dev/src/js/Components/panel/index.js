@@ -10,7 +10,11 @@ const propTypes = {
   /** @type {string} */
   contentClassName: PropTypes.string,
 
-  /** @type {string} */
+  /** 
+   * Текст заголовка
+   * 
+   * @type {string}
+   */
   title: PropTypes.string.isRequired,
 
   children: PropTypes.element.isRequired
@@ -24,7 +28,7 @@ function Panel({
   children
 }) {
   return (
-    <div className={clsx(className, "stats-panel")}>
+    <div className={clsx("stats-panel", className)}>
       <h2 className="stats-panel-title card">{title}</h2>
       <div className={clsx("stats-panel-content", contentClassName)}>
         {children}

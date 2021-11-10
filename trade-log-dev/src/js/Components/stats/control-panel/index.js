@@ -1,6 +1,8 @@
-import React from "react"
+import React, { useContext } from "react"
 
 import { Switch } from "antd"
+
+import { StateContext } from "../../../App"
 
 import Stack        from "../../../../../../common/components/stack"
 import NumericInput from "../../../../../../common/components/numeric-input"
@@ -10,23 +12,20 @@ import InputWrapper from "../../input-wrapper"
 
 import "./style.scss"
 
-/**
- * 
- * @param {object}  props
- * @param {number}  props.dailyRate Дневной план (в %)
- * @param {boolean} props.limitUnprofitableDeals Флаг того, включен ли лимит убыточных сделок
- * @param {(checked: boolean) => any} props.onLimitUnprofitableDealsChange Коллбэк, который вызывается при смене значения `limitUnprofitableDeals`
- * @param {number}  props.allowedNumberOfUnprofitableDeals Флаг того, включен ли лимит убыточных сделок
- * @param {(value: number) => any}  props.onAllowedNumberOfUnprofitableDealsChange Коллбэк, который вызывается при смене значения `allowedNumberOfUnprofitableDeals`
- */
-export default function ControlPanel(props) {
+export default function ControlPanel() {
+  const context = useContext(StateContext);
+  const { state } = context;
   return (
     <StatsPanel className="control-panel" title="Панель управления">
       <InputWrapper
         label="Дневной план"
         labelCentered={true}
       >
-        <NumericInput defaultValue={props.dailyRate} suffix="%" />
+        <NumericInput 
+          defaultValue={state.dailyRate}
+          onBlur={dailyRate => context.setState({ dailyRate })}
+          suffix="%"
+        />
       </InputWrapper>
 
       <Stack space=".8em">
@@ -41,9 +40,8 @@ export default function ControlPanel(props) {
         >
           <Switch
             className="switch"
-            key={props.limitUnprofitableDeals}
-            defaultChecked={props.limitUnprofitableDeals}
-            onChange={checked => props?.onLimitUnprofitableDealsChange(checked)}
+            checked={state.limitUnprofitableDeals}
+            onChange={limitUnprofitableDeals => context.setState({ limitUnprofitableDeals })}
           />
         </InputWrapper>
 
@@ -56,8 +54,8 @@ export default function ControlPanel(props) {
           direction="row"
         >
           <NumericInput
-            defaultValue={props.allowedNumberOfUnprofitableDeals}
-            onBlur={value => props?.onAllowedNumberOfUnprofitableDealsChange(value)}
+            defaultValue={state.allowedNumberOfUnprofitableDeals}
+            onBlur={allowedNumberOfUnprofitableDeals => context.setState({ allowedNumberOfUnprofitableDeals })}
           />
         </InputWrapper>
 

@@ -1,43 +1,23 @@
 import React from "react"
-import { Button, Checkbox, Progress } from "antd"
+import { Checkbox, Progress } from "antd"
 
 import Stack from "../../../../../common/components/stack"
 
 import ControlPanel from "./control-panel"
 import TablePanel   from "./table-panel"
 import StatsPanel   from "../panel"
-import AssociationList from "./association-list"
 
 import "./style.scss"
 
-/**
- * @param {object} props
- * @param {() => {}} props.onOpenConfig
- */
-export default function Stats({
-  dailyRate,
-  limitUnprofitableDeals,
-  onLimitUnprofitableDealsChange,
-  allowedNumberOfUnprofitableDeals,
-  onAllowedNumberOfUnprofitableDealsChange,
-  onOpenConfig
-}) {
+export default function Stats() {
   return (
     <Stack className="stats" space="2em">
 
       {/* Панель управления */}
-      <ControlPanel
-        dailyRate={dailyRate}
-        limitUnprofitableDeals={limitUnprofitableDeals}
-        onLimitUnprofitableDealsChange={checked => onLimitUnprofitableDealsChange(checked)}
-        allowedNumberOfUnprofitableDeals={allowedNumberOfUnprofitableDeals}
-        onAllowedNumberOfUnprofitableDealsChange={number => onAllowedNumberOfUnprofitableDealsChange(number)}
-      />
+      <ControlPanel />
 
       {/* Пошаговый план проработки */}
-      <TablePanel 
-        onOpenConfig={index => onOpenConfig(index)}
-      />
+      <TablePanel />
 
       <div className="stats-container">
         {/* Генеральная статистика */}

@@ -1,157 +1,187 @@
-import React from 'react'
+import React from "react"
 /** @type {import("react").Context<App>} */
 export const StateContext = React.createContext();
-import ReactDOM from 'react-dom'
+
 import $ from "jquery"
-
-import clsx from 'clsx'
-import Header from "./components/header"
-
-import {
-  Button,
-  Input,
-} from 'antd/es'
-
-import {
-  PlusOutlined,
-  SettingFilled,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  QuestionCircleFilled,
-  LoadingOutlined,
-  WarningOutlined,
-} from '@ant-design/icons'
-
-import params from "../../../common/utils/params"
-import round               from "../../../common/utils/round";
-import formatNumber        from "../../../common/utils/format-number"
+import clsx from "clsx"
 
 import { cloneDeep, isEqual } from "lodash"
 
-import { Tools, Tool, template, parseTool } from "../../../common/tools"
+import { Button, Input, message } from "antd"
 
-import CrossButton           from "../../../common/components/cross-button"
-import NumericInput          from "../../../common/components/numeric-input"
-import Dashboard             from "./components/Dashboard"
-import FirstStep             from "./components/step-1"
-import SecondStep            from "./components/step-2"
-import ThirdStep             from "./components/step-3"
-import FourthStep            from "./components/step-4"
-import Stats                 from "./components/stats"
+import { PlusOutlined } from '@ant-design/icons'
 
+import params                from "../../../common/utils/params"
+import { Tools }             from "../../../common/tools"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
+import CrossButton           from "../../../common/components/cross-button"
+
+import Header      from "./components/header"
+import FirstStep   from "./components/step-1"
+import SecondStep  from "./components/step-2"
+import ThirdStep   from "./components/step-3"
+import FourthStep  from "./components/step-4"
+import Stats       from "./components/stats"
 
 /* API */
+
 import fetch from "../../../common/api/fetch"
-import { applyTools } from "../../../common/api/fetch/tools"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
-import fetchSavesFor from "../../../common/api/fetch-saves"
 import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id"
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 
 import "../sass/style.sass"
-import { message } from 'antd';
 
 let scrollInitiator;
 
-class App extends React.Component {
+const dealTemplate = {
+  currentToolCode: "SBER",
+  enterTime: null,
+  // FIXME: значение должно иметь тип boolean
+  isLong: "",
+
+  impulse:   false,
+  postponed: false,
+  levels:    false,
+  breakout:  false,
+
+  result: 0,
+
+  emotionalStates: {
+    /** @type {boolean[]} */
+    positive: [],
+    /** @type {boolean[]} */
+    negative: []
+  },
+  motives: {
+    /** @type {boolean[]} */
+    positive: [],
+    /** @type {boolean[]} */
+    negative: []
+  }
+};
+
+const dayTemplate = {
 
   /**
-   * Номер страницы
+   * Дата создания в формате Unix-time
    * 
-   * 0 - Главная
-   * 1 - ТС 1
-   * 2 - ТС 2
-   * 3 - ТС 3
-   * 4 - ТС 4
-   * 
-   * @type {0|1|2|3|4}
+   * @property {number}
    */
-  // state;
+  date: 0,
+
+  /**
+   * @typedef ExpectedDeal
+   * @property {string} currentToolCode Код торгового инструмента
+   * @property {number} load Загрузка (в %)
+   * @property {number} iterations Количество итераций
+   */
+
+  /**
+   * Массив Интрадей трейдометр 
+   * 
+   * @type {ExpectedDeal[]} 
+   */
+  expectedDeals: [
+    {
+      currentToolCode: "SBER",
+      load: 0,
+      iterations: 0,
+    }
+  ],
+
+  /**
+   * Регистр сделок
+   * 
+   * @type {dealTemplate[]}
+   * 
+   * //TODO: добавить описание
+   */
+  deals: [
+    cloneDeep(dealTemplate)
+  ],
+
+  reportMonitor: [
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+  ],
+
+  technology: {
+    amy: false,
+    tmo: false,
+    recapitulation: false,
+    archetypesWork: false,
+  },
+
+  customTechnology: [],
+
+  practiceWorkTasks: {
+    transactionTimeChange: false,
+    noneWithdrawPendingApplications: false,
+    noReenterAfterClosingStopLoss: false,
+    noDisablingRobot: false,
+    inputVolumeControl: false,
+    makeFaniCalculate: false,
+    enterResultsInFani: false,
+    screenshotTransactions: false,
+    keyBehavioralPatternsIdentify: false,
+  },
+  customPracticeWorkTasks: [],
+};
+
+export default class App extends React.Component {
 
   constructor(props) {
     super(props);
 
     this.initialState = {
 
-      dailyRate: 0.5,
-      limitUnprofitableDeals: false,
+      /**
+       * Дневной план (в %)
+       * 
+       * @type {number}
+       */
+      dailyRate: 0,
+
+      /** 
+       * Флаг ограничения на лимит убыточных сделок
+       * 
+       * @type {boolean}
+       */
+      limitUnprofitableDeals: true,
+
+      /**
+       * Допустимое количество убыточных сделок
+       * 
+       * @type {number}
+       */
       allowedNumberOfUnprofitableDeals: 2,
 
-      data: [
-        // Данные для конкретного дня
-        {
-          // Выполнение плана
-          // successRate
-          // kod
+      /** @type {dayTemplate[]} */
+      data: [],
 
-          // Массив Инстрадей трейдометр
-          expectedDeals: [
-            {
-              currentToolCode: "SBER",
-              load:       0,
-              iterations: 0,
-            },
-            {
-              currentToolCode: "SBER",
-              load:       0,
-              iterations: 0,
-            },
-          ],
+      /**
+       * Номер текущей страницы, где:
+       * 
+       * 0 - Главная
+       *
+       * 1 - ТС 1
+       *
+       * 2 - ТС 2
+       *
+       * 3 - ТС 3
+       *
+       * 4 - ТС 4
+       * 
+       * @type {0|1|2|3|4}
+       */
+      step: 0,
 
-          // Регистр сделок
-          deals: [
-            {
-              currentToolCode: "SBER",
-              enterTime:  null,
-              isLong:      "",
-
-              impulse:   false,
-              postponed: false, 
-
-              levels:    false,
-              breakout:  false,
-
-              result:        0,
-            }
-          ],
-
-          reportMonitor: [
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-            { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-          ],
-          
-          technology: {
-            amy:            false,
-            tmo:            false,
-            recapitulation: false,
-            archetypesWork: false,
-          },
-          customTechnology: [],
-
-          practiceWorkTasks: {
-            transactionTimeChange:           false,
-            noneWithdrawPendingApplications: false,
-            noReenterAfterClosingStopLoss:   false,
-            noDisablingRobot:                false,
-            inputVolumeControl:              false,
-            makeFaniCalculate:               false,
-            enterResultsInFani:              false,
-            screenshotTransactions:          false,
-            keyBehavioralPatternsIdentify:   false,
-          },
-          customPracticeWorkTasks: [],
-        }
-      ],
-
-      // ------
-
-      step:           1,
       extraStep:  false,
       extraSaved: false,
       loading:    false,
@@ -257,7 +287,13 @@ class App extends React.Component {
     this.state = {
       ...cloneDeep(this.initialState),
       
+      /**
+       * Индекс текущего выбранного дня
+       * 
+       * @type {number}
+       */
       currentRowIndex:   0,
+      
       toolsLoading:  false,
       changed:       false,
       searchVal:        "",
@@ -270,6 +306,14 @@ class App extends React.Component {
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
+  }
+
+  get dayTemplate() {
+    return dayTemplate;
+  }
+  
+  get dealTemplate() {
+    return dealTemplate;
   }
   
   componentDidUpdate(prevProps, prevState) {
@@ -614,11 +658,7 @@ class App extends React.Component {
   }
 
   render() {
-    let {
-      dailyRate,
-      limitUnprofitableDeals,
-      allowedNumberOfUnprofitableDeals,
-
+    const {
       step, 
       extraStep, 
       currentRowIndex, 
@@ -632,13 +672,12 @@ class App extends React.Component {
       data
     } = this.state;
 
-    let { currentToolCode, isSaved } = rowData[currentRowIndex];
-
     return (
       <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
+
             <div className="hdOptimize" >
               <div className="main-content">
                 <Header
@@ -677,6 +716,7 @@ class App extends React.Component {
                 />
                 <div className="container">
 
+                  {/* TODO: удалить */}
                   {/* <Dashboard
                     key={rowData}
                     rowData={rowData}
@@ -702,21 +742,7 @@ class App extends React.Component {
                     step === 0
                     ? (
                       <>
-                        <Stats
-                          dailyRate={dailyRate}
-                          limitUnprofitableDeals={limitUnprofitableDeals}
-                          onLimitUnprofitableDealsChange={limitUnprofitableDeals => this.setState({ limitUnprofitableDeals })}
-                          allowedNumberOfUnprofitableDeals={allowedNumberOfUnprofitableDeals}
-                          onAllowedNumberOfUnprofitableDealsChange={allowedNumberOfUnprofitableDeals => this.setState({ allowedNumberOfUnprofitableDeals })}
-                          onOpenConfig={async index =>  {
-                            console.log(index);
-                            await this.setStateAsync({ step: 1 });
-                            document.querySelector(".trade-slider").classList.add("trade-slider-active");
-                            document.querySelector(".dashboard").classList.add("dashboard-active");
-                            setCurrentRowIndex(index);
-                            scrollTop();
-                          }}
-                        />
+                        <Stats />
 
                         <div className="add-button-container">
                           <Button
@@ -745,36 +771,46 @@ class App extends React.Component {
                           <div className="trade-slider-top">
                             <Button
                               className={"day-button"}
-                              onClick={e => this.setState({ currentRowIndex: currentRowIndex - 1, step: 1, extraStep: false})}
                               disabled={currentRowIndex == 0}
+                              onClick={e => {
+                                this.setState(prevState => ({
+                                  currentRowIndex: prevState.currentRowIndex - 1,
+                                  extraStep: false
+                                }))
+                              }}
                             >
                               {"<< Предыдущий день"}
                             </Button>
                             <div className="trade-slider-day-container">
                               <p>День {currentRowIndex + 1}</p>
-                            </div>
-                            <CrossButton
-                              className="cross-button"
-                              disabled={rowData.length == 1}
-                              onClick={() => {
-                                document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                let rowDataClone = [...rowData];
-                                rowDataClone.splice(currentRowIndex, 1);
+                              <CrossButton
+                                className="cross-button"
+                                disabled={rowData.length == 1}
+                                onClick={() => {
+                                  document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                  document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                  let rowDataClone = [...rowData];
+                                  rowDataClone.splice(currentRowIndex, 1);
 
-                                this.setState({  
-                                  rowData: rowDataClone,
-                                  extraStep: false,
-                                  step:          1,
-                                  currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
-                                });
-                              }}
-                            />
+                                  this.setState({  
+                                    rowData: rowDataClone,
+                                    extraStep: false,
+                                    step:          1,
+                                    currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                                  });
+                                }}
+                              />
+                            </div>
 
                             <Button
                               className={"day-button"}
-                              disabled={currentRowIndex + 1 == rowData.length}
-                              onClick={e => this.setState({ currentRowIndex: currentRowIndex + 1, step: 1, extraStep: false})}
+                              disabled={currentRowIndex + 1 > data.length - 1}
+                              onClick={e => {
+                                this.setState(prevState => ({
+                                  currentRowIndex: prevState.currentRowIndex + 1,
+                                  extraStep: false
+                                }))
+                              }}
                             >
                               {"Следующий день >>"}
                             </Button>
@@ -888,8 +924,8 @@ class App extends React.Component {
                             {step == 1 && (
                               <Button
                                 className="custom-btn custom-btn--slider"
-                                onClick={e => {
-                                  this.setState({ step: 1, extraStep: false });
+                                onClick={async e => {
+                                  await this.setStateAsync({ step: 0, extraStep: false });
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                   document.querySelector(".dashboard").classList.remove("dashboard-active");
                                 }}
@@ -903,7 +939,7 @@ class App extends React.Component {
                               <Button
                                 className="custom-btn custom-btn--slider"
                                 onClick={e => {
-                                  this.setState({ step: step - 1, extraStep: false })
+                                  this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
                                 }}
                                 disabled={step == 1}
                               >
@@ -915,7 +951,7 @@ class App extends React.Component {
                               <Button 
                                 className="custom-btn custom-btn--slider next-button"
                                 onClick={e => {
-                                  this.setState({ step: step + 1 })
+                                  this.setState(prevState => ({ step: prevState.step + 1 }))
                                 }}
                                 disabled={step == 3}
                               >
@@ -958,7 +994,6 @@ class App extends React.Component {
                                   </Button>
                                 )
                               }
-
                             })()}
                           </div>
 
@@ -1183,5 +1218,3 @@ class App extends React.Component {
     );
   }
 }
-
-export { App }

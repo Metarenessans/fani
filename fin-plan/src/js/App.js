@@ -66,6 +66,9 @@ import ActiveIncomeCalculator from "./components/ActiveIncomeCalculator"
 
 import { message } from 'antd';
 
+// DOM-Element, который инициирует скролл
+let scrollInitiator;
+
 class App extends React.Component {
 
   constructor(props) {
@@ -318,6 +321,26 @@ class App extends React.Component {
 
   setStateAsync(state = {}) {
     return new Promise(resolve => this.setState(state, resolve))
+  }
+
+  bindEvents() {
+    // При наведении мыши на .dashboard-extra-container, элемент записывается в `scrollInitiator`
+    $(document).on("mouseenter", ".dashboard-extra-container", function (e) {
+      scrollInitiator = e.target.closest(".dashboard-extra-container");
+    })
+
+    document.addEventListener("scroll", function(e) {
+      if (e?.target?.classList?.contains("dashboard-extra-container")) {
+        if (e.target !== scrollInitiator) return;
+        
+        document.querySelectorAll(".dashboard-extra-container").forEach(element => {
+          if (element === scrollInitiator) {
+            return;
+          }
+          element.scrollLeft = scrollInitiator.scrollLeft;
+        });
+      }
+    }, true /* Capture event */);
   }
 
   componentDidMount() {
