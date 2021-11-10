@@ -27,7 +27,7 @@ export default function TablePanel() {
             <tr key={index}>
               <td>{formatUnitTime(day.date)}</td>
               <td>{index + 1}</td>
-              <td>0.38%</td>
+              <td>{day.deals.reduce((acc, curr) => acc + curr.result, 0)}%</td>
               <td>76%</td>
               <td>0.095%</td>
               <td>
