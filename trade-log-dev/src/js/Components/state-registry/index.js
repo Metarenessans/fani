@@ -1,37 +1,19 @@
-import React from "react"
-import PropTypes from "prop-types"
+import React, { useContext } from "react"
 
-import { Button, Checkbox } from "antd"
+import { Checkbox } from "antd"
 
 import Panel from "../panel"
 
+import { StateContext } from "../../App"
+
 import "./style.scss"
+import { cloneDeep } from "lodash"
 
-const propTypes = {
-  /**
-   * Массив сделок
-   * 
-   * @type {{}[]}
-   */
-  deals: PropTypes.array.isRequired,
-
-  /** 
-   * Коллбэк, который вызовется при клике на кнопку "Назад"
-   * 
-   * @type {function() {}}
-   */
-  onPrevStep: PropTypes.func.isRequired,
-
-  /**
-   * Коллбэк, который вызовется при клике на кнопку "Далее"
-   *
-   * @type {function() {}}
-   */
-  onNextStep: PropTypes.func.isRequired,
-}
-
-/** @param {propTypes} props */
-function StateRegistry({ deals, onPrevStep, onNextStep }) {
+export default function StateRegistry() {
+  const context = useContext(StateContext);
+  const { state } = context;
+  const { data, currentRowIndex } = state;
+  const currentDay = data[currentRowIndex];
   return (
     <Panel 
       title="Регистр состояний" 
@@ -43,7 +25,7 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
           <tbody>
             <tr>
               <th>Состояния</th>
-              {deals.map((deal, index) => 
+              {currentDay.deals.map((deal, index) =>
                 <th key={index}>{index + 1} сделка</th>
               )}
             </tr>
@@ -58,10 +40,17 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
             ].map((label, i) =>
               <tr key={i}>
                 <td>{label}</td>
-                {/* TODO: deal должен как-то задействоваться */}
-                {deals.map((deal, index) =>
+                {currentDay.deals.map((deal, index) =>
                   <td key={index}>
-                    <Checkbox className="positive" />
+                    <Checkbox
+                      className="positive" 
+                      checked={deal.emotionalStates.positive[i]}
+                      onChange={checked => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].deals[index].emotionalStates.positive[i] = checked;
+                        context.setState({ data });
+                      }}
+                    />
                   </td>
                 )}
               </tr>
@@ -82,10 +71,17 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
             ].map((label, i) =>
               <tr key={i}>
                 <td>{label}</td>
-                {/* TODO: deal должен как-то задействоваться */}
-                {deals.map((deal, index) =>
+                {currentDay.deals.map((deal, index) =>
                   <td key={index}>
-                    <Checkbox className="negative" />
+                    <Checkbox
+                      className="negative"
+                      checked={deal.emotionalStates.negative[i + 4]}
+                      onChange={checked => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].deals[index].emotionalStates.negative[i + 4] = checked;
+                        context.setState({ data });
+                      }}
+                    />
                   </td>
                 )}
               </tr>
@@ -106,10 +102,17 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
             ].map((label, i) =>
               <tr key={i}>
                 <td>{label}</td>
-                {/* TODO: deal должен как-то задействоваться */}
-                {deals.map((deal, index) =>
+                {currentDay.deals.map((deal, index) =>
                   <td key={index}>
-                    <Checkbox className="positive" />
+                    <Checkbox
+                      className="positive"
+                      checked={deal.motives.positive[i]}
+                      onChange={checked => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].deals[index].motives.positive[i] = checked;
+                        context.setState({ data });
+                      }}
+                    />
                   </td>
                 )}
               </tr>
@@ -124,10 +127,17 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
             ].map((label, i) =>
               <tr key={i}>
                 <td>{label}</td>
-                {/* TODO: deal должен как-то задействоваться */}
-                {deals.map((deal, index) =>
+                {currentDay.deals.map((deal, index) =>
                   <td key={index}>
-                    <Checkbox className="negative" />
+                    <Checkbox
+                      className="negative"
+                      checked={deal.motives.negative[i + 6]}
+                      onChange={checked => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].deals[index].motives.negative[i + 6] = checked;
+                        context.setState({ data });
+                      }}
+                    />
                   </td>
                 )}
               </tr>
@@ -135,14 +145,6 @@ function StateRegistry({ deals, onPrevStep, onNextStep }) {
           </tbody>
         </table>
       </div>
-      <div className="state-registry-footer">
-        <Button className="custom-btn" onClick={e => onPrevStep()}>Назад</Button>
-        <Button className="custom-btn" onClick={e => onNextStep()}>Далее</Button>
-      </div>
     </Panel>
   )
 }
-
-StateRegistry.propTypes = propTypes;
-
-export default StateRegistry

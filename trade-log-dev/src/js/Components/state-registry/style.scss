@@ -84,23 +84,4 @@
       }
     }
   }
-
-  &-footer {
-    margin-top: 1.5em;
-    width: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5em;
-
-    button {
-      font-size: 1.2em;
-    }
-  }
-}
-
-// TODO: Удалить
-.state-registry {
-  margin-top: 2em;
 }

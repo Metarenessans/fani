@@ -47,11 +47,15 @@ const dealTemplate = {
   result: 0,
 
   emotionalStates: {
+    /** @type {boolean[]} */
     positive: [],
+    /** @type {boolean[]} */
     negative: []
   },
   motives: {
+    /** @type {boolean[]} */
     positive: [],
+    /** @type {boolean[]} */
     negative: []
   }
 };

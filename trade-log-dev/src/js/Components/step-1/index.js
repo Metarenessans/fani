@@ -535,16 +535,7 @@ export default class FirstStep extends React.Component {
                   onClick={() => {
                     const data = cloneDeep(state.data);
                     const deals = cloneDeep(data[currentRowIndex].deals);
-                    deals.push({
-                      currentToolCode: "SBER",
-                      enterTime:  null,
-                      isLong:       "",
-                      impulse:   false,
-                      postponed: false,
-                      levels:    false,
-                      breakout:  false,
-                      result:        0,
-                    });
+                    deals.push(cloneDeep(context.dealTemplate));
                     data[currentRowIndex].deals = deals;
                     context.setState({ data });
                   }}
