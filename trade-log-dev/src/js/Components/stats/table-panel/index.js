@@ -1,6 +1,7 @@
 import React, { useContext } from "react"
 import { Button } from "antd"
 import { cloneDeep } from "lodash"
+import round from "../../../../../../common/utils/round"
 import StatsPanel from "../../panel"
 import formatUnitTime from "./format-unix-time"
 
@@ -23,31 +24,35 @@ export default function TablePanel() {
             <th>КОД</th>
             <th></th>
           </tr>
-          {state.data.map((day, index) =>
-            <tr key={index}>
-              <td>{formatUnitTime(day.date)}</td>
-              <td>{index + 1}</td>
-              <td>{day.deals.reduce((acc, curr) => acc + curr.result, 0)}%</td>
-              <td>76%</td>
-              <td>0.095%</td>
-              <td>
-                <Button 
-                  className="custom-btn" 
-                  onClick={async () =>  {
-                    // TODO: Заменить на вызов какой-нибудь `openConfig()`
-                    await context.setStateAsync({ currentRowIndex: index, step: 1 });
-                    // TODO: убрать лишнее
-                    document.querySelector(".trade-slider").classList.add("trade-slider-active");
-                    document.querySelector(".dashboard").classList.add("dashboard-active");
-                    setCurrentRowIndex(index);
-                    scrollTop();
-                  }}
-                >
-                  Редактировать
-                </Button>
-              </td>
-            </tr>
-          )}
+          {state.data.map((day, index) => {
+            const { deals } = day;
+            const result = deals.reduce((acc, curr) => acc + curr.result, 0);
+            return (
+              <tr key={index}>
+                <td>{formatUnitTime(day.date)}</td>
+                <td>{index + 1}</td>
+                <td>{result}%</td>
+                <td>76%</td>
+                <td>{round(result / deals.length, 1)}%</td>
+                <td>
+                  <Button
+                    className="custom-btn"
+                    onClick={async () => {
+                      // TODO: Заменить на вызов какой-нибудь `openConfig()`
+                      await context.setStateAsync({ currentRowIndex: index, step: 1 });
+                      // TODO: убрать лишнее
+                      document.querySelector(".trade-slider").classList.add("trade-slider-active");
+                      document.querySelector(".dashboard").classList.add("dashboard-active");
+                      setCurrentRowIndex(index);
+                      scrollTop();
+                    }}
+                  >
+                    Редактировать
+                  </Button>
+                </td>
+              </tr>
+            )
+          })}
         </table>
       </div>
       <Button 
