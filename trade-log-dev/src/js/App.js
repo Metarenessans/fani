@@ -33,6 +33,29 @@ import "../sass/style.sass"
 
 let scrollInitiator;
 
+const dealTemplate = {
+  currentToolCode: "SBER",
+  enterTime: null,
+  // FIXME: значение должно иметь тип boolean
+  isLong: "",
+
+  impulse:   false,
+  postponed: false,
+  levels:    false,
+  breakout:  false,
+
+  result: 0,
+
+  emotionalStates: {
+    positive: [],
+    negative: []
+  },
+  motives: {
+    positive: [],
+    negative: []
+  }
+};
+
 const dayTemplate = {
 
   /**
@@ -64,22 +87,13 @@ const dayTemplate = {
 
   /**
    * Регистр сделок
+   * 
+   * @type {dealTemplate[]}
+   * 
    * //TODO: добавить описание
    */
   deals: [
-    {
-      currentToolCode: "SBER",
-      enterTime: null,
-      isLong: "",
-
-      impulse: false,
-      postponed: false,
-
-      levels: false,
-      breakout: false,
-
-      result: 0,
-    }
+    cloneDeep(dealTemplate)
   ],
 
   reportMonitor: [
@@ -114,7 +128,7 @@ const dayTemplate = {
     keyBehavioralPatternsIdentify: false,
   },
   customPracticeWorkTasks: [],
-}
+};
 
 export default class App extends React.Component {
 
@@ -292,6 +306,10 @@ export default class App extends React.Component {
 
   get dayTemplate() {
     return dayTemplate;
+  }
+  
+  get dealTemplate() {
+    return dealTemplate;
   }
   
   componentDidUpdate(prevProps, prevState) {
