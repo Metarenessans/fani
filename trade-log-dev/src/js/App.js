@@ -901,9 +901,7 @@ export default class App extends React.Component {
                               <SecondStep/>
                             )}
 
-                            {step == 3 && (
-                              <ThirdStep/>
-                            )}
+                            <ThirdStep hidden={step != 3} />
 
                             {step == 4 && (
                               <FourthStep
