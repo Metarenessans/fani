@@ -45,7 +45,7 @@ export default class ThirdStep extends React.Component {
           const { data, currentRowIndex } = state
           const { reportMonitor } = data[currentRowIndex];
           return (
-            <div className="third-step">
+            <div {...this.props} className="third-step">
               <ResultPanel/>
               <div className="title">
                 Мониторинг рапорта
