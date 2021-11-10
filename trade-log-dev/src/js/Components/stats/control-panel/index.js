@@ -40,7 +40,7 @@ export default function ControlPanel() {
         >
           <Switch
             className="switch"
-            value={state.limitUnprofitableDeals}
+            checked={state.limitUnprofitableDeals}
             onChange={limitUnprofitableDeals => context.setState({ limitUnprofitableDeals })}
           />
         </InputWrapper>

@@ -124,14 +124,14 @@ export default class App extends React.Component {
        * 
        * @type {number}
        */
-      dailyRate: .5,
+      dailyRate: 0,
 
       /** 
        * Флаг ограничения на лимит убыточных сделок
        * 
        * @type {boolean}
        */
-      limitUnprofitableDeals: false,
+      limitUnprofitableDeals: true,
 
       /**
        * Допустимое количество убыточных сделок
