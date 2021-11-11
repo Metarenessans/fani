@@ -149,7 +149,7 @@ export default class App extends React.Component {
       dailyRate: 0,
 
       /** 
-       * Флаг ограничения на лимит убыточных сделок
+       * Флаг ограничения убыточных сделок
        * 
        * @type {boolean}
        */
@@ -192,7 +192,7 @@ export default class App extends React.Component {
       saved:   false,
       id:       null,
 
-      // DashboardData
+      // TODO: delete
       rowData: new Array(5).fill(0).map( _ => {
         return {
           // значения для селекта с инструментами
