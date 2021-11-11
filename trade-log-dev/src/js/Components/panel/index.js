@@ -15,7 +15,7 @@ const propTypes = {
    * 
    * @type {string}
    */
-  title: PropTypes.string.isRequired
+  title: PropTypes.string
 };
 
 /** @param {propTypes} */
@@ -27,7 +27,7 @@ function Panel({
 }) {
   return (
     <div className={clsx("stats-panel", className)}>
-      <h2 className="stats-panel-title card">{title}</h2>
+      {title && <h2 className="stats-panel-title card">{title}</h2>}
       <div className={clsx("stats-panel-content", contentClassName)}>
         {children}
       </div>
