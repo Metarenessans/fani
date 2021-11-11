@@ -27,16 +27,16 @@ export default function ResultPanel() {
 
   return (
     <Panel 
-      title="Мониторинг раппорта" 
+      // title="Мониторинг раппорта" 
       className="result-panel"
       contentClassName="result-panel-content"
     >
       <Stack space="1em">
         <Riskometer value={50} />
         {/* TODO: Добавить aria-label */}
-        <Button className="custom-btn result-panel-btn" disabled>
+        {/* <Button className="custom-btn result-panel-btn" disabled>
           НИМБА
-        </Button>
+        </Button> */}
       </Stack>
       <strong className={clsx(
         "result-panel__action",

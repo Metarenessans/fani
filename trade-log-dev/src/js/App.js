@@ -27,7 +27,7 @@ import Stats       from "./components/stats"
 
 import fetch from "../../../common/api/fetch"
 import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id"
-import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 
 import "../sass/style.sass"
 
@@ -35,9 +35,9 @@ let scrollInitiator;
 
 const dealTemplate = {
   currentToolCode: "SBER",
-  enterTime: null,
-  // FIXME: значение должно иметь тип boolean
-  isLong: "",
+  currentToolIndex:    "",
+  enterTime:  null,
+  isLong:     null,
 
   impulse:   false,
   postponed: false,
@@ -74,6 +74,7 @@ const dayTemplate = {
    * @property {string} currentToolCode Код торгового инструмента
    * @property {number} load Загрузка (в %)
    * @property {number} iterations Количество итераций
+   * @property {number} depo Депозит
    */
 
   /**
@@ -84,8 +85,9 @@ const dayTemplate = {
   expectedDeals: [
     {
       currentToolCode: "SBER",
-      load: 0,
-      iterations: 0,
+      load:       1,
+      iterations: 1,
+      depo:  10_000,
     }
   ],
 
@@ -120,16 +122,19 @@ const dayTemplate = {
 
   customTechnology: [],
 
+  /**
+   * Практические задачи на отработку
+   */
   practiceWorkTasks: {
-    transactionTimeChange: false,
-    noneWithdrawPendingApplications: false,
-    noReenterAfterClosingStopLoss: false,
-    noDisablingRobot: false,
-    inputVolumeControl: false,
-    makeFaniCalculate: false,
-    enterResultsInFani: false,
-    screenshotTransactions: false,
-    keyBehavioralPatternsIdentify: false,
+    "Изменить время на сделку": false,
+    "Не снимать отложенные заявки, выставленные до этого": false,
+    "Не перезаходить после закрытия по Stop-Loss": false,
+    "Не выключать робота": false,
+    "Контролировать объём входа": false,
+    "Делать расчёты ФАНИ": false,
+    "Заносить результаты в ФАНИ": false,
+    "Фиксировать сделки в скриншотах": false,
+    "Выделять ключевые поведенченские паттерны и модели": false,
   },
   customPracticeWorkTasks: [],
 };
@@ -146,7 +151,8 @@ export default class App extends React.Component {
        * 
        * @type {number}
        */
-      dailyRate: 0,
+      dailyRate: 0.5,
+
 
       /** 
        * Флаг ограничения на лимит убыточных сделок
@@ -192,96 +198,6 @@ export default class App extends React.Component {
       saved:   false,
       id:       null,
 
-      // DashboardData
-      rowData: new Array(5).fill(0).map( _ => {
-        return {
-          // значения для селекта с инструментами
-          currentToolCode: "SBER",
-
-          isSaved: false,
-
-          // second step
-          calmnessBefore:       0,
-          calmnessDuring:       0,
-          calmnessAfter:        0,
-
-          collectednessBefore:  0,
-          collectednessDuring:  0,
-          collectednessAfter:   0,
-          
-          braveryBefore:        0,
-          braveryDuring:        0,
-          braveryAfter:         0,
-          
-          confidenceBefore:     0,
-          confidenceDuring:     0,
-          confidenceAfter:      0,
-          
-          compassionBefore:     0,
-          compassionDuring:     0,
-          compassionAfter:      0,
-          
-          greedinessBefore:     0,
-          greedinessDuring:     0,
-          greedinessAfter:      0,
-          
-          egoBefore:            0,
-          egoDuring:            0,
-          egoAfter:             0,
-          
-          euphoriaBefore:       0,
-          euphoriaDuring:       0,
-          euphoriaAfter:        0,
-          
-          faultBefore:          0,
-          faultDuring:          0,
-          faultAfter:           0,
-          
-          resentmentBefore:     0,
-          resentmentDuring:     0,
-          resentmentAfter:      0,
-          
-          angerBefore:          0,
-          angerDuring:          0,
-          angerAfter:           0,
-          
-          apathyBefore:         0,
-          apathyDuring:         0,
-          apathyAfter:          0,
-
-          stagnationBefore:     0,
-          stagnationDuring:     0,
-          stagnationAfter:      0,
-
-
-
-          
-          marketVision:   false,
-          entrySkill:     false,
-          exitSkill:      false,
-          dealStay:       false,
-          mediumTermStay: false,
-          tradeAlgorithm: false,
-          boredom:        false,
-          excitement:     false,
-          tradeDesire:    false,
-
-          // third step
-          amy:                             false,
-          tmo:                             false,
-          recapitulation:                  false,
-          archetypesWork:                  false,
-          transactionTimeChange:           false,
-          noneWithdrawPendingApplications: false,
-          noReenterAfterClosingStopLoss:   false,
-          noDisablingRobot:                false,
-          inputVolumeControl:              false,
-          makeFaniCalculate:               false,
-          enterResultsInFani:              false,
-          screenshotTransactions:          false,
-          keyBehavioralPatternsIdentify:   false,
-        }
-      })
     };
 
     this.state = {
@@ -304,7 +220,11 @@ export default class App extends React.Component {
     };
 
     // Bindings
+    /**
+     * @type {applyInvestorInfo}
+     */
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
+    this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
   }
 
@@ -379,6 +299,9 @@ export default class App extends React.Component {
     this.fetchTools()
       .then(() => this.fetchSaves())
       .catch(error => console.error(error))
+
+    this.fetchInvestorInfo()
+      .then(response => this.setStateAsync({ depo: response.data.deposit }))
   }
 
   fetchTools() {
@@ -715,29 +638,6 @@ export default class App extends React.Component {
                   }}
                 />
                 <div className="container">
-
-                  {/* TODO: удалить */}
-                  {/* <Dashboard
-                    key={rowData}
-                    rowData={rowData}
-                    currentRowIndex={currentRowIndex}
-                    setCurrentRowIndex={currentRowIndex => this.setState({ currentRowIndex }) }
-                    onChange={(prop, value, index) => {
-                      const rowDataClone = [...rowData];
-                      rowDataClone[index][prop] = value;
-                      this.setState({ rowData: rowDataClone })
-                    }}
-                    onChangeStep={() => this.setStateAsync({step: 1})}
-                    allPracticeStepsModify={(value) => {
-                      const rowDataClone = 
-                      [...rowData].map(row => {
-                        row.practiceStep = value;
-                        return row;
-                      });
-                      this.setState({ rowData: rowDataClone })
-                    }}
-                  /> */}
-
                   {
                     step === 0
                     ? (
@@ -785,15 +685,15 @@ export default class App extends React.Component {
                               <p>День {currentRowIndex + 1}</p>
                               <CrossButton
                                 className="cross-button"
-                                disabled={rowData.length == 1}
+                                disabled={data.length == 1}
                                 onClick={() => {
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                   document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                  let rowDataClone = [...rowData];
-                                  rowDataClone.splice(currentRowIndex, 1);
+                                  let dataClone = [...data];
+                                  dataClone.splice(currentRowIndex, 1);
 
                                   this.setState({  
-                                    rowData: rowDataClone,
+                                    data: dataClone,
                                     extraStep: false,
                                     step:          1,
                                     currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
@@ -863,9 +763,9 @@ export default class App extends React.Component {
                               className="trade-slider-middle-step"
                               onClick={() => this.setState({ extraStep: true, step: 4 })}
                             >
-                              <span className={clsx("step-logo", extraStep && "step-logo--active")}>Тс 4</span>
+                              <span className={clsx("step-logo", step == 4 && "step-logo--active")}>Тс 4</span>
 
-                              <span className={clsx("step-name", extraStep && "step-name--active")}>
+                              <span className={clsx("step-name", step == 4 && "step-name--active")}>
                                 Точечный<br/>самоанализа
                               </span>
                             </div>
@@ -945,13 +845,13 @@ export default class App extends React.Component {
                               </Button>
                             )}
 
-                            {step < 3 && (
+                            {step < 4 && (
                               <Button 
                                 className="custom-btn custom-btn--slider next-button"
                                 onClick={e => {
                                   this.setState(prevState => ({ step: prevState.step + 1 }))
                                 }}
-                                disabled={step == 3}
+                                disabled={step == 4}
                               >
                                 Далее
                               </Button>
@@ -968,7 +868,7 @@ export default class App extends React.Component {
                                       this.update(this.getTitle());
                                       this.setState({
                                         rowData: rowDataClone, 
-                                        extraStep: true, 
+                                        // extraStep: true, 
                                         extraSaved: true,
                                       })
                                     }}
@@ -978,7 +878,7 @@ export default class App extends React.Component {
                                 )
                               }
                               
-                              if (step == 4 && extraSaved) {
+                              if (extraSaved) {
                                 return (
                                   <Button
                                     className="custom-btn custom-btn--slider"

@@ -1,5 +1,13 @@
 
 .first-step {
+  // .positive {
+  //   color: ;
+  // }
+
+  // .negative {
+
+  // }
+
   .pages-link-buttons {
     display: flex;
     align-items: center;
@@ -85,7 +93,21 @@
         }
 
         &--tool {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
           padding: 0 1.3em;
+          gap: 1em;
+
+          .numeric-input-wrap {
+            width: 100%;
+          }
+
+          Input {
+            width: 100%!important;
+            text-align: center;
+          }
         }
 
         &--final {
@@ -398,7 +420,6 @@
   display: flex;
   justify-content: flex-start;
   margin-top: 1em;
-  padding-left: 4em;
   width: 100%;
   min-height: 2.8em;
 

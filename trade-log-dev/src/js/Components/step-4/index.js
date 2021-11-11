@@ -73,7 +73,7 @@ export default class FourthStep extends React.Component {
               </div>
 
               <div className="pactice-container">
-                <a className="trade-log-button" href="https://www.youtube.com/">
+                <a className="trade-log-button" target="_blank" href="https://www.youtube.com/">
                   Техники внутренней проработки
                 </a>
               </div>
@@ -159,7 +159,7 @@ export default class FourthStep extends React.Component {
                       {customTechnology.map((item, index) => {
                         const { name, value } = customTechnology[index]
                         return (
-                          <div className="fourth-step-table-row-container-row">
+                          <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
                               defaultValue={name}
                               onBlur={ val => {
@@ -194,13 +194,13 @@ export default class FourthStep extends React.Component {
                           const data = cloneDeep(state.data);
                           const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
                           customTechnology.push({
-                            name:  "",
+                            name: "Новая технология " + customTechnology.length,
                             value: ""
                           });
                           data[currentRowIndex].customTechnology = customTechnology;
                           context.setState({ data });
                         }}
-                      >Добавить</Button>
+                      >Добавить технологию</Button>
                     </div>
                 </div>
                 {/* col */}
@@ -216,165 +216,32 @@ export default class FourthStep extends React.Component {
                     </div>
                     
                     <div className="fourth-step-table-row-container">
-
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Изменить время на сделку</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={transactionTimeChange}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.transactionTimeChange = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Не снимать отложенные заявки, выставленные до этого</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={noneWithdrawPendingApplications}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.noneWithdrawPendingApplications = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Не перезаходить после закрытия по Stop-Loss</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={noReenterAfterClosingStopLoss}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.noReenterAfterClosingStopLoss = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Не выключать робота</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={noDisablingRobot}
-                            onChange={ val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.noDisablingRobot = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Контролировать объём входа</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={inputVolumeControl}
-                            onChange={ val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.inputVolumeControl = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Делать расчёты ФАНИ</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={makeFaniCalculate}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.makeFaniCalculate = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Заносить результаты в ФАНИ</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={enterResultsInFani}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.enterResultsInFani = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Фиксировать сделки в скриншотах</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={screenshotTransactions}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.screenshotTransactions = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    
-                      <div className="fourth-step-table-row-container-row">
-                        <p>Выделять ключевые поведенченские паттерны и модели</p>
-                        <div className="fourth-step-table-check-box">
-                          <Checkbox
-                            className="green"
-                            key={currentRowIndex}
-                            checked={keyBehavioralPatternsIdentify}
-                            onChange={val => {
-                              let value = val.target.checked;
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].practiceWorkTasks.keyBehavioralPatternsIdentify = value;
-                              context.setState({ data });
-                            }}
-                          />
-                        </div>
-                      </div>
+                      {Object.keys(practiceWorkTasks).map((key, index) => {
+                        return (
+                          <div className="fourth-step-table-row-container-row" key={index}>
+                            <p>{key}</p>
+                            <div className="fourth-step-table-check-box">
+                              <Checkbox
+                                className="green"
+                                checked={practiceWorkTasks[key]}
+                                checked={transactionTimeChange}
+                                onChange={val => {
+                                  let value = val.target.checked;
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].practiceWorkTasks.transactionTimeChange = value;
+                                  context.setState({ data });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
 
                     {customPracticeWorkTasks.map((item, index) => {
                       const { name, value } = customPracticeWorkTasks[index]
                       return (
-                        <div className="fourth-step-table-row-container-row">
+                        <div className="fourth-step-table-row-container-row" key={index}>
                           <Input
                             defaultValue={name}
                             onBlur={e => {
@@ -408,13 +275,13 @@ export default class FourthStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
                       customPracticeWorkTasks.push({
-                        name:  "",
+                        name:  "Новая задача " +  customPracticeWorkTasks.length,
                         value: ""
                       });
                       data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;
                       context.setState({ data });
                     }}
-                  >Добавить</Button>
+                  >Добавить задачу</Button>
                 </div>
                 </div>
                 {/* col */}

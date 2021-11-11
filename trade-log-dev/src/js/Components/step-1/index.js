@@ -60,18 +60,15 @@ export default class FirstStep extends React.Component {
   }
 
   render() {
-    let { combineTable, transactionRegister } = this.state
-    let { 
-      onChange, 
-      setSeachVal,
-    } = this.props;
+    let { setSeachVal } = this.props;
 
     return (
       <StateContext.Consumer>
         {context => {
           const { state } = context;
-          const { toolsLoading, data, currentRowIndex, tools } = state;
+          const { toolsLoading, data, currentRowIndex, tools, depo, limitUnprofitableDeals, allowedNumberOfUnprofitableDeals } = state;
           const { expectedDeals, deals } = data[currentRowIndex];
+
           return (
             <div className="first-step">
 
@@ -81,19 +78,19 @@ export default class FirstStep extends React.Component {
 
               <div className="pages-link-buttons">
                 
-                <a className="trade-log-button" href="https://fani144.ru/trademeter/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/trademeter/">
                   Трейдометр
                 </a>
 
-                <a className="trade-log-button" href="https://fani144.ru/intraday/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/intraday/">
                   Интрадей портфель
                 </a>
 
-                <a className="trade-log-button" href="https://fani144.ru/mts/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/mts/">
                   Мтс
                 </a>
 
-                <a className="trade-log-button" href="https://fani144.ru/ksd/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/ksd/">
                   Ксд
                 </a>
               </div>
@@ -105,7 +102,7 @@ export default class FirstStep extends React.Component {
 
               <div className="first-step-combine-table">
                 {expectedDeals.map((item, index) => {
-                  const { currentToolCode ,load, iterations } = item;
+                  const { currentToolCode, load, iterations, depo } = item;
                   return (
                     <div className="combine-table-row" key={index}>
                       <div className="combine-table-row-col">
@@ -115,6 +112,17 @@ export default class FirstStep extends React.Component {
                           </div>
                         )}
                         <div className="combine-table-row-val combine-table-row-val--tool">
+                          <NumericInput
+                            defaultValue={depo}
+                            format={formatNumber}
+                            unsigned="true"
+                            round="true"
+                            onBlur={ val => {
+                              const data = cloneDeep(state.data);
+                              data[currentRowIndex].expectedDeals[index].depo = val;
+                              context.setState({ data })
+                            }}
+                          />
                           {/* Торговый инструмент */}
                           <Select
                             value={
@@ -214,14 +222,43 @@ export default class FirstStep extends React.Component {
                           </div>
                         )}
                         <div className="combine-table-row-val combine-table-row-val--final">
-                          <p>
-                            Длина хода<br />
-                            <span style={{ color: "#736d6b" }}>125 п.</span>
-                          </p>
-                          <p>
-                            Вероятность взять ход<br/>
-                            <span style={{ color: "#bdb284" }}>68%</span>
-                          </p>
+                          {(() => {
+                            const { state } = context;
+                            const { tools, dailyRate } = state;
+
+                            let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+                            let currentTool = tools[currentToolIndex]
+
+                            const _depo = depo * load;
+                            let goal = _depo * (dailyRate / 100);
+                            let stepPrice = currentTool?.stepPrice;
+                            let contracts = ~~_depo / currentTool?.guarantee;
+
+                            let pointsForIteration = (goal / stepPrice / contracts) / iterations;
+
+                            return (
+                              <>
+                                <p>
+                                  Длина хода<br />
+                                  <span style={{ color: "#736d6b" }}>
+                                    {~~pointsForIteration + " п."}
+                                  </span>
+                                </p>
+                                <p>
+                                  Вероятность взять ход<br/>
+                                  <span style={{ color: "#bdb284" }}>
+                                    {(() => {
+                                      let chance = 100 - ((pointsForIteration * currentTool?.priceStep) / currentTool?.adrDay * 100);
+                                      if (chance < 0) {
+                                        chance = 0
+                                      }
+                                      return round(~~chance, 2) + "%"
+                                    })()}
+                                  </span>
+                                </p>
+                              </>
+                            )
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -234,6 +271,7 @@ export default class FirstStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
                       expectedDeals.push({
+                        depo: expectedDeals[expectedDeals.length - 1].depo,
                         currentToolCode: "SBER",
                         iterations: 0,
                         load: 0
@@ -242,7 +280,7 @@ export default class FirstStep extends React.Component {
                       context.setState({ data });
                     }}
                   >
-                    Добавить
+                    Добавить инструмент
                   </Button>
                 </div>
               </div>
@@ -252,20 +290,34 @@ export default class FirstStep extends React.Component {
                 Регистр сделок
               </div>
 
-              <div className="stats-container">
-                <p>
-                  Общая дохолность<br />
-                  <span style={{ color: "#65c565" }}>0,38%</span>
-                </p>
-                <p>
-                  Выполнение плана<br />
-                  <span style={{ color: "#5a6dce" }}>76%</span>
-                </p>
-                <p>
-                  Внутридневной КОД<br />
-                  <span style={{ color: "#65c565" }}>0,095%</span>
-                </p>
-              </div>
+                {(() => {
+                  const result = deals.reduce((acc, curr) => acc + curr.result, 0);
+                  /** КОД */
+                  const averageResult = result / deals.length;
+                  
+                  return (
+                    <div className="stats-container"> 
+                      <p>
+                        Общая дохолность<br />
+                        <span style={{ color: "#65c565" }}>
+                          {result}%
+                        </span>
+                      </p>
+                      <p>
+                        Выполнение плана<br />
+                        <span style={{ color: "#5a6dce" }}>
+                          {~~(averageResult / state.dailyRate) * 100}%
+                        </span>
+                      </p>
+                      <p>
+                        Внутридневной КОД<br />
+                        <span style={{ color: "#65c565" }}>
+                          {round(averageResult, 1)}%
+                        </span>
+                      </p>
+                    </div>
+                  )
+                })()}
 
 
               <div className="transaction-register-table">
@@ -303,7 +355,8 @@ export default class FirstStep extends React.Component {
                               const currentToolCode = currentTool.code;
 
                               const data = cloneDeep(state.data);
-                              data[currentRowIndex].deals[index].currentToolCode = currentToolCode;
+                              data[currentRowIndex].deals[index].currentToolCode  = currentToolCode;
+                              data[currentRowIndex].deals[index].currentToolIndex = currentToolIndex;
                               context.setState({ data });
                             }}
                             disabled={toolsLoading}
@@ -487,7 +540,6 @@ export default class FirstStep extends React.Component {
                           <div className="check-box-container check-box-container--second">
                             <Checkbox
                               key={breakout}
-                              // ~~
                               checked={breakout}
                               onChange={ val => {
                                 let value = val.target.checked;
@@ -531,15 +583,17 @@ export default class FirstStep extends React.Component {
               <div className={"add-btn-container"}>
                 <Button
                   className="trade-log-button"
+                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals}
                   onClick={() => {
                     const data = cloneDeep(state.data);
                     const deals = cloneDeep(data[currentRowIndex].deals);
                     deals.push(cloneDeep(context.dealTemplate));
                     data[currentRowIndex].deals = deals;
                     context.setState({ data });
+                    console.log(deals.filter(item => item < 0));
                   }}
                 >
-                  Добавить
+                  Добавить сделку
                 </Button>
               </div>
             </div>
