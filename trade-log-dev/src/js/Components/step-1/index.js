@@ -120,7 +120,14 @@ export default class FirstStep extends React.Component {
                             onBlur={ val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].expectedDeals[index].depo = val;
-                              context.setState({ data })
+                              
+                              if (index === 0) {
+                                data[currentRowIndex].expectedDeals.map((item, index) => {
+                                  item.depo = val;
+                                })
+                                context.setState({ data })
+                              }
+                              else context.setState({ data })
                             }}
                           />
                           {/* Торговый инструмент */}
