@@ -54,18 +54,6 @@ export default class FourthStep extends React.Component {
             archetypesWork, 
           } = technology;
 
-          const {
-            transactionTimeChange,
-            noneWithdrawPendingApplications,
-            noReenterAfterClosingStopLoss,
-            noDisablingRobot,
-            inputVolumeControl,
-            makeFaniCalculate,
-            enterResultsInFani,
-            screenshotTransactions,
-            keyBehavioralPatternsIdentify,
-          } = practiceWorkTasks;
-
           return (
             <div className="fourth-step">
               <div className="title">
@@ -194,7 +182,7 @@ export default class FourthStep extends React.Component {
                           const data = cloneDeep(state.data);
                           const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
                           customTechnology.push({
-                            name: "Новая технология " + customTechnology.length,
+                            name: "Новая технология " + (customTechnology.length + 1),
                             value: ""
                           });
                           data[currentRowIndex].customTechnology = customTechnology;
@@ -266,7 +254,6 @@ export default class FourthStep extends React.Component {
                         )
                       })}
                     </div>
-
                   </div>
                 <div className="fourth-step-add-button-container">
                   <Button
@@ -275,7 +262,7 @@ export default class FourthStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
                       customPracticeWorkTasks.push({
-                        name:  "Новая задача " +  customPracticeWorkTasks.length,
+                        name:  "Новая задача " +  (customPracticeWorkTasks.length + 1),
                         value: ""
                       });
                       data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;

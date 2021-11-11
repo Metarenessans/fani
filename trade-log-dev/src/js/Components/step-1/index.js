@@ -120,7 +120,7 @@ export default class FirstStep extends React.Component {
                             onBlur={ val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].expectedDeals[index].depo = val;
-                              
+
                               if (index === 0) {
                                 data[currentRowIndex].expectedDeals.map((item, index) => {
                                   item.depo = val;
@@ -313,13 +313,14 @@ export default class FirstStep extends React.Component {
                       <p>
                         Выполнение плана<br />
                         <span style={{ color: "#5a6dce" }}>
-                          {~~(averageResult / state.dailyRate) * 100}%
+                          {(averageResult / state.dailyRate) * 100}%
                         </span>
                       </p>
                       <p>
                         Внутридневной КОД<br />
                         <span style={{ color: "#65c565" }}>
-                          {round(averageResult, 1)}%
+                          {averageResult}%
+                          {/* {round(averageResult, 4)}% */}
                         </span>
                       </p>
                     </div>
