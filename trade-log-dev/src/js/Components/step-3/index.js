@@ -43,12 +43,12 @@ export default class ThirdStep extends React.Component {
         {context => {
           const { state } = context;
           const { data, currentRowIndex } = state
-          const { reportMonitor } = data[currentRowIndex];
+          const { reportMonitor, deals} = data[currentRowIndex];
           return (
             <div {...this.props} className="third-step">
               <ResultPanel/>
               <div className="title">
-                Мониторинг рапорта
+                Мониторинг раппорта
               </div>
 
               <div className="third-step-table">
@@ -64,10 +64,10 @@ export default class ThirdStep extends React.Component {
                     </div>
                   </div>
                   <div className="table-extra-column-container scroll-hide">
-                    {reportMonitor.map((item, index) => {
-                      const { baseTrendDirection } = item;
+                    {deals.map((item, index) => {
+                      const { baseTrendDirection } = reportMonitor[index];
                       return (
-                        <div className="table-extra-column">
+                        <div className="table-extra-column" key={index}>
                           <div className="table-extra-column-key">
                             {(index + 1) + " " + "сделка"}
                           </div>
@@ -113,10 +113,10 @@ export default class ThirdStep extends React.Component {
                     </div>
                   </div>
                   <div className="table-extra-column-container scroll-hide">
-                    {reportMonitor.map((item, index) => {
-                      const { momentDirection } = item;
+                    {deals.map((item, index) => {
+                      const { momentDirection } = reportMonitor[index];
                       return (
-                        <div className="table-extra-column">
+                        <div className="table-extra-column" key={index}>
                           <div className="table-extra-column-value">
                             <div className="table-extra-column-value-row">
                               <p>Long</p>
@@ -158,10 +158,10 @@ export default class ThirdStep extends React.Component {
                     </div>
                   </div>
                   <div className="table-extra-column-container scroll-hide">
-                    {reportMonitor.map((item, index) => {
-                      const { doubts } = item;
+                    {deals.map((item, index) => {
+                      const { doubts } = reportMonitor[index];
                       return (
-                        <div className="table-extra-column">
+                        <div className="table-extra-column" key={index}>
                           <div className="table-extra-column-value">
                             <div className="table-extra-column-value-row">
                               <p>Нет</p>
@@ -201,12 +201,12 @@ export default class ThirdStep extends React.Component {
                     <p>Результат сделки</p>
                   </div>
                   <div className="table-extra-column-container">
-                    {reportMonitor.map((item, index) => {
-                      const { result } = reportMonitor[index]
+                    {deals.map((item, index) => {
+                      const { result } = item
                       return (
-                        <div className="table-extra-column">
+                        <div className="table-extra-column" key={index}>
                           <div className="table-extra-column-value table-extra-column-value--result">
-                            <span className={clsx("circle", result ? "positive" : "negative")} />
+                            <span className={clsx("circle", result >= 0 ? "positive" : "negative")} />
                           </div>
                         </div>
                       )
