@@ -157,7 +157,7 @@ export default class App extends React.Component {
 
 
       /** 
-       * Флаг ограничения на лимит убыточных сделок
+       * Флаг ограничения убыточных сделок
        * 
        * @type {boolean}
        */
@@ -648,7 +648,7 @@ export default class App extends React.Component {
                       // <div className="trade-slider" id="trade-slider">
                       <div className="trade-slider-active" id="trade-slider">
                         <div className="trade-slider-container">
-                          
+
                           <div className="trade-slider-top">
                             <Button
                               className={"day-button"}
