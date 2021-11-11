@@ -16,46 +16,48 @@ export default function TablePanel() {
     <StatsPanel className="table-panel" title="Пошаговый план проработки">
       <div className="table-panel-table-wrapper">
         <table>
-          <tr>
-            <th>Дата</th>
-            <th>День</th>
-            <th>Результат</th>
-            <th>Выполнение плана</th>
-            <th>КОД</th>
-            <th></th>
-          </tr>
-          {state.data.map((day, index) => {
-            const { deals } = day;
-            const result = deals.reduce((acc, curr) => acc + curr.result, 0);
-            /** КОД */
-            const averageResult = result / deals.length;
-            return (
-              <tr key={index}>
-                <td>{formatUnitTime(day.date)}</td>
-                <td>{index + 1}</td>
-                <td>{result}%</td>
-                {/* ~~ Преобразует NaN в 0 */}
-                <td>{~~(averageResult / state.dailyRate) * 100}%</td>
-                <td>{round(averageResult, 1)}%</td>
-                <td>
-                  <Button
-                    className="custom-btn"
-                    onClick={async () => {
-                      // TODO: Заменить на вызов какой-нибудь `openConfig()`
-                      await context.setStateAsync({ currentRowIndex: index, step: 1 });
-                      // TODO: убрать лишнее
-                      document.querySelector(".trade-slider").classList.add("trade-slider-active");
-                      document.querySelector(".dashboard").classList.add("dashboard-active");
-                      setCurrentRowIndex(index);
-                      scrollTop();
-                    }}
-                  >
-                    Редактировать
-                  </Button>
-                </td>
-              </tr>
-            )
-          })}
+          <tbody>
+            <tr>
+              <th>Дата</th>
+              <th>День</th>
+              <th>Результат</th>
+              <th>Выполнение плана</th>
+              <th>КОД</th>
+              <th></th>
+            </tr>
+            {state.data.map((day, index) => {
+              const { deals } = day;
+              const result = deals.reduce((acc, curr) => acc + curr.result, 0);
+              /** КОД */
+              const averageResult = result / deals.length;
+              return (
+                <tr key={index}>
+                  <td>{formatUnitTime(day.date)}</td>
+                  <td>{index + 1}</td>
+                  <td>{result}%</td>
+                  {/* ~~ Преобразует NaN в 0 */}
+                  <td>{~~(averageResult / state.dailyRate) * 100}%</td>
+                  <td>{round(averageResult, 1)}%</td>
+                  <td>
+                    <Button
+                      className="custom-btn"
+                      onClick={async () => {
+                        // TODO: Заменить на вызов какой-нибудь `openConfig()`
+                        await context.setStateAsync({ currentRowIndex: index, step: 1 });
+                        // TODO: убрать лишнее
+                        document.querySelector(".trade-slider").classList.add("trade-slider-active");
+                        document.querySelector(".dashboard").classList.add("dashboard-active");
+                        setCurrentRowIndex(index);
+                        scrollTop();
+                      }}
+                    >
+                      Редактировать
+                    </Button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
         </table>
       </div>
       <Button 

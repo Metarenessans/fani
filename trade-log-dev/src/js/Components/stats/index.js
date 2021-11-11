@@ -201,47 +201,49 @@ export default function Stats() {
       {/* Активная проработка */}
       <StatsPanel className="panel5" title="Активная проработка">
         <table>
-          <tr>
-            <th>Задача</th>
-            <th>Приоритет</th>
-            <th>Выполнено</th>
-          </tr>
-          <tr>
-            <td>Изменить время входа в сделку</td>
-            <td>
-              <Progress percent={50} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не снимать отложенные заявки, выставленные до этого</td>
-            <td>
-              <Progress percent={25} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не перезаходить после закрытия по stop-loss</td>
-            <td>
-              <Progress percent={15} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не выключать робот</td>
-            <td>
-              <Progress percent={5} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Задача</th>
+              <th>Приоритет</th>
+              <th>Выполнено</th>
+            </tr>
+            <tr>
+              <td>Изменить время входа в сделку</td>
+              <td>
+                <Progress percent={50} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не снимать отложенные заявки, выставленные до этого</td>
+              <td>
+                <Progress percent={25} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не перезаходить после закрытия по stop-loss</td>
+              <td>
+                <Progress percent={15} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не выключать робот</td>
+              <td>
+                <Progress percent={5} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+          </tbody>
         </table>
       </StatsPanel>
 

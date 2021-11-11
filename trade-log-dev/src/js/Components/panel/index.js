@@ -15,9 +15,7 @@ const propTypes = {
    * 
    * @type {string}
    */
-  title: PropTypes.string.isRequired,
-
-  children: PropTypes.element.isRequired
+  title: PropTypes.string.isRequired
 };
 
 /** @param {propTypes} */

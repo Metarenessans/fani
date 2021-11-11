@@ -7,7 +7,7 @@ import { StateContext } from "../../../App"
 import Stack        from "../../../../../../common/components/stack"
 import NumericInput from "../../../../../../common/components/numeric-input"
 
-import StatsPanel   from "../../panel"
+import Panel        from "../../panel"
 import InputWrapper from "../../input-wrapper"
 
 import "./style.scss"
@@ -16,7 +16,7 @@ export default function ControlPanel() {
   const context = useContext(StateContext);
   const { state } = context;
   return (
-    <StatsPanel className="control-panel" title="Панель управления">
+    <Panel className="control-panel" title="Панель управления">
       <InputWrapper
         label="Дневной план"
         labelCentered={true}
@@ -60,6 +60,6 @@ export default function ControlPanel() {
         </InputWrapper>
 
       </Stack>
-    </StatsPanel>
+    </Panel>
   )
 }
