@@ -224,12 +224,41 @@ export default class FourthStep extends React.Component {
                               <Checkbox
                                 className="green"
                                 checked={practiceWorkTasks[key]}
-                                checked={transactionTimeChange}
                                 onChange={val => {
                                   let value = val.target.checked;
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].practiceWorkTasks.transactionTimeChange = value;
+                                  data[currentRowIndex].practiceWorkTasks[key] = value;
                                   context.setState({ data });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+
+                      {customPracticeWorkTasks.map((item, index) => {
+                        const { name, value } = customPracticeWorkTasks[index]
+                        return (
+                          <div className="fourth-step-table-row-container-row" key={index}>
+                            <Input
+                              defaultValue={name}
+                              onBlur={e => {
+                                let val = e.target.value;
+                                const dataClone = [...customPracticeWorkTasks];
+                                dataClone[index]["name"] = val
+                                this.setState({ customPracticeWorkTasks: dataClone });
+                              }}
+                            />
+                            <div className="fourth-step-table-check-box">
+                              <Checkbox
+                                className="green"
+                                key={value}
+                                checked={value}
+                                onChange={(val) => {
+                                  let value = val.target.checked;
+                                  const dataClone = [...customPracticeWorkTasks];
+                                  dataClone[index]["value"] = value;
+                                  this.setState({ customPracticeWorkTasks: dataClone });
                                 }}
                               />
                             </div>
@@ -238,35 +267,6 @@ export default class FourthStep extends React.Component {
                       })}
                     </div>
 
-                    {customPracticeWorkTasks.map((item, index) => {
-                      const { name, value } = customPracticeWorkTasks[index]
-                      return (
-                        <div className="fourth-step-table-row-container-row" key={index}>
-                          <Input
-                            defaultValue={name}
-                            onBlur={e => {
-                              let val = e.target.value;
-                              const dataClone = [...customPracticeWorkTasks];
-                              dataClone[index]["name"] = val
-                              this.setState({ customPracticeWorkTasks: dataClone });
-                            }}
-                          />
-                          <div className="fourth-step-table-check-box">
-                            <Checkbox
-                              className="green"
-                              key={value}
-                              checked={value}
-                              onChange={(val) => {
-                                let value = val.target.checked;
-                                const dataClone = [...customPracticeWorkTasks];
-                                dataClone[index]["value"] = value;
-                                this.setState({ customPracticeWorkTasks: dataClone });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
                   </div>
                 <div className="fourth-step-add-button-container">
                   <Button
