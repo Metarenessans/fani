@@ -204,18 +204,18 @@ export default class FourthStep extends React.Component {
                     </div>
                     
                     <div className="fourth-step-table-row-container">
-                      {Object.keys(practiceWorkTasks).map((key, index) => {
+                      {Object.keys(practiceWorkTasks).map((taskName, index) => {
                         return (
                           <div className="fourth-step-table-row-container-row" key={index}>
-                            <p>{key}</p>
+                            <p>{taskName}</p>
                             <div className="fourth-step-table-check-box">
                               <Checkbox
                                 className="green"
-                                checked={practiceWorkTasks[key]}
+                                checked={practiceWorkTasks[taskName]}
                                 onChange={val => {
                                   let value = val.target.checked;
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].practiceWorkTasks[key] = value;
+                                  data[currentRowIndex].practiceWorkTasks[taskName] = value;
                                   context.setState({ data });
                                 }}
                               />

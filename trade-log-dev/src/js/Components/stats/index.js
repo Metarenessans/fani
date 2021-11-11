@@ -207,42 +207,43 @@ export default function Stats() {
               <th>Приоритет</th>
               <th>Выполнено</th>
             </tr>
-            <tr>
-              <td>Изменить время входа в сделку</td>
-              <td>
-                <Progress percent={50} />
-              </td>
-              <td>
-                <Checkbox />
-              </td>
-            </tr>
-            <tr>
-              <td>Не снимать отложенные заявки, выставленные до этого</td>
-              <td>
-                <Progress percent={25} />
-              </td>
-              <td>
-                <Checkbox />
-              </td>
-            </tr>
-            <tr>
-              <td>Не перезаходить после закрытия по stop-loss</td>
-              <td>
-                <Progress percent={15} />
-              </td>
-              <td>
-                <Checkbox />
-              </td>
-            </tr>
-            <tr>
-              <td>Не выключать робот</td>
-              <td>
-                <Progress percent={5} />
-              </td>
-              <td>
-                <Checkbox />
-              </td>
-            </tr>
+            {(() => {
+              /** @type {Object.<string, number>} */
+              const tasks = {};
+              // Количество зачеканных задач на отработку во всех днях
+              let tasksCount = 0;
+              
+              for (let day of data) {
+                const practiceWorkTasks = day?.practiceWorkTasks;
+                if (practiceWorkTasks) {
+                  Object.keys(practiceWorkTasks)
+                    // Оставляем только зачеканные задачи
+                    .filter(key => practiceWorkTasks[key])
+                    .forEach(taskName => {
+                      if (!tasks[taskName]) {
+                        tasks[taskName] = 0;
+                      }
+                      tasks[taskName]++;
+                      tasksCount++;
+                    });
+                }
+              }
+
+              return Object.keys(tasks)
+                // Сортировка по убыванию частотности
+                .sort((l, r) => tasks[r] - tasks[l])
+                .map((taskName, index) =>
+                  <tr key={index}>
+                    <td>{taskName}</td>
+                    <td>
+                      <Progress percent={tasks[taskName] / tasksCount * 100} />
+                    </td>
+                    <td>
+                      <Checkbox disabled />
+                    </td>
+                  </tr>
+                );
+            })()}
           </tbody>
         </table>
       </StatsPanel>

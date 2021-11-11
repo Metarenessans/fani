@@ -124,6 +124,8 @@ const dayTemplate = {
 
   /**
    * Практические задачи на отработку
+   * 
+   * @type {Object.<string, boolean>}
    */
   practiceWorkTasks: {
     "Изменить время на сделку":                            false,
@@ -640,33 +642,12 @@ export default class App extends React.Component {
                 <div className="container">
                   {
                     step === 0
-                    ? (
-                      <>
-                        <Stats />
-
-                        <div className="add-button-container">
-                          <Button
-                            className="custom-btn"
-                            onClick={() => {
-                              const dataClone = [...rowData];
-                              dataClone.push({ ...rowData });
-                              dataClone[dataClone.length - 1].practiceStep = dataClone[0].practiceStep
-                              this.setState({ rowData: dataClone });
-                            }}
-                            style={ document.querySelector(".trade-slider-active") && ({display: "none"}) }
-                          >
-                            <PlusOutlined aria-label="Добавить день" />
-                            Добавить день
-                          </Button>
-                        </div>
-                      </>
-                    )
+                    ? <Stats />
                     : (
                       // TODO: это вернуть
                       // <div className="trade-slider" id="trade-slider">
                       <div className="trade-slider-active" id="trade-slider">
                         <div className="trade-slider-container">
-
 
                           <div className="trade-slider-top">
                             <Button
