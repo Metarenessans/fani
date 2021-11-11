@@ -116,19 +116,75 @@ export default function Stats() {
           <dl className="association-list">
             <div>
               <dt>Нормальных состояний</dt>
-              <dd>50%</dd>
+              <dd>
+                {(() => {
+                  let total = 0;
+                  let checked = 0;
+                  for (let day of data) {
+                    for (let deal of day.deals) {
+                      checked += deal.emotionalStates.positive.length;
+                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
+                      total += 4;
+                    }
+                  }
+                  return round(checked / total * 100, 1);
+                })()}
+                %
+              </dd>
             </div>
             <div>
               <dt>Искаженных состояний</dt>
-              <dd>0%</dd>
+              <dd>
+                {(() => {
+                  let total = 0;
+                  let checked = 0;
+                  for (let day of data) {
+                    for (let deal of day.deals) {
+                      checked += deal.emotionalStates.negative.length;
+                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
+                      total += 9;
+                    }
+                  }
+                  return round(checked / total * 100, 1);
+                })()}
+                %
+              </dd>
             </div>
             <div>
               <dt>Нормальных драйверов</dt>
-              <dd>0%</dd>
+              <dd>
+                {(() => {
+                  let total = 0;
+                  let checked = 0;
+                  for (let day of data) {
+                    for (let deal of day.deals) {
+                      checked += deal.motives.positive.length;
+                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
+                      total += 6;
+                    }
+                  }
+                  return round(checked / total * 100, 1);
+                })()}
+                %
+              </dd>
             </div>
             <div>
               <dt>Искаженных драйверов</dt>
-              <dd>0</dd>
+              <dd>
+                {(() => {
+                  let total = 0;
+                  let checked = 0;
+                  for (let day of data) {
+                    for (let deal of day.deals) {
+                      checked += deal.motives.negative.length;
+                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
+                      total += 3;
+                    }
+                  }
+                  return round(checked / total * 100, 1);
+                })()}
+                %
+              </dd>
             </div>
             <div>
               <dt>Срабатываний раппорта</dt>
@@ -145,47 +201,49 @@ export default function Stats() {
       {/* Активная проработка */}
       <StatsPanel className="panel5" title="Активная проработка">
         <table>
-          <tr>
-            <th>Задача</th>
-            <th>Приоритет</th>
-            <th>Выполнено</th>
-          </tr>
-          <tr>
-            <td>Изменить время входа в сделку</td>
-            <td>
-              <Progress percent={50} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не снимать отложенные заявки, выставленные до этого</td>
-            <td>
-              <Progress percent={25} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не перезаходить после закрытия по stop-loss</td>
-            <td>
-              <Progress percent={15} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
-          <tr>
-            <td>Не выключать робот</td>
-            <td>
-              <Progress percent={5} />
-            </td>
-            <td>
-              <Checkbox />
-            </td>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Задача</th>
+              <th>Приоритет</th>
+              <th>Выполнено</th>
+            </tr>
+            <tr>
+              <td>Изменить время входа в сделку</td>
+              <td>
+                <Progress percent={50} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не снимать отложенные заявки, выставленные до этого</td>
+              <td>
+                <Progress percent={25} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не перезаходить после закрытия по stop-loss</td>
+              <td>
+                <Progress percent={15} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+            <tr>
+              <td>Не выключать робот</td>
+              <td>
+                <Progress percent={5} />
+              </td>
+              <td>
+                <Checkbox />
+              </td>
+            </tr>
+          </tbody>
         </table>
       </StatsPanel>
 
