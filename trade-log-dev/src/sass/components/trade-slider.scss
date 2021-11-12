@@ -10,7 +10,7 @@
   &-active {
     transform: translateX(0);
   }
-  
+
   .day-button {
     background-color: inherit;
   }
@@ -193,6 +193,11 @@
     font-size: 1.4em;
 
     gap: 1em;
+
+    .trade-log-button--slider {
+      border-radius: 17px;
+      min-width:    8.1em;
+    }
   }
 }
 
