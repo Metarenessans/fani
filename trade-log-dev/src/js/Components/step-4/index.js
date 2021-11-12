@@ -189,6 +189,18 @@ export default class FourthStep extends React.Component {
                           context.setState({ data });
                         }}
                       >Добавить технологию</Button>
+
+                      <Button 
+                        className="trade-log-button"
+                        disabled={customTechnology.length === 0}
+                        onClick={() => {
+                          const data = cloneDeep(state.data);
+                          const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
+                          customTechnology.splice(customTechnology.length - 1, 1)
+                          data[currentRowIndex].customTechnology = customTechnology;
+                          context.setState({ data });
+                        }}
+                      >Удалить технологию</Button>
                     </div>
                 </div>
                 {/* col */}
@@ -269,6 +281,18 @@ export default class FourthStep extends React.Component {
                       context.setState({ data });
                     }}
                   >Добавить задачу</Button>
+
+                  <Button
+                    className="trade-log-button"
+                    disabled={customPracticeWorkTasks.length === 0}
+                    onClick={() => {
+                      const data = cloneDeep(state.data);
+                      const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
+                      customPracticeWorkTasks.splice(customPracticeWorkTasks.length - 1 ,1)
+                      data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;
+                      context.setState({ data });
+                    }}
+                  >Удалить задачу</Button>
                 </div>
                 </div>
                 {/* col */}
