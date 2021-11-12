@@ -67,7 +67,7 @@ const dayTemplate = {
    * 
    * @property {number}
    */
-  date: 0,
+  date: Number(new Date()),
 
   /**
    * @typedef ExpectedDeal

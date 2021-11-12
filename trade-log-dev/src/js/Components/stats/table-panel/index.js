@@ -1,9 +1,10 @@
 import React, { useContext } from "react"
-import { Button } from "antd"
+import { Button, DatePicker } from "antd"
+import locale from "antd/es/date-picker/locale/ru_RU"
+import moment from "moment"
 import { cloneDeep } from "lodash"
 import round from "../../../../../../common/utils/round"
 import StatsPanel from "../../panel"
-import formatUnitTime from "./format-unix-time"
 
 import { StateContext } from "../../../App"
 
@@ -32,7 +33,19 @@ export default function TablePanel() {
               const averageResult = result / deals.length;
               return (
                 <tr key={index}>
-                  <td>{formatUnitTime(day.date)}</td>
+                  <td>
+                    <DatePicker
+                      locale={locale}
+                      format="DD.MM.YYYY"
+                      value={moment(day.date)}
+                      onChange={(moment, formatted) => {
+                        const { currentRowIndex } = state;
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].date = Number(moment);
+                        context.setState({ data })
+                      }}
+                    />
+                  </td>
                   <td>{index + 1}</td>
                   <td>{result}%</td>
                   {/* ~~ Преобразует NaN в 0 */}
