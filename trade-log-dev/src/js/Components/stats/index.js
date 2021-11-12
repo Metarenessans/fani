@@ -36,54 +36,68 @@ export default function Stats() {
             </div>
             <div>
               <dt>Сделок</dt>
-              <dd>{data.reduce((acc, day) => acc + day.deals.length, 0)}</dd>
+              <dd>
+                {data.reduce((acc, day) => {
+                  const deals = day.deals.filter(deal => deal.result !== 0);
+                  return acc + deals.length;
+                }, 0)}
+              </dd>
             </div>
             <div>
               <dt>Общий результат</dt>
-              <dd>{
-                data.reduce((acc, day) =>
-                  acc + day.deals.reduce((acc, deal) => acc + deal.result, 0), 0
-                )
-              }%</dd>
+              <dd>
+                {(() => {
+                  let sum = 0;
+                  for (let day of data) {
+                    const deals = day.deals.filter(deal => deal.result !== 0);
+                    const totalResult = deals
+                      .map(deal => deal.result)
+                      .reduce((acc, curr) => acc + curr, 0);
+                    
+                    sum += totalResult;
+                  }
+                  return sum + "%"
+                })()}
+              </dd>
             </div>
             <div>
               <dt>Позиций Long</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.isLong).length, 0
-                  )
-                }
+                {data.reduce((acc, day) => {
+                  const deals = day.deals
+                    .filter(deal => deal.result !== 0)
+                    .filter(deal => deal.isLong);
+                  return acc + deals.length;
+                }, 0)}
               </dd>
             </div>
             <div>
               <dt>Позиций Short</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => !deal.isLong).length, 0
-                  )
-                }
+                {data.reduce((acc, day) => {
+                  const deals = day.deals
+                    .filter(deal =>  deal.result !== 0)
+                    .filter(deal => !deal.isLong);
+                  return acc + deals.length;
+                }, 0)}
               </dd>
             </div>
             <div>
               <dt>Положительных сделок</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.result > 0).length, 0
-                  )
-                }
+                {data.reduce((acc, day) =>
+                  acc + day.deals.filter(deal => deal.result > 0).length,
+                  0
+                )}
               </dd>
             </div>
             <div>
               <dt>Отрицательных сделок</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.result <= 0).length, 0
-                  )
-                }
+                {data.reduce((acc, day) =>
+                  acc + day.deals.filter(deal => deal.result < 0).length,
+                  0
+                )}
               </dd>
             </div>
             <div>
@@ -102,7 +116,7 @@ export default function Stats() {
               <dd>{(() => {
                 const negativeResults = data
                    .map(day => day.deals.flat())[0]
-                  ?.filter(deal => deal.result <= 0)
+                  ?.filter(deal => deal.result < 0)
                    .map(deal => deal.result)
 
                 return ~~round(average(negativeResults), 1);
