@@ -278,16 +278,29 @@ export default class FirstStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
                       expectedDeals.push({
-                        depo: expectedDeals[expectedDeals.length - 1].depo,
                         currentToolCode: "SBER",
-                        iterations: 0,
-                        load: 0
+                        depo:                 0,
+                        iterations:           0,
+                        load:                 0,
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
                     }}
                   >
                     Добавить инструмент
+                  </Button>
+                  <Button 
+                    className="trade-log-button"
+                    disabled={expectedDeals.length === 1}
+                    onClick={e => {
+                      const data = cloneDeep(state.data);
+                      let expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
+                      expectedDeals.splice(expectedDeals.length - 1, 1);
+                      data[currentRowIndex].expectedDeals = expectedDeals;
+                      context.setState({ data });
+                    }}
+                  >
+                    Удалить инструмент
                   </Button>
                 </div>
               </div>
@@ -598,10 +611,22 @@ export default class FirstStep extends React.Component {
                     deals.push(cloneDeep(context.dealTemplate));
                     data[currentRowIndex].deals = deals;
                     context.setState({ data });
-                    console.log(deals.filter(item => item < 0));
                   }}
                 >
                   Добавить сделку
+                </Button>
+                <Button
+                  className="trade-log-button"
+                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1}
+                  onClick={() => {
+                    const data = cloneDeep(state.data);
+                    let deals = cloneDeep(data[currentRowIndex].deals);
+                    deals.splice(deals.length - 1, 1);
+                    data[currentRowIndex].deals = deals;
+                    context.setState({ data });
+                  }}
+                >
+                  Удалить сделку
                 </Button>
               </div>
             </div>
