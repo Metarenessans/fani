@@ -1,13 +1,5 @@
 
 .first-step {
-  // .positive {
-  //   color: ;
-  // }
-
-  // .negative {
-
-  // }
-
   .pages-link-buttons {
     display: flex;
     align-items: center;
@@ -503,5 +495,35 @@
       }
     }
   }
+  .positive {
+    color: #06b606;
 
+    .numeric-input-wrap {
+      span {
+        input {
+          color: #06b606!important;
+        }
+        span {
+          color: #06b606!important;
+        }
+      }
+    }
+  }
+  .negative {
+    color: #ec161a;
+
+    .numeric-input-wrap {
+      span {
+        input {
+          color: #ec161a!important;
+        }
+        span {
+          color: #ec161a!important;
+        }
+      }
+    }
+  }
+  .default {
+    color: #5a6dce;
+  }
 }

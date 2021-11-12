@@ -311,28 +311,39 @@ export default class FirstStep extends React.Component {
               </div>
 
                 {(() => {
+                  const validDealsNumber = () => {
+                    let arr = [];
+                    deals.map((item, index) => {
+                      item.result !== 0 && arr.push(1)
+                    })
+                    return arr.length
+                  }
                   const result = deals.reduce((acc, curr) => acc + curr.result, 0);
                   /** КОД */
-                  const averageResult = result / deals.length;
-                  
+                  const averageResult = result / ~~validDealsNumber();
+                  const compliancingPlan = (result / (state.dailyRate || 0)) * 100;
                   return (
                     <div className="stats-container"> 
                       <p>
                         Общая дохолность<br />
-                        <span style={{ color: "#65c565" }}>
-                          {result}%
+                        <span className={clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
+                          {result || 0} %
                         </span>
                       </p>
                       <p>
                         Выполнение плана<br />
-                        <span style={{ color: "#5a6dce" }}>
-                          {(averageResult / state.dailyRate) * 100}%
+                        <span className={
+                          clsx(compliancingPlan >= 0 ? (compliancingPlan > 100 ? "positive" : "default") : "negative")
+                        }>
+                          {round(compliancingPlan, 0)} %
                         </span>
                       </p>
                       <p>
                         Внутридневной КОД<br />
-                        <span style={{ color: "#65c565" }}>
-                          {averageResult}%
+                        <span key={averageResult} className={
+                          clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
+                          {/* TODO: проблема с округлением, ретёрнит 0 */}
+                          {~~averageResult} %
                           {/* {round(averageResult, 4)}% */}
                         </span>
                       </p>
@@ -582,7 +593,7 @@ export default class FirstStep extends React.Component {
                           </div>
                         )}
 
-                        <div className="first-step-row-val first-step-row-val--final">
+                        <div className={clsx("first-step-row-val first-step-row-val--final", result > 0 ? "positive" : "negative")}>
                           <NumericInput
                             defaultValue={result || 0}
                             onBlur={ val => {
