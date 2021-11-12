@@ -54,18 +54,6 @@ export default class FourthStep extends React.Component {
             archetypesWork, 
           } = technology;
 
-          const {
-            transactionTimeChange,
-            noneWithdrawPendingApplications,
-            noReenterAfterClosingStopLoss,
-            noDisablingRobot,
-            inputVolumeControl,
-            makeFaniCalculate,
-            enterResultsInFani,
-            screenshotTransactions,
-            keyBehavioralPatternsIdentify,
-          } = practiceWorkTasks;
-
           return (
             <div className="fourth-step">
               <div className="title">
@@ -194,13 +182,25 @@ export default class FourthStep extends React.Component {
                           const data = cloneDeep(state.data);
                           const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
                           customTechnology.push({
-                            name: "Новая технология " + customTechnology.length,
+                            name: "Новая технология " + (customTechnology.length + 1),
                             value: ""
                           });
                           data[currentRowIndex].customTechnology = customTechnology;
                           context.setState({ data });
                         }}
                       >Добавить технологию</Button>
+
+                      <Button 
+                        className="trade-log-button"
+                        disabled={customTechnology.length === 0}
+                        onClick={() => {
+                          const data = cloneDeep(state.data);
+                          const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
+                          customTechnology.splice(customTechnology.length - 1, 1)
+                          data[currentRowIndex].customTechnology = customTechnology;
+                          context.setState({ data });
+                        }}
+                      >Удалить технологию</Button>
                     </div>
                 </div>
                 {/* col */}
@@ -266,7 +266,6 @@ export default class FourthStep extends React.Component {
                         )
                       })}
                     </div>
-
                   </div>
                 <div className="fourth-step-add-button-container">
                   <Button
@@ -275,13 +274,25 @@ export default class FourthStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
                       customPracticeWorkTasks.push({
-                        name:  "Новая задача " +  customPracticeWorkTasks.length,
+                        name:  "Новая задача " +  (customPracticeWorkTasks.length + 1),
                         value: ""
                       });
                       data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;
                       context.setState({ data });
                     }}
                   >Добавить задачу</Button>
+
+                  <Button
+                    className="trade-log-button"
+                    disabled={customPracticeWorkTasks.length === 0}
+                    onClick={() => {
+                      const data = cloneDeep(state.data);
+                      const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
+                      customPracticeWorkTasks.splice(customPracticeWorkTasks.length - 1 ,1)
+                      data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;
+                      context.setState({ data });
+                    }}
+                  >Удалить задачу</Button>
                 </div>
                 </div>
                 {/* col */}

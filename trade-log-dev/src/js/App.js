@@ -157,7 +157,7 @@ export default class App extends React.Component {
 
 
       /** 
-       * Флаг ограничения убыточных сделок
+       * Флаг ограничения на лимит убыточных сделок
        * 
        * @type {boolean}
        */

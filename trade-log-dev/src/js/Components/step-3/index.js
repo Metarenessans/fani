@@ -206,7 +206,7 @@ export default class ThirdStep extends React.Component {
                       return (
                         <div className="table-extra-column" key={index}>
                           <div className="table-extra-column-value table-extra-column-value--result">
-                            <span className={clsx("circle", result >= 0 ? "positive" : "negative")} />
+                            <span className={clsx("circle", result >= 0 ? (result == 0 ? "default" :"positive") : "negative")} />
                           </div>
                         </div>
                       )

@@ -120,7 +120,14 @@ export default class FirstStep extends React.Component {
                             onBlur={ val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].expectedDeals[index].depo = val;
-                              context.setState({ data })
+
+                              if (index === 0) {
+                                data[currentRowIndex].expectedDeals.map((item, index) => {
+                                  item.depo = val;
+                                })
+                                context.setState({ data })
+                              }
+                              else context.setState({ data })
                             }}
                           />
                           {/* Торговый инструмент */}
@@ -271,16 +278,29 @@ export default class FirstStep extends React.Component {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
                       expectedDeals.push({
-                        depo: expectedDeals[expectedDeals.length - 1].depo,
                         currentToolCode: "SBER",
-                        iterations: 0,
-                        load: 0
+                        depo:                 0,
+                        iterations:           0,
+                        load:                 0,
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
                     }}
                   >
                     Добавить инструмент
+                  </Button>
+                  <Button 
+                    className="trade-log-button"
+                    disabled={expectedDeals.length === 1}
+                    onClick={e => {
+                      const data = cloneDeep(state.data);
+                      let expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
+                      expectedDeals.splice(expectedDeals.length - 1, 1);
+                      data[currentRowIndex].expectedDeals = expectedDeals;
+                      context.setState({ data });
+                    }}
+                  >
+                    Удалить инструмент
                   </Button>
                 </div>
               </div>
@@ -291,28 +311,40 @@ export default class FirstStep extends React.Component {
               </div>
 
                 {(() => {
+                  const validDealsNumber = () => {
+                    let arr = [];
+                    deals.map((item, index) => {
+                      item.result !== 0 && arr.push(1)
+                    })
+                    return arr.length
+                  }
                   const result = deals.reduce((acc, curr) => acc + curr.result, 0);
                   /** КОД */
-                  const averageResult = result / deals.length;
-                  
+                  const averageResult = result / ~~validDealsNumber();
+                  const compliancingPlan = (result / (state.dailyRate || 0)) * 100;
                   return (
                     <div className="stats-container"> 
                       <p>
                         Общая дохолность<br />
-                        <span style={{ color: "#65c565" }}>
-                          {result}%
+                        <span className={clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
+                          {result || 0} %
                         </span>
                       </p>
                       <p>
                         Выполнение плана<br />
-                        <span style={{ color: "#5a6dce" }}>
-                          {~~(averageResult / state.dailyRate) * 100}%
+                        <span className={
+                          clsx(compliancingPlan >= 0 ? (compliancingPlan > 100 ? "positive" : "default") : "negative")
+                        }>
+                          {round(compliancingPlan, 0)} %
                         </span>
                       </p>
                       <p>
                         Внутридневной КОД<br />
-                        <span style={{ color: "#65c565" }}>
-                          {round(averageResult, 1)}%
+                        <span key={averageResult} className={
+                          clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
+                          {/* TODO: проблема с округлением, ретёрнит 0 */}
+                          {~~averageResult} %
+                          {/* {round(averageResult, 4)}% */}
                         </span>
                       </p>
                     </div>
@@ -561,7 +593,7 @@ export default class FirstStep extends React.Component {
                           </div>
                         )}
 
-                        <div className="first-step-row-val first-step-row-val--final">
+                        <div className={clsx("first-step-row-val first-step-row-val--final", result > 0 ? "positive" : "negative")}>
                           <NumericInput
                             defaultValue={result || 0}
                             onBlur={ val => {
@@ -590,10 +622,22 @@ export default class FirstStep extends React.Component {
                     deals.push(cloneDeep(context.dealTemplate));
                     data[currentRowIndex].deals = deals;
                     context.setState({ data });
-                    console.log(deals.filter(item => item < 0));
                   }}
                 >
                   Добавить сделку
+                </Button>
+                <Button
+                  className="trade-log-button"
+                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1}
+                  onClick={() => {
+                    const data = cloneDeep(state.data);
+                    let deals = cloneDeep(data[currentRowIndex].deals);
+                    deals.splice(deals.length - 1, 1);
+                    data[currentRowIndex].deals = deals;
+                    context.setState({ data });
+                  }}
+                >
+                  Удалить сделку
                 </Button>
               </div>
             </div>
