@@ -171,7 +171,9 @@ export default class App extends React.Component {
       allowedNumberOfUnprofitableDeals: 2,
 
       /** @type {dayTemplate[]} */
-      data: [],
+      data: [
+        cloneDeep(this.dayTemplate)
+      ],
 
       /**
        * Номер текущей страницы, где:
