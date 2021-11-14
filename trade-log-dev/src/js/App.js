@@ -145,6 +145,9 @@ const dayTemplate = {
 
 export default class App extends React.Component {
 
+  /** @type {{}} */
+  lastSavedState;
+
   constructor(props) {
     super(props);
 
@@ -647,241 +650,255 @@ export default class App extends React.Component {
                   {
                     step === 0
                     ? <Stats />
-                    : (
-                      // TODO: это вернуть
-                      // <div className="trade-slider" id="trade-slider">
-                      <div className="trade-slider-active" id="trade-slider">
-                        <div className="trade-slider-container">
+                    :
+                      ((() => {
+                        const hasChanged = this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
 
-                          <div className="trade-slider-top">
-                            <Button
-                              className={"day-button"}
-                              disabled={currentRowIndex == 0}
-                              onClick={e => {
-                                this.setState(prevState => ({
-                                  currentRowIndex: prevState.currentRowIndex - 1,
-                                  extraStep: false
-                                }))
-                              }}
-                            >
-                              {"<< Предыдущий день"}
-                            </Button>
-                            <div className="trade-slider-day-container">
-                              <p>День {currentRowIndex + 1}</p>
-                              <CrossButton
-                                className="cross-button"
-                                disabled={data.length == 1}
-                                onClick={() => {
-                                  document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                  document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                  let dataClone = [...data];
-                                  dataClone.splice(currentRowIndex, 1);
+                        return (
+                          // TODO: это вернуть
+                          // <div className="trade-slider" id="trade-slider">
+                          <div className="trade-slider-active" id="trade-slider">
+                            <div className="trade-slider-container">
 
-                                  this.setState({  
-                                    data: dataClone,
-                                    extraStep: false,
-                                    step:          1,
-                                    currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
-                                  });
-                                }}
-                              />
-                            </div>
-
-                            <Button
-                              className={"day-button"}
-                              disabled={currentRowIndex + 1 > data.length - 1}
-                              onClick={e => {
-                                this.setState(prevState => ({
-                                  currentRowIndex: prevState.currentRowIndex + 1,
-                                  extraStep: false
-                                }))
-                              }}
-                            >
-                              {"Следующий день >>"}
-                            </Button>
-                          </div>
-
-                          <div className="trade-slider-middle">
-                            
-                            <div 
-                              className={clsx("trade-slider-middle-step", step >= 1 && ("blue-after-element") )}
-                              onClick={e => this.setState({ step: 1, extraStep: false })}
-                            >
-                              <span className={clsx("step-logo", step >= 1 && "step-logo--active")}>
-                                Тс 1
-                              </span>
-
-                              <span className={clsx("step-name", step >= 1 && "step-name--active")}>
-                                Торговая<br/>стратегия
-                              </span>
-                            </div>
-
-                            <div 
-                              className={clsx("trade-slider-middle-step", step >= 2 && ("blue-after-element"))}
-                              onClick={ () => this.setState({ step: 2, extraStep: false })}
-                            >
-                              <span className={clsx("step-logo", step >= 2 && "step-logo--active")}>
-                                Тс 2
-                              </span>
-
-                              <span className={clsx("step-name", step >= 2 && "step-name--active")}>
-                                Торговое<br/> состояние
-                              </span>
-                            </div>
-
-                            <div
-                              className={clsx("trade-slider-middle-step", step >= 3 && ("blue-after-element"))}
-                              onClick={e => {
-                                this.setState({ step: 3, extraStep: false });
-                              }}
-                            >
-                              <span className={clsx("step-logo", step >= 3 && "step-logo--active")}>
-                                Тс 3
-                              </span>
-
-                              <span className={clsx("step-name", step >= 3 && "step-name--active")}>
-                                Торговая<br/>сонастройка
-                              </span>
-                            </div>
-
-                            <div
-                              className="trade-slider-middle-step"
-                              onClick={() => this.setState({ extraStep: true, step: 4 })}
-                            >
-                              <span className={clsx("step-logo", step == 4 && "step-logo--active")}>Тс 4</span>
-
-                              <span className={clsx("step-name", step == 4 && "step-name--active")}>
-                                Точечный<br/>самоанализа
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className={"trade-slider--main-page"}>
-                            <Button 
-                              className={"main-button"}
-                              onClick={async () => {
-                                await this.setStateAsync({ step: 0, extraStep: false });
-                                document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                document.querySelector(".dashboard").classList.remove("dashboard-active");
-                              }}
-                            >
-                              Главная страница
-                            </Button>
-                          </div>
-
-                          <div className="trade-slider-steps">
-                            {step == 1 && (
-                              <FirstStep
-                                key={data}
-                                data={data[currentRowIndex]}
-                                tools={this.state.tools}
-                                searchVal={this.state.searchVal}
-                                setSeachVal={ val => this.setState({searchVal: val}) }
-                                currentRowIndex={currentRowIndex}
-                                toolsLoading={this.state.toolsLoading}
-                              />
-                            )}
-
-                            {step == 2 && (
-                              <SecondStep/>
-                            )}
-
-                            <ThirdStep hidden={step != 3} />
-
-                            {step == 4 && (
-                              <FourthStep
-                                rowData={rowData}
-                                currentRowIndex={currentRowIndex}
-                                onChange={(prop, value, index) => {
-                                  const rowDataClone = [...rowData];
-                                  rowDataClone[index][prop] = value;
-                                  this.setState({ rowData: rowDataClone })
-                                }}
-                                onClickTab={(boolean) => this.setState({ extraStep: boolean })}
-                              />
-                            )}
-
-                          </div>
-
-                          <div className="trade-slider-bottom">
-                            {step == 1 && (
-                              <Button
-                                className="trade-log-button trade-log-button--slider"
-                                onClick={async e => {
-                                  await this.setStateAsync({ step: 0, extraStep: false });
-                                  document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                  document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                }}
-                                disabled={step > 1}
-                              >
-                                Закрыть
-                              </Button>
-                            )}
-                            
-                            {step > 1 && (
-                              <Button
-                                className="trade-log-button trade-log-button--slider"
-                                onClick={e => {
-                                  this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
-                                }}
-                                disabled={step == 1}
-                              >
-                                Назад
-                              </Button>
-                            )}
-
-                            {step < 4 && (
-                              <Button 
-                                className="trade-log-button trade-log-button--slider"
-                                onClick={e => {
-                                  this.setState(prevState => ({ step: prevState.step + 1 }))
-                                }}
-                                disabled={step == 4}
-                              >
-                                Далее
-                              </Button>
-                            )}
-
-                            {(() => {
-                              if (step == 4 && !extraSaved) {
-                                return (
-                                  <Button
-                                    className="trade-log-button trade-log-button--slider"
+                              <div className="trade-slider-top">
+                                <Button
+                                  className={"day-button"}
+                                  disabled={currentRowIndex == 0}
+                                  onClick={e => {
+                                    this.setState(prevState => ({
+                                      currentRowIndex: prevState.currentRowIndex - 1,
+                                      extraStep: false
+                                    }))
+                                  }}
+                                >
+                                  {"<< Предыдущий день"}
+                                </Button>
+                                <div className="trade-slider-day-container">
+                                  <p>День {currentRowIndex + 1}</p>
+                                  <CrossButton
+                                    className="cross-button"
+                                    disabled={data.length == 1}
                                     onClick={() => {
-                                      const dataClone = [...data];
-                                      dataClone[currentRowIndex].isSaved = true;
-                                      this.update(this.getTitle());
-                                      this.setState({
-                                        data: dataClone, 
-                                        extraSaved: true,
-                                      })
+                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                      let dataClone = [...data];
+                                      dataClone.splice(currentRowIndex, 1);
+
+                                      this.setState({  
+                                        data: dataClone,
+                                        extraStep: false,
+                                        step:          1,
+                                        currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                                      });
                                     }}
-                                  >
-                                    Сохранить
-                                  </Button>
-                                )
-                              }
-                              
-                              if (extraSaved) {
-                                return (
+                                  />
+                                </div>
+
+                                <Button
+                                  className={"day-button"}
+                                  disabled={currentRowIndex + 1 > data.length - 1}
+                                  onClick={e => {
+                                    this.setState(prevState => ({
+                                      currentRowIndex: prevState.currentRowIndex + 1,
+                                      extraStep: false
+                                    }))
+                                  }}
+                                >
+                                  {"Следующий день >>"}
+                                </Button>
+                              </div>
+
+                              <div className="trade-slider-middle">
+                                
+                                <div 
+                                  className={clsx("trade-slider-middle-step", step >= 1 && ("blue-after-element") )}
+                                  onClick={e => this.setState({ step: 1, extraStep: false })}
+                                >
+                                  <span className={clsx("step-logo", step >= 1 && "step-logo--active")}>
+                                    Тс 1
+                                  </span>
+
+                                  <span className={clsx("step-name", step >= 1 && "step-name--active")}>
+                                    Торговая<br/>стратегия
+                                  </span>
+                                </div>
+
+                                <div 
+                                  className={clsx("trade-slider-middle-step", step >= 2 && ("blue-after-element"))}
+                                  onClick={ () => this.setState({ step: 2, extraStep: false })}
+                                >
+                                  <span className={clsx("step-logo", step >= 2 && "step-logo--active")}>
+                                    Тс 2
+                                  </span>
+
+                                  <span className={clsx("step-name", step >= 2 && "step-name--active")}>
+                                    Торговое<br/> состояние
+                                  </span>
+                                </div>
+
+                                <div
+                                  className={clsx("trade-slider-middle-step", step >= 3 && ("blue-after-element"))}
+                                  onClick={e => {
+                                    this.setState({ step: 3, extraStep: false });
+                                  }}
+                                >
+                                  <span className={clsx("step-logo", step >= 3 && "step-logo--active")}>
+                                    Тс 3
+                                  </span>
+
+                                  <span className={clsx("step-name", step >= 3 && "step-name--active")}>
+                                    Торговая<br/>сонастройка
+                                  </span>
+                                </div>
+
+                                <div
+                                  className="trade-slider-middle-step"
+                                  onClick={() => this.setState({ extraStep: true, step: 4 })}
+                                >
+                                  <span className={clsx("step-logo", step == 4 && "step-logo--active")}>Тс 4</span>
+
+                                  <span className={clsx("step-name", step == 4 && "step-name--active")}>
+                                    Точечный<br/>самоанализа
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className={"trade-slider--main-page"}>
+                                <Button 
+                                  className={"main-button"}
+                                  onClick={async e => {
+                                    if (hasChanged) {
+                                      dialogAPI.open("close-slider-dialog", e.target);
+                                    }
+                                    else {
+                                      await this.setStateAsync({ step: 0, extraStep: false });
+                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                    }
+                                  }}
+                                >
+                                  Главная страница
+                                </Button>
+                              </div>
+
+                              <div className="trade-slider-steps">
+                                {step == 1 && (
+                                  <FirstStep
+                                    key={data}
+                                    data={data[currentRowIndex]}
+                                    tools={this.state.tools}
+                                    searchVal={this.state.searchVal}
+                                    setSeachVal={ val => this.setState({searchVal: val}) }
+                                    currentRowIndex={currentRowIndex}
+                                    toolsLoading={this.state.toolsLoading}
+                                  />
+                                )}
+
+                                {step == 2 && (
+                                  <SecondStep/>
+                                )}
+
+                                <ThirdStep hidden={step != 3} />
+
+                                {step == 4 && (
+                                  <FourthStep
+                                    rowData={rowData}
+                                    currentRowIndex={currentRowIndex}
+                                    onChange={(prop, value, index) => {
+                                      const rowDataClone = [...rowData];
+                                      rowDataClone[index][prop] = value;
+                                      this.setState({ rowData: rowDataClone })
+                                    }}
+                                    onClickTab={(boolean) => this.setState({ extraStep: boolean })}
+                                  />
+                                )}
+
+                              </div>
+
+                              <div className="trade-slider-bottom">
+                                {step == 1 && (
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
-                                    onClick={ e => {
-                                      this.setState({ step: 1, extraStep: false, extraSaved: false, changed: false});
+                                    onClick={async e => {
+                                      await this.setStateAsync({ step: 0, extraStep: false });
                                       document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                       document.querySelector(".dashboard").classList.remove("dashboard-active");
                                     }}
+                                    disabled={step > 1}
                                   >
                                     Закрыть
                                   </Button>
-                                )
-                              }
-                            })()}
-                          </div>
+                                )}
+                                
+                                {step > 1 && (
+                                  <Button
+                                    className="trade-log-button trade-log-button--slider"
+                                    onClick={e => {
+                                      this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
+                                    }}
+                                    disabled={step == 1}
+                                  >
+                                    Назад
+                                  </Button>
+                                )}
 
-                        </div>
-                      </div>
-                    )
+                                {step < 4 && (
+                                  <Button 
+                                    className="trade-log-button trade-log-button--slider"
+                                    onClick={e => {
+                                      this.setState(prevState => ({ step: prevState.step + 1 }))
+                                    }}
+                                    disabled={step == 4}
+                                  >
+                                    Далее
+                                  </Button>
+                                )}
+
+                                {step == 4 && hasChanged
+                                  ? (
+                                      <Button
+                                        className={clsx(
+                                          "trade-log-button",
+                                          "trade-log-button--slider",
+                                          "trade-log-button--filled"
+                                        )}
+                                        onClick={async e => {
+                                          this.lastSavedState = cloneDeep(this.state);
+                                          const { id } = this.state;
+                                          if (id == null) {
+                                            dialogAPI.open("dialog1", e.target);
+                                          }
+                                          else {
+                                            await this.update(this.getTitle());
+                                            this.setStateAsync({ saved: true });
+                                          }
+                                        }}
+                                      >
+                                        Сохранить
+                                      </Button>
+                                  )
+                                  : (
+                                      <Button
+                                        className={clsx(
+                                          "trade-log-button",
+                                          "trade-log-button--slider"
+                                        )}
+                                        onClick={async e => {
+                                          await this.setStateAsync({ step: 0 });
+                                          document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                          document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                        }}
+                                      >
+                                        Закрыть
+                                      </Button>
+                                  )
+                                }
+                              </div>
+
+                            </div>
+                          </div>
+                        )
+                      })())
                   }
 
                 </div>
@@ -968,7 +985,7 @@ export default class App extends React.Component {
                       autoCapitalize="off"
                       spellCheck="false"
                       value={value}
-                      maxLength={30}
+                      maxLength={20}
                       onChange={e => {
                         let { value } = e.target;
                         let { onChange } = this.props;
@@ -1094,6 +1111,23 @@ export default class App extends React.Component {
             Вы уверены, что хотите удалить {this.getTitle()}?
           </Dialog>
           {/* Delete Popup */}
+
+          <Dialog
+            id="close-slider-dialog"
+            title="Предупреждение"
+            confirmText="ОК"
+            onConfirm={e => {
+              if (this.lastSavedState) {
+                // Откатываемся к предыдущему сохраненному стейту
+                this.setState(cloneDeep(this.lastSavedState));
+                this.lastSavedState = null;
+              }
+              return true;
+            }}
+            cancelText="Отмена"
+          >
+            Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны
+          </Dialog>
 
         </div>
       </StateContext.Provider>
