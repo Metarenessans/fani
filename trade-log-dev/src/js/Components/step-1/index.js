@@ -237,8 +237,7 @@ export default class FirstStep extends React.Component {
                                 min={1}
                                 max={100}
                                 step={1}
-                                precision={100}
-                                filter={val => round(val)}
+                                precision={1}
                                 onChange={val => {
                                   const data = cloneDeep(state.data);
                                   data[currentRowIndex].expectedDeals[index].iterations = val;
