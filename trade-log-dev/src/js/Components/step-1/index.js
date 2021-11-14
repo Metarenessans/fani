@@ -300,14 +300,19 @@ export default class FirstStep extends React.Component {
                 <div className={"add-btn-container"}>
                   <Button 
                     className="trade-log-button"
-                    onClick={e => {
+                    onClick={ e => {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
+
+                      let currentToolIndex = Tools.getToolIndexByCode(tools, "SBER");
+                      let currentTool = tools[currentToolIndex];
+                      let minStep = currentTool?.guarantee / 10_000 * 100;
+
                       expectedDeals.push({
                         currentToolCode: "SBER",
-                        depo:      10_000,
-                        iterations:     1,
-                        load:           0,
+                        depo:        10_000,
+                        iterations :      1,
+                        load:       minStep,
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
@@ -658,7 +663,11 @@ export default class FirstStep extends React.Component {
                 </Button>
                 <Button
                   className="trade-log-button"
-                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1}
+                  disabled={
+                    state.limitUnprofitableDeals && 
+                    deals
+                      .filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1
+                  }
                   onClick={() => {
                     const data = cloneDeep(state.data);
                     let deals = cloneDeep(data[currentRowIndex].deals);
