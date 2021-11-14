@@ -920,16 +920,15 @@ export default class App extends BaseComponent {
             onConfirm={e => {
               if (this.lastSavedState) {
                 // Откатываемся к предыдущему сохраненному стейту
-                const pureLastSavedState = {
+                this.setState({
                   dailyRate:                        this.lastSavedState.dailyRate,
                   limitUnprofitableDeals:           this.lastSavedState.limitUnprofitableDeals,
                   allowedNumberOfUnprofitableDeals: this.lastSavedState.allowedNumberOfUnprofitableDeals,
                   data:                             cloneDeep(this.lastSavedState.data),
                   currentRowIndex:                  this.lastSavedState.currentRowIndex,
                   customTools:                      cloneDeep(this.lastSavedState.customTools),
-                };
-
-                this.setState(pureLastSavedState);
+                  step:                             0
+                });
                 this.lastSavedState = null;
               }
               return true;
