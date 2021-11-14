@@ -593,7 +593,13 @@ export default class FirstStep extends React.Component {
                           </div>
                         )}
 
-                        <div className={clsx("first-step-row-val first-step-row-val--final", result > 0 ? "positive" : "negative")}>
+                        <div className={clsx(
+                          "first-step-row-val first-step-row-val--final", 
+                            result >= 0 ?
+                              (result == 0 ? "" : "positive") :
+                              "negative"
+                          )}
+                        >
                           <NumericInput
                             defaultValue={result || 0}
                             onBlur={ val => {
