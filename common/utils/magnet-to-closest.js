@@ -1,3 +1,21 @@
-export default function magnetToClosest (number, base) {
-  return Math.round(number / base) * base;
+/**
+ * Магнитит число `number` к ближайшему шагу `step`
+ * 
+ * Пример:
+ * ```
+ *   magnetToClosest(5.9, 1)
+ *   > 6
+ * 
+ *   magnetToClosest(1.5, 3)
+ *   > 3
+ * ```
+ * 
+ * 
+ * @param {number} number Число, которое нужно примагнитить
+ * @param {number} step Шаг, к которому нужно прижать `number`
+ * @returns {number}
+ * @todo Написать тесты
+ */
+export default function magnetToClosest(number, step) {
+  return Math.round(number / step) * step;
 }
