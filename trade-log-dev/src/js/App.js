@@ -816,20 +816,6 @@ export default class App extends React.Component {
                               </div>
 
                               <div className="trade-slider-bottom">
-                                {step == 1 && (
-                                  <Button
-                                    className="trade-log-button trade-log-button--slider"
-                                    onClick={async e => {
-                                      await this.setStateAsync({ step: 0, extraStep: false });
-                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                    }}
-                                    disabled={step > 1}
-                                  >
-                                    Закрыть
-                                  </Button>
-                                )}
-                                
                                 {step > 1 && (
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
@@ -854,43 +840,43 @@ export default class App extends React.Component {
                                   </Button>
                                 )}
 
-                                {step == 4 && hasChanged
+                                {hasChanged
                                   ? (
-                                      <Button
-                                        className={clsx(
-                                          "trade-log-button",
-                                          "trade-log-button--slider",
-                                          "trade-log-button--filled"
-                                        )}
-                                        onClick={async e => {
-                                          this.lastSavedState = cloneDeep(this.state);
-                                          const { id } = this.state;
-                                          if (id == null) {
-                                            dialogAPI.open("dialog1", e.target);
-                                          }
-                                          else {
-                                            await this.update(this.getTitle());
-                                            this.setStateAsync({ saved: true });
-                                          }
-                                        }}
-                                      >
-                                        Сохранить
-                                      </Button>
+                                    <Button
+                                      className={clsx(
+                                        "trade-log-button",
+                                        "trade-log-button--slider",
+                                        "trade-log-button--filled"
+                                      )}
+                                      onClick={async e => {
+                                        this.lastSavedState = cloneDeep(this.state);
+                                        const { id } = this.state;
+                                        if (id == null) {
+                                          dialogAPI.open("dialog1", e.target);
+                                        }
+                                        else {
+                                          await this.update(this.getTitle());
+                                          this.setStateAsync({ saved: true });
+                                        }
+                                      }}
+                                    >
+                                      Сохранить
+                                    </Button>
                                   )
                                   : (
-                                      <Button
-                                        className={clsx(
-                                          "trade-log-button",
-                                          "trade-log-button--slider"
-                                        )}
-                                        onClick={async e => {
-                                          await this.setStateAsync({ step: 0 });
-                                          document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                          document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                        }}
-                                      >
-                                        Закрыть
-                                      </Button>
+                                    <Button
+                                      className={clsx(
+                                        "trade-log-button",
+                                        "trade-log-button--slider"
+                                      )}
+                                      onClick={async e => {
+                                        await this.setStateAsync({ step: 0 });
+                                        document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                        document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                      }}
+                                    >
+                                      Закрыть
+                                    </Button>
                                   )
                                 }
                               </div>
