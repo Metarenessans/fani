@@ -3,9 +3,8 @@
  *
  * @param {number} number Число, которое нужно округлить
  * @param {number} [decimals=0] Кол-во знаков, до которых нужно округлить
- * @returns {number} Возвращает округленное число или `0` (если результат равен `NaN`)
  */
 export default function round(number, decimals = 0) {
   const powerOfTen = Math.pow(10, decimals);
-  return ~~(Math.round(number * powerOfTen) / powerOfTen);
+  return (Math.round(number * powerOfTen) / powerOfTen);
 }
