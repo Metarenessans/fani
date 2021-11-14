@@ -7,8 +7,23 @@ import "./style.scss"
 /**
  * @param {object} props
  * @param {number} props.value
- * @param {"success"|"danger"|"default"} props.type
- * @param {(value: any) => any} props.format
+ * @param {"success"|"danger"|"default"} props.type Строка-идентификатор, указывающая, в какой цвет покрасить число
+ * 
+ * `success` - зеленый
+ * 
+ * `danger`  - красный
+ * 
+ * `default` - серый
+ * 
+ * Если не указан, то значение будет расчитано автоматически по следующему правилу:
+ * 
+ * `value === 0 -> "default"`
+ * 
+ * `value < 0   -> "danger"`
+ * 
+ * `value > 0   -> "success"`
+ * 
+ * @param {(value: any) => any} props.format Коллбэк, в который передается `value` для форматирования
  * @param {string} props.className
  */
 export default function Value({
