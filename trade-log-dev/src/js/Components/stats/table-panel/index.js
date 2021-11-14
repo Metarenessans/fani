@@ -3,7 +3,9 @@ import { Button, DatePicker } from "antd"
 import locale from "antd/es/date-picker/locale/ru_RU"
 import moment from "moment"
 import { cloneDeep } from "lodash"
-import round from "../../../../../../common/utils/round"
+import Value        from "../../../../../../common/components/value"
+import round        from "../../../../../../common/utils/round"
+import formatNumber from "../../../../../../common/utils/format-number"
 import StatsPanel from "../../panel"
 
 import { StateContext } from "../../../App"
@@ -46,10 +48,24 @@ export default function TablePanel() {
                     />
                   </td>
                   <td>{index + 1}</td>
-                  <td>{round(result, 3)}%</td>
-                  {/* ~~ Преобразует NaN в 0 */}
-                  <td>{~~(averageResult / state.dailyRate) * 100}%</td>
-                  <td>{round(averageResult, 1)}%</td>
+                  <td>
+                    <Value
+                      value={result}
+                      format={value => formatNumber(round(value, 3)) + "%"}
+                    />
+                  </td>
+                  <td>
+                    <Value
+                      value={~~(averageResult / state.dailyRate) * 100}
+                      format={value => formatNumber(round(value, 3)) + "%"}
+                    />
+                  </td>
+                  <td>
+                    <Value
+                      value={averageResult}
+                      format={value => formatNumber(round(value, 1)) + "%"}
+                    />
+                  </td>
                   <td>
                     <Button
                       className="custom-btn"
