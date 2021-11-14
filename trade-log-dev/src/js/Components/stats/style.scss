@@ -90,6 +90,10 @@
     }
 
     .ant-progress {
+      &-bg {
+        background: var(--danger-color);
+      }
+
       &-outer {
         margin: 0;
         padding: 0;
