@@ -3,6 +3,7 @@ import { Checkbox, Progress } from "antd"
 import { mean as average } from "lodash"
 
 import Stack from "../../../../../common/components/stack"
+import Value from "../../../../../common/components/value"
 import round from "../../../../../common/utils/round"
 
 import ControlPanel from "./control-panel"
@@ -12,6 +13,7 @@ import StatsPanel   from "../panel"
 import { StateContext } from "../../App"
 
 import "./style.scss"
+import formatNumber from "../../../../../common/utils/format-number"
 
 export default function Stats() {
   const context = useContext(StateContext);
@@ -56,7 +58,7 @@ export default function Stats() {
                     
                     sum += totalResult;
                   }
-                  return sum + "%"
+                  return <Value value={sum} format={value => formatNumber(value) + "%"} />
                 })()}
               </dd>
             </div>
@@ -85,42 +87,62 @@ export default function Stats() {
             <div>
               <dt>Положительных сделок</dt>
               <dd>
-                {data.reduce((acc, day) =>
-                  acc + day.deals.filter(deal => deal.result > 0).length,
-                  0
-                )}
+                <Value type="success">
+                  {data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => deal.result > 0).length,
+                    0
+                  )}
+                </Value>
               </dd>
             </div>
             <div>
               <dt>Отрицательных сделок</dt>
               <dd>
-                {data.reduce((acc, day) =>
-                  acc + day.deals.filter(deal => deal.result < 0).length,
-                  0
-                )}
+                <Value type="danger">
+                  {data.reduce((acc, day) =>
+                    acc + day.deals.filter(deal => deal.result < 0).length,
+                    0
+                  )}
+                </Value>
               </dd>
             </div>
             <div>
               <dt>Средняя положительная сделка</dt>
-              <dd>{(() => {
-                const positiveResults = data
-                   .map(day => day.deals.flat())[0]
-                  ?.filter(deal => deal.result > 0)
-                   .map(deal => deal.result)
+              <dd>
+                {(() => {
+                  const positiveResults = data
+                     .map(day => day.deals.flat())[0]
+                    ?.filter(deal => deal.result > 0)
+                     .map(deal => deal.result)
 
-                return ~~round(average(positiveResults), 1);
-              })()}%</dd>
+                  return (
+                    <Value 
+                      value={~~round(average(positiveResults), 1)}
+                      type="success"
+                      format={value => formatNumber(value) + "%"}
+                    />
+                  );
+                })()}
+              </dd>
             </div>
             <div>
               <dt>Средняя отрицательная сделка</dt>
-              <dd>{(() => {
-                const negativeResults = data
-                   .map(day => day.deals.flat())[0]
-                  ?.filter(deal => deal.result < 0)
-                   .map(deal => deal.result)
+              <dd>
+                {(() => {
+                  const negativeResults = data
+                     .map(day => day.deals.flat())[0]
+                    ?.filter(deal => deal.result < 0)
+                     .map(deal => deal.result)
 
-                return ~~round(average(negativeResults), 1);
-              })()}%</dd>
+                  return (
+                    <Value
+                      value={~~round(average(negativeResults), 1)}
+                      type="danger"
+                      format={value => formatNumber(value) + "%"}
+                    />
+                  );
+                })()}
+              </dd>
             </div>
           </dl>
         </StatsPanel>
@@ -141,9 +163,14 @@ export default function Stats() {
                       total += 4;
                     }
                   }
-                  return round(checked / total * 100, 1);
+                  return (
+                    <Value 
+                      value={checked / total * 100}
+                      type="success"
+                      format={value => formatNumber(round(value, 1)) + "%"}
+                    />
+                  )
                 })()}
-                %
               </dd>
             </div>
             <div>
@@ -159,9 +186,14 @@ export default function Stats() {
                       total += 9;
                     }
                   }
-                  return round(checked / total * 100, 1);
+                  return (
+                    <Value
+                      value={checked / total * 100}
+                      type="danger"
+                      format={value => formatNumber(round(value, 1)) + "%"}
+                    />
+                  )
                 })()}
-                %
               </dd>
             </div>
             <div>
@@ -177,9 +209,14 @@ export default function Stats() {
                       total += 6;
                     }
                   }
-                  return round(checked / total * 100, 1);
+                  return (
+                    <Value
+                      value={checked / total * 100}
+                      type="success"
+                      format={value => formatNumber(round(value, 1)) + "%"}
+                    />
+                  )
                 })()}
-                %
               </dd>
             </div>
             <div>
@@ -195,18 +232,31 @@ export default function Stats() {
                       total += 3;
                     }
                   }
-                  return round(checked / total * 100, 1);
+                  return (
+                    <Value
+                      value={checked / total * 100}
+                      type="danger"
+                      format={value => formatNumber(round(value, 1)) + "%"}
+                    />
+                  )
                 })()}
-                %
               </dd>
             </div>
             <div>
               <dt>Срабатываний раппорта</dt>
-              <dd>0</dd>
+              <dd>
+                <Value>
+                  0
+                </Value>
+              </dd>
             </div>
             <div>
               <dt>Потерь раппорта</dt>
-              <dd>0</dd>
+              <dd>
+                <Value>
+                  0
+                </Value>
+              </dd>
             </div>
           </dl>
         </StatsPanel>

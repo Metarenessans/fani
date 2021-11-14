@@ -1,13 +1,13 @@
 .value {
-  color: var( --accent-color );
+  color: #777;
   font-weight: bold;
   white-space: nowrap;
-
-  &--neutral {
-    color: #777
+  
+  &.success {
+    color: var(--accent-color);
   }
   
-  &--negative {
-    color: var( --danger-color );
+  &.danger {
+    color: var(--danger-color);
   }
 }

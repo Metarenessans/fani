@@ -1,26 +1,25 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import React from "react"
+import clsx from "clsx"
+import formatNumber from "../../utils/format-number"
 
 import "./style.scss"
 
-export default function Value(props) {
-
-  var format = props.format || (val => val);
-  var classList = ["value"].concat(props.className);
-  var neutral = props.neutral || false;
-  
-  var val = props.children;
-  if (neutral) {
-    classList.push("value--neutral");
-  }
-  else {
-    if (val === 0) {
-      classList.push("value--neutral");
-    }
-    else if (val < 0) {
-      classList.push("value--negative");
-    }
-  }
-
-  return <span className={ classList.join(" ").trim() }>{ format( val ) }</span>;
+/**
+ * @param {object} props
+ * @param {number} props.value
+ * @param {"success"|"danger"|"default"} props.type
+ * @param {(value: any) => any} props.format
+ * @param {string} props.className
+ */
+export default function Value({
+  value,
+  type,
+  format,
+  className,
+  children
+}) {
+  value = value ?? children;
+  type = type ?? (value === 0 ? "default" : value < 0 ? "danger" : "success");
+  format = format ?? (typeof value === "number" ? formatNumber : null);
+  return <span className={clsx("value", type, className)}>{format?.(value) ?? value}</span>
 }
