@@ -258,9 +258,9 @@ export default class FirstStep extends React.Component {
                         <div className="combine-table-row-val combine-table-row-val--final">
                           {(() => {
                             let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
-                            let currentTool = tools[currentToolIndex]
+                            let currentTool = tools[currentToolIndex];
                             
-                            const _depo = round(depo * (load / 100));
+                            const _depo = round(depo * (load / 100), 0);
 
                             let contracts = round((_depo || 0) / currentTool?.guarantee, 1);
                             let stepPrice = currentTool?.stepPrice;
