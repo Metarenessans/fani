@@ -299,17 +299,20 @@ export default function Stats() {
                   {Object.keys(tasks)
                     // Сортировка по убыванию частотности
                     .sort((l, r) => tasks[r] - tasks[l])
-                    .map((taskName, index) =>
-                      <tr key={index}>
-                        <td>{taskName}</td>
-                        <td>
-                          <Progress percent={tasks[taskName] / tasksCount * 100} />
-                        </td>
-                        <td>
-                          <Checkbox disabled />
-                        </td>
-                      </tr>
-                    )}
+                    .map((taskName, index) => {
+                      const percent = tasks[taskName] / tasksCount * 100;
+                      return (
+                        <tr key={index}>
+                          <td>{taskName}</td>
+                          <td>
+                            <Progress className={percent > 66 && "urgent"} percent={percent} />
+                          </td>
+                          <td>
+                            <Checkbox disabled />
+                          </td>
+                        </tr>
+                      )
+                    })}
                 </tbody>
               </table>
             </StatsPanel>

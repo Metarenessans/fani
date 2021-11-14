@@ -90,8 +90,11 @@
     }
 
     .ant-progress {
-      &-bg {
-        background: var(--danger-color);
+
+      &.urgent {
+        .ant-progress-bg {
+          background: var(--danger-color) !important;
+        }
       }
 
       &-outer {
