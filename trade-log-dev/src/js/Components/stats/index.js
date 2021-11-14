@@ -58,7 +58,7 @@ export default function Stats() {
                     
                     sum += totalResult;
                   }
-                  return <Value value={sum} format={value => formatNumber(value) + "%"} />
+                  return <Value value={sum} format={value => formatNumber(round(value, 3)) + "%"} />
                 })()}
               </dd>
             </div>

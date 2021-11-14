@@ -46,7 +46,7 @@ export default function TablePanel() {
                     />
                   </td>
                   <td>{index + 1}</td>
-                  <td>{result}%</td>
+                  <td>{round(result, 3)}%</td>
                   {/* ~~ Преобразует NaN в 0 */}
                   <td>{~~(averageResult / state.dailyRate) * 100}%</td>
                   <td>{round(averageResult, 1)}%</td>
