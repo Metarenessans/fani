@@ -9,10 +9,8 @@ import { cloneDeep, isEqual } from "lodash"
 
 import { Button, Input, message } from "antd"
 
-import { PlusOutlined } from '@ant-design/icons'
-
-import params                from "../../../common/utils/params"
-import { Tools }             from "../../../common/tools"
+import { Tools, Tool }       from "../../../common/tools"
+import BaseComponent         from "../../../common/components/BaseComponent"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import CrossButton           from "../../../common/components/cross-button"
 
@@ -143,7 +141,7 @@ const dayTemplate = {
   customPracticeWorkTasks: [],
 };
 
-export default class App extends React.Component {
+export default class App extends BaseComponent {
 
   /** @type {{}} */
   lastSavedState;
@@ -151,7 +149,11 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
 
+    this.pageName = "Tradelog";
+
     this.initialState = {
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       /**
        * Дневной план (в %)
@@ -201,15 +203,15 @@ export default class App extends React.Component {
       extraSaved: false,
       loading:    false,
       customTools:   [],
-      currentSaveIndex: 0,
 
       loading: false,
       saved:   false,
-      id:       null,
-
     };
-
+    
     this.state = {
+      // Копирует `state` из BaseComponent
+      ...this.state,
+
       ...cloneDeep(this.initialState),
       
       /**
@@ -223,18 +225,17 @@ export default class App extends React.Component {
       changed:       false,
       searchVal:        "",
 
-      /** @type {Tool[]} */
-      tools:        [],
-      saves:        [],
+      /**
+       * Торговые инструменты
+       * 
+       * @type {Tool[]}
+       */
+      tools: [],
     };
 
     // Bindings
-    /**
-     * @type {applyInvestorInfo}
-     */
+    /** @type {applyInvestorInfo} */
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
-    this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
-    this.fetchSaveById = fetchSaveById.bind(this, "Tradelog");
   }
 
   get dayTemplate() {
@@ -246,28 +247,12 @@ export default class App extends React.Component {
   }
   
   componentDidUpdate(prevProps, prevState) {
-    const { 
-      id, 
-      saves, 
-      rowData, 
-    } = this.state;
-
-    // if (prevState.step == 2 && this.state.step == 1) {
-    //   document.getElementById("trade-slider").scrollIntoView();
-    // }
-    
-    // if (prevState.step !== this.state.step && this.state.step == 2) {
-    //   document.getElementById("second-step").scrollIntoView();
-    // }
-
-    // if (prevState.step !== this.state.step && this.state.step == 3) {
-    //   document.getElementById("trade-slider").scrollIntoView();
-    // }
-
+    const { rowData } = this.state;
     if (prevState.rowData != rowData) {
       this.setState({ changed: true });
     }
 
+    const { id, saves } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
@@ -299,18 +284,11 @@ export default class App extends React.Component {
 
   }
 
-  setStateAsync(state = {}) {
-    return new Promise(resolve => this.setState(state, resolve))
-  }
-
   // Fetching everithing we need to start working
   fetchInitialData() {
-    this.fetchTools()
-      .then(() => this.fetchSaves())
-      .catch(error => console.error(error))
-
-    this.fetchInvestorInfo()
-      .then(response => this.setStateAsync({ depo: response.data.deposit }))
+    this.fetchTools();
+    this.fetchSnapshots();
+    this.fetchLastModifiedSnapshot();
   }
 
   fetchTools() {
@@ -335,79 +313,24 @@ export default class App extends React.Component {
     })
   }
 
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-      fetch("getTradelogSnapshots")
-        .then(response => {
-          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          this.setState({ saves, loading: false });
-        })
-
-      fetch("getLastModifiedTradelogSnapshot")
-        .then(response => {
-          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-          if (!response.error && response.data?.name) {
-            const pure = params.get("pure") === "true";
-            if (!pure) {
-              this.setState({ loading: true });
-              return this.extractSave(response.data)
-                .then(resolve)
-                .catch(error => reject(error));
-            }
-          }
-          resolve();
-        })
-        .catch(reason => {
-          this.showAlert(`Не удалось получить сохранения! ${reason}`);
-          reject(reason);
-        })
-        .finally(() => {
-          const {changed} = this.state;
-          this.setState({ changed: false });
-          if (dev) {
-            const response = {
-              "error": false,
-              "data": {
-                "id": 0,
-                "name": null,
-                "dateCreate": 0,
-                "dateUpdate": 0,
-                "static": null
-              }
-            };
-
-            const saves = [{
-              "id": response.data.id,
-              "name": response.data.name,
-              "dateCreate": response.data.dateCreate,
-            }];
-
-            this.setStateAsync({ saves, loading: false }).then(() => {
-              if (!response.error && response.data?.name) {
-                this.extractSave(response.data)
-              }
-            })
-          }
-        })
-    });
-  }
-
-  showMessageDialog(msg = "") {
-    console.log(`%c${msg}`, "background: #222; color: #bada55");
-    if (!dev) {
-      this.setState({ errorMessage: msg }, () => {
-        dialogAPI.open("dialog-msg");
-      });
-    }
-  }
-
-  // TODO:
   packSave() {
-    const { rowData } = this.state;
+    const {
+      dailyRate,
+      limitUnprofitableDeals,
+      allowedNumberOfUnprofitableDeals,
+      data,
+      currentRowIndex,
+      customTools
+    } = this.state;
 
     const json = {
       static: {
-        rowData
+        dailyRate,
+        limitUnprofitableDeals,
+        allowedNumberOfUnprofitableDeals,
+        data,
+        currentRowIndex,
+        customTools
       },
     };
 
@@ -415,139 +338,28 @@ export default class App extends React.Component {
     return json;
   }
 
-  extractSave(save) {
-    const { saves, investorInfo } = this.state;
-    let staticParsed;
-
-    let state = {};
-
-    try {
-      let lastUpdated = save.dateUpdate || save.dateCreate;
-      console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
-
-      staticParsed = JSON.parse(save.static);
-      console.log("Parsed static", staticParsed);
-      
-      const initialState = cloneDeep(this.initialState);
-      
-      state.rowData = staticParsed.rowData ?? initialState.rowData;
-
-      state.id = save.id;
-      state.saved = true;
-      state.loading = false;
-    }
-    catch (e) {
-      state = {
-        id: save?.id || 0,
-        saved: true
-      };
-    }
-
-    console.log('Parsing save finished!', state);
-    return this.setStateAsync(state);
-  }
-
-  reset() {
+  parseSnapshot = data => {
+    const {} = this.state; 
     const initialState = cloneDeep(this.initialState);
-    console.log(initialState);
-    return this.setStateAsync(initialState);
+    return {
+      dailyRate:                        data.dailyRate                        ?? initialState.dailyRate,
+      limitUnprofitableDeals:           data.limitUnprofitableDeals           ?? initialState.limitUnprofitableDeals,
+      allowedNumberOfUnprofitableDeals: data.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
+      data:                             data.data                             ?? initialState.data,
+      currentRowIndex:                  data.currentRowIndex                  ?? initialState.currentRowIndex,
+      // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
+      customTools:                     (data.customTools || []).map(tool => Tool.fromObject(tool)),
+    }
   }
 
-  save(name = "") {
-    return new Promise((resolve, reject) => {
-      if (!name) {
-        reject("Name is empty!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        name,
-        static: JSON.stringify(json.static),
-      };
-
-      fetch("addTradelogSnapshot", "POST", data)
-        .then(res => {
-          console.log(res);
-
-          let id = Number(res.id);
-          if (id) {
-            console.log("Saved with id = ", id);
-            this.setState({ id }, () => resolve(id));
-          }
-          else {
-            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-          }
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  update(name = "") {
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (dev) {
-        resolve();
-      }
-
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-      };
-      fetch("updateTradelogSnapshot", "POST", data)
-        .then(response => {
-          console.log("Updated!", response);
-          resolve();
-        })
-        .catch(error => console.error(error));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteTradelogSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-            this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
-              .then(() => this.setState({ id }))
-              .catch(err => this.showAlert(err));
-          }
-          else {
-            this.reset();
-
-            saved = changed = false;
-          }
-
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
+  /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
+  async extractSnapshot(snapshot) {
+    try {
+      await super.extractSnapshot(snapshot, this.parseSnapshot);
+    }
+    catch (error) {
+      message.error(error)
+    }
   }
 
   showAlert(errorMessage = "") {
@@ -571,7 +383,6 @@ export default class App extends React.Component {
       };
     });
   }
-
 
   getTitleJSX() {
     const { saves, currentSaveIndex } = this.state;
@@ -619,7 +430,7 @@ export default class App extends React.Component {
                   currentSaveIndex={currentSaveIndex}
                   changed={changed}
                   saved={saved}
-                  onSaveChange={currentSaveIndex => {
+                  onSaveChange={async currentSaveIndex => {
                     const { saves } = this.state;
 
                     this.setState({ currentSaveIndex });
@@ -629,10 +440,14 @@ export default class App extends React.Component {
                     }
                     else {
                       const id = saves[currentSaveIndex - 1].id;
-                      this.setState({ loading: true });
-                      this.fetchSaveById(id)
-                        .then(response => this.extractSave(response.data))
-                        .catch(error => this.showAlert(error));
+                      await this.setStateAsync({ loading: true });
+                      try {
+                        const response = await this.fetchSaveById(id);
+                        await this.extractSnapshot(response.data);
+                      }
+                      catch (error) {
+                        message.error(error);
+                      }
                     }
                   }}
                   onSave={e => {
@@ -1105,7 +920,16 @@ export default class App extends React.Component {
             onConfirm={e => {
               if (this.lastSavedState) {
                 // Откатываемся к предыдущему сохраненному стейту
-                this.setState(cloneDeep(this.lastSavedState));
+                const pureLastSavedState = {
+                  dailyRate:                        this.lastSavedState.dailyRate,
+                  limitUnprofitableDeals:           this.lastSavedState.limitUnprofitableDeals,
+                  allowedNumberOfUnprofitableDeals: this.lastSavedState.allowedNumberOfUnprofitableDeals,
+                  data:                             cloneDeep(this.lastSavedState.data),
+                  currentRowIndex:                  this.lastSavedState.currentRowIndex,
+                  customTools:                      cloneDeep(this.lastSavedState.customTools),
+                };
+
+                this.setState(pureLastSavedState);
                 this.lastSavedState = null;
               }
               return true;
