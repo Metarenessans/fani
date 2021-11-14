@@ -527,3 +527,10 @@
     color: #5a6dce;
   }
 }
+// TODO: фикс малой ширины у второго дроп-листа
+// .ant-select-dropdown {
+//   display: none!important;
+//   &:last-of-type {
+//     width: 300px!important;
+//   }
+// }

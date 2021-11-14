@@ -61,6 +61,8 @@ const dealTemplate = {
 };
 
 const dayTemplate = {
+ 
+  isSaved: false,
 
   /**
    * Дата создания в формате Unix-time
@@ -87,7 +89,7 @@ const dayTemplate = {
       currentToolCode: "SBER",
       load:       1,
       iterations: 1,
-      depo:  10_000,
+      depo:       0,
     }
   ],
 
@@ -804,7 +806,7 @@ export default class App extends React.Component {
                           <div className="trade-slider-bottom">
                             {step == 1 && (
                               <Button
-                                className="custom-btn custom-btn--slider"
+                                className="trade-log-button trade-log-button--slider"
                                 onClick={async e => {
                                   await this.setStateAsync({ step: 0, extraStep: false });
                                   document.querySelector(".trade-slider").classList.remove("trade-slider-active");
@@ -818,7 +820,7 @@ export default class App extends React.Component {
                             
                             {step > 1 && (
                               <Button
-                                className="custom-btn custom-btn--slider"
+                                className="trade-log-button trade-log-button--slider"
                                 onClick={e => {
                                   this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
                                 }}
@@ -830,7 +832,7 @@ export default class App extends React.Component {
 
                             {step < 4 && (
                               <Button 
-                                className="custom-btn custom-btn--slider next-button"
+                                className="trade-log-button trade-log-button--slider"
                                 onClick={e => {
                                   this.setState(prevState => ({ step: prevState.step + 1 }))
                                 }}
@@ -844,14 +846,13 @@ export default class App extends React.Component {
                               if (step == 4 && !extraSaved) {
                                 return (
                                   <Button
-                                    className="custom-btn custom-btn--slider"
+                                    className="trade-log-button trade-log-button--slider"
                                     onClick={() => {
-                                      const rowDataClone = [...rowData];
-                                      rowDataClone[currentRowIndex].isSaved = true;
+                                      const dataClone = [...data];
+                                      dataClone[currentRowIndex].isSaved = true;
                                       this.update(this.getTitle());
                                       this.setState({
-                                        rowData: rowDataClone, 
-                                        // extraStep: true, 
+                                        data: dataClone, 
                                         extraSaved: true,
                                       })
                                     }}
@@ -864,8 +865,8 @@ export default class App extends React.Component {
                               if (extraSaved) {
                                 return (
                                   <Button
-                                    className="custom-btn custom-btn--slider"
-                                    onClick={e => {
+                                    className="trade-log-button trade-log-button--slider"
+                                    onClick={ e => {
                                       this.setState({ step: 1, extraStep: false, extraSaved: false, changed: false});
                                       document.querySelector(".trade-slider").classList.remove("trade-slider-active");
                                       document.querySelector(".dashboard").classList.remove("dashboard-active");
