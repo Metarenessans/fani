@@ -1,17 +1,19 @@
 /**
- * @typedef Snapshot
- * @property {number}  id
- * @property {string}  name
- * @property {number}  dateCreate
- * @property {number}  dateUpdate
- * @property {{}}      static
- * @property {{}}      dynamic
- */
-
-/**
+ * Ответ с сервера
+ * 
  * @typedef SnapshotResponse
  * @property {boolean}  error
  * @property {Snapshot} data
+ */
+
+/**
+ * @typedef Snapshot
+ * @property {number}  id         ID сейва
+ * @property {string}  name       Название сейва
+ * @property {number}  dateCreate Дата создания сейва в формате Unix time
+ * @property {number}  dateUpdate Дата последнего обновления сейва в формате Unix time
+ * @property {{}}      static     Объект со всеми сохраненными данными
+ * @property {{}}      dynamic
  */
 
 /**
@@ -42,6 +44,6 @@ export default function extractSnapshot(snapshot, parseFn) {
     };
   }
 
-  console.log(`Сохранение ${name} распаршено!`);
+  console.log(`Сохранение '${name}' распаршено:`, state);
   return new Promise(resolve => this.setState(state, () => resolve(state)))
 }
