@@ -78,9 +78,15 @@ export default class ThirdStep extends React.Component {
                               <Checkbox
                                 className="green"
                                 checked={baseTrendDirection === true}
-                                onChange={e => {
+                                onChange={ e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].baseTrendDirection = true;
+                                  
+                                  if (baseTrendDirection === true) {
+                                    data[currentRowIndex].reportMonitor[index].baseTrendDirection = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].baseTrendDirection = true;
+                                  }
                                   context.setState({ data });
                                 }}
                               />
@@ -92,7 +98,13 @@ export default class ThirdStep extends React.Component {
                                 checked={baseTrendDirection === false}
                                 onChange={e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].baseTrendDirection = false;
+
+                                  if (baseTrendDirection === false) {
+                                    data[currentRowIndex].reportMonitor[index].baseTrendDirection = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].baseTrendDirection = false;
+                                  }
                                   context.setState({ data });
                                 }}
                               />
@@ -125,7 +137,13 @@ export default class ThirdStep extends React.Component {
                                 checked={momentDirection === true}
                                 onChange={ e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].momentDirection = true;
+
+                                  if (momentDirection === true) {
+                                    data[currentRowIndex].reportMonitor[index].momentDirection = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].momentDirection = true;
+                                  }
                                   context.setState({ data });
                                 }}
                               />
@@ -137,8 +155,15 @@ export default class ThirdStep extends React.Component {
                                 checked={momentDirection === false}
                                 onChange={ e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].momentDirection = false;
+
+                                  if (momentDirection === false) {
+                                    data[currentRowIndex].reportMonitor[index].momentDirection = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].momentDirection = false;
+                                  }
                                   context.setState({ data });
+                                  
                                 }}
                               />
                             </div>
@@ -170,7 +195,13 @@ export default class ThirdStep extends React.Component {
                                 checked={doubts === true}
                                 onChange={e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].doubts = true;
+
+                                  if (doubts === true) {
+                                    data[currentRowIndex].reportMonitor[index].doubts = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].doubts = true;
+                                  }
                                   context.setState({ data });
                                 }}
                               />
@@ -182,7 +213,13 @@ export default class ThirdStep extends React.Component {
                                 checked={doubts === false}
                                 onChange={e => {
                                   const data = cloneDeep(state.data);
-                                  data[currentRowIndex].reportMonitor[index].doubts = false;
+
+                                  if (doubts === false) {
+                                    data[currentRowIndex].reportMonitor[index].doubts = null;
+                                  }
+                                  else {
+                                    data[currentRowIndex].reportMonitor[index].doubts = false;
+                                  }
                                   context.setState({ data });
                                 }}
                               />
