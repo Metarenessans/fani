@@ -499,7 +499,12 @@ export default class FirstStep extends React.Component {
                               checked={isLong === true}
                               onChange={ ()=> {
                                 const data = cloneDeep(state.data);
-                                data[currentRowIndex].deals[index].isLong = true;
+                                if (isLong === true) {
+                                  data[currentRowIndex].deals[index].isLong = null;
+                                }
+                                else {
+                                  data[currentRowIndex].deals[index].isLong = true;
+                                }
                                 context.setState({ data });
                               }}
                             />
@@ -516,7 +521,12 @@ export default class FirstStep extends React.Component {
                               checked={isLong === false}
                               onChange={() => {
                                 const data = cloneDeep(state.data);
-                                data[currentRowIndex].deals[index].isLong = false;
+                                if (isLong === false) {
+                                  data[currentRowIndex].deals[index].isLong = null;
+                                }
+                                else {
+                                  data[currentRowIndex].deals[index].isLong = false;
+                                }
                                 context.setState({ data });
                               }}
                             />
