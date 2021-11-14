@@ -39,9 +39,8 @@ export default function TablePanel() {
                       format="DD.MM.YYYY"
                       value={moment(day.date)}
                       onChange={(moment, formatted) => {
-                        const { currentRowIndex } = state;
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].date = Number(moment);
+                        data[index].date = Number(moment);
                         context.setState({ data })
                       }}
                     />
