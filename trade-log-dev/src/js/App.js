@@ -61,6 +61,8 @@ const dealTemplate = {
 };
 
 const dayTemplate = {
+ 
+  isSaved: false,
 
   /**
    * Дата создания в формате Unix-time
@@ -87,7 +89,7 @@ const dayTemplate = {
       currentToolCode: "SBER",
       load:       1,
       iterations: 1,
-      depo:  10_000,
+      depo:       0,
     }
   ],
 
@@ -844,12 +846,11 @@ export default class App extends React.Component {
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={() => {
-                                      const rowDataClone = [...rowData];
-                                      rowDataClone[currentRowIndex].isSaved = true;
+                                      const dataClone = [...data];
+                                      dataClone[currentRowIndex].isSaved = true;
                                       this.update(this.getTitle());
                                       this.setState({
-                                        rowData: rowDataClone, 
-                                        // extraStep: true, 
+                                        data: dataClone, 
                                         extraSaved: true,
                                       })
                                     }}
