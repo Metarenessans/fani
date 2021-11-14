@@ -1,25 +1,268 @@
 import React from "react"
-import extractSnapshot from "../utils/extract-snapshot"
+import { message } from "antd"
 import { cloneDeep } from "lodash"
 
+import fetch         from "../api/fetch"
+import fetchSaveById from "../api/fetch/fetch-save-by-id"
+import { fetchInvestorInfo } from "../api/fetch/investor-info"
+
+import extractSnapshot from "../utils/extract-snapshot"
+import params          from "../utils/params"
+
 export default class BaseComponent extends React.Component {
+
+  /**
+   * Строковый идентификатор страницы (Например: `"Trademeter"|"Mts"|"Tor"...`)
+   * 
+   * Подставляется в запросы на сервер
+   * 
+   * @type {string}
+   */
+  pageName;
 
   constructor(props) {
     super(props);
 
-    this.initialState = {};
-    this.state = {};
+    this.initialState = {
+      /** 
+       * ID текущего сохранения
+       * 
+       * @type {number|null}
+       */
+      id: null,
 
-    /** @type {extractSnapshot} */
-    this.extractSnapshot = extractSnapshot.bind(this);
+      /**
+       * Индекс текущего сохранения
+       * 
+       * @type {number}
+       */
+      currentSaveIndex: 0,
+    };
+    this.state = {
+      ...cloneDeep(this.initialState),
+
+      /**
+       * Список сохранений
+       * 
+       * @type {{ id: number, name: string }[]}
+       */
+      saves: []
+    };
+
+    /**
+     * @type {fetchSaveById & (id: number) => Promise<import("../utils/extract-snapshot").SnapshotResponse>}
+     */
+    this.fetchSaveById = fetchSaveById.bind(this, this.pageName);
+
+    /** @type {fetchInvestorInfo} */
+    this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
   }
 
   setStateAsync(state = {}) {
     return new Promise(resolve => this.setState(state, resolve))
   }
-
-  reset() {
-    const initialState = cloneDeep(this.initialState);
-    return this.setStateAsync(initialState);
+    
+  extractSnapshot(snapshot, parseFn) {
+    return extractSnapshot.call(this, snapshot, parseFn)
   }
+
+  /** Откатывает стейт к `this.initialState` */
+  reset() {
+    return this.setStateAsync(cloneDeep(this.initialState));
+  }
+
+  // TODO: fetchTools
+
+  // TODO: getTitle
+
+  /**
+   * Делает GET запрос на `get<pageName>Snapshots` с помощью {@link fetch},
+   * где `<pageName>` - это `this.pageName`
+   * 
+   * 
+   * Пример: если `this.pageName` равен `Mts`,
+   * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getMtsSnapshots
+   * 
+   * @returns {Promise}
+   */
+  async fetchSnapshots() {
+    try {
+      const response = await fetch(`get${this.pageName}Snapshots`);
+      // Сортировка по дате обновления
+      const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
+      return this.setStateAsync({ saves, loading: false });
+    }
+    catch (error) {
+      console.error("Не удалось получить сохранения:", error);
+      message.error(error);
+    }
+  }
+
+  /**
+   * Делает GET запрос на `getLastModified<pageName>Snapshot` с помощью {@link fetch},
+   * где `<pageName>` - это `this.pageName`
+   *
+   *
+   * Пример: если `this.pageName` равен `Mts`,
+   * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot
+   *
+   * @param {{ fallback?: import("../utils/extract-snapshot").SnapshotResponse }} options
+   * @returns {Promise}
+   */
+  async fetchLastModifiedSnapshot(options) {
+    try {
+      const response = await fetch(`getLastModified${this.pageName}Snapshot`);
+      if (!response.error && response.data?.name) {
+        const pure = params.get("pure") === "true";
+        if (!pure) {
+          await this.setStateAsync({ loading: true });
+          return this.extractSnapshot(response.data);
+        }
+      }
+    }
+    catch (error) {
+      console.error(error);
+      message.error(`Не удалось получить последнее сохранение: ${error}`);
+    }
+    finally {
+      if (dev) {
+        const response = options.fallback;
+        const { data } = response;
+        const { id, name, dateCreate } = data;
+
+        const saves = [{ id, name, dateCreate }];
+        await this.setStateAsync({ saves });
+        if (!response.error && response.data?.name) {
+          return this.extractSnapshot(response.data);
+        }
+      }
+    }
+  }
+
+  /**
+   * Делает POST-запрос с помощью кастомной функции-обертки {@link fetch}
+   * 
+   * @param {string} name Название сохранения
+   * @returns {Promise<number>}
+   */
+  async save(name) {
+    if (!name) {
+      throw "Название сохранения не может быть пустым!";
+    }
+
+    const json = this.packSave();
+    const data = {
+      name,
+      static: JSON.stringify(json.static),
+    };
+
+    try {
+      const response = await fetch(`add${this.pageName}Snapshot`, "POST", data);
+      console.log("Сохранено!", response);
+      message.success("Сохранено!");
+
+      const { id } = response;
+      if (id) {
+        await this.setStateAsync({ id });
+        return id;
+      }
+      else {
+        throw "Произошла незвестная ошибка! Пожалуйста, повторите действие позже";
+      }
+    }
+    catch (error) {
+      message.error(`Не удалось создать сохранение: ${error}`);
+    }
+  }
+
+  /**
+   * Делает POST-запрос с помощью кастомной функции-обертки {@link fetch}
+   * 
+   * Пример: если `name="Mts"`, то адрес запроса будет
+   * https://fani144.ru/local/php_interface/s1/ajax?method=updateMtsSnapshot
+   *
+   * @param {string} name Название сохранения
+   * @returns {Promise}
+   */
+  async update(name) {
+    const { id } = this.state;
+    if (dev) {
+      return;
+    }
+
+    if (!id) {
+      throw "Не удалось обновить сохранение: 'id' is " + id;
+    }
+
+    const json = this.packSave();
+    const data = {
+      id,
+      name,
+      static: JSON.stringify(json.static),
+    };
+
+    try {
+      const response = await fetch(`update${this.pageName}Snapshot`, "POST", data);
+      console.log("Сохранение обновлено!", response);
+      message.success("Готово!");
+      return;
+    }
+    catch (error) {
+      message.error(`Не удалось обновить сохранение: ${error}`);
+    }
+  }
+
+  /**
+   * Делает POST-запрос с помощью кастомной функции-обертки {@link fetch}
+   *
+   * @param {number} id ID сохранения, которое нужно удалить
+   * @returns {Promise}
+   */
+  async delete(id) {
+    await fetch(`delete${this.pageName}Snapshot`, "POST", { id });
+    let {
+      saves,
+      saved,
+      changed,
+      currentSaveIndex,
+    } = this.state;
+
+    // Находим индекс удаляемого сохранения
+    const index = saves.indexOf(saves.find(save => save.id === id));
+    // Удаляем элемент под этим индексом из массива
+    saves.splice(index - 1, 1);
+    // Предотвращаем кейс, где текущий индекс больше длины самого массива
+    currentSaveIndex = Math.min(Math.max(this.state.currentSaveIndex, 1), saves.length);
+
+    if (saves.length > 0) {
+      id = saves[currentSaveIndex - 1].id;
+      try {
+        const response = await this.fetchSaveById(id);
+        console.log("Сохранение удалено!", response);
+        message.success("Удалено!");
+        // TODO: удалить?
+        response.data.id = id;
+        await this.extractSnapshot(response.data);
+        await this.setStateAsync({ id });
+      }
+      catch (error) {
+        console.error(error);
+        message.error(error);
+      }
+    }
+    else {
+      await this.reset();
+      saved   = false;
+      changed = false;
+    }
+
+    return this.setStateAsync({
+      id,
+      saves,
+      saved,
+      changed,
+      currentSaveIndex,
+    });
+  }
+
 }

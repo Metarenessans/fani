@@ -1,4 +1,6 @@
 .trade-slider {
+  margin-top: 1.75em;
+  
   position: absolute;
   width: 100%;
   
@@ -62,18 +64,16 @@
       }
     }
 
-    button {
+    .day-button {
       border: none;
       font-size: 0.4em;
       text-transform: uppercase;
-      font-weight: bold;   
+      font-weight: bold;  
+      line-height: 3.75; 
 
-      &:hover {
-        color: #4859b4;
-      }
-
+      &:hover,
       &:focus {
-        color: #4859b4;
+        color: var(--primary-color);
       }
     }
   }
@@ -109,8 +109,8 @@
         color: #cacaca;
 
         &--active {
-          border: 0.3em solid #5a6dce;
-          color: #5a6dce;
+          border: 0.3em solid var(--primary-color);
+          color: var(--primary-color);
         }
       }
 
@@ -119,7 +119,7 @@
         color: #cacaca;
 
         &--active {
-          color: #5a6dce;
+          color: var(--primary-color);
         }
       }
 
@@ -179,8 +179,8 @@
 
       &:hover {
         color: #fff;
-        border: 0.2em solid #5a6dce;
-        background: #5a6dce;
+        border: 0.2em solid var(--primary-color);
+        background: var(--primary-color);
       }
     }
   }
