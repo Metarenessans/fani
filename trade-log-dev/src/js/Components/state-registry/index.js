@@ -45,7 +45,8 @@ export default function StateRegistry() {
                     <Checkbox
                       className="positive" 
                       checked={deal.emotionalStates.positive[i]}
-                      onChange={checked => {
+                      onChange={e => {
+                        const { checked } = e.target;
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].deals[index].emotionalStates.positive[i] = checked;
                         context.setState({ data });
@@ -76,7 +77,8 @@ export default function StateRegistry() {
                     <Checkbox
                       className="negative"
                       checked={deal.emotionalStates.negative[i + 4]}
-                      onChange={checked => {
+                      onChange={e => {
+                        const { checked } = e.target;
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].deals[index].emotionalStates.negative[i + 4] = checked;
                         context.setState({ data });
@@ -107,7 +109,8 @@ export default function StateRegistry() {
                     <Checkbox
                       className="positive"
                       checked={deal.motives.positive[i]}
-                      onChange={checked => {
+                      onChange={e => {
+                        const { checked } = e.target;
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].deals[index].motives.positive[i] = checked;
                         context.setState({ data });
@@ -132,7 +135,8 @@ export default function StateRegistry() {
                     <Checkbox
                       className="negative"
                       checked={deal.motives.negative[i + 6]}
-                      onChange={checked => {
+                      onChange={e => {
+                        const { checked } = e.target;
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].deals[index].motives.negative[i + 6] = checked;
                         context.setState({ data });

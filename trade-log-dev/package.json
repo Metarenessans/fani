@@ -53,6 +53,7 @@
     "anychart": "^8.7.1",
     "jquery": "^3.6.0",
     "lodash": "^4.17.21",
+    "moment": "^2.29.1",
     "object-plain-string": "^1.0.4",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",

@@ -36,54 +36,68 @@ export default function Stats() {
             </div>
             <div>
               <dt>Сделок</dt>
-              <dd>{data.reduce((acc, day) => acc + day.deals.length, 0)}</dd>
+              <dd>
+                {data.reduce((acc, day) => {
+                  const deals = day.deals.filter(deal => deal.result !== 0);
+                  return acc + deals.length;
+                }, 0)}
+              </dd>
             </div>
             <div>
               <dt>Общий результат</dt>
-              <dd>{
-                data.reduce((acc, day) =>
-                  acc + day.deals.reduce((acc, deal) => acc + deal.result, 0), 0
-                )
-              }%</dd>
+              <dd>
+                {(() => {
+                  let sum = 0;
+                  for (let day of data) {
+                    const deals = day.deals.filter(deal => deal.result !== 0);
+                    const totalResult = deals
+                      .map(deal => deal.result)
+                      .reduce((acc, curr) => acc + curr, 0);
+                    
+                    sum += totalResult;
+                  }
+                  return sum + "%"
+                })()}
+              </dd>
             </div>
             <div>
               <dt>Позиций Long</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.isLong).length, 0
-                  )
-                }
+                {data.reduce((acc, day) => {
+                  const deals = day.deals
+                    .filter(deal => deal.result !== 0)
+                    .filter(deal => deal.isLong);
+                  return acc + deals.length;
+                }, 0)}
               </dd>
             </div>
             <div>
               <dt>Позиций Short</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => !deal.isLong).length, 0
-                  )
-                }
+                {data.reduce((acc, day) => {
+                  const deals = day.deals
+                    .filter(deal =>  deal.result !== 0)
+                    .filter(deal => !deal.isLong);
+                  return acc + deals.length;
+                }, 0)}
               </dd>
             </div>
             <div>
               <dt>Положительных сделок</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.result > 0).length, 0
-                  )
-                }
+                {data.reduce((acc, day) =>
+                  acc + day.deals.filter(deal => deal.result > 0).length,
+                  0
+                )}
               </dd>
             </div>
             <div>
               <dt>Отрицательных сделок</dt>
               <dd>
-                {
-                  data.reduce((acc, day) =>
-                    acc + day.deals.filter(deal => deal.result <= 0).length, 0
-                  )
-                }
+                {data.reduce((acc, day) =>
+                  acc + day.deals.filter(deal => deal.result < 0).length,
+                  0
+                )}
               </dd>
             </div>
             <div>
@@ -102,7 +116,7 @@ export default function Stats() {
               <dd>{(() => {
                 const negativeResults = data
                    .map(day => day.deals.flat())[0]
-                  ?.filter(deal => deal.result <= 0)
+                  ?.filter(deal => deal.result < 0)
                    .map(deal => deal.result)
 
                 return ~~round(average(negativeResults), 1);
@@ -199,54 +213,59 @@ export default function Stats() {
       </div>
 
       {/* Активная проработка */}
-      <StatsPanel className="panel5" title="Активная проработка">
-        <table>
-          <tbody>
-            <tr>
-              <th>Задача</th>
-              <th>Приоритет</th>
-              <th>Выполнено</th>
-            </tr>
-            {(() => {
-              /** @type {Object.<string, number>} */
-              const tasks = {};
-              // Количество зачеканных задач на отработку во всех днях
-              let tasksCount = 0;
-              
-              for (let day of data) {
-                const practiceWorkTasks = day?.practiceWorkTasks;
-                if (practiceWorkTasks) {
-                  Object.keys(practiceWorkTasks)
-                    // Оставляем только зачеканные задачи
-                    .filter(key => practiceWorkTasks[key])
-                    .forEach(taskName => {
-                      if (!tasks[taskName]) {
-                        tasks[taskName] = 0;
-                      }
-                      tasks[taskName]++;
-                      tasksCount++;
-                    });
-                }
-              }
+      {(() => {
+        /** @type {Object.<string, number>} */
+        const tasks = {};
+        // Количество зачеканных задач на отработку во всех днях
+        let tasksCount = 0;
 
-              return Object.keys(tasks)
-                // Сортировка по убыванию частотности
-                .sort((l, r) => tasks[r] - tasks[l])
-                .map((taskName, index) =>
-                  <tr key={index}>
-                    <td>{taskName}</td>
-                    <td>
-                      <Progress percent={tasks[taskName] / tasksCount * 100} />
-                    </td>
-                    <td>
-                      <Checkbox disabled />
-                    </td>
+        for (let day of data) {
+          const practiceWorkTasks = day?.practiceWorkTasks;
+          if (practiceWorkTasks) {
+            Object.keys(practiceWorkTasks)
+              // Оставляем только зачеканные задачи
+              .filter(key => practiceWorkTasks[key])
+              .forEach(taskName => {
+                if (!tasks[taskName]) {
+                  tasks[taskName] = 0;
+                }
+                tasks[taskName]++;
+                tasksCount++;
+              });
+          }
+        }
+
+        // Рендерим секцию только если есть задачи на отработку
+        if (tasksCount > 0) {
+          return (
+            <StatsPanel className="panel5" title="Активная проработка">
+              <table>
+                <tbody>
+                  <tr>
+                    <th>Задача</th>
+                    <th>Приоритет</th>
+                    <th>Выполнено</th>
                   </tr>
-                );
-            })()}
-          </tbody>
-        </table>
-      </StatsPanel>
+                  {Object.keys(tasks)
+                    // Сортировка по убыванию частотности
+                    .sort((l, r) => tasks[r] - tasks[l])
+                    .map((taskName, index) =>
+                      <tr key={index}>
+                        <td>{taskName}</td>
+                        <td>
+                          <Progress percent={tasks[taskName] / tasksCount * 100} />
+                        </td>
+                        <td>
+                          <Checkbox disabled />
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </StatsPanel>
+          )
+        }
+      })()}
 
     </Stack>
   )

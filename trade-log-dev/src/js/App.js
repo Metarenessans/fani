@@ -69,7 +69,7 @@ const dayTemplate = {
    * 
    * @property {number}
    */
-  date: 0,
+  date: Number(new Date()),
 
   /**
    * @typedef ExpectedDeal
@@ -173,7 +173,9 @@ export default class App extends React.Component {
       allowedNumberOfUnprofitableDeals: 2,
 
       /** @type {dayTemplate[]} */
-      data: [],
+      data: [
+        cloneDeep(this.dayTemplate)
+      ],
 
       /**
        * Номер текущей страницы, где:
