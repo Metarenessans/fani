@@ -3,7 +3,6 @@
  *
  * @param {number} number Число, которое нужно округлить
  * @param {number} [decimals=0] Кол-во знаков, до которых нужно округлить
- * @returns {number} Возвращает округленное число или `0` (если результат равен `NaN`)
  */
 export default function round(number, decimals) {
   if (decimals >= 6) throw "Точность не может быть больше 6 знаков!"

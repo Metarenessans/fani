@@ -87,9 +87,9 @@ const dayTemplate = {
   expectedDeals: [
     {
       currentToolCode: "SBER",
-      load:       1,
-      iterations: 1,
-      depo:       0,
+      load:                 0,
+      iterations:           1,
+      depo:            10_000,
     }
   ],
 

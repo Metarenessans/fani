@@ -66,7 +66,13 @@ export default class FirstStep extends React.Component {
       <StateContext.Consumer>
         {context => {
           const { state } = context;
-          const { toolsLoading, data, currentRowIndex, tools, depo, limitUnprofitableDeals, allowedNumberOfUnprofitableDeals } = state;
+          const { 
+            data, 
+            tools, 
+            dailyRate, 
+            toolsLoading, 
+            currentRowIndex, 
+          } = state;
           const { expectedDeals, deals } = data[currentRowIndex];
 
           return (
@@ -186,19 +192,41 @@ export default class FirstStep extends React.Component {
                           <div className="combine-table-row-val-row">
                             <span>Загрузка</span>
                             <div className="slider-container">
-                              <CustomSlider
-                                value={load}
-                                min={0.01}
-                                max={100}
-                                step={.01}
-                                precision={100}
-                                filter={val => round(val, 2) + "%"}
-                                onChange={val => {
-                                  const data = cloneDeep(state.data);
-                                  data[currentRowIndex].expectedDeals[index].load = val;
-                                  context.setState({ data });
-                                }}
-                              />
+                              {(() => {
+                                let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+                                let currentTool = tools[currentToolIndex];
+                                let step = currentTool?.guarantee / depo * 100;
+                                if (step > 100) {
+                                  console.warn('step > 100');
+                                  for (let i = 0; i < tools.length; i++) {
+                                    let s = tools[i].guarantee / depo * 100;
+                                    if (s < 100) {
+                                      const data = cloneDeep(state.data);
+                                      data[currentRowIndex].expectedDeals[index].currentToolCode = tools[i].code;
+                                      context.setState({ data });
+                                      step = s;
+                                      break;
+                                    }
+                                  }
+                                }
+                                let min = step;
+
+                                return (
+                                  <CustomSlider
+                                    value={load}
+                                    min={min}
+                                    max={100}
+                                    step={step}
+                                    precision={2}
+                                    filter={val => val + "%"}
+                                    onChange={ val => {
+                                      const data = cloneDeep(state.data);
+                                      data[currentRowIndex].expectedDeals[index].load = val;
+                                      context.setState({ data });
+                                    }}
+                                  />
+                                )
+                              })()}
                             </div>
                           </div>
                           <div className="combine-table-row-val-row">
@@ -230,16 +258,14 @@ export default class FirstStep extends React.Component {
                         )}
                         <div className="combine-table-row-val combine-table-row-val--final">
                           {(() => {
-                            const { state } = context;
-                            const { tools, dailyRate } = state;
-
                             let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
                             let currentTool = tools[currentToolIndex]
+                            
+                            const _depo = round(depo * (load / 100));
 
-                            const _depo = depo * load;
-                            let goal = _depo * (dailyRate / 100);
+                            let contracts = round((_depo || 0) / currentTool?.guarantee, 1);
                             let stepPrice = currentTool?.stepPrice;
-                            let contracts = ~~_depo / currentTool?.guarantee;
+                            let goal = Math.round(depo * (dailyRate / 100));
 
                             let pointsForIteration = (goal / stepPrice / contracts) / iterations;
 
@@ -248,7 +274,7 @@ export default class FirstStep extends React.Component {
                                 <p>
                                   Длина хода<br />
                                   <span style={{ color: "#736d6b" }}>
-                                    {~~pointsForIteration + " п."}
+                                    {round((Number.isFinite(pointsForIteration) ? pointsForIteration : 0), 2) + " п."}
                                   </span>
                                 </p>
                                 <p>
@@ -259,7 +285,7 @@ export default class FirstStep extends React.Component {
                                       if (chance < 0) {
                                         chance = 0
                                       }
-                                      return round(~~chance, 2) + "%"
+                                      return round((chance || 0), 2) + "%"
                                     })()}
                                   </span>
                                 </p>
@@ -274,14 +300,19 @@ export default class FirstStep extends React.Component {
                 <div className={"add-btn-container"}>
                   <Button 
                     className="trade-log-button"
-                    onClick={e => {
+                    onClick={ e => {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
+
+                      let currentToolIndex = Tools.getToolIndexByCode(tools, "SBER");
+                      let currentTool = tools[currentToolIndex];
+                      let minStep = currentTool?.guarantee / 10_000 * 100;
+
                       expectedDeals.push({
                         currentToolCode: "SBER",
-                        depo:                 0,
-                        iterations:           0,
-                        load:                 0,
+                        depo:        10_000,
+                        iterations :      1,
+                        load:       minStep,
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
@@ -320,31 +351,29 @@ export default class FirstStep extends React.Component {
                   }
                   const result = deals.reduce((acc, curr) => acc + curr.result, 0);
                   /** КОД */
-                  const averageResult = result / ~~validDealsNumber();
+                  const averageResult = result / (validDealsNumber() || 0);
                   const compliancingPlan = (result / (state.dailyRate || 0)) * 100;
                   return (
                     <div className="stats-container"> 
                       <p>
                         Общая дохолность<br />
                         <span className={clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
-                          {result || 0} %
+                          {(round((result || 0), 2))} %
                         </span>
                       </p>
                       <p>
                         Выполнение плана<br />
                         <span className={
-                          clsx(compliancingPlan >= 0 ? (compliancingPlan > 100 ? "positive" : "default") : "negative")
+                          clsx((compliancingPlan || 0) >= 0 ? (compliancingPlan > 100 ? "positive" : "default") : "negative")
                         }>
-                          {round(compliancingPlan, 0)} %
+                          {round((compliancingPlan || 0), 0)} %
                         </span>
                       </p>
                       <p>
                         Внутридневной КОД<br />
                         <span key={averageResult} className={
                           clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
-                          {/* TODO: проблема с округлением, ретёрнит 0 */}
-                          {~~averageResult} %
-                          {/* {round(averageResult, 4)}% */}
+                          {round(averageResult || 0, 3)} %
                         </span>
                       </p>
                     </div>
@@ -635,7 +664,11 @@ export default class FirstStep extends React.Component {
                 </Button>
                 <Button
                   className="trade-log-button"
-                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1}
+                  disabled={
+                    state.limitUnprofitableDeals && 
+                    deals
+                      .filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1
+                  }
                   onClick={() => {
                     const data = cloneDeep(state.data);
                     let deals = cloneDeep(data[currentRowIndex].deals);
