@@ -273,7 +273,7 @@ export default class FirstStep extends React.Component {
                                 <p>
                                   Длина хода<br />
                                   <span style={{ color: "#736d6b" }}>
-                                    {round((Number.isFinite(pointsForIteration) ? pointsForIteration : 0), 2) + " п."}
+                                    {Math.ceil((Number.isFinite(pointsForIteration) ? pointsForIteration : 0)) + " п."}
                                   </span>
                                 </p>
                                 <p>
@@ -284,7 +284,7 @@ export default class FirstStep extends React.Component {
                                       if (chance < 0) {
                                         chance = 0
                                       }
-                                      return round((chance || 0), 2) + "%"
+                                      return round((chance || 0), 1) + "%"
                                     })()}
                                   </span>
                                 </p>
