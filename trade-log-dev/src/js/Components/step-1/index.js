@@ -274,7 +274,7 @@ export default class FirstStep extends React.Component {
                                 <p>
                                   Длина хода<br />
                                   <span style={{ color: "#736d6b" }}>
-                                    {round((pointsForIteration || 0), 2) + " п."}
+                                    {round((Number.isFinite(pointsForIteration) ? pointsForIteration : 0), 2) + " п."}
                                   </span>
                                 </p>
                                 <p>
@@ -305,9 +305,9 @@ export default class FirstStep extends React.Component {
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
                       expectedDeals.push({
                         currentToolCode: "SBER",
-                        depo:                 0,
-                        iterations:           0,
-                        load:                 0,
+                        depo:      10_000,
+                        iterations:     1,
+                        load:           0,
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
