@@ -59,9 +59,7 @@ const dealTemplate = {
 };
 
 const dayTemplate = {
- 
-  isSaved: false,
-
+  isSaved:  false,
   /**
    * Дата создания в формате Unix-time
    * 
@@ -87,7 +85,7 @@ const dayTemplate = {
       currentToolCode: "SBER",
       load:                 0,
       iterations:           1,
-      depo:            10_000,
+      depo:              null,
     }
   ],
 
@@ -151,6 +149,12 @@ export default class App extends BaseComponent {
       // Копирует `initialState` из BaseComponent
       ...this.initialState,
 
+      /**
+       * Депозит из профиля инвестора
+       * 
+       * @type {number}
+       */
+      investorDepo: null,
       /**
        * Дневной план (в %)
        * 
@@ -270,7 +274,13 @@ export default class App extends BaseComponent {
   fetchInitialData() {
     this.fetchTools();
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot();
+    this.fetchLastModifiedSnapshot()
+    this.fetchInvestorInfo()
+      .then(response => {
+        const deposit = response.data.deposit;
+        this.initialState.investorDepo = deposit;
+        this.setState({ investorDepo: deposit })
+      })
   }
 
   fetchTools() {
