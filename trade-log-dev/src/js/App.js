@@ -29,7 +29,7 @@ import "../sass/style.sass"
 
 let scrollInitiator;
 
-const dealTemplate = {
+export const dealTemplate = {
   currentToolCode: "SBER",
   currentToolIndex:    "",
   enterTime:  null,
