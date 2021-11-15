@@ -276,6 +276,13 @@ export default class App extends BaseComponent {
         this.initialState.investorDepo = deposit;
         this.setState({ investorDepo: deposit })
       })
+      .catch(error => {
+        if (dev) {
+          const deposit = 10_000;
+          this.initialState.investorDepo = deposit;
+          this.setState({ investorDepo: deposit })
+        }
+      })
   }
 
   fetchTools() {
