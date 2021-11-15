@@ -482,23 +482,25 @@ export default class App extends BaseComponent {
                                 </Button>
                                 <div className="trade-slider-day-container">
                                   <p>День {currentRowIndex + 1}</p>
-                                  <CrossButton
-                                    className="cross-button"
-                                    disabled={data.length == 1}
-                                    onClick={() => {
-                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                      let dataClone = [...data];
-                                      dataClone.splice(currentRowIndex, 1);
-
-                                      this.setState({  
-                                        data: dataClone,
-                                        extraStep: false,
-                                        step:          1,
-                                        currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
-                                      });
-                                    }}
-                                  />
+                                  {currentRowIndex == data.length - 1 && (
+                                    <CrossButton
+                                      className="cross-button"
+                                      disabled={data.length == 1}
+                                      onClick={() => {
+                                        document.querySelector(".trade-slider").classList.remove("trade-slider-active");
+                                        document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                        let dataClone = [...data];
+                                        dataClone.splice(currentRowIndex, 1);
+  
+                                        this.setState({  
+                                          data: dataClone,
+                                          extraStep: false,
+                                          step:          1,
+                                          currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                                        });
+                                      }}
+                                    />
+                                  )}
                                 </div>
 
                                 <Button
