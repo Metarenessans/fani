@@ -24,8 +24,6 @@ import Stats       from "./components/stats"
 /* API */
 
 import fetch from "../../../common/api/fetch"
-import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
 
 import "../sass/style.sass"
 
@@ -219,9 +217,6 @@ export default class App extends BaseComponent {
     };
 
     // Bindings
-
-    /** @type {applyInvestorInfo} */
-    this.applyInvestorInfo = applyInvestorInfo.bind(this);
   }
 
   get dayTemplate() {
