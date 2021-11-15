@@ -8,9 +8,6 @@ import fetch from "../fetch"
  * @returns {Promise<import("../../utils/extract-snapshot").SnapshotResponse>}
  */
 export default function fetchSaveById(pageName, id) {
-  if (typeof id !== "number") {
-    throw "Аргумент 'id' должен быть числом!";
-  }
   // Делает первую букву заглавной
   pageName = pageName[0].toUpperCase() + pageName.slice(1);
   return fetch(`get${pageName}Snapshot`, "GET", { id });
