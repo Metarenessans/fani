@@ -65,8 +65,10 @@
     }
 
     .day-button {
-      border: none;
       font-size: 0.4em;
+      display: flex;
+      align-items: center;
+      border: none;
       text-transform: uppercase;
       font-weight: bold;  
       line-height: 3.75; 
