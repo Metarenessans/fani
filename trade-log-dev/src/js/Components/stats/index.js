@@ -14,6 +14,7 @@ import { StateContext } from "../../App"
 
 import "./style.scss"
 import formatNumber from "../../../../../common/utils/format-number"
+import Tasks from "./tasks/Tasks"
 
 export default function Stats() {
   const context = useContext(StateContext);
@@ -263,62 +264,7 @@ export default function Stats() {
       </div>
 
       {/* Активная проработка */}
-      {(() => {
-        /** @type {Object.<string, number>} */
-        const tasks = {};
-        // Количество зачеканных задач на отработку во всех днях
-        let tasksCount = 0;
-
-        for (let day of data) {
-          const practiceWorkTasks = day?.practiceWorkTasks;
-          if (practiceWorkTasks) {
-            Object.keys(practiceWorkTasks)
-              // Оставляем только зачеканные задачи
-              .filter(key => practiceWorkTasks[key])
-              .forEach(taskName => {
-                if (!tasks[taskName]) {
-                  tasks[taskName] = 0;
-                }
-                tasks[taskName]++;
-                tasksCount++;
-              });
-          }
-        }
-
-        // Рендерим секцию только если есть задачи на отработку
-        if (tasksCount > 0) {
-          return (
-            <StatsPanel className="panel5" title="Активная проработка">
-              <table>
-                <tbody>
-                  <tr>
-                    <th>Задача</th>
-                    <th>Приоритет</th>
-                    <th>Выполнено</th>
-                  </tr>
-                  {Object.keys(tasks)
-                    // Сортировка по убыванию частотности
-                    .sort((l, r) => tasks[r] - tasks[l])
-                    .map((taskName, index) => {
-                      const percent = tasks[taskName] / tasksCount * 100;
-                      return (
-                        <tr key={index}>
-                          <td>{taskName}</td>
-                          <td>
-                            <Progress className={percent > 66 && "urgent"} percent={percent} />
-                          </td>
-                          <td>
-                            <Checkbox disabled />
-                          </td>
-                        </tr>
-                      )
-                    })}
-                </tbody>
-              </table>
-            </StatsPanel>
-          )
-        }
-      })()}
+      <Tasks />
 
     </Stack>
   )
