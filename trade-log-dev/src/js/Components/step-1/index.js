@@ -5,6 +5,8 @@ import moment from 'moment'
 import { LoadingOutlined } from '@ant-design/icons'
 
 import { Tools, Tool, template, parseTool } from "../../../../../common/tools"
+
+import parseEmotionalState from '../../utils/parse-emotional-state'
 import CustomSlider from "../custom-slider"
 
 
@@ -660,26 +662,13 @@ export default class FirstStep extends React.Component {
               </div>
               <div className={"add-btn-container"}>
                 {(() => {
-                  let disabled = state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
+                  let disabled = 
+                    state.limitUnprofitableDeals && 
+                    deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
 
-                  // TODO: хотелось бы иметь функцию parseEmotionalState(deals)
-
-                  /**
-                   * @callback parseEmotionalState
-                   * @param {deals} deals
-                   * @returns {{ positive: number, negative: number, total: number }}
-                   */
-
-                  let positivePoints = 0;
-                  let negativePoints = 0;
-                  for (let deal of deals) {
-                    positivePoints += deal.emotionalStates.positive.filter(value => value === true).length;
-                    negativePoints += deal.emotionalStates.negative.filter(value => value === true).length;
-                    positivePoints += deal.motives.positive.filter(value => value === true).length;
-                    negativePoints += deal.motives.negative.filter(value => value === true).length;
-                  }
-                  
-                  if (negativePoints > positivePoints) {
+                  // Запрещаем добавлять сделки, если эмоциональный фон вышел в негатив
+                  const parsedEmotionalState = parseEmotionalState(deals);
+                  if (parsedEmotionalState.state === "negative") {
                     disabled = true;
                   }
 
