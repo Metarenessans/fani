@@ -23,7 +23,7 @@ export default function ResultPanel() {
   // Убыточные сделки
   const unprofitableDeals = currentDay.deals.filter(deal => deal.result < 0);
   // Если включен лимит убыточных сделок и мы превышаем допустимый лимит - запрещаем торговлю
-  let tradingNotAllowed = state.limitUnprofitableDeals && unprofitableDeals.length > state.allowedNumberOfUnprofitableDeals;
+  let tradingNotAllowed = state.limitUnprofitableDeals && unprofitableDeals.length >= state.allowedNumberOfUnprofitableDeals;
 
   // TODO: Расчитать `percent` без использования `negativePoints`
   let positivePoints = 0;
