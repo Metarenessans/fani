@@ -661,6 +661,14 @@ export default class FirstStep extends React.Component {
                 {(() => {
                   let disabled = state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
 
+                  // TODO: хотелось бы иметь функцию parseEmotionalState(deals)
+
+                  /**
+                   * @callback parseEmotionalState
+                   * @param {deals} deals
+                   * @returns {{ positive: number, negative: number, total: number }}
+                   */
+
                   let positivePoints = 0;
                   let negativePoints = 0;
                   for (let deal of deals) {
