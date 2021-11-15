@@ -482,7 +482,7 @@ export default class App extends BaseComponent {
                                 </Button>
                                 <div className="trade-slider-day-container">
                                   <p>День {currentRowIndex + 1}</p>
-                                  {currentRowIndex == data.length - 1 && (
+                                  {currentRowIndex >= data.length - 1 && data.length > 1 && (
                                     <CrossButton
                                       className="cross-button"
                                       disabled={data.length == 1}
