@@ -41,6 +41,10 @@ export default function ResultPanel() {
     percent = 50;
   }
 
+  if (percent < 50) {
+    tradingNotAllowed = true;
+  }
+
   return (
     <Panel 
       // title="Мониторинг раппорта" 
