@@ -123,6 +123,7 @@ export default class FirstStep extends React.Component {
                             format={formatNumber}
                             unsigned="true"
                             round="true"
+                            min={10_000}
                             onBlur={ val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].expectedDeals[index].depo = val;
