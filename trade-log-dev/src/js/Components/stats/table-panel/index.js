@@ -67,18 +67,13 @@ export default function TablePanel() {
                   <td>
                     <Button
                       className="custom-btn"
-                      onClick={async () => {
+                      onClick={() => {
                         // TODO: Заменить на вызов какой-нибудь `openConfig()`
                         context.lastSavedState = cloneDeep(state);
-                        await context.setStateAsync({
+                        context.setState({
                           currentRowIndex: index,
                           step: 1
                         });
-                        // TODO: убрать лишнее
-                        document.querySelector(".trade-slider").classList.add("trade-slider-active");
-                        document.querySelector(".dashboard").classList.add("dashboard-active");
-                        setCurrentRowIndex(index);
-                        scrollTop();
                       }}
                     >
                       Редактировать
