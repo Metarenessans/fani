@@ -31,8 +31,6 @@ export default function TablePanel() {
             {state.data.map((day, index) => {
               const { deals } = day;
               const result = deals.reduce((acc, curr) => acc + curr.result, 0);
-              /** КОД */
-              const averageResult = result / deals.length;
               return (
                 <tr key={index}>
                   <td>
@@ -56,13 +54,13 @@ export default function TablePanel() {
                   </td>
                   <td>
                     <Value
-                      value={~~(averageResult / state.dailyRate) * 100}
+                      value={(result / state.dailyRate) * 100}
                       format={value => formatNumber(round(value, 3)) + "%"}
                     />
                   </td>
                   <td>
                     <Value
-                      value={averageResult}
+                      value={result / deals.length}
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
                   </td>
