@@ -11,23 +11,23 @@ import params          from "../utils/params"
 
 export default class BaseComponent extends React.Component {
 
-  /**
-   * Строковый идентификатор страницы (Например: `"Trademeter"|"Mts"|"Tor"...`)
-   * 
-   * Подставляется в запросы на сервер
-   * 
-   * @type {string}
-   */
-  pageName;
-
   constructor(props) {
     super(props);
+
+    /**
+     * Строковый идентификатор страницы (Например: `"Trademeter"|"Mts"|"Tor"...`)
+     *
+     * Подставляется в запросы на сервер
+     *
+     * @type {string}
+     */
+    this.pageName = props.pageName;
 
     this.initialState = {
       /** 
        * ID текущего сохранения
        * 
-       * @type {number|null}
+       * @type {?number}
        */
       id: null,
 
@@ -37,7 +37,12 @@ export default class BaseComponent extends React.Component {
        * @type {number}
        */
       currentSaveIndex: 0,
+
+      loading: false,
+
+      saved: false,
     };
+
     this.state = {
       ...cloneDeep(this.initialState),
 
@@ -53,7 +58,7 @@ export default class BaseComponent extends React.Component {
      * @type {fetchSaveById & (id: number) => Promise<import("../utils/extract-snapshot").SnapshotResponse>}
      */
     this.fetchSaveById = fetchSaveById.bind(this, this.pageName);
-
+  
     /** @type {fetchInvestorInfo} */
     this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
   }

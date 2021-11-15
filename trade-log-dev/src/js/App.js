@@ -201,11 +201,7 @@ export default class App extends BaseComponent {
 
       extraStep:  false,
       extraSaved: false,
-      loading:    false,
       customTools:   [],
-
-      loading: false,
-      saved:   false,
     };
     
     this.state = {
@@ -234,6 +230,7 @@ export default class App extends BaseComponent {
     };
 
     // Bindings
+
     /** @type {applyInvestorInfo} */
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
   }
