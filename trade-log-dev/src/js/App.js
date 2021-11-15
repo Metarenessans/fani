@@ -482,23 +482,23 @@ export default class App extends BaseComponent {
                                 </Button>
                                 <div className="trade-slider-day-container">
                                   <p>День {currentRowIndex + 1}</p>
-                                  <CrossButton
-                                    className="cross-button"
-                                    disabled={data.length == 1}
-                                    onClick={() => {
-                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                      let dataClone = [...data];
-                                      dataClone.splice(currentRowIndex, 1);
-
-                                      this.setState({  
-                                        data: dataClone,
-                                        extraStep: false,
-                                        step:          1,
-                                        currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
-                                      });
-                                    }}
-                                  />
+                                  {currentRowIndex >= data.length - 1 && data.length > 1 && (
+                                    <CrossButton
+                                      className="cross-button"
+                                      disabled={data.length == 1}
+                                      onClick={() => {
+                                        let dataClone = [...data];
+                                        dataClone.splice(currentRowIndex, 1);
+  
+                                        this.setState({  
+                                          data: dataClone,
+                                          extraStep: false,
+                                          step:          1,
+                                          currentRowIndex: currentRowIndex == 0 ? 0 : currentRowIndex - 1
+                                        });
+                                      }}
+                                    />
+                                  )}
                                 </div>
 
                                 <Button
@@ -578,9 +578,7 @@ export default class App extends BaseComponent {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {
-                                      await this.setStateAsync({ step: 0, extraStep: false });
-                                      document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                      document.querySelector(".dashboard").classList.remove("dashboard-active");
+                                      await this.setStateAsync({ step: 0, extraStep: false })
                                     }
                                   }}
                                 >
@@ -677,11 +675,7 @@ export default class App extends BaseComponent {
                                           "trade-log-button",
                                           "trade-log-button--slider"
                                         )}
-                                        onClick={async e => {
-                                          await this.setStateAsync({ step: 0 });
-                                          document.querySelector(".trade-slider").classList.remove("trade-slider-active");
-                                          document.querySelector(".dashboard").classList.remove("dashboard-active");
-                                        }}
+                                        onClick={async e => await this.setStateAsync({ step: 0 })}
                                       >
                                         Закрыть
                                       </Button>
