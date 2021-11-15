@@ -7,7 +7,7 @@ import { LoadingOutlined } from '@ant-design/icons'
 import { Tools, Tool, template, parseTool } from "../../../../../common/tools"
 
 import parseEmotionalState from '../../utils/parse-emotional-state'
-import CustomSlider from "../custom-slider"
+import CustomSlider from "../../../../../common/components/custom-slider"
 
 
 import NumericInput from "../../../../../common/components/numeric-input"
@@ -201,7 +201,6 @@ export default class FirstStep extends React.Component {
                                 let currentTool = tools[currentToolIndex];
                                 let step = currentTool?.guarantee / depo * 100;
                                 if (step > 100) {
-                                  console.warn('step > 100');
                                   for (let i = 0; i < tools.length; i++) {
                                     let s = tools[i].guarantee / depo * 100;
                                     if (s < 100) {

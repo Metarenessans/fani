@@ -1,10 +1,9 @@
 import React from 'react'
 
 import { Slider, Tooltip } from 'antd/es'
+import { isEqual } from 'lodash'
 
-import croppNumber from "../../utils/cropp-number"
-import isEqual from "../../utils/is-equal"
-
+import croppNumber from "../../../../../common/utils/cropp-number"
 
 import "./style.scss"
 
