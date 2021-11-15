@@ -9,6 +9,8 @@ import { fetchInvestorInfo } from "../api/fetch/investor-info"
 import extractSnapshot from "../utils/extract-snapshot"
 import params          from "../utils/params"
 
+import { Tool } from "../tools"
+
 export default class BaseComponent extends React.Component {
 
   constructor(props) {
@@ -38,9 +40,27 @@ export default class BaseComponent extends React.Component {
        */
       currentSaveIndex: 0,
 
+      /**
+       * Равен `true`, если запрос на получение сохранения был отправлен, но ответ еще не получен
+       * 
+       * При получении ответа/ошибке значение сменится на `false`
+       * 
+       * @type {boolean}
+       */
       loading: false,
 
+      /**
+       * Равен `true`, если запрос на получение инструментов был отправлен, но ответ еще не получен
+       *
+       * При получении ответа/ошибке значение сменится на `false`
+       *
+       * @type {boolean}
+       */
+      toolsLoading: false,
+
       saved: false,
+
+      changed: false
     };
 
     this.state = {
@@ -51,7 +71,19 @@ export default class BaseComponent extends React.Component {
        * 
        * @type {{ id: number, name: string }[]}
        */
-      saves: []
+      saves: [],
+
+      /**
+       * Торговые инструменты
+       * 
+       * @type {Tool[]}
+       */
+      tools: [],
+
+      /**
+       * Влияет на сортировку Select'ов с инструментами
+       */
+      searchVal: "",
     };
 
     /**

@@ -95,8 +95,6 @@ const dayTemplate = {
    * Регистр сделок
    * 
    * @type {dealTemplate[]}
-   * 
-   * //TODO: добавить описание
    */
   deals: [
     cloneDeep(dealTemplate)
@@ -149,8 +147,6 @@ export default class App extends BaseComponent {
   constructor(props) {
     super(props);
 
-    this.pageName = "Tradelog";
-
     this.initialState = {
       // Копирует `initialState` из BaseComponent
       ...this.initialState,
@@ -199,6 +195,13 @@ export default class App extends BaseComponent {
        */
       step: 0,
 
+      /**
+       * Индекс текущего выбранного дня
+       * 
+       * @type {number}
+       */
+      currentRowIndex: 0,
+
       extraStep:  false,
       extraSaved: false,
       customTools:   [],
@@ -209,24 +212,6 @@ export default class App extends BaseComponent {
       ...this.state,
 
       ...cloneDeep(this.initialState),
-      
-      /**
-       * Индекс текущего выбранного дня
-       * 
-       * @type {number}
-       */
-      currentRowIndex:   0,
-      
-      toolsLoading:  false,
-      changed:       false,
-      searchVal:        "",
-
-      /**
-       * Торговые инструменты
-       * 
-       * @type {Tool[]}
-       */
-      tools: [],
     };
 
     // Bindings
