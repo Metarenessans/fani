@@ -380,7 +380,6 @@ export default class FirstStep extends React.Component {
                   )
                 })()}
 
-
               <div className="transaction-register-table">
                 {deals.map((item, index) => {
                   let {
@@ -659,19 +658,38 @@ export default class FirstStep extends React.Component {
                 })}
               </div>
               <div className={"add-btn-container"}>
-                <Button
-                  className="trade-log-button"
-                  disabled={state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals}
-                  onClick={() => {
-                    const data = cloneDeep(state.data);
-                    const deals = cloneDeep(data[currentRowIndex].deals);
-                    deals.push(cloneDeep(context.dealTemplate));
-                    data[currentRowIndex].deals = deals;
-                    context.setState({ data });
-                  }}
-                >
-                  Добавить сделку
-                </Button>
+                {(() => {
+                  let disabled = state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
+
+                  let positivePoints = 0;
+                  let negativePoints = 0;
+                  for (let deal of deals) {
+                    positivePoints += deal.emotionalStates.positive.filter(value => value === true).length;
+                    negativePoints += deal.emotionalStates.negative.filter(value => value === true).length;
+                    positivePoints += deal.motives.positive.filter(value => value === true).length;
+                    negativePoints += deal.motives.negative.filter(value => value === true).length;
+                  }
+                  
+                  if (negativePoints > positivePoints) {
+                    disabled = true;
+                  }
+
+                  return (
+                    <Button
+                      className="trade-log-button"
+                      disabled={disabled}
+                      onClick={() => {
+                        const data = cloneDeep(state.data);
+                        const deals = cloneDeep(data[currentRowIndex].deals);
+                        deals.push(cloneDeep(context.dealTemplate));
+                        data[currentRowIndex].deals = deals;
+                        context.setState({ data });
+                      }}
+                    >
+                      Добавить сделку
+                    </Button>
+                  )
+                })()}
                 <Button
                   className="trade-log-button"
                   disabled={
