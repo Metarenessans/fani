@@ -1,20 +1,19 @@
 import React from "react"
-/** @type {import("react").Context<App>} */
-export const StateContext = React.createContext();
 
 import $ from "jquery"
 import clsx from "clsx"
-
 import { cloneDeep, isEqual } from "lodash"
-
 import { Button, Input, message } from "antd"
 
 import { Tools, Tool }       from "../../../common/tools"
-import BaseComponent         from "../../../common/components/BaseComponent"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import CrossButton           from "../../../common/components/cross-button"
 
-import Header      from "./components/header"
+import BaseComponent, { Context as StateContext } from "../../../common/components/BaseComponent"
+/** @type {import("react").Context<App>} */
+export { StateContext };
+
+import Header      from "../../../common/components/header"
 import FirstStep   from "./components/step-1"
 import SecondStep  from "./components/step-2"
 import ThirdStep   from "./components/step-3"
@@ -417,44 +416,7 @@ export default class App extends BaseComponent {
 
             <div className="hdOptimize" >
               <div className="main-content">
-                <Header
-                  title={this.getTitleJSX()}
-                  loading={loading}
-                  saves={saves}
-                  currentSaveIndex={currentSaveIndex}
-                  changed={changed}
-                  saved={saved}
-                  onSaveChange={async currentSaveIndex => {
-                    const { saves } = this.state;
-
-                    this.setState({ currentSaveIndex });
-
-                    if (currentSaveIndex === 0) {
-                      this.reset();
-                    }
-                    else {
-                      const id = saves[currentSaveIndex - 1].id;
-                      await this.setStateAsync({ loading: true });
-                      try {
-                        const response = await this.fetchSaveById(id);
-                        await this.extractSnapshot(response.data);
-                      }
-                      catch (error) {
-                        message.error(error);
-                      }
-                    }
-                  }}
-                  onSave={e => {
-                    const { saved, changed } = this.state;
-                    if (saved && changed) {
-                      this.update(this.getTitle());
-                      this.setState({ changed: false });
-                    }
-                    else {
-                      dialogAPI.open("dialog1", e.target);
-                    }
-                  }}
-                />
+                <Header />
                 <div className="container">
                   {
                     step === 0
@@ -698,7 +660,7 @@ export default class App extends BaseComponent {
           </main>
           {/* /.main */}
 
-          {(() => {
+          {false && (() => {
             const { saves, id } = this.state;
             const currentTitle = this.getTitle();
             let namesTaken = saves.slice().map(save => save.name);

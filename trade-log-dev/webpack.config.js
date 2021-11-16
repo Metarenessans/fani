@@ -15,6 +15,12 @@ module.exports = (env, options) => {
       filename: "js/index.js",
       chunkFilename: "js/[name].js"
     },
+    resolve: {
+      alias: {
+        // Фиксит краш при рендере компонентов на хуках из common
+        react: path.resolve("./node_modules/react")
+      }
+    },
     devServer: {
       contentBase: path.join(__dirname, "public"),
       publicPath: "/",

@@ -11,6 +11,9 @@ import params          from "../utils/params"
 
 import { Tool } from "../tools"
 
+/** @type {React.Context<BaseComponent>} */
+export const Context = React.createContext();
+
 export default class BaseComponent extends React.Component {
 
   constructor(props) {
@@ -24,6 +27,15 @@ export default class BaseComponent extends React.Component {
      * @type {string}
      */
     this.pageName = props.pageName;
+
+    /**
+     * Дефолтный заголовок страницы
+     * 
+     * Показывается в дефолтном сейве
+     * 
+     * @type {string}
+     */
+    this.deafultTitle = "Hello world!";
 
     this.initialState = {
       /** 
@@ -110,7 +122,19 @@ export default class BaseComponent extends React.Component {
 
   // TODO: fetchTools
 
-  // TODO: getTitle
+  /**
+   * Возвращает название страницы
+   * 
+   * @returns {string}
+   */
+  getTitle() {
+    const { saves, currentSaveIndex } = this.state;
+    let title = this.deafultTitle ?? "Hello world!";
+    if (saves && saves[currentSaveIndex - 1]) {
+      title = saves[currentSaveIndex - 1].name;
+    }
+    return title;
+  }
 
   /**
    * Делает GET запрос на `get<pageName>Snapshots` с помощью {@link fetch},
@@ -223,10 +247,6 @@ export default class BaseComponent extends React.Component {
    */
   async update(name) {
     const { id } = this.state;
-    if (dev) {
-      return;
-    }
-
     if (!id) {
       throw "Не удалось обновить сохранение: 'id' is " + id;
     }
@@ -242,10 +262,12 @@ export default class BaseComponent extends React.Component {
       const response = await fetch(`update${this.pageName}Snapshot`, "POST", data);
       console.log("Сохранение обновлено!", response);
       message.success("Готово!");
-      return;
     }
     catch (error) {
       message.error(`Не удалось обновить сохранение: ${error}`);
+    }
+    finally {
+      this.setState({ changed: false });
     }
   }
 
@@ -301,5 +323,4 @@ export default class BaseComponent extends React.Component {
       currentSaveIndex,
     });
   }
-
 }
