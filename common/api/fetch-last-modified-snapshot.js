@@ -1,4 +1,4 @@
-import fetch from "./fetch"
+import fetch from "./fetch";
 
 export default async function fetchLastModifiedSnapshot(page = "") {
   // Capitalizing the first letter

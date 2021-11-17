@@ -1,4 +1,4 @@
-import { ajax } from "jquery"
+import { ajax } from "jquery";
 
 const urlPrefix = dev ? "https://fani144.ru/" : "";
 

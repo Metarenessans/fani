@@ -19,9 +19,10 @@
 /**
  * Парсит сохранение с помощью пользовательской коллбэк-функции
  * 
+ * @this {import("react").Component}
  * @param {Snapshot} snapshot {@link Snapshot Ответ с сервера}, который нужно распарсить
  * @param {(static: object, dynamic?: object) => object} parseFn Коллбэк-парсер
- * @this {import("react").Component}
+ * @returns {Promise}
  */
 export default function extractSnapshot(snapshot, parseFn) {
   const { id, name } = snapshot;
@@ -45,5 +46,5 @@ export default function extractSnapshot(snapshot, parseFn) {
   }
 
   console.log(`Сохранение '${name}' распаршено:`, state);
-  return new Promise(resolve => this.setState(state, () => resolve(state)))
+  return new Promise(resolve => this.setState(state, resolve));
 }

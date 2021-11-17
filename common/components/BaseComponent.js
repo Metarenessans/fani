@@ -1,15 +1,13 @@
-import React from "react"
-import { message } from "antd"
-import { cloneDeep } from "lodash"
+import React from "react";
+import { message } from "antd";
+import { cloneDeep } from "lodash";
 
-import fetch         from "../api/fetch"
-import fetchSaveById from "../api/fetch/fetch-save-by-id"
-import { fetchInvestorInfo } from "../api/fetch/investor-info"
+import fetch         from "../api/fetch";
+import fetchSaveById from "../api/fetch/fetch-save-by-id";
+import { fetchInvestorInfo } from "../api/fetch/investor-info";
 
-import extractSnapshot from "../utils/extract-snapshot"
-import params          from "../utils/params"
-
-import { Tool } from "../tools"
+import params          from "../utils/params";
+import extractSnapshot from "../utils/extract-snapshot";
 
 /** @type {React.Context<BaseComponent>} */
 export const Context = React.createContext();
@@ -88,14 +86,14 @@ export default class BaseComponent extends React.Component {
       /**
        * Торговые инструменты
        * 
-       * @type {Tool[]}
+       * @type {import("../tools").Tool[]}
        */
       tools: [],
 
       /**
        * Влияет на сортировку Select'ов с инструментами
        */
-      searchVal: "",
+      searchVal: ""
     };
 
     /**
@@ -107,15 +105,16 @@ export default class BaseComponent extends React.Component {
     this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
   }
 
+  /** {@link BaseComponent.setState setState}, обернутый в {@link Promise} */
   setStateAsync(state = {}) {
-    return new Promise(resolve => this.setState(state, resolve))
+    return new Promise(resolve => this.setState(state, resolve));
   }
     
   extractSnapshot(snapshot, parseFn) {
-    return extractSnapshot.call(this, snapshot, parseFn)
+    return extractSnapshot.call(this, snapshot, parseFn);
   }
 
-  /** Откатывает стейт к `this.initialState` */
+  /** Пушит `this.initialState` в стейт */
   reset() {
     return this.setStateAsync(cloneDeep(this.initialState));
   }
@@ -129,11 +128,7 @@ export default class BaseComponent extends React.Component {
    */
   getTitle() {
     const { saves, currentSaveIndex } = this.state;
-    let title = this.deafultTitle ?? "Hello world!";
-    if (saves && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
-    }
-    return title;
+    return saves?.[currentSaveIndex - 1]?.name ?? this.deafultTitle;
   }
 
   /**
@@ -163,14 +158,12 @@ export default class BaseComponent extends React.Component {
    * Делает GET запрос на `getLastModified<pageName>Snapshot` с помощью {@link fetch},
    * где `<pageName>` - это `this.pageName`
    *
-   *
    * Пример: если `this.pageName` равен `Mts`,
    * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot
    *
-   * @param {{ fallback?: import("../utils/extract-snapshot").SnapshotResponse }} options
    * @returns {Promise}
    */
-  async fetchLastModifiedSnapshot(options) {
+  async fetchLastModifiedSnapshot() {
     try {
       const response = await fetch(`getLastModified${this.pageName}Snapshot`);
       if (!response.error && response.data?.name) {
@@ -184,19 +177,18 @@ export default class BaseComponent extends React.Component {
     catch (error) {
       console.error(error);
       message.error(`Не удалось получить последнее сохранение: ${error}`);
-    }
-    finally {
-      if (dev) {
-        const response = options.fallback;
-        const { data } = response;
-        const { id, name, dateCreate } = data;
 
-        const saves = [{ id, name, dateCreate }];
-        await this.setStateAsync({ saves });
-        if (!response.error && response.data?.name) {
-          return this.extractSnapshot(response.data);
-        }
-      }
+      // if (dev) {
+      //   const response = options.fallback;
+      //   const { data } = response;
+      //   const { id, name, dateCreate } = data;
+  
+      //   const saves = [{ id, name, dateCreate }];
+      //   await this.setStateAsync({ saves });
+      //   if (!response.error && response.data?.name) {
+      //     this.extractSnapshot(response.data);
+      //   }
+      // }
     }
   }
 
@@ -214,7 +206,7 @@ export default class BaseComponent extends React.Component {
     const json = this.packSave();
     const data = {
       name,
-      static: JSON.stringify(json.static),
+      static: JSON.stringify(json.static)
     };
 
     try {
@@ -255,7 +247,7 @@ export default class BaseComponent extends React.Component {
     const data = {
       id,
       name,
-      static: JSON.stringify(json.static),
+      static: JSON.stringify(json.static)
     };
 
     try {
@@ -283,7 +275,7 @@ export default class BaseComponent extends React.Component {
       saves,
       saved,
       changed,
-      currentSaveIndex,
+      currentSaveIndex
     } = this.state;
 
     // Находим индекс удаляемого сохранения
@@ -320,7 +312,7 @@ export default class BaseComponent extends React.Component {
       saves,
       saved,
       changed,
-      currentSaveIndex,
+      currentSaveIndex
     });
   }
 }

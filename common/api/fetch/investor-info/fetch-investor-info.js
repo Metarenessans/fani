@@ -1,4 +1,4 @@
-import fetch from "../../fetch"
+import fetch from "../../fetch";
 
 /**
  * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}

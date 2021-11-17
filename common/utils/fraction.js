@@ -7,5 +7,5 @@
  * @returns {string}
  */
 export default function fraction(number) {
-  return String(number).split('.')[1] || "";
+  return String(number).split(".")[1] || "";
 }
