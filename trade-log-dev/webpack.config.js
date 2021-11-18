@@ -42,6 +42,12 @@ module.exports = (env, options) => {
             }
           }
         },
+        // TypeScript
+        {
+          test: /\.tsx?$/,
+          use: "ignore-loader",
+          exclude: /node_modules/
+        },
         // CSS
         {
           test: /\.s[ac]ss$/i,
