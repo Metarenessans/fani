@@ -9,6 +9,7 @@ import { Tools, Tool }       from "../../../common/tools"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import CrossButton           from "../../../common/components/cross-button"
 
+import { SaveDialog } from "../../../common/components/save-dialog"
 import BaseComponent, { Context as StateContext } from "../../../common/components/BaseComponent"
 /** @type {import("react").Context<App>} */
 export { StateContext };
@@ -141,6 +142,8 @@ export default class App extends BaseComponent {
 
   constructor(props) {
     super(props);
+
+    this.deafultTitle = "Бинарный журнал сделок";
 
     this.initialState = {
       // Копирует `initialState` из BaseComponent
@@ -296,7 +299,7 @@ export default class App extends BaseComponent {
             .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
             .then(tools => Tools.sort(parsedTools.concat(tools)))
             .then(tools => parsedTools.push(...tools))
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
+            .catch(error => message.error(`Не удалось получить инстурменты! ${error}`))
         )
       }
 
@@ -355,56 +358,23 @@ export default class App extends BaseComponent {
     }
   }
 
-  showAlert(errorMessage = "") {
-    console.log(`%c${errorMessage}`, "background: #222; color: #bada55");
-    message.error(errorMessage);
-    // if (!dev) {
-    //   this.setState({ errorMessage }, () => dialogAPI.open("dialog-msg"));
-    // }
-  }
-
   getTools() {
     const { tools, customTools } = this.state;
     return [].concat(tools).concat(customTools);
   }
 
   getOptions() {
-    return this.getTools().map((tool, idx) => {
-      return {
-        idx: idx,
-        label: String(tool),
-      };
-    });
-  }
-
-  getTitleJSX() {
-    const { saves, currentSaveIndex } = this.state;
-    let titleJSX = <span>Бинарный журнал сделок</span>;
-    if (saves && saves[currentSaveIndex - 1]) {
-      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
-    }
-
-    return titleJSX;
-  }
-
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Калькулятор Инвестиционных Стратегий") */
-  getTitle() {
-    return this.getTitleJSX().props.children;
+    return this.getTools().map((tool, idx) => ({
+      idx,
+      label: String(tool),
+    }));
   }
 
   render() {
     const {
-      step, 
-      extraStep, 
+      step,
       currentRowIndex, 
       rowData,
-      extraSaved,
-      loading,
-      saves,
-      currentSaveIndex,
-      saved,
-      changed,
       data
     } = this.state;
 
@@ -658,195 +628,8 @@ export default class App extends BaseComponent {
             </div>
 
           </main>
-          {/* /.main */}
 
-          {false && (() => {
-            const { saves, id } = this.state;
-            const currentTitle = this.getTitle();
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? currentTitle : "Новое сохранение";
-
-            /**
-             * Проверяет, может ли данная строка быть использована как название сейва
-             * 
-             * @param {String} nameToValidate
-             * 
-             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
-             */
-            const validate = (nameToValidate = "") => {
-              nameToValidate = nameToValidate.trim();
-
-              let errors = [];
-              if (nameToValidate != currentTitle) {
-                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
-                if (nameToValidate.length < 3) {
-                  errors.push("Имя должно содержать не меньше трех символов!");
-                }
-                else if (test) {
-                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
-                }
-                if (namesTaken.indexOf(nameToValidate) > -1) {
-                  console.log();
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={20}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-            let onConfirm = () => {
-              let { id, data, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(err => this.showAlert(err));
-              }
-              else {
-                const onResolve = (id) => {
-                  let index = saves.push({ id, name });
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(err => this.showAlert(err));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
+          <SaveDialog />
 
           <Dialog
             id="dialog4"
