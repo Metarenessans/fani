@@ -1,16 +1,16 @@
-import React, { useContext } from "react"
-import PropTypes from "prop-types"
-import { Button, Select } from "antd"
-import { LoadingOutlined } from "@ant-design/icons"
-import clsx from "clsx"
+import React, { useContext } from "react";
+import PropTypes from "prop-types";
+import { Button, Select, message } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
+import clsx from "clsx";
 
-import Stack         from "../stack"
-import CrossButton   from "../cross-button"
-import { dialogAPI } from "../dialog"
+import Stack         from "../stack";
+import CrossButton   from "../cross-button";
+import { dialogAPI } from "../dialog";
 
-import { Context } from "../BaseComponent"
+import { Context } from "../BaseComponent";
 
-import "./style.scss"
+import "./style.scss";
 
 const propTypes = {
   /**
@@ -32,7 +32,7 @@ const propTypes = {
 const Header = ({
   children,
   onSave,
-  onChange,
+  onChange
 }) => {
   const context = useContext(Context);
   const { state } = context;
@@ -41,7 +41,7 @@ const Header = ({
     currentSaveIndex,
     loading,
     saved,
-    saves,
+    saves
   } = state;
   const title = context.getTitle();
   return (
@@ -132,7 +132,7 @@ const Header = ({
                     context.update(title);
                   }
                   else {
-                    dialogAPI.open("dialog1", e.target);
+                    dialogAPI.open("save-dialog", e.target);
                   }
                 }}
               >
@@ -158,9 +158,9 @@ const Header = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 Header.propTypes = propTypes;
 
-export default Header
+export default Header;
