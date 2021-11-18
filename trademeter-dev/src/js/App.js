@@ -412,6 +412,11 @@ class App extends Component {
     fetchInvestorInfo()
       .then(this.applyInvestorInfo)  
       .then(response => {
+        // Не перезаписываем depoStart и depoEnd, если уже выбрано сохранение
+        if (this.state.id != null) {
+          return;
+        }
+
         let { deposit } = response.data;
         let { depoStart, depoEnd } = this.state;
 
