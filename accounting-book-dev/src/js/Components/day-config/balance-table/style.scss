@@ -1,0 +1,79 @@
+.balance-table {
+  margin-top: 2em;
+
+  &-table-wrapper {
+    width: 100%;
+
+    .ant-calendar-picker {
+      font-size: .5em;
+    }
+  }
+
+  table {
+    box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
+    width: 100%;
+
+    th,
+    td {
+      padding: 0.7em;
+
+      font-size: 1.55em;
+        // font-size: 0.85em;
+      text-align: center;
+      min-width: 16%;
+      width: 16%;
+
+      border-right: 0.03em solid #cacaca;
+
+      &:last-of-type {
+        border-right: none;
+      }
+    }
+
+    th {
+      width: 16%;
+
+      min-width: 16%;
+      line-height: 1.2em;
+
+      font-weight: 800;
+
+    }
+
+    tr {
+      margin-top: .5em;
+
+      &:first-of-type {
+        border-bottom: 0.03em solid #cacaca;
+
+        th {
+          position: sticky;
+          z-index: 1;
+          top: 0;
+          background: white;
+          padding: .5em;
+
+          border-right: 0.03em solid #cacaca;
+          &:last-of-type {
+            border-right: none;
+          }
+        }
+      }
+    }
+
+    button {
+      font-size: 0.8em;
+    }
+  }
+
+  &__add-button {
+    margin-top: 1.5em;
+
+    font-size: 1.2em;
+  }
+  
+  .custom-btn--edit {
+    min-width: 12em;
+    padding: .9em 1.5em .7em;
+  }
+}
