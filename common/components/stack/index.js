@@ -3,10 +3,11 @@ import clsx from "clsx"
 import "./style.scss"
 
 /**
- * TODO: дописать описание
- * @param {object} props
- * @param {string} props.space CSS значение для `margin`
+ * @typedef Props
+ * @property {string} props.space CSS-значение для `margin`
  */
+
+/** @param {Props & React.HTMLAttributes} props */
 export default function Stack(props) {
   return (
     <div
