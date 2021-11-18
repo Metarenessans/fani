@@ -1,9 +1,8 @@
 import React from "react"
-
 import $ from "jquery"
 import clsx from "clsx"
 import { cloneDeep, isEqual } from "lodash"
-import { Button, Input, message } from "antd"
+import { Button, message } from "antd"
 
 import { Tools, Tool }       from "../../../common/tools"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
@@ -11,7 +10,7 @@ import CrossButton           from "../../../common/components/cross-button"
 
 import { SaveDialog } from "../../../common/components/save-dialog"
 import BaseComponent, { Context as StateContext } from "../../../common/components/BaseComponent"
-/** @type {import("react").Context<App>} */
+/** @type {React.Context<App>} */
 export { StateContext };
 
 import Header      from "../../../common/components/header"
