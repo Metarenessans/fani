@@ -1,9 +1,11 @@
+import { InvestorInfoResponse } from "./investor-info-response";
+
 /**
  * Распаковывает ответ с сервера и обновляет стейт по ключу `investorInfo`
  * 
- * @param {import(".").InvestorInfoResponse} response Объект-ответ с сервера
- * @this {import("react").Component} React компонент
- * @returns {Promise.<import(".").InvestorInfoResponse>}
+ * @this {import("react").Component} React-компонент
+ * @param {InvestorInfoResponse} response Объект-ответ с сервера
+ * @returns {Promise.<InvestorInfoResponse>}
  */
 export function applyInvestorInfo(response) {
   const { data } = response;
@@ -13,5 +15,5 @@ export function applyInvestorInfo(response) {
     status,
     skill
   };
-  return new Promise(resolve => this.setState({ investorInfo }, () => resolve(response)))
+  return new Promise(resolve => this.setState({ investorInfo }, () => resolve(response)));
 }

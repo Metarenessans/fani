@@ -4,7 +4,7 @@ import { cloneDeep } from "lodash";
 
 import fetch         from "../api/fetch";
 import fetchSaveById from "../api/fetch/fetch-save-by-id";
-import { fetchInvestorInfo } from "../api/fetch/investor-info";
+import { fetchInvestorInfo } from "../api/fetch/investor-info/fetch-investor-info";
 
 import params          from "../utils/params";
 import extractSnapshot from "../utils/extract-snapshot";
