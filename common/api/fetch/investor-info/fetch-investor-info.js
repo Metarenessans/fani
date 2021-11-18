@@ -1,5 +1,8 @@
 import fetch from "../../fetch";
-import { InvestorInfoResponse } from "./investor-info-response.ts";
+
+/**
+ * @typedef {import("./investor-info-response").InvestorInfoResponse} InvestorInfoResponse
+ */
 
 /**
  * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}
