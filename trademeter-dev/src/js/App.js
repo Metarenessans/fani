@@ -19,16 +19,14 @@ import {
   SettingFilled
 } from "@ant-design/icons"
 
-import {
-  merge,
-  cloneDeep as clone
-} from "lodash"
+import { merge, cloneDeep as clone } from "lodash"
 import objToPlainText from "object-plain-string"
 
 /* API */
 import fetch             from "../../../common/api/fetch"
 import { applyTools }    from "../../../common/api/fetch/tools"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import { fetchInvestorInfo } from "../../../common/api/fetch/investor-info/fetch-investor-info"
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info/apply-investor-info"
 import fetchBonds        from "../../../common/api/fetch-bonds"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
