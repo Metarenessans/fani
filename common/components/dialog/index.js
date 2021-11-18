@@ -1,16 +1,17 @@
-import React, { memo } from 'react'
-import { Button } from 'antd/es'
+import React, { memo } from "react";
+import { Button } from "antd";
+import clsx from "clsx";
 
-import CrossButton from "../cross-button"
+import CrossButton from "../cross-button";
+import Stack from "../stack";
 
-import Stack from "../stack"
-import "./style.sass"
+import "./style.sass";
 
 var dialogAPI = {};
 
 dialogAPI.getFocusableDescendants = element => {
-  return element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-}
+  return element.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
+};
 
 dialogAPI.focusFirstDescendant = element => {
   let elementToFocus;
@@ -24,17 +25,17 @@ dialogAPI.focusFirstDescendant = element => {
   }
 
   elementToFocus.focus();
-}
+};
 
 dialogAPI.focusLastDescendant = element => {
   const focusable = dialogAPI.getFocusableDescendants(element);
   focusable[focusable.length - 1].focus();
-}
+};
 
 dialogAPI.getCurrentDialog = () => {
   const dialogs = document.querySelectorAll(".dialog:not([hidden])");
   return dialogs[dialogs.length - 1];
-}
+};
 
 dialogAPI.trapFocus = event => {
   event.stopPropagation();
@@ -55,7 +56,7 @@ dialogAPI.trapFocus = event => {
     }
     dialogHTML.lastFocus = document.activeElement;
   }
-}
+};
 
 dialogAPI.handleEscape = (event) => {
   // const key = event.which || event.keyCode;
@@ -64,13 +65,13 @@ dialogAPI.handleEscape = (event) => {
   //   dialogAPI.closeLast();
   //   event.stopPropagation();
   // }
-}
+};
 
 dialogAPI.handleClick = event => {
   if (event.target == dialogAPI.getCurrentDialog()) {
     dialogAPI.closeLast();
   }
-}
+};
 
 dialogAPI.open = (dialogID, initiator) => {
   const dialogHTML = document.getElementById(dialogID);
@@ -93,7 +94,7 @@ dialogAPI.open = (dialogID, initiator) => {
   document.addEventListener("keyup", dialogAPI.handleEscape);
   // Close on click outside the dialog
   // document.addEventListener("click", dialogAPI.handleClick);
-}
+};
 
 dialogAPI.closeLast = () => {
   const dialogHTML = dialogAPI.getCurrentDialog();
@@ -110,10 +111,10 @@ dialogAPI.closeLast = () => {
   if (dialogHTML.initiator) {
     dialogHTML.initiator.focus();
   }
-}
+};
 
 dialogAPI.close = dialogID => {
-  const dialogHTML = document.getElementById(dialogID);;
+  const dialogHTML = document.getElementById(dialogID);
   if (!dialogHTML) {
     return;
   }
@@ -127,9 +128,10 @@ dialogAPI.close = dialogID => {
   if (dialogHTML.initiator) {
     dialogHTML.initiator.focus();
   }
-}
+};
 
 // TODO: accessible close button that is visible only when focused
+// TODO: propTypes и JSDoc
 const Dialog = memo(class extends React.Component {
 
   constructor(props) {
@@ -149,8 +151,8 @@ const Dialog = memo(class extends React.Component {
       if (key === 27) {
         this.onClose();
         event.stopPropagation();
-      };
-    })
+      }
+    });
   }
 
   onConfirm() {
@@ -230,7 +232,7 @@ const Dialog = memo(class extends React.Component {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        hidden={true}
+        hidden={!this.props.test ?? true}
         onClick={e => {
           if (
             e.target.id
@@ -242,13 +244,10 @@ const Dialog = memo(class extends React.Component {
         }}>
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${block}__inner card`}>
-          <Stack className={className}>
-            {!pure
-              ? <h2 className={`${block}__title`}>{title}</h2>
-              : null
-            }
+          <Stack>
+            {!pure && <h2 className={`${block}__title`}>{title}</h2>}
 
-            <div className={`${block}__content`}>
+            <div className={clsx(`${block}__content`, contentClassName)}>
               {this.props.children}
             </div>
 
@@ -293,7 +292,7 @@ const Dialog = memo(class extends React.Component {
         </div>
         <div tabIndex="0" aria-hidden="true"></div>
       </div>
-    )
+    );
   }
 });
 
