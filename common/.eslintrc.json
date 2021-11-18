@@ -13,7 +13,10 @@
   ],
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": 2020
+    "ecmaVersion": 2020,
+    "ecmaFeatures": {
+      "jsx": true
+    }
   },
   "rules": {
     "quotes": [
@@ -21,6 +24,7 @@
       "double"
     ],
     "semi": "error",
+    "no-unused-vars": "off",
     "no-duplicate-imports": "warn",
     "camelcase": "warn",
     "comma-dangle": ["error", "never"],
