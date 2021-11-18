@@ -1,6 +1,6 @@
-import React from "react"
-import clsx from "clsx"
-import "./style.scss"
+import React from "react";
+import clsx from "clsx";
+import "./style.scss";
 
 /**
  * @typedef Props
@@ -13,9 +13,9 @@ export default function Stack(props) {
     <div
       {...props}
       className={clsx("stack", props.className)}
-      style={{ "--space": props.space || "1.5rem" }}
+      style={{ "--space": props.space ?? "1.5rem" }}
     >
       {props.children}
     </div>
-  )
+  );
 }
