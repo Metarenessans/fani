@@ -1,0 +1,39 @@
+.save-dialog {
+
+  &-content {
+    // max-width: 40em;
+    padding: .4em;
+  }
+
+  &-error {
+    display: block;
+    min-height: 0;
+    margin-top: .5em;
+
+    font-size: .9em;
+    color: var(--danger-color);
+
+    visibility: hidden;
+    transition: min-height .2s ease-in;
+
+    &.visible {
+      min-height:  1.5em;
+      visibility: visible;
+    }
+  }
+
+  &-input {
+    height: 2.2em;
+    font-size: 1em !important;
+    
+    &-wrap {
+      font-size: 1.2em;
+    }
+
+    &-label {
+      padding-left: .6em;
+      font-size: .8em;
+      color: #999;
+    }
+  }
+}
