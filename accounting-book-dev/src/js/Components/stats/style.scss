@@ -1,0 +1,46 @@
+.stats {
+  // TODO: удалить перез сборкой
+  margin-top: 5em;
+
+  &-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+
+    gap: 2em;
+
+    > * {
+      flex-grow: 1;
+    }
+  }
+
+  .association-list {
+    width: 100%;
+
+    > * {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5em;
+
+      margin-bottom: 1em;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      dt,
+      dd {
+        font-size: 1.6em;
+      }
+
+      dd {
+        margin: 0;
+        margin-left: auto;
+        min-width: 8ch;
+
+        text-align: center;
+      }
+    }
+  }
+}
