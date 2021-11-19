@@ -3,13 +3,12 @@ import { ajax } from "jquery";
 const urlPrefix = dev ? "https://fani144.ru/" : "";
 
 /**
- * Отправляет запрос на https://fani144.ru/local/php_interface/s1/ajax с помощью функции ajax из jQuery
+ * Отправляет запрос на https://fani144.ru/local/php_interface/s1/ajax с помощью функции {@link ajax} из jQuery
  *
- * @export
  * @param {string} query Подставляется в GET-параметр "method"
- * @param {"GET"|"POST"} [method="GET"] Метод HTTP запроса. По дефолту используется "GET"
+ * @param {"GET"|"POST"} [method="GET"] Метод HTTP запроса. Если не указан, будет использован "GET"
  * @param {{}} [data={}] Данные для передачи
- * @returns {Promise<{ error: boolean, data: Array >}
+ * @returns {Promise<{ error: boolean, data: [] >}
  */
 export default function fetch(query, method = "GET", data = {}) {
   const url = `${urlPrefix}/local/php_interface/s1/ajax/?method=${query}`;
