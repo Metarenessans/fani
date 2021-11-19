@@ -6,7 +6,7 @@ import { cloneDeep } from "lodash"
 import Value from "../../../../../../common/components/value"
 import round from "../../../../../../common/utils/round"
 import formatNumber from "../../../../../../common/utils/format-number"
-import StatsPanel from "../../panel"
+import Panel from "../../panel"
 
 import { StateContext } from "../../../App"
 
@@ -15,8 +15,10 @@ import "./style.scss"
 export default function BalanceTable() {
   const context = useContext(StateContext);
   const { state } = context;
+  const { data, currentRowIndex } = state;
+  const currentDay = data[currentRowIndex];
   return (
-    <StatsPanel className="balance-table" title="Баланс">
+    <Panel className="balance-table" title={`Баланс (день ${currentRowIndex + 1})`}>
       <div className="balance-table-table-wrapper">
         <table>
           <tbody>
@@ -34,44 +36,48 @@ export default function BalanceTable() {
                 <tr>
                   <td>
                     <Value
-                      value={29_000}
+                      value={
+                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
+                        -
+                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={31_000}
+                      value={currentDay.income.reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={30_000}
+                      value={currentDay.income.filter(source => source.incomeTypeName == "Постоянные").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={1_000}
+                      value={currentDay.income.filter(source => source.incomeTypeName == "Периодические").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-2_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-1_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Важные").reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-1_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Необязательные").reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                 </tr>
@@ -80,6 +86,6 @@ export default function BalanceTable() {
           </tbody>
         </table>
       </div>
-    </StatsPanel>
+    </Panel>
   )
 }

@@ -14,7 +14,7 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 export const StateContext = Context;
 
 import Header      from "../../../common/components/header"
-import DayConfig   from "./Components/day-config"
+import DayConfig   from "./components/day-config"
 import Stats       from "./components/stats"
 
 /* API */
@@ -65,35 +65,41 @@ const dayTemplate = {
   date: Number(new Date()),
 
   /**
+   * @typedef PaymentSource
+   * @property {"Важные"|"Необязательные"} expenseTypeName Выбранный тип расходов
+   * @property {string} selectedPaymentToolName Источник расходов
+   * @property {number} value Потраченая сумма
+   */
+
+  /**
    * Массив значений для таблицы затрат
    * 
-   * @expenseTypeName         выбранный вид затрат
-   * @expensePaymentToolsName выбранное наименование затрат
-   * @value                   потраченная сумма
-   * 
-   * @type {expense[]}
+   * @type {PaymentSource[]}
    */
   expense: [
     {
       expenseTypeName:        "Важные",
       selectedPaymentToolName: "Жилье",
-      value:                     1_000,
+      value:                         0,
     },
     {
       expenseTypeName:  "Необязательные",
-      expensePaymentToolsName:  "Машина",
-      value:                       1_000,
+      selectedPaymentToolName:  "Машина",
+      value:                           0,
     },
   ],
 
   /**
+   * @typedef IncomeSource
+   * @property {"Постоянные"|"Периодические"} incomeTypeName Выбранный тип дохода
+   * @property {string} selectedIncomeToolName Название дохода
+   * @property {number} value Заработанная сумма
+   */
+
+  /**
    * Массив значений для таблицы доходов
-   * 
-   * @incomeTypeName         выбранный тип дохода
-   * @selectedIncomeToolName выбранное наименование дохода
-   * @value                  заработанная сумма
    *
-   * @type {income[]}
+   * @type {IncomeSource[]}
    */
   income: [
     {
@@ -102,7 +108,7 @@ const dayTemplate = {
       value:                           0,
     },    
     {
-      incomeTypeName:    "Переодические",
+      incomeTypeName:    "Периодические",
       selectedIncomeToolName:   "Бизнес",
       value:                           0,
     },    
@@ -128,6 +134,13 @@ export default class App extends BaseComponent {
 
     this.initialState = {
       /**
+       * Номер месяца (начиная с 1)
+       * 
+       * @type {number}
+       */
+      month: 1,
+
+      /**
        * Дефолтный массив видов трат
        * 
        * * @type {expenseTypeTools[]}
@@ -139,13 +152,14 @@ export default class App extends BaseComponent {
        * 
        * * @type {incomeTypeTools[]}
        */
-      incomeTypeTools:  ["Постоянные", "Переодические"],
+      incomeTypeTools:  ["Постоянные", "Периодические"],
 
       // Копирует `initialState` из BaseComponent
       ...this.initialState,
 
       /** @type {dayTemplate[]} */
       data: [
+        // ...new Array(30).fill().map(pekora => cloneDeep(this.dayTemplate))
         cloneDeep(this.dayTemplate)
       ],
 
@@ -181,7 +195,6 @@ export default class App extends BaseComponent {
       paymentTools: [
         "Жилье",
         "Машина",
-        "Питание",
         "Одежда",
         "Отдых",
         "Обучение",
@@ -240,37 +253,18 @@ export default class App extends BaseComponent {
       }
     }, true /* Capture event */);
 
+    window.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      console.log("!");
+      document.getElementById("add-day-btn").click();
+    });
   }
 
   // Fetching everithing we need to start working
   fetchInitialData() {
-    // this.fetchTools();
-    this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot()
-    // this.fetchInvestorInfo()
+    // this.fetchSnapshots();
+    // this.fetchLastModifiedSnapshot()
   }
-
-  // fetchTools() {
-  //   return new Promise(resolve => {
-  //     const { investorInfo } = this.state;
-  //     const requests = [];
-  //     const parsedTools = [];
-  //     this.setState({ toolsLoading: true })
-  //     for (let request of ["getFutures", "getTrademeterInfo"]) {
-  //       requests.push(
-  //         fetch(request)
-  //           .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-  //           .then(tools => Tools.sort(parsedTools.concat(tools)))
-  //           .then(tools => parsedTools.push(...tools))
-  //           .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-  //       )
-  //     }
-
-  //     Promise.all(requests)
-  //       .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
-  //       .then(() => resolve())
-  //   })
-  // }
 
   packSave() {
     const {
@@ -358,7 +352,8 @@ export default class App extends BaseComponent {
       currentSaveIndex,
       saved,
       changed,
-      data
+      data,
+      month
     } = this.state;
 
     return (
@@ -374,19 +369,16 @@ export default class App extends BaseComponent {
                   <div className="trade-slider-top">
                     <Button
                       className={"day-button"}
-                      disabled={currentRowIndex == 0}
+                      disabled={month === 1}
                       onClick={e => {
-                        this.setState(prevState => ({
-                          currentRowIndex: prevState.currentRowIndex - 1,
-                          extraStep: false
-                        }))
+                        this.setState(prevState => ({ month: prevState.month - 1, step: 0 }))
                       }}
                     >
                       {"<< Предыдущий месяц"}
                     </Button>
                     <div className="trade-slider-day-container">
-                      <p>Месяц {currentRowIndex + 1}</p>
-                      {currentRowIndex >= data.length - 1 && data.length > 1 && (
+                      <p>Месяц {month}</p>
+                      {/* {currentRowIndex >= data.length - 1 && data.length > 1 && (
                         <CrossButton
                           className="cross-button"
                           disabled={data.length == 1}
@@ -402,18 +394,14 @@ export default class App extends BaseComponent {
                             });
                           }}
                         />
-                      )}
+                      )} */}
                     </div>
 
                     <Button
                       className={"day-button"}
-                      disabled={currentRowIndex + 1 > data.length - 1}
+                      disabled={month + 1 > Math.ceil(data.length / 30)}
                       onClick={e => {
-                        this.setState( () => ({
-                          // // daysDataStorage
-                          // currentRowIndex: prevState.currentRowIndex + 1,
-                          // extraStep: false
-                        }))
+                        this.setState(prevState => ({ month: prevState.month + 1, step: 0 }))
                       }}
                     >
                       {"Следующий месяц >>"}
@@ -436,7 +424,8 @@ export default class App extends BaseComponent {
                                 <Button 
                                   className={"main-button"}
                                   onClick={async e => {
-                                    if (hasChanged) {
+                                    // ~~
+                                    if (false && hasChanged) {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {
@@ -679,7 +668,7 @@ export default class App extends BaseComponent {
             title="Предупреждение"
             confirmText="ОК"
             onConfirm={e => {
-              if (this.lastSavedState) {
+              if (false && this.lastSavedState) {
                 // Откатываемся к предыдущему сохраненному стейту
                 this.setState({
                   dailyRate:                        this.lastSavedState.dailyRate,
