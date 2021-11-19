@@ -6,7 +6,7 @@ import { cloneDeep } from "lodash"
 import Value from "../../../../../../common/components/value"
 import round from "../../../../../../common/utils/round"
 import formatNumber from "../../../../../../common/utils/format-number"
-import StatsPanel from "../../panel"
+import Panel from "../../panel"
 import CustomSelect from "../../../../../../common/components/custom-select"
 
 import { StateContext } from "../../../App"
@@ -24,7 +24,7 @@ export default function ExpenseTable() {
   const { expense, income } = data[currentRowIndex]
 
   return (
-    <StatsPanel className="expense-table" title="Расходы">
+    <Panel className="expense-table" title="Расходы">
       <div className="expense-table-table-wrapper">
         <table>
           <tbody>
@@ -38,7 +38,7 @@ export default function ExpenseTable() {
                 expenseTypeName,
                 selectedPaymentToolName,
                 value,
-              } = item
+              } = item;
               return (
                 <tr key={index}>
                   <td>
@@ -112,18 +112,17 @@ export default function ExpenseTable() {
 
       <Button
         className="table-panel__add-button custom-btn"
-        disabled={expense.lenght === 1}
+        disabled={expense.length === 1}
         onClick={ () => {
           const data = cloneDeep(state.data);
           const expense = cloneDeep(data[currentRowIndex].expense);
-
-          expense.splice(expense.lenght - 1, 1);
+          expense.pop();
           data[currentRowIndex].expense = expense;
           context.setState({ data });
         }}
       >
         Удалить
       </Button>
-    </StatsPanel>
+    </Panel>
   )
 }

@@ -6,7 +6,7 @@ import { cloneDeep } from "lodash"
 import Value        from "../../../../../../common/components/value"
 import round        from "../../../../../../common/utils/round"
 import formatNumber from "../../../../../../common/utils/format-number"
-import StatsPanel from "../../panel"
+import Panel from "../../panel"
 
 import { StateContext } from "../../../App"
 
@@ -15,8 +15,10 @@ import "./style.scss"
 export default function TablePanel() {
   const context = useContext(StateContext);
   const { state } = context;
+  const { month } = state;
+  const data = state.data.slice((month - 1) * 30, month * 30);
   return (
-    <StatsPanel className="table-panel" >
+    <Panel className="table-panel" >
       <div className="table-panel-table-wrapper">
         <table>
           <tbody>
@@ -31,7 +33,9 @@ export default function TablePanel() {
               <th>Необязательные<br/> расходы</th>
               <th></th>
             </tr>
-            {state.data.map((day, index) => {
+            {data.map((day, index) => {
+              index = index + (month - 1) * 30;
+              const currentDay = day;
               const { deals } = day;
               const result = deals.reduce((acc, curr) => acc + curr.result, 0);
               return (
@@ -50,44 +54,48 @@ export default function TablePanel() {
                   </td>
                   <td>
                     <Value
-                      value={2_000}
+                      value={
+                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
+                        -
+                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={5_000}
+                      value={currentDay.income.reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={4_000}
+                      value={currentDay.income.filter(source => source.incomeTypeName == "Постоянные").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={1_000}
+                      value={currentDay.income.filter(source => source.incomeTypeName == "Периодические").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-3_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-1_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Важные").reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-2_000}
-                      format={value => formatNumber(Math.floor(-value))}
+                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Необязательные").reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
@@ -110,20 +118,29 @@ export default function TablePanel() {
           </tbody>
         </table>
       </div>
-      <Button 
+      <Button
+        id="add-day-btn"
         className="table-panel__add-button custom-btn"
         onClick={async e => {
+          const { month} = state;
           const data = cloneDeep(state.data);
           const day = cloneDeep(context.dayTemplate);
           // Обновляем дату
-          day.date = Number(new Date());
+          let time = new Date();
+          if (data[data.length - 1]) {
+            time = new Date(data[data.length - 1]?.date + (24 * 3600 * 1000));
+          }
+          day.date = Number(time);
           data.push(day);
           await context.setStateAsync({ data });
           document.querySelector(".table-panel-table-wrapper").scrollTop = 99999;
+          if (data.length > month * 30) {
+            context.setState({ month: month + 1 });
+          }
         }}
       >
         Добавить
       </Button>
-    </StatsPanel>
+    </Panel>
   )
 }

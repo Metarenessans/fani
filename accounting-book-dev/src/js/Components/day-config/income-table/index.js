@@ -6,7 +6,7 @@ import { cloneDeep } from "lodash"
 import Value from "../../../../../../common/components/value"
 import round from "../../../../../../common/utils/round"
 import formatNumber from "../../../../../../common/utils/format-number"
-import StatsPanel from "../../panel"
+import Panel from "../../panel"
 
 import { StateContext } from "../../../App"
 
@@ -24,7 +24,7 @@ export default function IncomeTable() {
   const { income } = data[currentRowIndex]
 
   return (
-    <StatsPanel className="income-table" title="Доходы">
+    <Panel className="income-table" title="Доходы">
       <div className="income-table-table-wrapper">
         <table>
           <tbody>
@@ -114,18 +114,17 @@ export default function IncomeTable() {
 
       <Button
         className="table-panel__add-button custom-btn"
-        disabled={income.lenght === 1}
+        disabled={income.length === 1}
         onClick={() => {
           const data = cloneDeep(state.data);
           const income = cloneDeep(data[currentRowIndex].income);
-
-          income.splice(income.lenght - 1, 1);
+          income.pop();
           data[currentRowIndex].income = income;
           context.setState({ data });
         }}
       >
         Удалить
       </Button>
-    </StatsPanel>
+    </Panel>
   )
 }
