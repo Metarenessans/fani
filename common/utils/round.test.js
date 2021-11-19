@@ -1,11 +1,5 @@
 import round from "./round";
 
-test("Выбрасывает ошибку, если точность больше 6 знаков", () => {
-  expect(() => round(0, 5)).not.toThrow();
-  expect(() => round(0, 6)).toThrow();
-  expect(() => round(0, 999)).toThrow();
-})
-
 test("Работает с нулем", () => {
   expect(round(0, 1)).toBe(0);
   expect(round(0, 2)).toBe(0);
