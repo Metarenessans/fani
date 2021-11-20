@@ -47,7 +47,7 @@ export default function IncomeTable() {
                       style={{ width: "100%" }}
                       onChange={val => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].income[index]["incomeTypeName"] = val;
+                        data[currentRowIndex].income[index].incomeTypeName = val;
                         context.setState({ data });
                       }}
                     >
@@ -61,17 +61,15 @@ export default function IncomeTable() {
                   <td>
                     <CustomSelect
                       type="text"
-                      options={data[currentRowIndex].incomeTools}
+                      options={state.incomeTools}
                       value={selectedIncomeToolName}
-                      onChange={ value => {
+                      onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].income[index]["selectedIncomeToolName"] = value;
+                        data[currentRowIndex].income[index].selectedIncomeToolName = value;
                         context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].incomeTools = options;
-                        context.setState({ data });
+                        context.setState({ incomeTools: options });
                       }}
                     />
                   </td>

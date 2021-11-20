@@ -32,8 +32,6 @@ export const dealTemplate = {
 const dayTemplate = {
   /**
    * Общий массив наименований затрат
-   * 
-   * @type {paymentTools[]}
    */
   paymentTools: [
     "Жилье",
@@ -47,14 +45,14 @@ const dayTemplate = {
     "Налоги",
     "Прочее"
   ],
+
   /**
    * Общий массив наименований дохода
-   *
-   * @type {incomeTools[]}
    */
   incomeTools: ["Работа", "Бизнес", "Пассивный доход"],
 
   isSaved:  false,
+
   /**
    * Дата создания в формате Unix-time
    * 
@@ -140,16 +138,16 @@ export default class App extends BaseComponent {
       month: 1,
 
       /**
-       * Дефолтный массив видов трат
+       * Виды расходов
        * 
-       * * @type {expenseTypeTools[]}
+       * @type {string[]}
        */
       expenseTypeTools: ["Важные", "Необязательные"],
 
       /**
-       * Дефолтный массив видов дохода
+       * Виды доходов
        * 
-       * * @type {incomeTypeTools[]}
+       * @type {string[]}
        */
       incomeTypeTools:  ["Постоянные", "Периодические"],
 
@@ -188,6 +186,7 @@ export default class App extends BaseComponent {
 
       ...cloneDeep(this.initialState),
 
+      /** Статьи расходов */
       paymentTools: [
         "Жилье",
         "Машина",
@@ -199,6 +198,8 @@ export default class App extends BaseComponent {
         "Налоги",
         "Прочее"
       ],
+
+      /** Статьи доходов */
       incomeTools: ["Работа", "Бизнес", "Пассивный доход"]
     };
 
@@ -251,14 +252,25 @@ export default class App extends BaseComponent {
   }
 
   fetchInitialData() {
-
+    this.fetchSnapshots();
+    this.fetchLastModifiedSnapshot();
   }
 
   packSave() {
-    // const {} = this.state;
+    const {
+      data,
+      month,
+      incomeTypeTools,
+      expenseTypeTools
+    } = this.state;
 
     const json = {
-      static: {}
+      static: {
+        data,
+        month,
+        incomeTypeTools,
+        expenseTypeTools
+      }
     };
 
     console.log("Packed save:", json);
@@ -268,7 +280,10 @@ export default class App extends BaseComponent {
   parseSnapshot = data => {
     const initialState = cloneDeep(this.initialState);
     return {
-      
+      data:             data.data             ?? initialState.data,
+      month:            data.month            ?? initialState.month,
+      incomeTypeTools:  data.incomeTypeTools  ?? initialState.incomeTypeTools,
+      expenseTypeTools: data.expenseTypeTools ?? initialState.expenseTypeTools
     };
   };
 
@@ -282,24 +297,12 @@ export default class App extends BaseComponent {
     }
   }
 
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools);
-  }
-
-  getOptions() {
-    return this.getTools().map((tool, idx) => ({
-      idx,
-      label: String(tool)
-    }));
-  }
-
   render() {
     const {
-      step, 
-      currentRowIndex, 
+      step,
       data,
-      month
+      month,
+      currentRowIndex 
     } = this.state;
 
     return (
@@ -314,10 +317,13 @@ export default class App extends BaseComponent {
                 <div className="container">
                   <div className="trade-slider-top">
                     <Button
-                      className={"day-button"}
+                      className="day-button"
                       disabled={month === 1}
                       onClick={e => {
-                        this.setState(prevState => ({ month: prevState.month - 1, step: 0 }));
+                        this.setState(prevState => ({
+                          month: prevState.month - 1,
+                          step: 0
+                        }));
                       }}
                     >
                       {"<< Предыдущий месяц"}
@@ -344,10 +350,13 @@ export default class App extends BaseComponent {
                     </div>
 
                     <Button
-                      className={"day-button"}
+                      className="day-button"
                       disabled={month + 1 > Math.ceil(data.length / 30)}
                       onClick={e => {
-                        this.setState(prevState => ({ month: prevState.month + 1, step: 0 }));
+                        this.setState(prevState => ({
+                          month: prevState.month + 1,
+                          step: 0
+                        }));
                       }}
                     >
                       {"Следующий месяц >>"}
@@ -355,47 +364,33 @@ export default class App extends BaseComponent {
                   </div>
                   {
                     step === 0
-                    ? 
-                      <Stats />
+                      ? <Stats />
                       :
-                      ((() => {
-                        const hasChanged = this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
-
-                        return (
-                          <div className="trade-slider-active" id="trade-slider">
-                            <div className="trade-slider-container">
-
-
-                              <div className={"trade-slider--main-page"}>
-                                <Button 
-                                  className={"main-button"}
-                                  onClick={async e => {
-                                    // ~~
-                                    if (false && hasChanged) {
-                                      dialogAPI.open("close-slider-dialog", e.target);
-                                    }
-                                    else {
-                                      await this.setStateAsync({ step: 0, extraStep: false });
-                                    }
-                                  }}
-                                >
-                                  Главная страница
-                                </Button>
-                              </div>
-
-                              <DayConfig
-                                key={data}
-                                data={data[currentRowIndex]}
-                                tools={this.state.tools}
-                                searchVal={this.state.searchVal}
-                                setSeachVal={ val => this.setState({searchVal: val}) }
-                                currentRowIndex={currentRowIndex}
-                                toolsLoading={this.state.toolsLoading}
-                              />
+                        <div id="trade-slider" className="trade-slider-active">
+                          <div className="trade-slider-container">
+                            <div className="trade-slider--main-page">
+                              <Button 
+                                className="main-button"
+                                onClick={async e => {
+                                  const hasChanged = 
+                                    this.lastSavedState && 
+                                    !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
+                                  // ~~
+                                  if (false && hasChanged) {
+                                    dialogAPI.open("close-slider-dialog", e.target);
+                                  }
+                                  else {
+                                    await this.setStateAsync({ step: 0, extraStep: false });
+                                  }
+                                }}
+                              >
+                                Главная страница
+                              </Button>
                             </div>
+
+                            <DayConfig />
                           </div>
-                        );
-                      })())
+                        </div>
                   }
 
                 </div>

@@ -148,11 +148,15 @@ const propTypes = {
 
   /**
    * Перезаписывает содержимое нижней части диалогового окна
+   * 
+   * @type {JSX.Element}
    */
   footer: PropTypes.element,
 
   /**
    * Прячет футер, если `true`
+   * 
+   * @type {boolean}
    */
   hideFooter: PropTypes.bool,
 
@@ -217,8 +221,7 @@ const propTypes = {
  * 
  * @augments React.Component<Props>
  */
-const Dialog = memo(
-  class extends React.Component {
+class Dialog extends React.Component {
 
   static propTypes = propTypes;
 
@@ -302,15 +305,10 @@ const Dialog = memo(
       pure
     } = this.props;
 
-    // console.log('rendering Dialog', id);
-
     const block = "dialog";
-
-    contentClassName = contentClassName || "";
 
     return (
       <div
-        {...this.props}
         id={id}
         className={clsx(block, className, pure && "pure")}
         role="dialog"
@@ -372,6 +370,6 @@ const Dialog = memo(
       </div>
     );
   }
-});
+}
 
 export { Dialog, dialogAPI };

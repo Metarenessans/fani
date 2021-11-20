@@ -43,9 +43,9 @@ export default function ExpenseTable() {
                     <Select
                       value={expenseTypeName}
                       style={{ width: "100%" }}
-                      onChange={ val => {
+                      onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].expense[index]["expenseTypeName"] = val;
+                        data[currentRowIndex].expense[index].expenseTypeName = value;
                         context.setState({ data });
                       }}
                     >
@@ -59,17 +59,15 @@ export default function ExpenseTable() {
                   <td>
                     <CustomSelect
                       type="text"
-                      options={data[currentRowIndex].paymentTools}
+                      options={state.paymentTools}
                       value={selectedPaymentToolName}
                       onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].expense[index]["selectedPaymentToolName"] = value;
+                        data[currentRowIndex].expense[index].selectedPaymentToolName = value;
                         context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].paymentTools = options;
-                        context.setState({ data });
+                        context.setState({ paymentTools: options });
                       }}
                     />
                   </td>
@@ -92,7 +90,7 @@ export default function ExpenseTable() {
       </div>
       <Button
         className="table-panel__add-button custom-btn"
-        onClick={ () => {
+        onClick={() => {
           const data = cloneDeep(state.data);
           const expense = cloneDeep(data[currentRowIndex].expense);
 
@@ -111,7 +109,7 @@ export default function ExpenseTable() {
       <Button
         className="table-panel__add-button custom-btn"
         disabled={expense.length === 1}
-        onClick={ () => {
+        onClick={() => {
           const data = cloneDeep(state.data);
           const expense = cloneDeep(data[currentRowIndex].expense);
           expense.pop();

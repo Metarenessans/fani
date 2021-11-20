@@ -39,6 +39,8 @@ export default class BaseComponent extends React.Component {
       /** 
        * ID текущего сохранения
        * 
+       * По умолчанию равен `null` (чистая страница)
+       * 
        * @type {?number}
        */
       id: null,
@@ -53,7 +55,7 @@ export default class BaseComponent extends React.Component {
       /**
        * Равен `true`, если запрос на получение сохранения был отправлен, но ответ еще не получен
        * 
-       * При получении ответа/ошибке значение сменится на `false`
+       * При получении ответа/ошибке значение становится равным `false`
        * 
        * @type {boolean}
        */
@@ -62,11 +64,13 @@ export default class BaseComponent extends React.Component {
       /**
        * Равен `true`, если запрос на получение инструментов был отправлен, но ответ еще не получен
        *
-       * При получении ответа/ошибке значение сменится на `false`
+       * При получении ответа/ошибке значение становится равным `false`
        *
        * @type {boolean}
        */
       toolsLoading: false,
+
+      // TODO: можно обойтись только одним флагом 
 
       saved: false,
 
@@ -280,7 +284,7 @@ export default class BaseComponent extends React.Component {
       currentSaveIndex
     } = this.state;
 
-    // Находим индекс удаляемого сохранения
+    // Находим индекс сохранения, которое нужно удалить
     const index = saves.indexOf(saves.find(save => save.id === id));
     // Удаляем элемент под этим индексом из массива
     saves.splice(index - 1, 1);
