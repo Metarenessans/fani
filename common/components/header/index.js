@@ -7,6 +7,8 @@ import clsx from "clsx";
 import Stack         from "../stack";
 import CrossButton   from "../cross-button";
 import { dialogAPI } from "../dialog";
+import { id as deleteDialogID } from "../delete-dialog";
+import { id as saveDialogID } from "../save-dialog";
 
 import { Context } from "../BaseComponent";
 
@@ -108,7 +110,7 @@ const Header = ({
                   : saves[currentSaveIndex - 1] &&
                     <CrossButton
                       className="page-header__remove"
-                      onClick={e => dialogAPI.open("dialog4", e.target)}
+                      onClick={e => dialogAPI.open(deleteDialogID, e.target)}
                       aria-label="Удалить сохранение"
                     />
                 }
@@ -132,7 +134,7 @@ const Header = ({
                     context.update(title);
                   }
                   else {
-                    dialogAPI.open("save-dialog", e.target);
+                    dialogAPI.open(saveDialogID, e.target);
                   }
                 }}
               >
