@@ -1,4 +1,5 @@
 {
+  "parser": "@babel/eslint-parser",
   "ignorePatterns": ["*.test.js"],
   "env": {
     "es6": true,
