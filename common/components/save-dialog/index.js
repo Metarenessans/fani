@@ -9,6 +9,9 @@ import { Context } from "../BaseComponent";
 
 import "./style.scss";
 
+/** ID диалогового окна сохранения */
+export const id = "save-dialog";
+
 export const SaveDialog = props => {
   const context = useContext(Context);
   const { state } = context;
@@ -85,7 +88,7 @@ export const SaveDialog = props => {
 
   return (
     <Dialog
-      id="save-dialog"
+      id={id}
       className="save-dialog"
       contentClassName="save-dialog-content"
       title="Сохранение"
