@@ -23,13 +23,13 @@ export default function TablePanel() {
           <tbody>
             <tr>
               <th>Дата</th>
-              <th>Баланс</th>
-              <th>Доходы</th>
-              <th>Постоянные<br/> доходы</th>
-              <th>Периодические<br/> доходы</th>
-              <th>Расходы</th>
-              <th>Важные<br/> расходы</th>
-              <th>Необязательные<br/> расходы</th>
+              <th className="balance">Баланс</th>
+              <th className="income">Доходы</th>
+              <th className="income">Постоянные<br/> доходы</th>
+              <th className="income">Периодические<br/> доходы</th>
+              <th className="payments">Расходы</th>
+              <th className="payments">Важные<br/> расходы</th>
+              <th className="payments">Необязательные<br/> расходы</th>
               <th></th>
             </tr>
             {data.map((day, index) => {
@@ -142,24 +142,12 @@ export default function TablePanel() {
           Добавить
         </Button>
         <Button
-          id="add-day-btn"
           className="table-panel__add-button custom-btn"
-          onClick={async e => {
-            const { month} = state;
+          disabled={state.data.length === 1}
+          onClick={ e => {
             const data = cloneDeep(state.data);
-            const day = cloneDeep(context.dayTemplate);
-            // Обновляем дату
-            let time = new Date();
-            if (data[data.length - 1]) {
-              time = new Date(data[data.length - 1]?.date + (24 * 3600 * 1000));
-            }
-            day.date = Number(time);
-            data.push(day);
-            await context.setStateAsync({ data });
-            document.querySelector(".table-panel-table-wrapper").scrollTop = 99999;
-            if (data.length > month * 30) {
-              context.setState({ month: month + 1 });
-            }
+            data.pop();
+            context.setState({ data });
           }}
         >
           Удалить
