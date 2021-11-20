@@ -122,7 +122,9 @@ export default class BaseComponent extends React.Component {
   // TODO: fetchTools
 
   /**
-   * Возвращает название страницы
+   * Возвращает название текущего выбранного сохранения.
+   * 
+   * В дефолтном сохранении ("не выбрано") возвращает `this.deafultTitle`
    * 
    * @returns {string}
    */
