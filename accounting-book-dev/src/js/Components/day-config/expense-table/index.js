@@ -22,7 +22,7 @@ export default function ExpenseTable() {
   const { expense } = data[currentRowIndex];
 
   return (
-    <Panel className="expense-table" title="Расходы">
+    <Panel className="expense-table expense-table--payments-title" title="Расходы">
       <div className="expense-table-table-wrapper">
         <table>
           <tbody>
@@ -88,37 +88,39 @@ export default function ExpenseTable() {
           </tbody>
         </table>
       </div>
-      <Button
-        className="table-panel__add-button custom-btn"
-        onClick={() => {
-          const data = cloneDeep(state.data);
-          const expense = cloneDeep(data[currentRowIndex].expense);
+      <div className="buttons-container">
+        <Button
+          className="table-panel__add-button custom-btn"
+          onClick={() => {
+            const data = cloneDeep(state.data);
+            const expense = cloneDeep(data[currentRowIndex].expense);
 
-          expense.push({
-            expenseTypeName:         "Важные",
-            selectedPaymentToolName: "Жилье",
-            value:                   0
-          });
-          data[currentRowIndex].expense = expense;
-          context.setState({ data });
-        }}
-      >
-        Добавить
-      </Button>
+            expense.push({
+              expenseTypeName:         "Важные",
+              selectedPaymentToolName: "Жилье",
+              value:                   0
+            });
+            data[currentRowIndex].expense = expense;
+            context.setState({ data });
+          }}
+        >
+          Добавить
+        </Button>
 
-      <Button
-        className="table-panel__add-button custom-btn"
-        disabled={expense.length === 1}
-        onClick={() => {
-          const data = cloneDeep(state.data);
-          const expense = cloneDeep(data[currentRowIndex].expense);
-          expense.pop();
-          data[currentRowIndex].expense = expense;
-          context.setState({ data });
-        }}
-      >
-        Удалить
-      </Button>
+        <Button
+          className="table-panel__add-button custom-btn"
+          disabled={expense.length === 1}
+          onClick={() => {
+            const data = cloneDeep(state.data);
+            const expense = cloneDeep(data[currentRowIndex].expense);
+            expense.pop();
+            data[currentRowIndex].expense = expense;
+            context.setState({ data });
+          }}
+        >
+          Удалить
+        </Button>
+      </div>
     </Panel>
   );
 }

@@ -20,13 +20,13 @@ export default function BalanceTable() {
         <table>
           <tbody>
             <tr>
-              <th>Баланс</th>
-              <th>Доходы</th>
-              <th>Постоянные<br /> доходы</th>
-              <th>Периодические<br /> доходы</th>
-              <th>Расходы</th>
-              <th>Важные<br /> расходы</th>
-              <th>Необязательные<br /> расходы</th>
+              <th className="balance">Баланс</th>
+              <th className="income">Доходы</th>
+              <th className="income">Постоянные<br /> доходы</th>
+              <th className="income">Периодические<br /> доходы</th>
+              <th className="payments">Расходы</th>
+              <th className="payments">Важные<br /> расходы</th>
+              <th className="payments">Необязательные<br /> расходы</th>
             </tr>
             {(() => {
               return (

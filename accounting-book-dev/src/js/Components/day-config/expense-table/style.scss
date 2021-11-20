@@ -14,6 +14,12 @@
     }
   }
 
+  &--payments-title {
+    .stats-panel-title {
+      background-color: #fdd1d1!important;
+    }
+  }
+
   table {
     box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
     width: 100%;
