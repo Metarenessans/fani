@@ -1,34 +1,32 @@
-import React from "react"
+import React from "react";
 
-import $ from "jquery"
-import clsx from "clsx"
-import { clone, cloneDeep, isEqual } from "lodash"
-import { Button, Input, message } from "antd"
+import $ from "jquery";
+import { cloneDeep, isEqual } from "lodash";
+import { Button, message } from "antd";
 
-import { Tools, Tool }       from "../../../common/tools"
-import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import CrossButton           from "../../../common/components/cross-button"
+import { Dialog, dialogAPI } from "../../../common/components/dialog";
+import { SaveDialog } from "../../../common/components/save-dialog";
 
-import BaseComponent, { Context } from "../../../common/components/BaseComponent"
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
 
-import Header      from "../../../common/components/header"
-import DayConfig   from "./components/day-config"
-import Stats       from "./components/stats"
+import Header from "../../../common/components/header";
+import DeleteDialog from "../../../common/components/delete-dialog";
+
+import DayConfig   from "./components/day-config";
+import Stats       from "./components/stats";
 
 /* API */
 
-import fetch from "../../../common/api/fetch"
-
-import "../sass/style.sass"
+import "../sass/style.sass";
 
 let scrollInitiator;
 
 export const dealTemplate = {
   currentToolCode:      "",
   currentToolIndex:     "",
-  enterTime:  null,
+  enterTime:  null
 };
 
 const dayTemplate = {
@@ -78,15 +76,15 @@ const dayTemplate = {
    */
   expense: [
     {
-      expenseTypeName:        "Важные",
+      expenseTypeName:         "Важные",
       selectedPaymentToolName: "Жилье",
-      value:                         0,
+      value:                   0
     },
     {
-      expenseTypeName:  "Необязательные",
-      selectedPaymentToolName:  "Машина",
-      value:                           0,
-    },
+      expenseTypeName:         "Необязательные",
+      selectedPaymentToolName: "Машина",
+      value:                   0
+    }
   ],
 
   /**
@@ -103,15 +101,15 @@ const dayTemplate = {
    */
   income: [
     {
-      incomeTypeName:       "Постоянные",
-      selectedIncomeToolName:   "Работа",
-      value:                           0,
+      incomeTypeName:         "Постоянные",
+      selectedIncomeToolName: "Работа",
+      value:                  0
     },    
     {
-      incomeTypeName:    "Периодические",
-      selectedIncomeToolName:   "Бизнес",
-      value:                           0,
-    },    
+      incomeTypeName:         "Периодические",
+      selectedIncomeToolName: "Бизнес",
+      value:                  0
+    }  
   ],
 
   /**
@@ -121,16 +119,17 @@ const dayTemplate = {
    */
   deals: [
     cloneDeep(dealTemplate)
-  ],
+  ]
 };
 
 export default class App extends BaseComponent {
 
-  /** @type {{}} */
-  lastSavedState;
-
   constructor(props) {
     super(props);
+
+    this.deafultTitle = "Бинарный журнал сделок";
+
+    this.lastSavedState = {};
 
     this.initialState = {
       /**
@@ -158,17 +157,14 @@ export default class App extends BaseComponent {
       ...this.initialState,
 
       /** @type {dayTemplate[]} */
-      data: [
-        // ...new Array(30).fill().map(pekora => cloneDeep(this.dayTemplate))
-        cloneDeep(this.dayTemplate)
-      ],
+      data: [cloneDeep(this.dayTemplate)],
 
       /**
        * Номер текущей страницы, где:
        * 
        * 0 - Главная
        *
-       * 1 - конфиг дня
+       * 1 - Конфиг дня
        * 
        * @type {0|1}
        */
@@ -183,7 +179,7 @@ export default class App extends BaseComponent {
 
       extraStep:  false,
       extraSaved: false,
-      customTools:   [],
+      customTools:   []
     };
     
     this.state = {
@@ -203,7 +199,7 @@ export default class App extends BaseComponent {
         "Налоги",
         "Прочее"
       ],
-      incomeTools: ["Работа", "Бизнес", "Пассивный доход"],
+      incomeTools: ["Работа", "Бизнес", "Пассивный доход"]
     };
 
     // Bindings
@@ -215,6 +211,28 @@ export default class App extends BaseComponent {
   
   get dealTemplate() {
     return dealTemplate;
+  }
+
+  componentDidMount() {
+    this.fetchInitialData();
+
+    // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
+    $(document).on("mouseenter", ".table-extra-column-container", function (e) {
+      scrollInitiator = e.target.closest(".table-extra-column-container");
+    });
+
+    document.addEventListener("scroll", function (e) {
+      if (e?.target?.classList?.contains("table-extra-column-container")) {
+        if (e.target !== scrollInitiator) return;
+
+        document.querySelectorAll(".table-extra-column-container").forEach(element => {
+          if (element === scrollInitiator) {
+            return;
+          }
+          element.scrollLeft = scrollInitiator.scrollLeft;
+        });
+      }
+    }, true /* Capture event */);
   }
   
   componentDidUpdate(prevProps, prevState) {
@@ -231,52 +249,16 @@ export default class App extends BaseComponent {
       }
     }
   }
-  
-  componentDidMount() {
-    this.fetchInitialData();
-    
-    // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
-    $(document).on("mouseenter", ".table-extra-column-container", function (e) {
-      scrollInitiator = e.target.closest(".table-extra-column-container");
-    })
 
-    document.addEventListener("scroll", function (e) {
-      if (e?.target?.classList?.contains("table-extra-column-container")) {
-        if (e.target !== scrollInitiator) return;
-
-        document.querySelectorAll(".table-extra-column-container").forEach(element => {
-          if (element === scrollInitiator) {
-            return;
-          }
-          element.scrollLeft = scrollInitiator.scrollLeft;
-        });
-      }
-    }, true /* Capture event */);
-
-    window.addEventListener("contextmenu", e => {
-      e.preventDefault();
-      console.log("!");
-      document.getElementById("add-day-btn").click();
-    });
-  }
-
-  // Fetching everithing we need to start working
   fetchInitialData() {
-    // this.fetchSnapshots();
-    // this.fetchLastModifiedSnapshot()
+
   }
 
   packSave() {
-    const {
-      data,
-      currentRowIndex,
-    } = this.state;
+    // const {} = this.state;
 
     const json = {
-      static: {
-        data,
-        currentRowIndex,
-      },
+      static: {}
     };
 
     console.log("Packed save:", json);
@@ -284,13 +266,11 @@ export default class App extends BaseComponent {
   }
 
   parseSnapshot = data => {
-    const {} = this.state; 
     const initialState = cloneDeep(this.initialState);
     return {
-      data:                             data.data                             ?? initialState.data,
-      currentRowIndex:                  data.currentRowIndex                  ?? initialState.currentRowIndex,
-    }
-  }
+      
+    };
+  };
 
   /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
   async extractSnapshot(snapshot) {
@@ -298,16 +278,8 @@ export default class App extends BaseComponent {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
     }
     catch (error) {
-      message.error(error)
+      message.error(error);
     }
-  }
-
-  showAlert(errorMessage = "") {
-    console.log(`%c${errorMessage}`, "background: #222; color: #bada55");
-    message.error(errorMessage);
-    // if (!dev) {
-    //   this.setState({ errorMessage }, () => dialogAPI.open("dialog-msg"));
-    // }
   }
 
   getTools() {
@@ -316,42 +288,16 @@ export default class App extends BaseComponent {
   }
 
   getOptions() {
-    return this.getTools().map((tool, idx) => {
-      return {
-        idx: idx,
-        label: String(tool),
-      };
-    });
-  }
-
-  getTitleJSX() {
-    const { saves, currentSaveIndex } = this.state;
-    let titleJSX = <span>Бинарный журнал сделок</span>;
-    if (saves && saves[currentSaveIndex - 1]) {
-      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
-    }
-
-    return titleJSX;
-  }
-
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Калькулятор Инвестиционных Стратегий") */
-  getTitle() {
-    return this.getTitleJSX().props.children;
+    return this.getTools().map((tool, idx) => ({
+      idx,
+      label: String(tool)
+    }));
   }
 
   render() {
     const {
       step, 
-      extraStep, 
       currentRowIndex, 
-      rowData,
-      extraSaved,
-      loading,
-      saves,
-      currentSaveIndex,
-      saved,
-      changed,
       data,
       month
     } = this.state;
@@ -371,7 +317,7 @@ export default class App extends BaseComponent {
                       className={"day-button"}
                       disabled={month === 1}
                       onClick={e => {
-                        this.setState(prevState => ({ month: prevState.month - 1, step: 0 }))
+                        this.setState(prevState => ({ month: prevState.month - 1, step: 0 }));
                       }}
                     >
                       {"<< Предыдущий месяц"}
@@ -401,7 +347,7 @@ export default class App extends BaseComponent {
                       className={"day-button"}
                       disabled={month + 1 > Math.ceil(data.length / 30)}
                       onClick={e => {
-                        this.setState(prevState => ({ month: prevState.month + 1, step: 0 }))
+                        this.setState(prevState => ({ month: prevState.month + 1, step: 0 }));
                       }}
                     >
                       {"Следующий месяц >>"}
@@ -429,7 +375,7 @@ export default class App extends BaseComponent {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {
-                                      await this.setStateAsync({ step: 0, extraStep: false })
+                                      await this.setStateAsync({ step: 0, extraStep: false });
                                     }
                                   }}
                                 >
@@ -448,7 +394,7 @@ export default class App extends BaseComponent {
                               />
                             </div>
                           </div>
-                        )
+                        );
                       })())
                   }
 
@@ -457,211 +403,10 @@ export default class App extends BaseComponent {
             </div>
 
           </main>
-          {/* /.main */}
 
-          {false && (() => {
-            const { saves, id } = this.state;
-            const currentTitle = this.getTitle();
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? currentTitle : "Новое сохранение";
+          <SaveDialog />
 
-            /**
-             * Проверяет, может ли данная строка быть использована как название сейва
-             * 
-             * @param {String} nameToValidate
-             * 
-             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
-             */
-            const validate = (nameToValidate = "") => {
-              nameToValidate = nameToValidate.trim();
-
-              let errors = [];
-              if (nameToValidate != currentTitle) {
-                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
-                if (nameToValidate.length < 3) {
-                  errors.push("Имя должно содержать не меньше трех символов!");
-                }
-                else if (test) {
-                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
-                }
-                if (namesTaken.indexOf(nameToValidate) > -1) {
-                  console.log();
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={20}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-            let onConfirm = () => {
-              let { id, data, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(err => this.showAlert(err));
-              }
-              else {
-                const onResolve = (id) => {
-                  let index = saves.push({ id, name });
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(err => this.showAlert(err));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
-
-          <Dialog
-            id="dialog4"
-            title="Удаление сохранения"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Dialog
             id="close-slider-dialog"

@@ -1,27 +1,25 @@
-import React, { useContext } from "react"
-import { Button, DatePicker, Select, Input  } from "antd"
-import locale from "antd/es/date-picker/locale/ru_RU"
-import moment from "moment"
-import { cloneDeep } from "lodash"
-import Value from "../../../../../../common/components/value"
-import round from "../../../../../../common/utils/round"
-import formatNumber from "../../../../../../common/utils/format-number"
-import Panel from "../../panel"
-import CustomSelect from "../../../../../../common/components/custom-select"
+import React, { useContext } from "react";
+import { Button, Select, Input  } from "antd";
+import { cloneDeep } from "lodash";
 
-import { StateContext } from "../../../App"
+import CustomSelect from "../../../../../../common/components/custom-select";
+import NumericInput from "../../../../../../common/components/numeric-input";
+import formatNumber from "../../../../../../common/utils/format-number";
 
-import "./style.scss"
-import NumericInput from "../../../../../../common/components/numeric-input"
+import Panel from "../../panel";
+
+import { StateContext } from "../../../App";
+
+import "./style.scss";
 
 export default function ExpenseTable() {
   const context = useContext(StateContext);
   const { state } = context;
   const {
     data,
-    currentRowIndex, 
+    currentRowIndex
   } = state;
-  const { expense, income } = data[currentRowIndex]
+  const { expense } = data[currentRowIndex];
 
   return (
     <Panel className="expense-table" title="Расходы">
@@ -37,7 +35,7 @@ export default function ExpenseTable() {
               const { 
                 expenseTypeName,
                 selectedPaymentToolName,
-                value,
+                value
               } = item;
               return (
                 <tr key={index}>
@@ -48,7 +46,7 @@ export default function ExpenseTable() {
                       onChange={ val => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].expense[index]["expenseTypeName"] = val;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                     >
                       {state.expenseTypeTools.map((tool, index) =>
@@ -66,12 +64,12 @@ export default function ExpenseTable() {
                       onChange={value => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].expense[index]["selectedPaymentToolName"] = value;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].paymentTools = options;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                     />
                   </td>
@@ -82,12 +80,12 @@ export default function ExpenseTable() {
                       onBlur={val => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].expense[index].value = val;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                     />
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -99,9 +97,9 @@ export default function ExpenseTable() {
           const expense = cloneDeep(data[currentRowIndex].expense);
 
           expense.push({
-            expenseTypeName:        "Важные",
+            expenseTypeName:         "Важные",
             selectedPaymentToolName: "Жилье",
-            value:                         0,
+            value:                   0
           });
           data[currentRowIndex].expense = expense;
           context.setState({ data });
@@ -124,5 +122,5 @@ export default function ExpenseTable() {
         Удалить
       </Button>
     </Panel>
-  )
+  );
 }

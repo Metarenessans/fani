@@ -1,19 +1,15 @@
-import React, { useContext } from "react"
-import { Checkbox, Progress } from "antd"
-import { mean as average } from "lodash"
+import React, { useContext } from "react";
 
-import Stack from "../../../../../common/components/stack"
-import Value from "../../../../../common/components/value"
-import round from "../../../../../common/utils/round"
-import formatNumber from "../../../../../common/utils/format-number"
+import Stack from "../../../../../common/components/stack";
+import Value from "../../../../../common/components/value";
+import formatNumber from "../../../../../common/utils/format-number";
 
-import TablePanel   from "./table-panel"
-import Panel        from "../panel"
+import TablePanel   from "./table-panel";
+import Panel        from "../panel";
 
-import { StateContext } from "../../App"
+import { StateContext } from "../../App";
 
-import "./style.scss"
-
+import "./style.scss";
 
 export default function Stats() {
   const context = useContext(StateContext);
@@ -112,7 +108,7 @@ export default function Stats() {
                   </dd>
                 </div>
               </dl>
-            )
+            );
           })()}
         </Panel>
 
@@ -200,9 +196,8 @@ export default function Stats() {
             </div>
           </dl>
         </Panel>
-
       </div>
 
     </Stack>
-  )
+  );
 }

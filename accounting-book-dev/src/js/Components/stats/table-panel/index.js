@@ -1,16 +1,15 @@
-import React, { useContext } from "react"
-import { Button, DatePicker } from "antd"
-import locale from "antd/es/date-picker/locale/ru_RU"
-import moment from "moment"
-import { cloneDeep } from "lodash"
-import Value        from "../../../../../../common/components/value"
-import round        from "../../../../../../common/utils/round"
-import formatNumber from "../../../../../../common/utils/format-number"
-import Panel from "../../panel"
+import React, { useContext } from "react";
+import { Button, DatePicker } from "antd";
+import locale from "antd/es/date-picker/locale/ru_RU";
+import moment from "moment";
+import { cloneDeep } from "lodash";
+import Value        from "../../../../../../common/components/value";
+import formatNumber from "../../../../../../common/utils/format-number";
+import Panel from "../../panel";
 
-import { StateContext } from "../../../App"
+import { StateContext } from "../../../App";
 
-import "./style.scss"
+import "./style.scss";
 
 export default function TablePanel() {
   const context = useContext(StateContext);
@@ -48,7 +47,7 @@ export default function TablePanel() {
                       onChange={(moment, formatted) => {
                         const data = cloneDeep(state.data);
                         data[index].date = Number(moment);
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                     />
                   </td>
@@ -113,7 +112,7 @@ export default function TablePanel() {
                     </Button>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -142,5 +141,5 @@ export default function TablePanel() {
         Добавить
       </Button>
     </Panel>
-  )
+  );
 }

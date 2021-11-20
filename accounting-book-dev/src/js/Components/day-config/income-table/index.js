@@ -1,27 +1,25 @@
-import React, { useContext } from "react"
-import { Button, DatePicker, Select, Input } from "antd"
-import locale from "antd/es/date-picker/locale/ru_RU"
-import moment from "moment"
-import { cloneDeep } from "lodash"
-import Value from "../../../../../../common/components/value"
-import round from "../../../../../../common/utils/round"
-import formatNumber from "../../../../../../common/utils/format-number"
-import Panel from "../../panel"
+import React, { useContext } from "react";
+import { Button, Select } from "antd";
+import { cloneDeep } from "lodash";
 
-import { StateContext } from "../../../App"
+import formatNumber from "../../../../../../common/utils/format-number";
+import NumericInput from "../../../../../../common/components/numeric-input";
+import CustomSelect from "../../../../../../common/components/custom-select";
 
-import "./style.scss"
-import NumericInput from "../../../../../../common/components/numeric-input"
-import CustomSelect from "../../../../../../common/components/custom-select"
+import Panel from "../../panel";
+
+import { StateContext } from "../../../App";
+
+import "./style.scss";
 
 export default function IncomeTable() {
   const context = useContext(StateContext);
   const { state } = context;
   const {
     data,
-    currentRowIndex,
+    currentRowIndex
   } = state;
-  const { income } = data[currentRowIndex]
+  const { income } = data[currentRowIndex];
 
   return (
     <Panel className="income-table" title="Доходы">
@@ -38,8 +36,8 @@ export default function IncomeTable() {
                 incomeTools,
                 selectedIncomeToolName,
                 incomeTypeName,
-                value,
-              } = item
+                value
+              } = item;
               return (
                 <tr key={index}>
                   <td>
@@ -68,7 +66,7 @@ export default function IncomeTable() {
                       onChange={ value => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].income[index]["selectedIncomeToolName"] = value;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
                         const data = cloneDeep(state.data);
@@ -84,12 +82,12 @@ export default function IncomeTable() {
                       onBlur={val => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].income[index].value = val;
-                        context.setState({ data })
+                        context.setState({ data });
                       }}
                     />
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -101,9 +99,9 @@ export default function IncomeTable() {
           const income = cloneDeep(data[currentRowIndex].income);
 
           income.push({
-            selectedIncomeToolName:     "Работа",
+            selectedIncomeToolName: "Работа",
             incomeTypeName:         "Постоянные",
-            value:                             0,
+            value:                  0
           });
           data[currentRowIndex].income = income;
           context.setState({ data });
@@ -126,5 +124,5 @@ export default function IncomeTable() {
         Удалить
       </Button>
     </Panel>
-  )
+  );
 }

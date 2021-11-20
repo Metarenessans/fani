@@ -1,16 +1,13 @@
-import React, { useContext } from "react"
-import { Button, DatePicker } from "antd"
-import locale from "antd/es/date-picker/locale/ru_RU"
-import moment from "moment"
-import { cloneDeep } from "lodash"
-import Value from "../../../../../../common/components/value"
-import round from "../../../../../../common/utils/round"
-import formatNumber from "../../../../../../common/utils/format-number"
-import Panel from "../../panel"
+import React, { useContext } from "react";
 
-import { StateContext } from "../../../App"
+import Value from "../../../../../../common/components/value";
+import formatNumber from "../../../../../../common/utils/format-number";
 
-import "./style.scss"
+import Panel from "../../panel";
+
+import { StateContext } from "../../../App";
+
+import "./style.scss";
 
 export default function BalanceTable() {
   const context = useContext(StateContext);
@@ -46,19 +43,27 @@ export default function BalanceTable() {
                   </td>
                   <td>
                     <Value
-                      value={currentDay.income.reduce((acc, row) => acc + row.value, 0)}
+                      value={currentDay.income
+                        .reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={currentDay.income.filter(source => source.incomeTypeName == "Постоянные").reduce((acc, row) => acc + row.value, 0)}
+                      value={currentDay.income
+                        .filter(source => source.incomeTypeName == "Постоянные")
+                        .reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={currentDay.income.filter(source => source.incomeTypeName == "Периодические").reduce((acc, row) => acc + row.value, 0)}
+                      value={currentDay.income
+                        .filter(source => source.incomeTypeName == "Периодические")
+                        .reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
@@ -70,22 +75,28 @@ export default function BalanceTable() {
                   </td>
                   <td>
                     <Value
-                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Важные").reduce((acc, row) => acc + row.value, 0)}
+                      value={-currentDay.expense
+                        .filter(source => source.expenseTypeName == "Важные")
+                        .reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
                     <Value
-                      value={-currentDay.expense.filter(source => source.expenseTypeName == "Необязательные").reduce((acc, row) => acc + row.value, 0)}
+                      value={-currentDay.expense
+                        .filter(source => source.expenseTypeName == "Необязательные")
+                        .reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                 </tr>
-              )
+              );
             })()}
           </tbody>
         </table>
       </div>
     </Panel>
-  )
+  );
 }
