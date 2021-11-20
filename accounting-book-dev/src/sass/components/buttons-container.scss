@@ -3,4 +3,9 @@
   justify-content: flex-start;
 
   gap: 1em;
+
+  &--end {
+    justify-content: flex-end;
+    margin-bottom: 3em;
+  }
 }

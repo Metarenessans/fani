@@ -364,7 +364,7 @@ export default class App extends BaseComponent {
                   </div>
                   {
                     step === 0
-                      ? <Stats />
+                      ? <Stats/>
                       :
                         <div id="trade-slider" className="trade-slider-active">
                           <div className="trade-slider-container">
@@ -389,6 +389,23 @@ export default class App extends BaseComponent {
                             </div>
 
                             <DayConfig />
+
+                            <div className="buttons-container buttons-container--end">
+                              <Button
+                                className="table-panel__add-button custom-btn"
+                                onClick={e => {}}
+                              >
+                                Сохранить
+                              </Button>
+                              <Button
+                                className="table-panel__add-button custom-btn"
+                                onClick={e => {
+                                  this.setState({ step: 0 })
+                                }}
+                              >
+                                Закрыть
+                              </Button>
+                            </div>
                           </div>
                         </div>
                   }
