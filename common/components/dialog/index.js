@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import PropTypes from "prop-types";
 import { Button } from "antd";
 import clsx from "clsx";
 
@@ -130,10 +131,98 @@ dialogAPI.close = dialogID => {
   }
 };
 
-// TODO: accessible close button that is visible only when focused
-// TODO: propTypes и JSDoc
-const Dialog = memo(class extends React.Component {
+const propTypes = {
+  /**
+   * Заголовок
+   * 
+   * @type {string|JSX.Element}
+   */
+  title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 
+  /**
+   * Класс обертки, внутри которой будет отрендерено содержимое компонента
+   * 
+   * @type {string}
+   */
+  contentClassName: PropTypes.string,
+
+  /**
+   * Перезаписывает содержимое нижней части диалогового окна
+   */
+  footer: PropTypes.element,
+
+  /**
+   * Прячет футер, если `true`
+   */
+  hideFooter: PropTypes.bool,
+
+  /**
+   * Текстовое содержимое кнопки подтверждения
+   * 
+   * @type {string|JSX.Element}
+   */
+  confirmText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  
+  /**
+   * Класс кнопки подтверждения
+   * 
+   * @type {string}
+   */
+  confirmClass: PropTypes.string,
+  
+  /**
+   * Если `true`, то кнопка подтверждения будет скрыта
+   * 
+   * @type {boolean}
+   */
+  hideConfirm: PropTypes.bool,
+
+  /**
+   * Текстовое содержимое кнопки отмены
+   * 
+   * @type {string|JSX.Element}
+   */
+  cancelText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+
+  /**
+   * Класс кнопки отмены
+   * 
+   * @type {string}
+   */
+  cancelClass: PropTypes.string,
+
+  /**
+   * Текстовое содержимое кнопки отмены
+   * 
+   * @type {string|JSX.Element}
+   */
+  hideCancel: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+
+  /**
+   * Режим "чистого" модального окна: прячет заголовок и футер
+   * 
+   * По умолчанию режим выключен
+   * 
+   * @type {boolean}
+   */
+  pure: PropTypes.bool
+};
+
+// TODO: accessible close button that is visible only when focused
+
+/** @typedef {propTypes & React.HTMLAttributes} Props */
+
+/**
+ * Модальное окно
+ * 
+ * @augments React.Component<Props>
+ */
+const Dialog = memo(
+  class extends React.Component {
+
+  static propTypes = propTypes;
+
+  /** @param {Props} props */
   constructor(props) {
     super(props);
 
@@ -144,13 +233,11 @@ const Dialog = memo(class extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener("keyup", event => {
-
-      const key = event.which || event.keyCode;
-
+    window.addEventListener("keyup", e => {
+      const key = e.which || e.keyCode;
       if (key === 27) {
         this.onClose();
-        event.stopPropagation();
+        e.stopPropagation();
       }
     });
   }
@@ -158,7 +245,8 @@ const Dialog = memo(class extends React.Component {
   onConfirm() {
     const { onConfirm } = this.props;
     if (onConfirm) {
-      if (onConfirm()) {
+      const shouldClose = onConfirm();
+      if (shouldClose) {
         dialogAPI.closeLast();
       }
     }
@@ -166,9 +254,10 @@ const Dialog = memo(class extends React.Component {
 
   onCancel() {
     const { onCancel, onClose } = this.props;
-    var callback = onCancel || onClose;
+    const callback = onCancel || onClose;
     if (callback) {
-      if (callback()) {
+      const shouldClose = callback();
+      if (shouldClose) {
         dialogAPI.closeLast();
       }
     }
@@ -180,7 +269,8 @@ const Dialog = memo(class extends React.Component {
   onClose() {
     const { onClose } = this.props;
     if (onClose) {
-      if (onClose()) {
+      const shouldClose = onClose();
+      if (shouldClose) {
         dialogAPI.closeLast();
       }
     }
@@ -193,8 +283,9 @@ const Dialog = memo(class extends React.Component {
     let {
       id,
       className,
-      title,
+      children,
 
+      title,
       contentClassName,
 
       footer,
@@ -213,32 +304,21 @@ const Dialog = memo(class extends React.Component {
 
     // console.log('rendering Dialog', id);
 
-    className = className || "";
     const block = "dialog";
 
     contentClassName = contentClassName || "";
 
     return (
       <div
+        {...this.props}
         id={id}
-        className={
-          []
-            .concat(block)
-            .concat(className)
-            .concat(pure ? "pure" : "")
-            .join(" ")
-            .trim()
-        }
+        className={clsx(block, className, pure && "pure")}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        hidden={!this.props.test ?? true}
+        hidden={true}
         onClick={e => {
-          if (
-            e.target.id
-              .split(" ")
-              .indexOf(id) > -1
-          ) {
+          if (e.target.id.split(" ").indexOf(id) > -1) {
             this.onClose();
           }
         }}>
@@ -248,7 +328,7 @@ const Dialog = memo(class extends React.Component {
             {!pure && <h2 className={`${block}__title`}>{title}</h2>}
 
             <div className={clsx(`${block}__content`, contentClassName)}>
-              {this.props.children}
+              {children}
             </div>
 
             {!pure && (
@@ -258,22 +338,22 @@ const Dialog = memo(class extends React.Component {
                   <div className={`${block}-footer-wrap`}>
                     <footer className={`${block}-footer`}>
 
-                      {!hideCancel && (
+                      {!hideCancel && 
                         <Button
-                          className={[].concat("custom-btn").concat(cancelClass).join(" ").trim()}
+                          className={clsx("custom-btn", cancelClass)}
                           onClick={() => this.onCancel()}>
-                          {cancelText ? cancelText : "Отмена"}
+                          {cancelText ?? "Отмена"}
                         </Button>
-                      )}
+                      }
 
-                      {!hideConfirm && (
+                      {!hideConfirm && 
                         <Button
-                          className="custom-btn custom-btn--filled"
+                          className={clsx("custom-btn", "custom-btn--filled", confirmClass)}
                           type="primary"
                           onClick={() => this.onConfirm()}>
-                          {confirmText ? confirmText : "Сохранить"}
+                          {confirmText ?? "ОК"}
                         </Button>
-                      )}
+                      }
 
                     </footer>
                   </div>
@@ -281,13 +361,11 @@ const Dialog = memo(class extends React.Component {
             )}
 
           </Stack>
-          {!pure
-            ?
+          {!pure &&
             <CrossButton
               className={`${block}__close`}
               onClick={e => this.onClose()}
             />
-            : null
           }
         </div>
         <div tabIndex="0" aria-hidden="true"></div>
