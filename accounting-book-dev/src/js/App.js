@@ -5,7 +5,7 @@ import { cloneDeep, isEqual } from "lodash";
 import { Button, message } from "antd";
 
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import { SaveDialog } from "../../../common/components/save-dialog";
+import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
@@ -393,15 +393,13 @@ export default class App extends BaseComponent {
                             <div className="buttons-container buttons-container--end">
                               <Button
                                 className="table-panel__add-button custom-btn"
-                                onClick={e => {}}
+                                onClick={e => dialogAPI.open(saveDialogID, e.target)}
                               >
                                 Сохранить
                               </Button>
                               <Button
                                 className="table-panel__add-button custom-btn"
-                                onClick={e => {
-                                  this.setState({ step: 0 })
-                                }}
+                                onClick={e => this.setState({ step: 0 })}
                               >
                                 Закрыть
                               </Button>

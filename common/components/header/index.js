@@ -7,8 +7,8 @@ import clsx from "clsx";
 import Stack         from "../stack";
 import CrossButton   from "../cross-button";
 import { dialogAPI } from "../dialog";
-import { id as deleteDialogID } from "../delete-dialog";
-import { id as saveDialogID } from "../save-dialog";
+import { dialogID as deleteDialogID } from "../delete-dialog";
+import { dialogID as saveDialogID } from "../save-dialog";
 
 import { Context } from "../BaseComponent";
 
