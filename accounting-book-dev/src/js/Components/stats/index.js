@@ -23,7 +23,7 @@ export default function Stats() {
 
       <div className="stats-container">
         {/* Генеральный анализ за этот месяц */}
-        <Panel title="Генеральный анализ за этот месяц">
+        <Panel className="stats-panel--indent" title="Генеральный анализ за этот месяц">
           {(() => {
             const data = state.data.slice((month - 1) * 30, month * 30 - 1);
             return (
@@ -113,7 +113,7 @@ export default function Stats() {
         </Panel>
 
         {/* Генеральный анализ за всё время */}
-        <Panel title="Генеральный анализ за всё время">
+        <Panel className="stats-panel--indent" title="Генеральный анализ за всё время">
           <dl className="association-list">
             <div>
               <dt>Доходы</dt>
