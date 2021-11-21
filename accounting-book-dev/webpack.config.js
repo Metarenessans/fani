@@ -56,8 +56,8 @@ module.exports = (env, options) => {
                 plugins: [
                   require("postcss-custom-properties")({ preserve: true }),
                   require("autoprefixer")(),
-                  require("postcss-csso")()
-                ],
+                  prod && require("postcss-csso")()
+                ].filter(plugin => !!plugin),
                 sourceMap: true
               }
             },

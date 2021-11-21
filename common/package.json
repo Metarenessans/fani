@@ -46,6 +46,7 @@
     "postcss-custom-properties": "^9.1.1",
     "postcss-loader": "^3.0.0",
     "prop-types": "^15.7.2",
+    "react-innertext": "^1.1.5",
     "resolve-url-loader": "^3.1.1",
     "sass": "^1.26.10",
     "sass-convert": "^0.5.2",
