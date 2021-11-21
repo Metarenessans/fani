@@ -20,6 +20,7 @@ import Stats       from "./components/stats";
 /* API */
 
 import "../sass/style.sass";
+import innerText from "react-innertext";
 
 let scrollInitiator;
 
@@ -125,7 +126,7 @@ export default class App extends BaseComponent {
   constructor(props) {
     super(props);
 
-    this.deafultTitle = "Бинарный журнал сделок";
+    this.deafultTitle = <>Книга учета<br/> доходов и расходов</>;
 
     this.lastSavedState = {};
 

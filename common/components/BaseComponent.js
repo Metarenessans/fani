@@ -1,6 +1,7 @@
 import React from "react";
 import { message } from "antd";
 import { cloneDeep } from "lodash";
+import innerText from "react-innertext";
 
 import fetch         from "../api/fetch";
 import fetchSaveById from "../api/fetch/fetch-save-by-id";
@@ -134,7 +135,7 @@ export default class BaseComponent extends React.Component {
    */
   getTitle() {
     const { saves, currentSaveIndex } = this.state;
-    return saves?.[currentSaveIndex - 1]?.name ?? this.deafultTitle;
+    return saves?.[currentSaveIndex - 1]?.name ?? innerText(this.deafultTitle);
   }
 
   /**
