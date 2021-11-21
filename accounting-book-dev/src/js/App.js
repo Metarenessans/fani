@@ -400,7 +400,7 @@ export default class App extends BaseComponent {
                               <Button
                                 className="table-panel__add-button custom-btn"
                                 onClick={e => {
-                                  this.setState({ step: 0 })
+                                  this.setState({ step: 0 });
                                 }}
                               >
                                 Закрыть

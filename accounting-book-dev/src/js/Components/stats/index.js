@@ -50,7 +50,7 @@ export default function Stats() {
                     />
                   </dd>
                 </div>
-                <div>
+                <div className="income-line">
                   <dt>Периодические доходы</dt>
                   <dd>
                     <Value
@@ -83,7 +83,7 @@ export default function Stats() {
                     />
                   </dd>
                 </div>
-                <div>
+                <div className="payments-line">
                   <dt>Необязательные расходы</dt>
                   <dd>
                     <Value
@@ -137,7 +137,7 @@ export default function Stats() {
                 />
               </dd>
             </div>
-            <div>
+            <div className="income-line">
               <dt>Периодические доходы</dt>
               <dd>
                 <Value
@@ -170,7 +170,7 @@ export default function Stats() {
                 />
               </dd>
             </div>
-            <div>
+            <div className="payments-line">
               <dt>Необязательные расходы</dt>
               <dd>
                 <Value
