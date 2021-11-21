@@ -246,7 +246,7 @@ export default class BaseComponent extends React.Component {
   async update(name) {
     const { id } = this.state;
     if (!id) {
-      throw "Не удалось обновить сохранение: 'id' is " + id;
+      throw "Не удалось обновить сохранение: 'id' равен " + id;
     }
 
     const json = this.packSave();
@@ -264,9 +264,8 @@ export default class BaseComponent extends React.Component {
     catch (error) {
       message.error(`Не удалось обновить сохранение: ${error}`);
     }
-    finally {
-      this.setState({ changed: false });
-    }
+
+    return this.setStateAsync({ changed: false });
   }
 
   /**

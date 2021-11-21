@@ -56,8 +56,8 @@ module.exports = (env, options) => {
                 plugins: [
                   require("postcss-custom-properties")({ preserve: true }),
                   require("autoprefixer")(),
-                  require("postcss-csso")()
-                ],
+                  prod && require("postcss-csso")()
+                ].filter(plugin => !!plugin),
                 sourceMap: true
               }
             },
@@ -65,9 +65,14 @@ module.exports = (env, options) => {
             // Compiles SASS to CSS
             {
               loader: "sass-loader",
-              /** @type import("sass-loader").Options */
+              /** @type {import("sass-loader").Options} */
               options: {
-                // prependData: `$fonts: '${prod ? "../" : ""}fonts/';`,
+                /** @type {import("webpack").LoaderDefinition} */
+                additionalData: (content, loaderContext) => {
+                  const { resourcePath } = loaderContext;
+                  const lineSeparator = resourcePath.endsWith(".scss") ? ";" : "\n";
+                  return `$fonts: '${prod ? "../" : ""}fonts/'${lineSeparator}` + content;
+                },
                 sassOptions: {
                   outputStyle: "expanded"
                 }

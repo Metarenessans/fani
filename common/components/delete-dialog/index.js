@@ -3,14 +3,14 @@ import { Dialog } from "../dialog";
 import { Context } from "../BaseComponent";
 
 /** ID диалогового окна удаления */
-export const id = "delete-dialog";
+export const dialogID = "delete-dialog";
 
 export default function DeleteDialog() {
   const context = useContext(Context);
   const { state } = context;
   return (
     <Dialog
-      id={id}
+      id={dialogID}
       title="Удаление сохранения"
       confirmText="Удалить"
       onConfirm={() => {

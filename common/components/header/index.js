@@ -3,12 +3,13 @@ import PropTypes from "prop-types";
 import { Button, Select, message } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 import clsx from "clsx";
+import innerText from "react-innertext";
 
 import Stack         from "../stack";
 import CrossButton   from "../cross-button";
 import { dialogAPI } from "../dialog";
-import { id as deleteDialogID } from "../delete-dialog";
-import { id as saveDialogID } from "../save-dialog";
+import { dialogID as deleteDialogID } from "../delete-dialog";
+import { dialogID as saveDialogID } from "../save-dialog";
 
 import { Context } from "../BaseComponent";
 
@@ -54,7 +55,7 @@ const Header = ({
           {/* Селект с выбором сохранения */}
           <label className="labeled-select stack-exception page-header__select">
             <span className="labeled-select__label labeled-select__label--hidden">
-              {title}
+              {innerText(title)}
             </span>
             <Select
               disabled={loading}
@@ -131,7 +132,7 @@ const Header = ({
                 )}
                 onClick={e => {
                   if (saved && changed) {
-                    context.update(title);
+                    context.update(innerText(title));
                   }
                   else {
                     dialogAPI.open(saveDialogID, e.target);

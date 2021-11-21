@@ -5,7 +5,7 @@ import { cloneDeep, isEqual } from "lodash";
 import { Button, message } from "antd";
 
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import { SaveDialog } from "../../../common/components/save-dialog";
+import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
@@ -20,6 +20,7 @@ import Stats       from "./components/stats";
 /* API */
 
 import "../sass/style.sass";
+import innerText from "react-innertext";
 
 let scrollInitiator;
 
@@ -125,7 +126,7 @@ export default class App extends BaseComponent {
   constructor(props) {
     super(props);
 
-    this.deafultTitle = "Бинарный журнал сделок";
+    this.deafultTitle = <>Книга учета<br/> доходов и расходов</>;
 
     this.lastSavedState = {};
 
@@ -320,10 +321,13 @@ export default class App extends BaseComponent {
                       className="day-button"
                       disabled={month === 1}
                       onClick={e => {
-                        this.setState(prevState => ({
-                          month: prevState.month - 1,
-                          step: 0
-                        }));
+                        this.setState(prevState => {
+                          const month = prevState.month - 1;
+                          return {
+                            month,
+                            currentRowIndex: (month - 1) * 30
+                          };
+                        });
                       }}
                     >
                       {"<< Предыдущий месяц"}
@@ -353,10 +357,13 @@ export default class App extends BaseComponent {
                       className="day-button"
                       disabled={month + 1 > Math.ceil(data.length / 30)}
                       onClick={e => {
-                        this.setState(prevState => ({
-                          month: prevState.month + 1,
-                          step: 0
-                        }));
+                        this.setState(prevState => {
+                          const month = prevState.month + 1;
+                          return {
+                            month,
+                            currentRowIndex: (month - 1) * 30
+                          };
+                        });
                       }}
                     >
                       {"Следующий месяц >>"}
@@ -393,15 +400,13 @@ export default class App extends BaseComponent {
                             <div className="buttons-container buttons-container--end">
                               <Button
                                 className="table-panel__add-button custom-btn"
-                                onClick={e => {}}
+                                onClick={e => dialogAPI.open(saveDialogID, e.target)}
                               >
                                 Сохранить
                               </Button>
                               <Button
                                 className="table-panel__add-button custom-btn"
-                                onClick={e => {
-                                  this.setState({ step: 0 });
-                                }}
+                                onClick={e => this.setState({ step: 0 })}
                               >
                                 Закрыть
                               </Button>

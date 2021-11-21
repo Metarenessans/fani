@@ -10,7 +10,7 @@ import { Context } from "../BaseComponent";
 import "./style.scss";
 
 /** ID диалогового окна сохранения */
-export const id = "save-dialog";
+export const dialogID = "save-dialog";
 
 export const SaveDialog = props => {
   const context = useContext(Context);
@@ -55,40 +55,34 @@ export const SaveDialog = props => {
     if (id != null) {
       try {
         await context.update(name);
+        const saves = cloneDeep(state.saves);
+        saves[currentSaveIndex - 1].name = name;
+        await context.setStateAsync({ saves });
       }
       catch (error) {
         console.error(error);
         message.error(error);
       }
-
-      const saves = cloneDeep(state.saves);
-      saves[currentSaveIndex - 1].name = name;
-      context.setState({ saves, changed: false });
     }
     else {
       try {
-        await context.save(name);
+        const id = await context.save(name);
+        const saves = cloneDeep(state.saves);
+        const currentSaveIndex = saves.push({ id, name });
+        await context.setStateAsync({ saves, currentSaveIndex });
       }
       catch (error) {
         console.error(error);
         message.error(error);
       }
-      finally {
-        const saves = cloneDeep(state.saves);
-        const currentSaveIndex = saves.push({ id, name });
-        context.setState({
-          saves,
-          currentSaveIndex,
-          saved:   true,
-          changed: false
-        });
-      }
     }
+
+    context.setState({ saved: true, changed: false });
   };
 
   return (
     <Dialog
-      id={id}
+      id={dialogID}
       className="save-dialog"
       contentClassName="save-dialog-content"
       title="Сохранение"
