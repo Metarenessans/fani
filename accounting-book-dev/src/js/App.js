@@ -320,10 +320,13 @@ export default class App extends BaseComponent {
                       className="day-button"
                       disabled={month === 1}
                       onClick={e => {
-                        this.setState(prevState => ({
-                          month: prevState.month - 1,
-                          step: 0
-                        }));
+                        this.setState(prevState => {
+                          const month = prevState.month - 1;
+                          return {
+                            month,
+                            currentRowIndex: (month - 1) * 30
+                          };
+                        });
                       }}
                     >
                       {"<< Предыдущий месяц"}
@@ -353,10 +356,13 @@ export default class App extends BaseComponent {
                       className="day-button"
                       disabled={month + 1 > Math.ceil(data.length / 30)}
                       onClick={e => {
-                        this.setState(prevState => ({
-                          month: prevState.month + 1,
-                          step: 0
-                        }));
+                        this.setState(prevState => {
+                          const month = prevState.month + 1;
+                          return {
+                            month,
+                            currentRowIndex: (month - 1) * 30
+                          };
+                        });
                       }}
                     >
                       {"Следующий месяц >>"}
