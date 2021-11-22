@@ -40,6 +40,7 @@ export default function TablePanel() {
                       value={moment(day.date)}
                       onChange={(moment, formatted) => {
                         const data = cloneDeep(state.data);
+                        // При сбросе значения ставим текущую дату
                         data[index].date = Number(moment) === 0 ? Date.now() : Number(moment);
                         context.setState({ data })
                       }}
