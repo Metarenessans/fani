@@ -9,9 +9,9 @@ import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import CrossButton           from "../../../common/components/cross-button"
 
 import { SaveDialog } from "../../../common/components/save-dialog"
-import BaseComponent, { Context as StateContext } from "../../../common/components/BaseComponent"
+import BaseComponent, { Context } from "../../../common/components/BaseComponent"
 /** @type {React.Context<App>} */
-export { StateContext };
+export const StateContext = Context;
 
 import Header      from "../../../common/components/header"
 import FirstStep   from "./components/step-1"
