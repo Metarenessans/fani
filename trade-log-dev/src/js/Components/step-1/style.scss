@@ -133,7 +133,7 @@
   }
 
   .time-picker-container {
-    height: 1.6em;
+    height: 1.8em;
   }
   
   .ant {
@@ -325,15 +325,17 @@
 
       &-tool {
         height: 100%;
-        padding-top:   .9em!important;
+        display: flex;
+        align-items: center;
         padding-right: .6em;
         padding-left:  .6em;
       }
 
       &-time {
         height: 100%;
-        padding: 0.98em 1.7em 2.69em;
-        padding-bottom: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 1.7em;
       }
 
       &--long {
@@ -378,11 +380,9 @@
         justify-content: center;
         align-items: center;
         height: 100%;
-        // ~~
+        
         input {
           text-align: left!important;
-          border: initial;
-          background-color: inherit;
         }
         
         .ant-input-suffix {

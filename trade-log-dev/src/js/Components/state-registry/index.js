@@ -1,6 +1,7 @@
 import React, { useContext } from "react"
 
-import { Checkbox } from "antd"
+import { Tooltip, Checkbox } from 'antd/es'
+import { Tools } from "../../../../../common/tools"
 
 import Panel from "../panel"
 
@@ -26,7 +27,27 @@ export default function StateRegistry() {
             <tr>
               <th>Состояния</th>
               {currentDay.deals.map((deal, index) =>
-                <th key={index}>{index + 1} сделка</th>
+                <Tooltip
+                  key={index}
+                  title={() => {
+                    let hours   = String(new Date(deal.enterTime).getHours());
+                    let minutes = String(new Date(deal.enterTime).getMinutes());
+                    let formattedHours   = hours.split("").length === 1 ? "0" + hours : hours;
+                    let formattedMinutes = minutes.split("").length === 1 ? "0" + minutes : minutes;
+                    let time = formattedHours + ":" + formattedMinutes;
+                    
+                    let selectedToolIndex  = Tools.getToolIndexByCode(state.tools, deal.currentToolCode);
+                    let selectedToolData   = state.tools[selectedToolIndex];
+                    let preferableToolName = (selectedToolData.shortName || selectedToolData.fullName);
+
+                    if (deal.enterTime != null) {
+                      return time + " | " + preferableToolName;
+                    }
+                    else return preferableToolName;
+                  }}
+                >
+                  <th key={index}>{index + 1} сделка</th>
+                </Tooltip>
               )}
             </tr>
             <tr>
