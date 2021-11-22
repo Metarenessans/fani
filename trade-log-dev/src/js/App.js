@@ -30,7 +30,7 @@ let scrollInitiator;
 
 export const dealTemplate = {
   currentToolCode: "SBER",
-  currentToolIndex:    "",
+  currentToolIndex:     0,
   enterTime:  null,
   isLong:     null,
 

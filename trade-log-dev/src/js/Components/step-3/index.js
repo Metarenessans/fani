@@ -1,5 +1,8 @@
 import React, { useContext } from 'react'
-import { Button, Tooltip, Select, Progress, Checkbox, Input } from 'antd/es'
+import { Tooltip, Select, Checkbox} from 'antd/es'
+
+import { Tools } from "../../../../../common/tools"
+
 
 import { StateContext } from "../../App"
 import { cloneDeep } from "lodash"
@@ -68,9 +71,29 @@ export default class ThirdStep extends React.Component {
                       const { baseTrendDirection } = reportMonitor[index];
                       return (
                         <div className="table-extra-column" key={index}>
-                          <div className="table-extra-column-key">
-                            {(index + 1) + " " + "сделка"}
-                          </div>
+                          <Tooltip
+                            key={index}
+                            title={() => {
+                              let hours   = String(new Date(item.enterTime).getHours());
+                              let minutes = String(new Date(item.enterTime).getMinutes());
+                              let formattedHours   = hours.split("").length === 1 ? "0" + hours : hours;
+                              let formattedMinutes = minutes.split("").length === 1 ? "0" + minutes : minutes;
+                              let time = formattedHours + ":" + formattedMinutes;
+                              
+                              let selectedToolIndex  = Tools.getToolIndexByCode(state.tools, item.currentToolCode);
+                              let selectedToolData   = state.tools[selectedToolIndex];
+                              let preferableToolName = selectedToolData.shortName || selectedToolData.fullName;
+
+                              if (item.enterTime != null) {
+                                return time + " | " + preferableToolName;
+                              }
+                              else return preferableToolName;
+                            }}
+                          >
+                            <div className="table-extra-column-key">
+                              {(index + 1) + " " + "сделка"}
+                            </div>
+                          </Tooltip>
 
                           <div className="table-extra-column-value">
                             <div className="table-extra-column-value-row">

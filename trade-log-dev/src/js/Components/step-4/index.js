@@ -61,7 +61,7 @@ export default class FourthStep extends React.Component {
               </div>
 
               <div className="pactice-container">
-                <a className="trade-log-button" target="_blank" href="https://www.youtube.com/">
+                <a className="trade-log-button" target="_blank" href="https://www.youtube.com/c/zmeevtv">
                   Техники внутренней проработки
                 </a>
               </div>
