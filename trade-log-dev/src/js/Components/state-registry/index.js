@@ -36,9 +36,9 @@ export default function StateRegistry() {
                     let formattedMinutes = minutes.split("").length === 1 ? "0" + minutes : minutes;
                     let time = formattedHours + ":" + formattedMinutes;
                     
-                    let selectedToolIndex  = Tools.getToolIndexByCode(state.tools, deal.currentToolCode);
-                    let selectedToolData   = state.tools[selectedToolIndex];
-                    let preferableToolName = (selectedToolData.shortName || selectedToolData.fullName);
+                    let selectedToolIndex  = Tools.getToolIndexByCode(state?.tools, deal.currentToolCode);
+                    let selectedToolData   = state?.tools[selectedToolIndex];
+                    let preferableToolName = (selectedToolData?.shortName || selectedToolData?.fullName);
 
                     if (deal.enterTime != null) {
                       return time + " | " + preferableToolName;

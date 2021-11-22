@@ -50,9 +50,9 @@ export default function ThirdStep(props) {
                       let formattedMinutes = String(minutes).padStart(2, "0");
                       let time = formattedHours + ":" + formattedMinutes;
                       
-                      let selectedToolIndex  = Tools.getToolIndexByCode(state.tools, deal.currentToolCode);
-                      let selectedTool       = state.tools[selectedToolIndex];
-                      let preferableToolName = selectedTool.shortName || selectedTool.fullName;
+                      let selectedToolIndex  = Tools.getToolIndexByCode(state?.tools, deal.currentToolCode);
+                      let selectedTool       = state?.tools[selectedToolIndex];
+                      let preferableToolName = selectedTool?.shortName || selectedTool?.fullName;
 
                       if (deal.enterTime != null) {
                         return time + " | " + preferableToolName;
