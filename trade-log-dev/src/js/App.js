@@ -31,6 +31,13 @@ let scrollInitiator;
 export const dealTemplate = {
   currentToolCode: "SBER",
   currentToolIndex:     0,
+  /**
+   * Время входа в сделку в формате Unix time
+   * 
+   * По дефолту равен `null` (показывает placeholder)
+   * 
+   * @type {?number}
+   */
   enterTime:  null,
   isLong:     null,
 
