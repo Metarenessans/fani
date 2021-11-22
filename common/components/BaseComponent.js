@@ -22,7 +22,7 @@ export default class BaseComponent extends React.Component {
      *
      * Подставляется в запросы на сервер
      *
-     * @type {string}
+     * @type {string|JSX.Element}
      */
     this.pageName = props.pageName;
 

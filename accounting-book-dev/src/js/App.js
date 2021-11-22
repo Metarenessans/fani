@@ -20,7 +20,6 @@ import Stats       from "./components/stats";
 /* API */
 
 import "../sass/style.sass";
-import innerText from "react-innertext";
 
 let scrollInitiator;
 
