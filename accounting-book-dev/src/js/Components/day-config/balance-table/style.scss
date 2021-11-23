@@ -18,10 +18,9 @@
       padding: 0.7em;
 
       font-size: 1.55em;
-        // font-size: 0.85em;
       text-align: center;
-      min-width: 16%;
-      width: 16%;
+      width: 14.3%;
+      min-width: 14.3%;
 
       border-right: 0.03em solid #cacaca;
 
@@ -31,9 +30,8 @@
     }
 
     th {
-      width: 16%;
-
-      min-width: 16%;
+      width:     14.3%;
+      min-width: 14.3%;
       line-height: 1.2em;
 
       font-weight: 800;
@@ -47,10 +45,6 @@
         border-bottom: 0.03em solid #cacaca;
 
         th {
-          position: sticky;
-          z-index: 1;
-          top: 0;
-          background: white;
           padding: .5em;
 
           border-right: 0.03em solid #cacaca;

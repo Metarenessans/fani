@@ -20,27 +20,17 @@ export default function BalanceTable() {
         <table>
           <tbody>
             <tr>
-              <th className="balance">Баланс</th>
               <th className="income">Доходы</th>
               <th className="income">Постоянные<br /> доходы</th>
               <th className="income">Периодические<br /> доходы</th>
               <th className="payments">Расходы</th>
               <th className="payments">Важные<br /> расходы</th>
               <th className="payments">Необязательные<br /> расходы</th>
+              <th className="balance">Баланс</th>
             </tr>
             {(() => {
               return (
                 <tr>
-                  <td>
-                    <Value
-                      value={
-                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
-                        -
-                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
                   <td>
                     <Value
                       value={currentDay.income
@@ -87,6 +77,16 @@ export default function BalanceTable() {
                       value={-currentDay.expense
                         .filter(source => source.expenseTypeName == "Необязательные")
                         .reduce((acc, row) => acc + row.value, 0)
+                      }
+                      format={value => formatNumber(Math.floor(value))}
+                    />
+                  </td>
+                  <td>
+                    <Value
+                      value={
+                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
+                        -
+                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
                       }
                       format={value => formatNumber(Math.floor(value))}
                     />

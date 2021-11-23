@@ -23,13 +23,13 @@ export default function TablePanel() {
           <tbody>
             <tr>
               <th>Дата</th>
-              <th className="balance">Баланс</th>
               <th className="income">Доходы</th>
               <th className="income">Постоянные<br/> доходы</th>
               <th className="income">Периодические<br/> доходы</th>
               <th className="payments">Расходы</th>
               <th className="payments">Важные<br/> расходы</th>
               <th className="payments">Необязательные<br/> расходы</th>
+              <th className="balance">Баланс</th>
               <th></th>
             </tr>
             {data.map((day, index) => {
@@ -49,16 +49,6 @@ export default function TablePanel() {
                         data[index].date = Number(moment);
                         context.setState({ data });
                       }}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={
-                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
-                        -
-                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
                   <td>
@@ -94,6 +84,16 @@ export default function TablePanel() {
                   <td>
                     <Value
                       value={-currentDay.expense.filter(source => source.expenseTypeName == "Необязательные").reduce((acc, row) => acc + row.value, 0)}
+                      format={value => formatNumber(Math.floor(value))}
+                    />
+                  </td>
+                  <td>
+                    <Value
+                      value={
+                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
+                        -
+                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
+                      }
                       format={value => formatNumber(Math.floor(value))}
                     />
                   </td>
