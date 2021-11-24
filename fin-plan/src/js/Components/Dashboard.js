@@ -13,15 +13,17 @@ import {
 } from '@ant-design/icons'
 
 import NumericInput from "../../../../common/components/numeric-input"
-import CrossButton  from "../../../../common/components/cross-button"
+import CrossButton from "../../../../common/components/cross-button"
 import CustomSelect from "../../../../common/components/custom-select"
 
-import round          from "../../../../common/utils/round"
-import num2str        from "../../../../common/utils/num2str"
-import formatNumber   from "../../../../common/utils/format-number"
+import round from "../../../../common/utils/round"
+import num2str from "../../../../common/utils/num2str"
+import formatNumber from "../../../../common/utils/format-number"
 import clsx from 'clsx'
 
 const { Option } = Select;
+
+let scrollInitiator;
 
 function onScroll() {
   if (innerWidth <= 768 || this.props.index > 0) {
@@ -103,37 +105,65 @@ export default class DashboardRow extends React.Component {
       goal,
       progressGoalPrimary,
       progressGoalSecondary,
+      minRows
     } = this.props;
     onChange = onChange || (() => console.log("Oh nein cringe"));
     showSum = showSum ?? true;
     canRemoveLastRow = canRemoveLastRow ?? false;
+    minRows = minRows ?? 0;
 
     const containerElement = React.createRef();
 
+    const Footer = props => (
+      <div className="row-modify__container">
+        <Button
+          className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+          disabled={!onAddRow}
+          onClick={() => onAddRow()}
+        >
+          <span className="dashboard__icon dashboard__icon--plus">+</span>
+          {rowButton}
+        </Button>
+
+        {data.length > 0 &&
+          <Button
+            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+            disabled={!onRemoveRow || data.length == minRows}
+            onClick={() => onRemoveRow()}
+          >
+            <span className="dashboard__icon">—</span>
+            {rowButton}
+          </Button>
+        }
+      </div>
+    );
+
     return (
-      <div 
+      <div
         className={clsx(
           "dashboard",
           extraPeriodColumns && "extended-height",
-          !showSum && "no-sum"
+          !showSum && "no-sum",
+          data.length == 0 && "empty"
         )}
         ref={containerElement}
       >
-      
+
         {!stats &&
           <div className="dashboard-header">
-            <p>{firstTitle   || ""}</p>
+            <p>{firstTitle || ""}</p>
+            {data.length == 0 && <Footer />}
             <p >{secondTitle || ""}</p>
             <p className={thirdTitleVerticalLine && "trird-title-before-element"}>
-              {thirdTitle  || ""}
+              {thirdTitle || ""}
             </p>
           </div>
         }
 
         <div className="dashboard-inner-wrap">
           {/* Перебор массива и рендеринг каждой отдельной строки */}
-          {data.map((currentData, rowIndex) => 
-            <div 
+          {data.map((currentData, rowIndex) =>
+            <div
               className={clsx(
                 "dashboard-inner",
                 (rowIndex > 0 || rowIndex == data.length - 1) && "row-height-fix",
@@ -157,13 +187,13 @@ export default class DashboardRow extends React.Component {
                   {firstColumnContent
                     ? firstColumnContent(rowIndex)
                     :
-                      <CustomSelect
-                        type="text"
-                        options={options}
-                        value={currentData.currentTool}
-                        onChange={value => onChange("currentTool", value, rowIndex)}
-                        onAddOption={(newOption, options) => onUpdateOptions(options)}
-                      />
+                    <CustomSelect
+                      type="text"
+                      options={options}
+                      value={currentData.currentTool}
+                      onChange={value => onChange("currentTool", value, rowIndex)}
+                      onAddOption={(newOption, options) => onUpdateOptions(options)}
+                    />
                   }
                 </span>
 
@@ -197,7 +227,7 @@ export default class DashboardRow extends React.Component {
                     min={0}
                   />
                 </span>
-                
+
                 {/* Выводится только в последней строке */}
                 {showSum && rowIndex == data.length - 1 && (
                   <span className="dashboard-key dashboard-key-result">
@@ -209,7 +239,7 @@ export default class DashboardRow extends React.Component {
                       return (
                         <>
                           {formatNumber(value)}
-                          {goal != null && 
+                          {goal != null &&
                             <Tooltip title="Покрытие расходов пассивным доходом">
                               <Progress
                                 percent={round(goal / value * 100, 2)}
@@ -277,25 +307,19 @@ export default class DashboardRow extends React.Component {
               </div>
               {/* col */}
 
-              <div 
+              <div
                 className={clsx(
                   "dashboard-extra-container",
                   "scroll-hide",
                   (fixedWidth || extraPeriodColumns) && "fixed-width"
                 )}
-                onScroll={e => {
-                  const scrollLeft = e.target.scrollLeft;
-                  [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                    element.scrollLeft = scrollLeft;
-                  });
-                }}
               >
                 {(() => {
                   const numericKeys = Object.keys(currentData)
                     .map(key => !isNaN(+key) && key)
                     .filter(value => !!value)
                     .slice(1);
-                  
+
                   return (
                     numericKeys.map((numericKey, columnIndex) =>
                       <div className="dashboard-col">
@@ -307,7 +331,7 @@ export default class DashboardRow extends React.Component {
                             disabled={!onPeriodChange}
                             size={"small"}
                             onBlur={value => onPeriodChange(value, numericKey)}
-                            suffix={num2str(numericKey , ["год", "года","лет"])}
+                            suffix={num2str(numericKey, ["год", "года", "лет"])}
                             unsigned="true"
                             min={0}
                           />
@@ -417,21 +441,13 @@ export default class DashboardRow extends React.Component {
                   </div>
                   {/* col */}
 
-                  <div
-                    className="dashboard-extra-container scroll-hide"
-                    onScroll={e => {
-                      const scrollLeft = e.target.scrollLeft;
-                      [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                        element.scrollLeft = scrollLeft;
-                      });
-                    }}
-                  >
+                  <div className="dashboard-extra-container scroll-hide">
                     {(() => {
                       const numericKeys = Object.keys(data[rowIndex])
                         .map(key => !isNaN(+key) && key)
                         .filter(value => !!value)
                         .slice(1);
-                      
+
                       return (
                         numericKeys.map((numericKey, columnIndex) =>
                           <div className="dashboard-col" key={columnIndex}>
@@ -473,7 +489,7 @@ export default class DashboardRow extends React.Component {
                               {(() => {
                                 const value = extraPeriodColumns.map(row => row[numericKey]).reduce((acc, curr) => acc + curr, 0);
                                 const printedValue = value == 0 ? 0 : round(goal / value * 100, 2);
-                                
+
                                 return (
                                   <>
                                     {formatNumber(value)}
@@ -516,26 +532,8 @@ export default class DashboardRow extends React.Component {
             </>
           )}
         </div>
-   
-        <div className={"row-modify__container"}>
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onAddRow}
-            onClick={() => onAddRow()}
-          >
-            <span className="dashboard__icon dashboard__icon--plus">+</span>
-            {rowButton}
-          </Button>
 
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onRemoveRow || (!canRemoveLastRow ? data.length == 1 : data.length == 0)}
-            onClick={() => onRemoveRow()}
-          >
-            <span className="dashboard__icon">—</span>
-            {rowButton}
-          </Button>
-        </div>
+        {data.length > 0 && <Footer />}
       </div>
     )
   }

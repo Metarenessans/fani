@@ -3,8 +3,8 @@
 @import "../../../../common/sass/components/input-group";
 @import "../../../../common/sass/components/labeled-select";
 // TODO: вынести в отдельный файл
-@import "components/settings-btn";
+@import "./settings-btn";
 @import "../../../../common/sass/components/table";
 // TODO: импортировать из trademeter-dev
-@import "components/tabs";
+@import "./tabs";
 @import "./settings-btn";

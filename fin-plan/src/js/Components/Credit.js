@@ -99,12 +99,37 @@ export default class DashboardRow extends React.Component {
 
     const containerElement = React.createRef();
 
+    const Footer = props => (
+      <div className="row-modify__container">
+        <Button
+          className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+          disabled={!onAddRow}
+          onClick={() => onAddRow()}
+        >
+          <span className="dashboard__icon dashboard__icon--plus">+</span>
+          {rowButton}
+        </Button>
+
+        {data.length > 0 &&
+          <Button
+            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
+            disabled={!onRemoveRow || data.length == 0}
+            onClick={() => onRemoveRow()}
+          >
+            <span className="dashboard__icon">—</span>
+            {rowButton}
+          </Button>
+        }
+      </div>
+    );
+
     return (
       <div
         className={clsx(
           "dashboard",
           extraPeriodColumns && "extended-height",
-          !showSum && "no-sum"
+          !showSum && "no-sum",
+          data.length == 0 && "empty"
         )}
         ref={containerElement}
       >
@@ -112,6 +137,7 @@ export default class DashboardRow extends React.Component {
         {!stats &&
           <div className="dashboard-header">
             <p>{firstTitle || ""}</p>
+            {data.length == 0 && <Footer />}
             <p >{secondTitle || ""}</p>
             <p className={thirdTitleVerticalLine && "trird-title-before-element"}>
               {thirdTitle || ""}
@@ -141,7 +167,7 @@ export default class DashboardRow extends React.Component {
                     <span
                       className={clsx("dashboard-val", "dashboard-val--tool", (i == 1) && "background-fix")}
                     >
-                      { i == 0 ? "Сумма кредита " + (rowIndex + 1) : "Платеж по кредиту " + (rowIndex + 1) }
+                      {i == 0 ? "Сумма кредита " + (rowIndex + 1) : "Платеж по кредиту " + (rowIndex + 1)}
                     </span>
                   </div>
                   {/* col */}
@@ -197,12 +223,6 @@ export default class DashboardRow extends React.Component {
                       "scroll-hide",
                       (fixedWidth || extraPeriodColumns) && "fixed-width"
                     )}
-                    onScroll={e => {
-                      const scrollLeft = e.target.scrollLeft;
-                      [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                        element.scrollLeft = scrollLeft;
-                      });
-                    }}
                   >
                     {(() => {
                       return (
@@ -228,12 +248,12 @@ export default class DashboardRow extends React.Component {
                               />
                             </span>
 
-                            <span className={clsx("dashboard-val dashboard-val--tool",(i == 1) && "background-fix")}>
+                            <span className={clsx("dashboard-val dashboard-val--tool", (i == 1) && "background-fix")}>
                               <NumericInput
                                 className="dashboard__input"
                                 // disabled={true}
-                                defaultValue={(i == 1 
-                                  ? currentData["now_" + numericKey] 
+                                defaultValue={(i == 1
+                                  ? currentData["now_" + numericKey]
                                     ? (currentData["payment_" + numericKey] ?? currentData.payment)
                                     : 0
                                   : (currentData["now_" + numericKey] ?? currentData[numericKey])
@@ -290,15 +310,7 @@ export default class DashboardRow extends React.Component {
                       )}
                       {/* col */}
 
-                      <div
-                        className="dashboard-extra-container scroll-hide"
-                        onScroll={e => {
-                          const scrollLeft = e.target.scrollLeft;
-                          const rows = [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                            element.scrollLeft = scrollLeft;
-                          });
-                        }}
-                      >
+                      <div className="dashboard-extra-container scroll-hide">
                         {(() => {
                           const numericKeys = Object.keys(data[rowIndex])
                             .map(key => !isNaN(+key) && key)
@@ -361,25 +373,7 @@ export default class DashboardRow extends React.Component {
           })}
         </div>
 
-        <div className={"row-modify__container"}>
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onAddRow}
-            onClick={() => onAddRow()}
-          >
-            <span className="dashboard__icon dashboard__icon--plus">+</span>
-            {rowButton}
-          </Button>
-
-          <Button
-            className={clsx("custom-btn", rowButtonColor && "rowButtonColor")}
-            disabled={!onRemoveRow || data.length == 0}
-            onClick={() => onRemoveRow()}
-          >
-            <span className="dashboard__icon">—</span>
-            {rowButton}
-          </Button>
-        </div>
+        {data.length > 0 && <Footer />}
       </div>
     )
   }

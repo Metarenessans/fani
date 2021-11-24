@@ -124,6 +124,27 @@
     }
   }
 
+  &.empty {
+    .trird-title-before-element::before,
+    .dashboard-header p + p::before,
+    .dashboard-header::after {
+      display: none;
+    }
+
+    .dashboard-inner-wrap {
+      display: none;
+    }
+
+    .dashboard-header {
+      align-items: center;
+      min-height: 1.75em;
+
+      p {
+        margin-bottom: 0;
+      }
+    }
+  }
+
   &__icon {
     // background: pink;
     margin-right: 0.2em;
@@ -515,6 +536,3 @@
     background-color: white;
   }
 }
-
-
-

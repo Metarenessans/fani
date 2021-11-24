@@ -13,11 +13,11 @@ import {
 } from '@ant-design/icons'
 
 import NumericInput from "../../../../common/components/numeric-input"
-import CrossButton  from "../../../../common/components/cross-button"
+import CrossButton from "../../../../common/components/cross-button"
 
-import round          from "../../../../common/utils/round"
+import round from "../../../../common/utils/round"
 import num2str from "../../../../common/utils/num2str"
-import formatNumber   from "../../../../common/utils/format-number"
+import formatNumber from "../../../../common/utils/format-number"
 import clsx from 'clsx'
 
 const { Option } = Select;
@@ -83,24 +83,24 @@ export default class Stats extends React.Component {
 
     return (
       <div className={clsx("dashboard", "dashboard--stats")} ref={containerElement}>
-        
+
         <div className="dashboard-inner-wrap">
           {/* Перебор массива и рендеринг каждой отдельной строки */}
           {data.map((currentData, rowIndex) => {
 
             return (
-              <div 
+              <div
                 className={clsx(
                   "dashboard-inner",
                   rowIndex > 0 && "row-height-fix",
-                  extraPeriodColumns && ( "dashboard-inner-width-fix"),
+                  extraPeriodColumns && ("dashboard-inner-width-fix"),
                   rowIndex == data.length - 1 && "reset-height"
                 )}
                 key={rowIndex}
               >
                 {/* col */}
                 <div className="dashboard-col dashboard-col--tools">
-                  
+
                   {/* Выводится только в последней строке */}
                   <span className="dashboard-key dashboard-key-result">
                     {title}
@@ -110,7 +110,7 @@ export default class Stats extends React.Component {
 
                 {/* col */}
                 <div className="dashboard-col ">
-                  
+
                   {/* Выводится только в последней строке */}
                   <span className="dashboard-key dashboard-key-result">
                     {formatNumber(data[0] * multiplier)}
@@ -128,14 +128,10 @@ export default class Stats extends React.Component {
                 </div>
                 {/* col */}
 
-                <div 
-                  className={clsx("dashboard-extra-container", "scroll-hide", extraPeriodColumns && "fixed-width")}
-                  onScroll={e => {
-                    const scrollLeft = e.target.scrollLeft;
-                    [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                      element.scrollLeft = scrollLeft;
-                    });
-                  }}
+                <div className={clsx(
+                  "dashboard-extra-container",
+                  "scroll-hide",
+                  extraPeriodColumns && "fixed-width")}
                 >
                   {(() => {
                     return (
@@ -164,15 +160,7 @@ export default class Stats extends React.Component {
                     </div>
                     {/* col */}
 
-                    <div
-                      className="dashboard-extra-container scroll-hide"
-                      onScroll={e => {
-                        const scrollLeft = e.target.scrollLeft;
-                        [...document.querySelectorAll(".dashboard-extra-container")].map(element => {
-                          element.scrollLeft = scrollLeft;
-                        });
-                      }}
-                    >
+                    <div className="dashboard-extra-container scroll-hide">
                       {(() => {
                         {/* Перебор массива и рендеринг каждой отдельного стобца */ }
                         return (
@@ -197,7 +185,7 @@ export default class Stats extends React.Component {
           )}
 
         </div>
-   
+
       </div>
     )
   }
