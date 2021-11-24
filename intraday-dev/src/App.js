@@ -17,7 +17,10 @@ function App() {
       <PriceMove />
       <DataInputs />
       <LoadTables />
-      <NanniBot />
+      {location.href.replace(/\/$/g, "").endsWith("-dev") && (
+        <NanniBot />
+      )}
+      
     </GlobalProvider>
   );
 }
