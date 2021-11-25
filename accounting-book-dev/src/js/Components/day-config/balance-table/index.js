@@ -15,7 +15,7 @@ export default function BalanceTable() {
   const { data, currentRowIndex } = state;
   const currentDay = data[currentRowIndex];
   return (
-    <Panel className="balance-table" title={`Баланс (день ${currentRowIndex + 1})`}>
+    <Panel className="balance-table" title={`Баланс - день ${currentRowIndex + 1}`}>
       <div className="balance-table-table-wrapper">
         <table>
           <tbody>
