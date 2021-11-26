@@ -1,50 +1,28 @@
-import React, { useRef } from 'react'
-import { Tooltip, Select } from 'antd/es'
+import React from "react";
+import { Tooltip, Select } from "antd";
+import { isEqual, cloneDeep } from "lodash";
+import clsx from "clsx";
 
 import {
-  LoadingOutlined,
-} from "@ant-design/icons"
+  LoadingOutlined
+} from "@ant-design/icons";
 
-import NumericInput from "../../../../common/components/numeric-input"
-import CustomSelect from "../../../../common/components/custom-select"
-import CrossButton  from "../../../../common/components/cross-button"
+import NumericInput from "../../../../common/components/numeric-input";
+import CustomSelect from "../../../../common/components/custom-select";
+import CrossButton  from "../../../../common/components/cross-button";
 
-import { Tools } from "../../../../common/tools"
-import round          from "../../../../common/utils/round"
-import formatNumber   from "../../../../common/utils/format-number"
-import fractionLength from "../../../../common/utils/fraction-length"
-import isEqual        from "../../../../common/utils/is-equal"
-import sortInputFirst from "../../../../common/utils/sort-input-first"
+import { Tools, Tool } from "../../../../common/tools";
+import round           from "../../../../common/utils/round";
+import formatNumber    from "../../../../common/utils/format-number";
+import fractionLength  from "../../../../common/utils/fraction-length";
+import sortInputFirst  from "../../../../common/utils/sort-input-first";
+
+import DashboardKey from "./DashboardKey";
 
 const { Option } = Select;
 
-function onScroll() {
-  if (innerWidth <= 768 || this.props.index > 0) {
-    return;
-  }
-
-  const dashboardElement = document.querySelector(".dashboard");
-  const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
-
-  const firstRowElement = dashboardElement.querySelector(".dashboard-row:first-child");
-  if (!firstRowElement) {
-    return;
-  }
-  const headerElements = firstRowElement.querySelectorAll(".dashboard-key");
-
-  if (pageYOffset > dashboardElementStart) {
-    if (this.state.tooltipPlacement == "top") {
-      this.setState({ tooltipPlacement: "bottom" })
-    }
-  }
-  else {
-    if (this.state.tooltipPlacement == "bottom") {
-      this.setState({ tooltipPlacement: "top" });
-    }
-  }
-}
-
 export default class DashboardRow extends React.Component {
+
   constructor(props) {
     super(props);
 
@@ -63,24 +41,40 @@ export default class DashboardRow extends React.Component {
       searchVal: "",
       planIncomeCustom: ""
     };
-
-    this.onScrollCb = this.onScrollCb.bind(this);
   }
 
-  onScrollCb() {
-    onScroll.call(this);
-  }
+  onScroll = () => {
+    if (innerWidth <= 768 || this.props.index > 0) {
+      return;
+    }
+
+    const dashboardElement = document.querySelector(".dashboard");
+    const dashboardElementStart = dashboardElement.getBoundingClientRect().top + window.scrollY;
+
+    const firstRowElement = dashboardElement.querySelector(".dashboard-row:first-child");
+    if (!firstRowElement) {
+      return;
+    }
+    const headerElements = firstRowElement.querySelectorAll(".dashboard-key");
+
+    if (pageYOffset > dashboardElementStart) {
+      if (this.state.tooltipPlacement == "top") {
+        this.setState({ tooltipPlacement: "bottom" });
+      }
+    }
+    else {
+      if (this.state.tooltipPlacement == "bottom") {
+        this.setState({ tooltipPlacement: "top" });
+      }
+    }
+  };
 
   componentDidMount() {
-    addEventListener("scroll", this.onScrollCb);
-  }
-
-  componentDidUpdate() {
-    onScroll.call(this);
+    addEventListener("scroll", this.onScroll);
   }
 
   componentWillUnmount() {
-    addEventListener("scroll", this.onScrollCb);
+    removeEventListener("scroll", this.onScroll);
   }
 
   getPlanIncome() {
@@ -118,10 +112,6 @@ export default class DashboardRow extends React.Component {
     return this.getCurrentTool().currentPrice * 0.1;
   }
 
-  update() {
-
-  }
-
   getToolIndexByCode(code) {
     const { tools, selectedToolName } = this.props;
     if (!code || !tools.length) {
@@ -132,8 +122,12 @@ export default class DashboardRow extends React.Component {
   }
 
   getCurrentTool() {
+    if (this.currentTool) {
+      return this.currentTool;
+    }
+
     const { tools } = this.props;
-    return tools[this.getCurrentToolIndex()] || Tools.create();
+    return tools[this.getCurrentToolIndex()] || Tools.createArray()[0];
   }
 
   getCurrentToolIndex() {
@@ -159,19 +153,21 @@ export default class DashboardRow extends React.Component {
       onChange,
       onUpdate,
       onDelete,
-      onDropdownClose,
+      onDropdownClose
     } = this.props;
 
     selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].getSortProperty();
-    
-    const currentTool      = this.getCurrentTool();
+
     const currentToolIndex = this.getCurrentToolIndex();
+    
+    this.currentTool  = tools[currentToolIndex] ?? Tools.createArray()[0];
+    const currentTool = this.currentTool;
 
     const realSelectedToolName = tools[currentToolIndex].getSortProperty();
 
     var planIncome = this.getPlanIncome();
 
-    var contracts = Math.floor( depo * (percentage / 100) / currentTool.guarantee );
+    var contracts = Math.floor(depo * (percentage / 100) / currentTool.guarantee);
     
     var income = contracts * planIncome / currentTool.priceStep * currentTool.stepPrice;
     var incomePercentage = (income / depo) * 100;
@@ -194,36 +190,32 @@ export default class DashboardRow extends React.Component {
       const prop = props.prop;
       return (
         <div className="dashboard-key__sort-toggle-wrap">
-          <button 
-            className={
-              []
-                .concat(className)
-                .concat(prop === sortProp && sortDESC != null ? "active" : "")
-                .concat(
-                  prop === sortProp && (sortDESC != null && !sortDESC) 
-                    ? "reversed" 
-                    : ""
-                )
-                .join(" ")
-                .trim()
-            }
+          <button
+            className={clsx(
+              className,
+              prop === sortProp && sortDESC != null ? "active" : "",
+              prop === sortProp && (sortDESC != null && !sortDESC)
+                ? "reversed"
+                : ""
+            )}
+            type="button"
             onClick={e => {
-              let val;
+              let value;
               if (sortDESC == null) {
-                val = true;
+                value = true;
               }
               else {
-                val = sortDESC ? !sortDESC : undefined;
+                value = sortDESC ? !sortDESC : undefined;
               }
   
-              onSort(prop, val);
+              onSort(prop, value);
             }}
           ></button>
         </div>
       );
-    }
+    };
 
-    const itemUpdated = {
+    this.updated = {
       percentage,
       // ГО
       guarantee: currentTool.guarantee,
@@ -246,25 +238,22 @@ export default class DashboardRow extends React.Component {
       // Идентификатор реального найденного инструмента
       realSelectedToolName,
 
-      updatedOnce: item.updatedOnce,
+      updatedOnce: item.updatedOnce
     };
 
-    const pureItem = { ...item };
+    const pureItem = cloneDeep(item);
     delete pureItem.isToolsDropdownOpen;
-    
-    if (!isEqual(itemUpdated, pureItem)) {
-      onUpdate(itemUpdated)
+
+    if (!isEqual(this.updated, pureItem)) {
+      onUpdate(this.updated);
     }
 
-    const container = React.createRef();
-
     return (
-      <div className="dashboard-row" ref={container}>
+      <div className="dashboard-row">
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <Select
-              // key={currentToolIndex}
               className="dashboard__select dashboard__select--wide" 
               value={toolsLoading && tools.length == 0 ? 0 : currentToolIndex}
               onFocus={() => onChange("isToolsDropdownOpen", true)}
@@ -294,7 +283,7 @@ export default class DashboardRow extends React.Component {
                       <LoadingOutlined style={{ marginRight: ".2em" }} />
                         Загрузка...
                     </Option>
-                  )
+                  );
                 }
                 else {
                   return this.getSortedOptions().map((option) => (
@@ -309,43 +298,37 @@ export default class DashboardRow extends React.Component {
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
-          <span className="dashboard-key">
-            <span className="dashboard-key-inner">
-              Цена /{" "}
-              <Tooltip title={"Гарантийное обеспечение"} placement={this.state.tooltipPlacement}>
-                ГО
-              </Tooltip>
-              <SortButton prop="guarantee" />
-            </span>
-          </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined/>
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
+          <DashboardKey sortProp="guarantee" onSort={onSort}>
+            Цена
+            {" / "}
+            <Tooltip title="Гарантийное обеспечение" placement={this.state.tooltipPlacement}>
+              ГО
+            </Tooltip>
+          </DashboardKey>
+          <span className="dashboard-val dashboard-val--wrap">
+            {toolsLoading
+              ?
+                <LoadingOutlined />
+              :
+                <>
                   <span className="no-wrap">{formatNumber(currentTool.currentPrice)}</span>
-                    &nbsp;/&nbsp;
+                  {" / "}
                   <span className="no-wrap">{formatNumber(currentTool.guarantee)}</span>
-                </span>
-              )
+                </>
             }
-          })()}
+          </span>
         </div>
         <div className="dashboard-col">
           <span className="dashboard-key">
-            <Tooltip title={"Объём депозита в процентах на вход в сделку"} placement={this.state.tooltipPlacement}>
+            <Tooltip 
+              title="Объём депозита в процентах на вход в сделку" 
+              placement={this.state.tooltipPlacement}
+            >
               Загрузка %
             </Tooltip>  
           </span>
           <span className="dashboard-val">
             <CustomSelect
-              key={percentage}
               className="dashboard__select"
               loading={toolsLoading}
               disabled={toolsLoading}
@@ -359,12 +342,11 @@ export default class DashboardRow extends React.Component {
                 onDropdownClose();
               }}
               options={new Array(10).fill(0).map((n, i) => 10 * (i + 1))}
-              // format={val => val + "%"}
               allowFraction={2}
               min={0.01}
               max={100}
               value={percentage}
-              onChange={val => onChange("percentage", val)}
+              onChange={value => onChange("percentage", value)}
               suffix="%"
             />
           </span>
@@ -372,30 +354,29 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">Контракты</span>
-          {(() => {
-            if (toolsLoading) {
-              return (
+          {
+            toolsLoading
+              ?
                 <span className="dashboard-val dashboard-val--wrap">
                   <LoadingOutlined />
                 </span>
-              )
-            }
-            else {
-              return ( 
+              :
                 <span className="dashboard-val">
-                  { contracts}
+                  {contracts}
                 </span>
-              )
-            }
-          })()}
+          }
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
           <span className="dashboard-key">
-            <Tooltip title={"Предполагаемые изменения цены"} placement={this.state.tooltipPlacement}>
+            <Tooltip 
+              title="Предполагаемые изменения цены" 
+              placement={this.state.tooltipPlacement}
+            >
               Ход
             </Tooltip>
-            {" "}$/₽
+            {" "}
+            $/₽
           </span>
           <span className="dashboard-val">
             {(() => {
@@ -408,11 +389,10 @@ export default class DashboardRow extends React.Component {
               return mode == 0
                 ? (
                   <Tooltip 
-                    title={`${+(planIncomeTooltip).toFixed(fraction)} = ${steps} п`}
+                    title={`${formatNumber(+(planIncomeTooltip).toFixed(fraction))} = ${formatNumber(steps)} п`}
                     visible={tooltipVisible}
                   >
                     <NumericInput
-                      key={Math.random()}
                       className="dashboard__input"
                       defaultValue={+(planIncome).toFixed(fraction)}
                       unsigned="true" 
@@ -424,16 +404,14 @@ export default class DashboardRow extends React.Component {
                         onChange("planIncome", value);
                         onChange("isToolsDropdownOpen", false);
                         onDropdownClose();
-                        this.setState({ planIncomeCustom: "", tooltipVisible: false })
+                        this.setState({ planIncomeCustom: "", tooltipVisible: false });
                       }}
                       onChange={(e, value = "") => {
-                        this.setState({ planIncomeCustom: value })
+                        this.setState({ planIncomeCustom: value });
                       }}
                       onFocus={e => {
-                        onChange("isToolsDropdownOpen", true);
                         this.setState({ tooltipVisible: true });
-                        }
-                      }
+                      }}
                       onMouseEnter={e => {
                         if (timeout) {
                           clearTimeout(timeout);
@@ -444,145 +422,118 @@ export default class DashboardRow extends React.Component {
                         if (e.target == document.activeElement) {
                           return;
                         }
-                        timeout = setTimeout(() => this.setState({ tooltipVisible: false }), 500)
+                        timeout = setTimeout(() => this.setState({ tooltipVisible: false }), 500);
                       }}
                     />
                   </Tooltip>
                 )
-                : formatNumber((planIncome).toFixed(fraction)) 
+                : formatNumber((planIncome).toFixed(fraction)); 
             })()}
           </span>
         </div>
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            <Tooltip title={"Прибыль в рублях к депозиту на заданную загрузку при предполагаемом ходе цены"} placement={this.state.tooltipPlacement}>
+            <Tooltip 
+              title="Прибыль в рублях к депозиту на заданную загрузку при предполагаемом ходе цены" 
+              placement={this.state.tooltipPlacement}
+            >
               Руб.
             </Tooltip>
           </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined />
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val">
-                  { formatNumber(Math.round(income))}
-                </span>
-              )
-            }
-          })()}
-        </div>
-        {/* col */}
-        <div className="dashboard-col">
-          <span className="dashboard-key">
-            <span className="dashboard-key-inner">
-              К депо
-              <SortButton prop="incomePercentage" />
+          {toolsLoading
+            ?
+            <span className="dashboard-val dashboard-val--wrap">
+              <LoadingOutlined />
             </span>
-          </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined />
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val">
-                  { formatNumber(round(incomePercentage, 2))}%
-                </span>
-              )
-            }
-          })()}
-        </div>
-        {/* col */}
-        <div className="dashboard-col">
-          <span className="dashboard-key">
-            <span className="dashboard-key-inner">
-              К загрузке
-              <SortButton prop="loadingPercentage" />
+            :
+            <span className="dashboard-val">
+              {formatNumber(Math.round(income))}
             </span>
-          </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined />
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val">
-                  { formatNumber(round(loadingPercentage, 2))}%
-                </span>
-              )
-            }
-          })()}
+          }
+        </div>
+        {/* col */}
+        <div className="dashboard-col">
+          <DashboardKey sortProp="incomePercentage" onSort={onSort}>
+            К депо
+          </DashboardKey>
+          {toolsLoading
+            ?
+            <span className="dashboard-val dashboard-val--wrap">
+              <LoadingOutlined />
+            </span>
+            :
+            <span className="dashboard-val">
+              {formatNumber(round(incomePercentage, 2))}%
+            </span>
+          }
+        </div>
+        {/* col */}
+        <div className="dashboard-col">
+          <DashboardKey sortProp="loadingPercentage" onSort={onSort}>
+            К загрузке
+          </DashboardKey>
+          {toolsLoading
+            ?
+            <span className="dashboard-val dashboard-val--wrap">
+              <LoadingOutlined />
+            </span>
+            :
+            <span className="dashboard-val">
+              {formatNumber(round(loadingPercentage, 2))}%
+            </span>
+          }
         </div>
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            <Tooltip title={"Процент убытка при движении цены в противоположную от позиции сторону"} placement={this.state.tooltipPlacement}>
+            <Tooltip 
+              title="Процент убытка при движении цены в противоположную от позиции сторону"
+              placement={this.state.tooltipPlacement}
+            >
               Риск
             </Tooltip>
           </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined />
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val">
-                  { round(risk, 2)}%
-                </span>
-              )
-            }
-          })()}
+          {toolsLoading
+            ?
+            <span className="dashboard-val dashboard-val--wrap">
+              <LoadingOutlined />
+            </span>
+            :
+            <span className="dashboard-val">
+              {round(risk, 2)}%
+            </span>
+          }
         </div>
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">
-            <Tooltip title={"Доступные средства на депозите с учётом загрузки и риска"} placement={this.state.tooltipPlacement}>
+            <Tooltip 
+              title="Доступные средства на депозите с учётом загрузки и риска"
+              placement={this.state.tooltipPlacement}
+            >
               Свободно
             </Tooltip>
           </span>
-          {(() => {
-            if (toolsLoading) {
-              return (
-                <span className="dashboard-val dashboard-val--wrap">
-                  <LoadingOutlined />
-                </span>
-              )
-            }
-            else {
-              return (
-                <span className="dashboard-val">
-                  { round(freeMoney, 2)}%
-                </span>
-              )
-            }
-          })()}
+          {toolsLoading
+            ?
+            <span className="dashboard-val dashboard-val--wrap">
+              <LoadingOutlined />
+            </span>
+            :
+            <span className="dashboard-val">
+              {round(freeMoney, 2)}%
+            </span>
+          }
         </div>
         {/* col */}
 
         <CrossButton 
-          aria-hidden={index == 0 ? "true" : "false"}
-          className={["dashboard-row__delete"].concat(index == 0 ? "invisible" : "").join(" ").trim()}
+          aria-hidden={index == 0}
+          className={clsx("dashboard-row__delete", index == 0 && "invisible")}
           onClick={e => onDelete(index)}
         />
       </div>
-    )
+    );
   }
 }

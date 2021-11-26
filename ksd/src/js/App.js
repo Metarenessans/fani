@@ -1,53 +1,56 @@
-import React from 'react'
+import React from "react";
 const { Provider, Consumer } = React.createContext();
-import ReactDOM from 'react-dom'
 import {
   Button,
   Tooltip,
   Radio,
   Spin,
   Input,
-  Switch,
-} from 'antd/es'
+  Switch
+} from "antd/es";
 
 import {
   PlusOutlined,
   SettingFilled,
-  LoadingOutlined,
-} from '@ant-design/icons'
+  LoadingOutlined
+} from "@ant-design/icons";
 
-import "../../../common/api/fetch";
+import { cloneDeep, isEqual } from "lodash";
 
-import { cloneDeep, isEqual } from "lodash"
-
-import params              from "../../../common/utils/params"
+import params              from "../../../common/utils/params";
 import round               from "../../../common/utils/round";
-import formatNumber        from "../../../common/utils/format-number"
-import typeOf              from "../../../common/utils/type-of"
-import { Tools, Tool, template } from "../../../common/tools"
+import formatNumber        from "../../../common/utils/format-number";
+import typeOf              from "../../../common/utils/type-of";
+import { Tools, Tool, template } from "../../../common/tools";
 
-import Header                from "./components/header"
-import CrossButton           from "../../../common/components/cross-button"
-import NumericInput          from "../../../common/components/numeric-input"
-import Config                from "../../../common/components/config"
-import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import Stack                 from "../../../common/components/stack"
-import DashboardRow          from "./components/DashboardRow"
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+/** @type {React.Context<App>} */
+export const StateContext = Context;
+import Header                from "../../../common/components/header";
+import CrossButton           from "../../../common/components/cross-button";
+import NumericInput          from "../../../common/components/numeric-input";
+import Config                from "../../../common/components/config";
+import { Dialog, dialogAPI } from "../../../common/components/dialog";
+import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
+import DeleteDialog from "../../../common/components/delete-dialog";
+import Stack                 from "../../../common/components/stack";
+import Dashboard             from "./components/Dashboard";
 
 /* API */
-import fetch             from "../../../common/api/fetch"
-import { applyTools }    from "../../../common/api/fetch/tools"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
-import fetchSavesFor     from "../../../common/api/fetch-saves"
-import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
+import fetch             from "../../../common/api/fetch";
+import { applyTools }    from "../../../common/api/fetch/tools";
+import { fetchInvestorInfo } from "../../../common/api/fetch/investor-info/fetch-investor-info";
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info/apply-investor-info";
+import fetchSavesFor     from "../../../common/api/fetch-saves";
+import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id";
+import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info";
 
-import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
-
-import "../sass/style.sass"
+import "../sass/style.sass";
+import { message } from "antd";
 
 const defaultToolData = {
-  percentage: 10,
-  selectedToolName: "SBER"
+  selectedToolName: "SBER",
+  percentage: 10
 };
 
 function onScroll() {
@@ -84,69 +87,69 @@ function onScroll() {
   }
 }
 
-class App extends React.Component {
+class App extends BaseComponent {
 
   constructor(props) {
     super(props);
 
+    this.deafultTitle = "КСД";
+
     this.initialState = {
 
-      id: null,
-
-      loading: false,
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       investorInfo: {
         status: "KSUR",
-        type:   "LONG",
+        type:   "LONG"
       },
-      isLong: true,
 
       data: [{ ...defaultToolData }],
 
-      // Режим
+      /**
+       * Свойство, по которому идет сортировка
+       * 
+       * По умолчанию значение равно `null` (сортировка выключена)
+       * 
+       * @type {?string}
+       */
+      sortProp: null,
+
+      /** Флаг сортировки по убыванию */
+      sortDESC: true,
+
+      /** Режим */
       mode: 0,
-      //Размер депозита
-      depo: 1000000,
+
+      /** Размер депозита */
+      depo: 1_000_000,
       
       customTools: [],
 
-      sortProp:  null,
-      sortDESC:  true,
-
-      saved: false,
-      
-      currentSaveIndex: 0,
-
       toolsLoading: false,
+
+      isToolsDropdownOpen: false
     };
 
     this.state = {
-      ...this.initialState,
-      ...{
-        tools: [],
+      // Копирует `state` из BaseComponent
+      ...this.state,
 
-        saves: [],
-      },
-      tooltipPlacement: "top",
+      ...cloneDeep(this.initialState),
+
+      tooltipPlacement: "top"
     };
 
     this.state.loading = true;
 
-    this.applyInvestorInfo = applyInvestorInfo.bind(this);
-    this.applyTools        = applyTools.bind(this);
-    this.fetchSaveById     = fetchSaveById.bind(this, "ksd");
     this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
   }
 
   componentDidMount() {
     this.fetchInitialData();
-
-    window.addEventListener( "scroll", () => onScroll.call(this) );
   }
 
   componentDidUpdate(prevProps, prevState) {
-    onScroll.call(this);
-
     const { id, saves } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
@@ -156,82 +159,64 @@ class App extends React.Component {
     }
   }
 
-  setStateAsync(state = {}) {
-    return new Promise(resolve => this.setState(state, resolve))
-  }
-
-  fetchInitialData() {
+  async fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout())
 
-    if (dev) {
-      this.loadFakeSave();
-      return;
+    this.fetchTools().then(() => this.setFetchingToolsTimeout());
+
+    await this.fetchSnapshots();
+    try {
+      await this.fetchLastModifiedSnapshot();
     }
-    this.fetchSaves();
+    finally {
+      if (dev) {
+        let response = require("./snapshot.json");
+        console.log("Loading fake snapshot", response);
+
+        const { data } = response;
+        const { id, name, dateCreate } = data;
+  
+        const saves = [{ id, name, dateCreate }];
+        await this.setStateAsync({ saves });
+        if (!response.error && response.data?.name) {
+          this.extractSnapshot(response.data);
+        }
+      }
+    }
   }
 
-  loadFakeSave() {
-    this.setState({ loading: true });
-
-    setTimeout(() => {
-      let { saves } = this.state;
-      let save = {
-        dateCreate: 1595544839,
-        static: "{\"depo\":12000000,\"sortProp\":\"incomePercentage\",\"sortDESC\":true,\"mode\":0,\"data\":[{\"percentage\":10,\"selectedToolName\":\"GOLD-3.21\",\"guarantee\":8259.5,\"contracts\":145,\"income\":264570.77725,\"incomePercentage\":2.2047564770833334,\"loadingPercentage\":22.048,\"risk\":2.2047564770833334,\"freeMoney\":87.79524352291666,\"updatedOnce\":true,\"planIncome\":24.7},{\"percentage\":10,\"selectedToolName\":\"Si-3.21\",\"guarantee\":4535,\"contracts\":264,\"income\":220704,\"incomePercentage\":1.8392,\"loadingPercentage\":18.392,\"risk\":1.8392,\"freeMoney\":88.1608,\"updatedOnce\":true,\"planIncome\":836},{\"percentage\":10,\"selectedToolName\":\"RTS-3.21\",\"guarantee\":28307.4,\"contracts\":42,\"income\":217492.47030000002,\"incomePercentage\":1.8124372525,\"loadingPercentage\":18.124,\"risk\":1.8124372525,\"freeMoney\":88.1875627475,\"updatedOnce\":true,\"planIncome\":3505},{\"percentage\":10,\"selectedToolName\":\"MAGN-3.21\",\"guarantee\":9196.9,\"contracts\":130,\"income\":214630,\"incomePercentage\":1.7885833333333334,\"loadingPercentage\":17.886,\"risk\":1.7885833333333334,\"freeMoney\":88.21141666666666,\"updatedOnce\":true,\"planIncome\":1651},{\"percentage\":10,\"selectedToolName\":\"SILV-3.21\",\"guarantee\":3495,\"contracts\":343,\"income\":207770.9809,\"incomePercentage\":1.7314248408333333,\"loadingPercentage\":17.314,\"risk\":1.7314248408333333,\"freeMoney\":88.26857515916666,\"updatedOnce\":true,\"planIncome\":0.82},{\"percentage\":10,\"selectedToolName\":\"BR-4.21\",\"guarantee\":8384.8,\"contracts\":143,\"income\":197539.77815000003,\"incomePercentage\":1.646164817916667,\"loadingPercentage\":16.462,\"risk\":1.646164817916667,\"freeMoney\":88.35383518208333,\"updatedOnce\":true,\"planIncome\":1.87},{\"percentage\":10,\"selectedToolName\":\"LKOH-3.21\",\"guarantee\":10959.4,\"contracts\":109,\"income\":176144,\"incomePercentage\":1.4678666666666667,\"loadingPercentage\":14.679,\"risk\":1.4678666666666667,\"freeMoney\":88.53213333333333,\"updatedOnce\":true,\"planIncome\":1616},{\"percentage\":10,\"selectedToolName\":\"MOEX-3.21\",\"guarantee\":2898.9,\"contracts\":413,\"income\":174699,\"incomePercentage\":1.455825,\"loadingPercentage\":14.558,\"risk\":1.455825,\"freeMoney\":88.544175,\"updatedOnce\":true,\"planIncome\":423},{\"percentage\":10,\"selectedToolName\":\"MIX-3.21\",\"guarantee\":35677.1,\"contracts\":33,\"income\":151932,\"incomePercentage\":1.2661,\"loadingPercentage\":12.661,\"risk\":1.2661,\"freeMoney\":88.7339,\"updatedOnce\":true,\"planIncome\":4604},{\"percentage\":10,\"selectedToolName\":\"SBPR-3.21\",\"guarantee\":4473.8,\"contracts\":268,\"income\":137752,\"incomePercentage\":1.1479333333333333,\"loadingPercentage\":11.479,\"risk\":1.1479333333333333,\"freeMoney\":88.85206666666667,\"updatedOnce\":true,\"planIncome\":514},{\"percentage\":10,\"selectedToolName\":\"FSLR\",\"guarantee\":3627.5,\"contracts\":330,\"income\":102319.8,\"incomePercentage\":0.852665,\"loadingPercentage\":8.527,\"risk\":0.852665,\"freeMoney\":89.147335,\"updatedOnce\":true,\"planIncome\":4.19},{\"percentage\":10,\"selectedToolName\":\"BIIB\",\"guarantee\":8619.2,\"contracts\":139,\"income\":90413.93999999999,\"incomePercentage\":0.7534494999999999,\"loadingPercentage\":7.534,\"risk\":0.7534494999999999,\"freeMoney\":89.2465505,\"updatedOnce\":true,\"planIncome\":8.79},{\"percentage\":10,\"selectedToolName\":\"NIO\",\"guarantee\":3056.9,\"contracts\":392,\"income\":86733.92000000001,\"incomePercentage\":0.7227826666666668,\"loadingPercentage\":7.228,\"risk\":0.7227826666666668,\"freeMoney\":89.27721733333334,\"updatedOnce\":true,\"planIncome\":2.99},{\"percentage\":10,\"selectedToolName\":\"CVX\",\"guarantee\":3541.6,\"contracts\":338,\"income\":80288.52,\"incomePercentage\":0.6690710000000001,\"loadingPercentage\":6.691,\"risk\":0.6690710000000001,\"freeMoney\":89.330929,\"updatedOnce\":true,\"planIncome\":3.21},{\"percentage\":10,\"selectedToolName\":\"M\",\"guarantee\":1062.5,\"contracts\":1129,\"income\":77697.78,\"incomePercentage\":0.6474815,\"loadingPercentage\":6.475,\"risk\":0.6474815,\"freeMoney\":89.3525185,\"updatedOnce\":true,\"planIncome\":0.93},{\"percentage\":10,\"selectedToolName\":\"DDD\",\"guarantee\":1922.9,\"contracts\":624,\"income\":76190.4,\"incomePercentage\":0.6349199999999999,\"loadingPercentage\":6.349,\"risk\":0.6349199999999999,\"freeMoney\":89.36508,\"updatedOnce\":true,\"planIncome\":1.65},{\"percentage\":10,\"selectedToolName\":\"NKLA\",\"guarantee\":1171.8,\"contracts\":1024,\"income\":74260.48,\"incomePercentage\":0.6188373333333332,\"loadingPercentage\":6.188,\"risk\":0.6188373333333332,\"freeMoney\":89.38116266666667,\"updatedOnce\":true,\"planIncome\":0.98},{\"percentage\":10,\"selectedToolName\":\"SNAP\",\"guarantee\":4162.1,\"contracts\":288,\"income\":61165.44,\"incomePercentage\":0.509712,\"loadingPercentage\":5.097,\"risk\":0.509712,\"freeMoney\":89.49028799999999,\"updatedOnce\":true,\"planIncome\":2.87},{\"percentage\":10,\"selectedToolName\":\"PLNT\",\"guarantee\":6051,\"contracts\":198,\"income\":58314.96,\"incomePercentage\":0.48595799999999995,\"loadingPercentage\":4.86,\"risk\":0.48595799999999995,\"freeMoney\":89.514042,\"updatedOnce\":true,\"planIncome\":3.98},{\"percentage\":10,\"selectedToolName\":\"TTD\",\"guarantee\":53177.5,\"contracts\":22,\"income\":55856.68,\"incomePercentage\":0.4654723333333334,\"loadingPercentage\":4.655,\"risk\":0.4654723333333334,\"freeMoney\":89.53452766666666,\"updatedOnce\":true,\"planIncome\":34.31},{\"percentage\":10,\"selectedToolName\":\"PINS\",\"guarantee\":4988.6,\"contracts\":240,\"income\":53635.2,\"incomePercentage\":0.44695999999999997,\"loadingPercentage\":4.47,\"risk\":0.44695999999999997,\"freeMoney\":89.55304,\"updatedOnce\":true,\"planIncome\":3.02},{\"percentage\":10,\"selectedToolName\":\"MRNA\",\"guarantee\":9674.9,\"contracts\":124,\"income\":52211.44,\"incomePercentage\":0.43509533333333333,\"loadingPercentage\":4.351,\"risk\":0.43509533333333333,\"freeMoney\":89.56490466666666,\"updatedOnce\":true,\"planIncome\":5.69},{\"percentage\":10,\"selectedToolName\":\"UBER\",\"guarantee\":4084.5,\"contracts\":293,\"income\":42496.719999999994,\"incomePercentage\":0.35413933333333325,\"loadingPercentage\":3.541,\"risk\":0.35413933333333325,\"freeMoney\":89.64586066666666,\"updatedOnce\":true,\"planIncome\":1.96},{\"percentage\":10,\"selectedToolName\":\"TSLA\",\"guarantee\":49796.1,\"contracts\":24,\"income\":42108.95999999999,\"incomePercentage\":0.35090799999999994,\"loadingPercentage\":3.509,\"risk\":0.35090799999999994,\"freeMoney\":89.649092,\"updatedOnce\":true,\"planIncome\":23.71},{\"percentage\":10,\"selectedToolName\":\"qiwi\",\"guarantee\":816.9,\"contracts\":1468,\"income\":36934.880000000005,\"incomePercentage\":0.3077906666666667,\"loadingPercentage\":3.078,\"risk\":0.3077906666666667,\"freeMoney\":89.69220933333334,\"updatedOnce\":true,\"planIncome\":0.34},{\"percentage\":10,\"selectedToolName\":\"RTX\",\"guarantee\":5532,\"contracts\":216,\"income\":35964,\"incomePercentage\":0.2997,\"loadingPercentage\":2.997,\"risk\":0.2997,\"freeMoney\":89.7003,\"updatedOnce\":true,\"planIncome\":2.25},{\"percentage\":10,\"selectedToolName\":\"NOK\",\"guarantee\":292.8,\"contracts\":4098,\"income\":33357.72,\"incomePercentage\":0.27798100000000003,\"loadingPercentage\":2.78,\"risk\":0.27798100000000003,\"freeMoney\":89.722019,\"updatedOnce\":true,\"planIncome\":0.11},{\"percentage\":10,\"selectedToolName\":\"BKI\",\"guarantee\":5559.3,\"contracts\":215,\"income\":29115.3,\"incomePercentage\":0.2426275,\"loadingPercentage\":2.426,\"risk\":0.2426275,\"freeMoney\":89.7573725,\"updatedOnce\":true,\"planIncome\":1.83},{\"percentage\":10,\"selectedToolName\":\"OZON\",\"guarantee\":3818.4,\"contracts\":314,\"income\":23933.079999999998,\"incomePercentage\":0.1994423333333333,\"loadingPercentage\":1.994,\"risk\":0.1994423333333333,\"freeMoney\":89.80055766666666,\"updatedOnce\":true,\"planIncome\":1.03},{\"percentage\":10,\"selectedToolName\":\"SNE\",\"guarantee\":7505.1,\"contracts\":159,\"income\":20825.82,\"incomePercentage\":0.1735485,\"loadingPercentage\":1.735,\"risk\":0.1735485,\"freeMoney\":89.8264515,\"updatedOnce\":true,\"planIncome\":1.77},{\"percentage\":10,\"selectedToolName\":\"SBER\",\"guarantee\":1027.2,\"contracts\":1168,\"planIncome\":6.96,\"income\":81292.8,\"incomePercentage\":0.67744,\"loadingPercentage\":6.774,\"risk\":0.67744,\"freeMoney\":89.32256,\"updatedOnce\":true}],\"customTools\":[],\"current_date\":\"#\"}",
-        data: {
-          id: 20,
-          name: "Отсортированный",
-        },
-        error: false,
-        id: 20
-      };
+  async fetchInvestorInfo() {
+    try {
+      const response = await fetchInvestorInfo();
   
-      const index = 0;
-      this.extractSave(save);
+      const { status, skill } = response.data;
+      const investorInfo = { ...this.state.investorInfo, status, skill };
+      await this.setStateAsync({ investorInfo });
   
-      saves[index] = {
-        id:      save.data.id,
-        name:    save.data.name,
-      };
-      this.setState({ 
-        saves, 
-        currentSaveIndex: index + 1,
-        loading: false
-      });
-    }, 1500);
-  }
-
-  fetchInvestorInfo() {
-    fetch("getInvestorInfo")
-      .then(response => {
-        const { status, skill } = response.data;
-        let investorInfo = { ...this.state.investorInfo, status, skill };
-        return new Promise(resolve => this.setState({ investorInfo }, () => resolve(response)));
-      })
-      .then(response => {
-        let { deposit } = response.data;
-        return this.setStateAsync({ depo: deposit || 10000 });
-      })
-      .then(this.syncToolsWithInvestorInfo)
-      .catch(error => console.error(error))
+      const { deposit } = response.data;
+      return this.setStateAsync({ depo: deposit || 10_000 });
+    }
+    catch (error) {
+      console.error(error);
+      message.error(error);
+    }
   }
   
   setFetchingToolsTimeout() {
-    new Promise(resolve => {
-      console.log('staring 10sec timeout');
+    return new Promise(resolve => {
+      console.log("staring 10sec timeout");
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
             .then(() => {
-              const isToolsDropdownOpen = this.state.data.some(row => row.isToolsDropdownOpen == true);
+              const { isToolsDropdownOpen } = this.state;
+
               if (!isToolsDropdownOpen) {
                 this.imitateFetchcingTools()
                   .then(() => resolve());
               }
               else {
-                console.log('no way!');
+                console.log("no way!");
                 resolve();
               }
             });
@@ -239,7 +224,7 @@ class App extends React.Component {
         else resolve();
       }, dev ? 15_000 : 1 * 60 * 1_000);
 
-    }).then(() => this.setFetchingToolsTimeout())
+    }).then(() => this.setFetchingToolsTimeout());
   }
 
   imitateFetchcingTools() {
@@ -252,18 +237,18 @@ class App extends React.Component {
         setTimeout(() => {
           this.setState({
             tools: newTools,
-            toolsLoading: false,
+            toolsLoading: false
           }, () => {
             Tools.storage = [];
             Tools.storageReady = false;
-            resolve()
+            resolve();
           });
         }, 2_000);
       }
       else {
         resolve();
       }
-    })
+    });
   }
 
   prefetchTools() {
@@ -280,18 +265,18 @@ class App extends React.Component {
               Tools.storage = [...tools];
             })
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        )
+        );
       }
 
-      Promise.all(requests).then(() => resolve())
-    })
+      Promise.all(requests).then(() => resolve());
+    });
   }
 
   fetchTools() {
     return new Promise(resolve => {
       const { investorInfo } = this.state;
       const requests = [];
-      this.setState({ toolsLoading: true })
+      this.setState({ toolsLoading: true });
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
@@ -299,98 +284,19 @@ class App extends React.Component {
             .then(tools => Tools.sort(this.state.tools.concat(tools)))
             .then(tools => this.setStateAsync({ tools }))
             .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        )
+        );
       }
 
       Promise.all(requests)
         .then(() => this.setStateAsync({ toolsLoading: false }))
-        .then(() => resolve())
-    })
-  }
-
-  fetchSaves() {
-    fetchSavesFor("ksd")
-      .then(response => {
-        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-        return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-      })
-    
-    fetch("getLastModifiedKsdSnapshot")
-      .then(response => {
-        // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-        if (!response.error && response.data?.name) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            this.setState({ loading: true });
-            return this.extractSave(response.data)
-              .then(resolve)
-              .catch(error => reject(error));
-          }
-        }
-        resolve();
-      })
-      .catch(reason => {
-        this.showAlert(`Не удалось получить сохранения! ${reason}`);
-        reject(reason);
-      })
-      .finally(() => {
-        if (dev) {
-          const response = {
-            "error": false,
-            "data": {
-              "id": 0,
-              "name": null,
-              "dateCreate": 0,
-              "dateUpdate": 0,
-              "static": null
-            }
-          };
-
-          const saves = [{
-            "id": response.data.id,
-            "name": response.data.name,
-            "dateCreate": response.data.dateCreate,
-          }];
-
-          this.setStateAsync({ saves }).then(() => {
-            if (!response.error && response.data?.name) {
-              this.extractSave(response.data)
-            }
-          })
-        }
-      })
-
-      
-      // .then(saves => {
-      //   if (saves.length) {
-      //     const pure = params.get("pure") === "true";
-      //     if (!pure) {
-      //       const save = saves[0];
-      //       const { id } = save;
-
-      //       this.setState({ loading: true });
-      //       this.fetchSaveById(id)
-      //         .then(response => this.extractSave(response.data))
-      //         .catch(error => console.error(error));
-      //     }
-      //   }
-      // })
-      // .catch(reason => this.showAlert(`Не удалось получить сохранения! ${reason}`));
-  }
-
-  showMessageDialog(msg = "") {
-    console.log(`%c${msg}`, "background: #222; color: #bada55");
-    if (!dev) {
-      this.setState({ errorMessage: msg }, () => {
-        dialogAPI.open("dialog-msg");
-      });
-    }
+        .then(() => resolve());
+    });
   }
 
   packSave() {
-    let { depo, sortProp, sortDESC, mode, data, customTools } = this.state;
+    let { depo, sortProp, sortDESC, mode, customTools } = this.state;
 
-    data = data.map(item => {
+    const data = this.state.data.map(item => {
       item.selectedToolName = item.realSelectedToolName;
       delete item.realSelectedToolName;
       return item;
@@ -403,42 +309,18 @@ class App extends React.Component {
         sortDESC,
         mode,
         data,
-        customTools,
-        current_date: "#"
-      },
+        customTools
+      }
     };
 
     console.log("Save packed!", json);
     return json;
   }
 
-  validateSave(save) {
-    return true;
-  }
-
-  extractSave(save) {
-    const onError = e => {
-      this.showMessageDialog(String(e));
-
-      const { saves, currentSaveIndex } = this.state;
-      if (saves[currentSaveIndex - 1]) {
-        console.log(saves, currentSaveIndex - 1);
-        saves[currentSaveIndex - 1].corrupt = true;
-        this.setState({ saves });
-      }
-    };
-
-    const { saves } = this.state;
-
-    let staticParsed;
-
+  parseSnapshot = data => {
     let state = {};
-    let failed = false;
-
     try {
-
-      staticParsed = JSON.parse(save.static);
-      staticParsed.data.map(item => {
+      data.data.map(item => {
         delete item.selectedToolCode;
         return item;
       });
@@ -446,17 +328,17 @@ class App extends React.Component {
       // console.log("static", save.static);
       // console.log("staticParsed", staticParsed);
 
-      let m = staticParsed.mode;
+      let m = data.mode;
       if (typeOf(m) === "array") {
         m = Number(m[0]);
       }
 
       state.mode = m;
-      state.sortProp = staticParsed.sortProp;
-      state.sortDESC = staticParsed.sortDESC;
+      state.sortProp = data.sortProp;
+      state.sortDESC = data.sortDESC;
 
-      state.depo = staticParsed.depo || this.state.depo;
-      state.data = staticParsed.data;
+      state.depo = data.depo || this.state.depo;
+      state.data = data.data;
       state.data = state.data
         .map(item => {
           item = { ...defaultToolData, ...item };
@@ -469,125 +351,27 @@ class App extends React.Component {
           delete item.planIncome;
           return item;
         });
-      state.customTools = staticParsed.customTools || [];
+      state.customTools = data.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
-
-      state.id      = save.id;
-      state.saved   = true;
-      state.loading = false;
-      state.currentSaveIndex = saves.indexOf( saves.find(currSave => currSave.id == save.id) ) + 1;
     }
-    catch (e) {
-      failed = true;
-      state = {
-        id: save.id,
-        saved: true
-      };
-
-      onError(e);
+    catch (error) {
+      console.error(error);
+      message.error(error);
     }
+    return state;
+  };
 
-    return this.setStateAsync(state).then(this.syncToolsWithInvestorInfo);
-  }
-
-  reset() {
-    return new Promise(resolve => this.setState(JSON.parse(JSON.stringify(this.initialState)), () => resolve()))
-  }
-
-  save(name = "") {
-    return new Promise((resolve, reject) => {
-      if (!name) {
-        reject("Name is empty!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        name,
-        static: JSON.stringify(json.static),
-      };
-
-      fetch("addKsdSnapshot", "POST", data)
-        .then(res => {
-          console.log(res);
-
-          let id = Number(res.id);
-          if (id) {
-            console.log("Saved with id = ", id);
-            this.setState({ id }, () => resolve(id));
-          }
-          else {
-            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-          }
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  update(name = "") {
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-      };
-      fetch("updateKsdSnapshot", "POST", data)
-        .then(res => {
-          console.log("Updated!", res);
-          resolve();
-        })
-        .catch(err => console.log(err));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteKsdSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-
-            this.setState({ loading: true });
-            this.fetchSaveById(id)
-              .then(response => this.extractSave(response.data))
-              .catch(error => console.error(error));
-          }
-          else {
-            this.reset()
-              .catch(err => this.showMessageDialog(err));
-
-            saved = changed = false;
-          }
-
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
+  /** @typedef {import("../../../common/utils/extract-snapshot").Snapshot} Snapshot */
+  /** @param {Snapshot} snapshot */
+  async extractSnapshot(snapshot) {
+    try {
+      await super.extractSnapshot(snapshot, this.parseSnapshot);
+      await this.syncToolsWithInvestorInfo();
+    }
+    catch (error) {
+      message.error(error);
+    }
   }
 
   getTools() {
@@ -599,60 +383,21 @@ class App extends React.Component {
 		return this.getTools().map((tool, idx) => {
       return {
         idx:   idx,
-        label: String(tool),
+        label: String(tool)
       };
     });
   }
 
-  getTitle() {
-    const { saves, currentSaveIndex, id } = this.state;
-    let title = "КСД";
-
-    if (id && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
-    }
-
-    return title;
-  }
-
   render() {
-    const { mode, data, sortProp, sortDESC, isLong } = this.state;
+    const { mode } = this.state;
 
     return (
-      <Provider value={this}>
+      <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
 
-            <Header
-              onSaveChange={currentSaveIndex => {
-                const { saves } = this.state;
-
-                this.setState({ currentSaveIndex });
-
-                if (currentSaveIndex === 0) {
-                  this.reset();
-                }
-                else {
-                  const id = saves[currentSaveIndex - 1].id;
-                  this.setState({ loading: true });
-                  this.fetchSaveById(id)
-                    .then(response => this.extractSave(response.data))
-                    .catch(error => this.showAlert(error));
-                }
-              }}
-              onSave={e => {
-                const { saved, changed } = this.state;
-
-                if (saved && changed) {
-                  this.update(this.getTitle());
-                  this.setState({ changed: false });
-                }
-                else {
-                  dialogAPI.open("dialog1", e.target);
-                }
-              }}
-            >
+            <Header>
               <Radio.Group
                 className="tabs"
                 key={mode}
@@ -681,6 +426,7 @@ class App extends React.Component {
               <Tooltip title="Настройки">
                 <button
                   className="settings-button js-open-modal main-top__settings"
+                  type="button"
                   onClick={e => dialogAPI.open("config", e.target)}
                 >
                   <span className="visually-hidden">Открыть конфиг</span>
@@ -693,104 +439,18 @@ class App extends React.Component {
 
               <div className="container">
 
-                <div className="main-content__switch-long-short-wrapper">
-                  {false &&
-                    <Tooltip title={"Направление позиции"}>
-                      <Switch
-                        className="main-content__switch-long-short"
-                        key={isLong + ""}
-                        checkedChildren="LONG"
-                        unCheckedChildren="SHORT"
-                        defaultChecked={isLong}
-                        onChange={isLong => {
-                          const investorInfo = { ...this.state.investorInfo };
-                          investorInfo.type = isLong ? "LONG" : "SHORT";
-
-                          this.setStateAsync({ investorInfo })
-                            .then(this.syncToolsWithInvestorInfo)
-                        }}
-                      />
-                    </Tooltip>
-                  }
-                </div>
-
-                <div className="dashboard">
-                  {(() => {
-                    let data = [...this.state.data];
-                    if (sortProp != null && sortDESC != null) {
-                      data = data.sort((l, r) => sortDESC ? r[sortProp] - l[sortProp] : l[sortProp] - r[sortProp])
-                    }
-
-                    return (
-                      this.state.tools.length > 0
-                        ? (
-                          data.map((item, index) =>
-                            <DashboardRow
-                              tooltipPlacement={this.state.tooltipPlacement}
-                              key={index}
-                              item={item}
-                              index={index}
-                              sortProp={sortProp}
-                              sortDESC={sortDESC}
-                              mode={this.state.mode}
-                              depo={this.state.depo}
-                              toolsLoading={this.state.toolsLoading}
-                              toolsStorage={this.state.toolsStorage}
-                              percentage={item.percentage}
-                              selectedToolName={item.selectedToolName}
-                              planIncome={item.planIncome}
-                              tools={this.getTools()}
-                              options={this.getOptions()}
-                              onDropdownClose={() => {
-                                this.imitateFetchcingTools();
-                              }}
-                              onSort={(sortProp, sortDESC) => {
-                                if (sortProp !== this.state.sortProp) {
-                                  sortDESC = true;
-                                }
-                                this.setState({ sortProp, sortDESC })
-                              }}
-                              onUpdate={state => {
-                                data[index] = { ...data[index], ...state, updatedOnce: true };
-                                this.setState({ data });
-                              }}
-                              onChange={(prop, val) => {
-                                const { data } = this.state;
-                                data[index][prop] = val;
-                                if (prop == "selectedToolName") {
-                                  data[index].planIncome = null;
-                                }
-                                this.setState({ data, changed: true });
-                              }}
-                              onDelete={index => {
-                                data.splice(index, 1);
-                                this.setState({ data, changed: true })
-                              }}
-                            />
-                          )
-                        )
-                        : (
-                          <span className="dashboard__loading">
-                            <Spin
-                              className="dashboard__loading-icon"
-                              indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} 
-                              />
-                            Подождите, инструменты загружаются...
-                          </span>
-                        )
-                    );
-                  })()}
-                </div>
+                <Dashboard />
 
                 <footer className="main__footer">
 
-                  <Button className="custom-btn main__save"
-                    key={Math.random()}
+                  <Button 
+                    className="custom-btn main__save"
                     onClick={() => {
                       const { data } = this.state;
                       data.push({ ...defaultToolData });
-                      this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
-                    }}>
+                      this.setState({ data, changed: true, sortDESC: undefined, sortProp: false });
+                    }}
+                  >
                     <PlusOutlined aria-label="Добавить" />
                     инструмент
                   </Button>
@@ -798,217 +458,18 @@ class App extends React.Component {
                 </footer>
                 
               </div>
-              {/* /.container */}
 
             </div>
 
           </main>
-          {/* /.main */}
 
-          {(() => {
-            let { saves, id } = this.state;
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = (id) ? this.getTitle() : "Новое сохранение";
+          <SaveDialog />
 
-            function validate(str = "") {
-              str = str.trim();
-
-              let errors = [];
-
-              let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
-              if (str.length < 3) {
-                errors.push("Имя должно содержать не меньше трех символов!");
-              }
-              else if (test) {
-                errors.push(`Нельзя использовать символ "${test[0]}"!`);
-              }
-              if (!id) {
-                if (namesTaken.indexOf(str) > -1) {
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={20}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-
-            let onConfirm = () => {
-              let { id, data, currentDay, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(err => this.showMessageDialog(err));
-              }
-              else {
-                const onResolve = (id) => {
-                  let index = saves.push({ id, name });
-                  console.log(saves);
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(err => this.showMessageDialog(err));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
-
-          <Dialog
-            id="dialog4"
-            title="Удаление трейдометра"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Config
             id="config"
             title="Инструменты"
-            template={template}
             template={template}
             templateContructor={Tool}
             tools={this.state.tools}
@@ -1023,7 +484,7 @@ class App extends React.Component {
               { name: "Курс доллара", prop: "dollarRate"   },
               { name: "ADR",          prop: "adrDay"       },
               { name: "ADR неделя",   prop: "adrWeek"      },
-              { name: "ADR месяц",    prop: "adrMonth"     },
+              { name: "ADR месяц",    prop: "adrMonth"     }
             ]}
             customTools={this.state.customTools}
             onChange={customTools => this.setState({ customTools })}
@@ -1032,19 +493,16 @@ class App extends React.Component {
               <label className="input-group input-group--fluid ksd-config__depo">
                 <span className="input-group__label">Размер депозита:</span>
                 <NumericInput
-                  className="input-group__input"
                   key={this.state.depo}
+                  className="input-group__input"
                   defaultValue={this.state.depo}
                   format={formatNumber}
-                  min={10000}
-                  max={Infinity}
-                  onBlur={val => {
-                    const { depo } = this.state;
-                    if (val == depo) {
+                  min={10_000}
+                  onBlur={depo => {
+                    if (depo == this.state.depo) {
                       return;
                     }
-
-                    this.setState({ depo: val, changed: true });
+                    this.setState({ depo, changed: true });
                   }}
                 />
               </label>
@@ -1052,25 +510,20 @@ class App extends React.Component {
           />
           {/* Инструменты */}
 
-          {(() => {
-            const { errorMessage } = this.state;
-            return (
-              <Dialog
-                id="dialog-msg"
-                title="Сообщение"
-                hideConfirm={true}
-                cancelText="ОК"
-              >
-                {errorMessage}
-              </Dialog>
-            )
-          })()}
+          <Dialog
+            id="dialog-msg"
+            title="Сообщение"
+            hideConfirm
+            cancelText="ОК"
+          >
+            {this.state.errorMessage}
+          </Dialog>
           {/* Error Popup */}
 
         </div>
-      </Provider>
+      </StateContext.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App };
