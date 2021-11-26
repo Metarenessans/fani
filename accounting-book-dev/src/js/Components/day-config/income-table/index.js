@@ -23,7 +23,89 @@ export default function IncomeTable() {
 
   return (
     <Panel className="income-table income-table--income-title" title="Доходы">
-      <div className="income-table-table-wrapper">
+      <div className="income-table-wrapper">
+        {income.map((item, index) => {
+          const {
+            incomeTools,
+            selectedIncomeToolName,
+            incomeTypeName,
+            value
+          } = item;
+          return (
+            <>
+              <div className="income-table-row">
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Вид
+                  </div>
+                  <div className="income-table-value">
+                    <Select
+                      value={incomeTypeName}
+                      key={incomeTypeName}
+                      style={{ width: "100%" }}
+                      onChange={val => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].income[index].incomeTypeName = val;
+                        context.setState({ data });
+                      }}
+                    >
+                      {state.incomeTypeTools.map((tool, index) =>
+                        <Select.Option key={index} value={tool}>
+                          {tool}
+                        </Select.Option>
+                      )}
+                    </Select>
+                  </div>
+                </div>
+
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Наименование
+                  </div>
+                  <div className="income-table-value">
+                    <CustomSelect
+                      type="text"
+                      options={state.incomeTools}
+                      value={selectedIncomeToolName}
+                      onChange={value => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].income[index].selectedIncomeToolName = value;
+                        context.setState({ data });
+                      }}
+                      onAddOption={(newOption, options) => {
+                        context.setState({ incomeTools: options });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Значение
+                  </div>
+                  <div className="income-table-value">
+                    <NumericInput
+                      defaultValue={value}
+                      format={formatNumber}
+                      unsigned="true"
+                      onBlur={val => {
+                        const data = cloneDeep(state.data);
+                        data[currentRowIndex].income[index].value = val;
+                        context.setState({ data });
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* col */}
+              </div>
+            </>
+          );
+        })}
+      </div>
+      {/* <div className="income-table-table-wrapper">
         <table>
           <tbody>
             <tr>
@@ -89,7 +171,7 @@ export default function IncomeTable() {
             })}
           </tbody>
         </table>
-      </div>
+      </div> */}
       <div className="buttons-container">
         <Button
           className="table-panel__add-button custom-btn"
