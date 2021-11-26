@@ -12,6 +12,7 @@ import extractSnapshot from "../utils/extract-snapshot";
 /** @type {React.Context<BaseComponent>} */
 export const Context = React.createContext();
 
+// TODO: добавить флаг в стейте, который бы отвечал за загрузку конкретно селекта с сейвами
 export default class BaseComponent extends React.Component {
 
   constructor(props) {
@@ -148,6 +149,7 @@ export default class BaseComponent extends React.Component {
    * @returns {Promise}
    */
   async fetchSnapshots() {
+    await this.setStateAsync({ loading: true });
     try {
       const response = await fetch(`get${this.pageName}Snapshots`);
       // Сортировка по дате обновления
@@ -170,12 +172,12 @@ export default class BaseComponent extends React.Component {
    * @returns {Promise}
    */
   async fetchLastModifiedSnapshot() {
+    await this.setStateAsync({ loading: true });
     try {
       const response = await fetch(`getLastModified${this.pageName}Snapshot`);
       if (!response.error && response.data?.name) {
         const pure = params.get("pure") === "true";
         if (!pure) {
-          await this.setStateAsync({ loading: true });
           return this.extractSnapshot(response.data);
         }
       }
