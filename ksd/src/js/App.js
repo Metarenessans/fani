@@ -1,52 +1,40 @@
 import React from "react";
-const { Provider, Consumer } = React.createContext();
 import {
   Button,
   Tooltip,
   Radio,
-  Spin,
-  Input,
-  Switch
-} from "antd/es";
+  message
+} from "antd";
 
 import {
   PlusOutlined,
-  SettingFilled,
-  LoadingOutlined
+  SettingFilled
 } from "@ant-design/icons";
 
 import { cloneDeep, isEqual } from "lodash";
 
-import params              from "../../../common/utils/params";
-import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number";
 import typeOf              from "../../../common/utils/type-of";
+import delay               from "../../../common/utils/delay";
 import { Tools, Tool, template } from "../../../common/tools";
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
 import Header                from "../../../common/components/header";
-import CrossButton           from "../../../common/components/cross-button";
 import NumericInput          from "../../../common/components/numeric-input";
 import Config                from "../../../common/components/config";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
-import Stack                 from "../../../common/components/stack";
 import Dashboard             from "./components/Dashboard";
 
 /* API */
 import fetch             from "../../../common/api/fetch";
-import { applyTools }    from "../../../common/api/fetch/tools";
 import { fetchInvestorInfo } from "../../../common/api/fetch/investor-info/fetch-investor-info";
-import { applyInvestorInfo } from "../../../common/api/fetch/investor-info/apply-investor-info";
-import fetchSavesFor     from "../../../common/api/fetch-saves";
-import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id";
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info";
 
 import "../sass/style.sass";
-import { message } from "antd";
 
 const defaultToolData = {
   selectedToolName: "SBER",
@@ -162,27 +150,11 @@ class App extends BaseComponent {
   async fetchInitialData() {
     this.fetchInvestorInfo();
 
-    this.fetchTools().then(() => this.setFetchingToolsTimeout());
+    await this.fetchTools();
+    this.setFetchingToolsTimeout();
 
     await this.fetchSnapshots();
-    try {
-      await this.fetchLastModifiedSnapshot();
-    }
-    finally {
-      if (dev) {
-        let response = require("./snapshot.json");
-        console.log("Loading fake snapshot", response);
-
-        const { data } = response;
-        const { id, name, dateCreate } = data;
-  
-        const saves = [{ id, name, dateCreate }];
-        await this.setStateAsync({ saves });
-        if (!response.error && response.data?.name) {
-          this.extractSnapshot(response.data);
-        }
-      }
-    }
+    await this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
   }
 
   async fetchInvestorInfo() {
@@ -353,7 +325,7 @@ class App extends BaseComponent {
         });
       state.customTools = data.customTools || [];
       state.customTools = state.customTools
-        .map(tool => Tools.create(tool, { investorInfo: this.state.investorInfo }));
+        .map(tool => Tool.fromObject(tool, { investorInfo: this.state.investorInfo }));
     }
     catch (error) {
       console.error(error);
