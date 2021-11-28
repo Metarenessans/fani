@@ -169,10 +169,11 @@ export default class BaseComponent extends React.Component {
    * Пример: если `this.pageName` равен `Mts`,
    * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot
    *
-   * @param {{ fallback: SnapshotResponse }} options
+   * @param {object} options
+   * @param {?SnapshotResponse} options.fallback Фейк ответ с сервера (работает только на локальной сборке)
    * @returns {Promise}
    */
-  async fetchLastModifiedSnapshot({ fallback }) {
+  async fetchLastModifiedSnapshot(options) {
     await this.setStateAsync({ loading: true });
 
     /** @type {SnapshotResponse} */
@@ -190,6 +191,7 @@ export default class BaseComponent extends React.Component {
       await this.setStateAsync({ loading: false });
     }
     else {
+      const fallback = options?.fallback;
       if (dev && fallback) {
         response = fallback;
         const { data } = response;
