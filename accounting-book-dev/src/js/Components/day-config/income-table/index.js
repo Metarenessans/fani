@@ -23,24 +23,23 @@ export default function IncomeTable() {
 
   return (
     <Panel className="income-table income-table--income-title" title="Доходы">
-      <div className="income-table-table-wrapper">
-        <table>
-          <tbody>
-            <tr>
-              <th>Вид</th>
-              <th>Наименование</th>
-              <th>Значение</th>
-            </tr>
-            {income.map((item, index) => {
-              const {
-                incomeTools,
-                selectedIncomeToolName,
-                incomeTypeName,
-                value
-              } = item;
-              return (
-                <tr key={index}>
-                  <td>
+      <div className="income-table-wrapper">
+        {income.map((item, index) => {
+          const {
+            incomeTools,
+            selectedIncomeToolName,
+            incomeTypeName,
+            value
+          } = item;
+          return (
+            <>
+              <div className="income-table-row">
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Вид
+                  </div>
+                  <div className="income-table-value">
                     <Select
                       value={incomeTypeName}
                       key={incomeTypeName}
@@ -57,8 +56,15 @@ export default function IncomeTable() {
                         </Select.Option>
                       )}
                     </Select>
-                  </td>
-                  <td>
+                  </div>
+                </div>
+
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Наименование
+                  </div>
+                  <div className="income-table-value">
                     <CustomSelect
                       type="text"
                       options={state.incomeTools}
@@ -72,23 +78,32 @@ export default function IncomeTable() {
                         context.setState({ incomeTools: options });
                       }}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+
+                {/* col */}
+                <div className="income-table-col">
+                  <div className="income-table-key">
+                    Значение
+                  </div>
+                  <div className="income-table-value">
                     <NumericInput
                       defaultValue={value}
                       format={formatNumber}
+                      unsigned="true"
                       onBlur={val => {
                         const data = cloneDeep(state.data);
                         data[currentRowIndex].income[index].value = val;
                         context.setState({ data });
                       }}
                     />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+                {/* col */}
+              </div>
+            </>
+          );
+        })}
       </div>
       <div className="buttons-container">
         <Button

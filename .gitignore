@@ -1,5 +1,7 @@
 **/node_modules
+accounting-book-prod
 trademeter-prod
+intraday-prod
 ksd-prod
 tor-prod
 mts-prod

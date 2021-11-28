@@ -1,8 +1,22 @@
+@import "../../../../../../common/sass/mixins";
+
 .expense-table {
   margin-top: 2em;
-
-  &-table-wrapper {
+  
+  &-wrapper {
+    font-size: 0.8em;
+    display: flex;
+    flex-direction: column;
+    
     width: 100%;
+    margin-bottom: 3em;
+    box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
+
+    @include sm {
+      font-size: 1em;
+      box-shadow: none;
+    }
+
 
     .ant-calendar-picker {
       font-size: .5em;
@@ -12,80 +26,100 @@
       width: 60%;
       height: 80%;
     }
+
+  }
+  
+  &-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+
+    border-bottom: 0.03em solid #cacaca;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+    
+    &:first-of-type{
+      .expense-table-col {
+        .expense-table-key {
+          display: block;
+        }
+      }
+    }
+
+    @include sm {
+      flex-direction: column;
+      margin-bottom: 3em;
+
+      border: none;
+      box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
+    }
+  }
+  
+  &-col {
+    display: flex;
+    flex-direction: column;
+    width: 33.33%;
+    
+    &:nth-child(2) {
+      border-right: 0.03em solid #cacaca;
+      border-left: 0.03em solid #cacaca;
+
+      @include sm {
+        border: none;
+      }
+    }
+
+    @include sm {
+      width: 100%;
+      border: none;
+    }
+  }
+  
+  &-key {
+    display: none;
+    width: 100%;
+    font-size: 2em;
+    
+    padding: 0.5em;
+    font-weight: 800;
+    text-align: center;
+    border-bottom: 0.03em solid #cacaca;
+    
+    &:last-of-type {
+      border-right: none;
+    }
+
+    @include sm {
+      display: block;
+      padding: 0;
+
+      border: none;
+      font-weight: normal;
+      background-color: #efeeee;
+    }
+  }
+
+  &-value {
+    width: 100%;
+    text-align: center;
+    padding: 0.7em;
+
+    @include sm {
+      border: none;
+      background-color:#efeeee;
+      padding: 0;
+
+      .ant-select {
+        text-align: center;
+      }
+    }
   }
 
   &--payments-title {
     .stats-panel-title {
       background-color: #fdd1d1!important;
-    }
-  }
-
-  table {
-    box-shadow: 0 3px 5px rgba(0,0,0,.03),0 0 8px rgba(12,12,12,.06);
-    width: 100%;
-
-    th,
-    td {
-      padding: 0.7em;
-
-      font-size: 1.55em;
-      text-align: center;
-      min-width: 16%;
-      width: 16%;
-      
-      border-right: 0.03em solid #cacaca;
-
-      input {
-        text-align: center;
-      }
-      
-      &:last-of-type {
-        border-right: none;
-      }
-    }
-    td {
-      font-size: 0.7em;
-      
-    }
-    
-    th {
-      width: 16%;
-      
-      min-width: 16%;
-      line-height: 1.2em;
-      
-      font-weight: 800;
-      
-    }
-    
-    tr {
-      margin-top: .5em;
-      border-bottom: 0.03em solid #cacaca;
-      
-      &:first-of-type {
-        border-bottom: 0.03em solid #cacaca;
-
-        th {
-          position: sticky;
-          z-index: 1;
-          top: 0;
-          background: white;
-          padding: .5em;
-
-          border-right: 0.03em solid #cacaca;
-          &:last-of-type {
-            border-right: none;
-          }
-        }
-      }
-
-      &:last-of-type {
-        border-bottom: none;
-      }
-    }
-
-    button {
-      font-size: 0.8em;
     }
   }
 

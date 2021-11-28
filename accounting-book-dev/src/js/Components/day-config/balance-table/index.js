@@ -15,87 +15,125 @@ export default function BalanceTable() {
   const { data, currentRowIndex } = state;
   const currentDay = data[currentRowIndex];
   return (
-    <Panel className="balance-table" title={`Баланс (день ${currentRowIndex + 1})`}>
-      <div className="balance-table-table-wrapper">
-        <table>
-          <tbody>
-            <tr>
-              <th className="income">Доходы</th>
-              <th className="income">Постоянные<br /> доходы</th>
-              <th className="income">Периодические<br /> доходы</th>
-              <th className="payments">Расходы</th>
-              <th className="payments">Важные<br /> расходы</th>
-              <th className="payments">Необязательные<br /> расходы</th>
-              <th className="balance">Баланс</th>
-            </tr>
-            {(() => {
-              return (
-                <tr>
-                  <td>
-                    <Value
-                      value={currentDay.income
-                        .reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={currentDay.income
-                        .filter(source => source.incomeTypeName == "Постоянные")
-                        .reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={currentDay.income
-                        .filter(source => source.incomeTypeName == "Периодические")
-                        .reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={-currentDay.expense.reduce((acc, row) => acc + row.value, 0)}
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={-currentDay.expense
-                        .filter(source => source.expenseTypeName == "Важные")
-                        .reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={-currentDay.expense
-                        .filter(source => source.expenseTypeName == "Необязательные")
-                        .reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                  <td>
-                    <Value
-                      value={
-                        currentDay.income.reduce((acc, row) => acc + row.value, 0)
-                        -
-                        currentDay.expense.reduce((acc, row) => acc + row.value, 0)
-                      }
-                      format={value => formatNumber(Math.floor(value))}
-                    />
-                  </td>
-                </tr>
-              );
-            })()}
-          </tbody>
-        </table>
+    <Panel className="balance-table" title={`Баланс - день ${currentRowIndex + 1}`}>
+      <div className="balance-table-wrapper">
+        <div className="balance-table-row">
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key income">
+              Доходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={currentDay.income
+                  .reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key income">
+              Постоянные<br/> доходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={currentDay.income
+                  .filter(source => source.incomeTypeName == "Постоянные")
+                  .reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key income">
+              Периодические<br/> доходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={currentDay.income
+                  .filter(source => source.incomeTypeName == "Периодические")
+                  .reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key payments">
+              Расходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={-currentDay.expense.reduce((acc, row) => acc + row.value, 0)}
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key payments">
+              Важные<br/> расходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={-currentDay.expense
+                  .filter(source => source.expenseTypeName == "Важные")
+                  .reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key payments">
+              Необязательные<br/> расходы
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={-currentDay.expense
+                  .filter(source => source.expenseTypeName == "Необязательные")
+                  .reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+
+          {/* col */}
+          <div className="balance-table-col">
+            <div className="balance-table-key balance">
+              Баланс
+            </div>
+            <div className="balance-table-value">
+              <Value
+                value={
+                  currentDay.income.reduce((acc, row) => acc + row.value, 0)
+                  -
+                  currentDay.expense.reduce((acc, row) => acc + row.value, 0)
+                }
+                format={value => formatNumber(Math.floor(value))}
+              />
+            </div>
+          </div>
+          {/* col */}
+        </div>
       </div>
     </Panel>
   );

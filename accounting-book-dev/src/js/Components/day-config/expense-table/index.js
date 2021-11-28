@@ -23,23 +23,22 @@ export default function ExpenseTable() {
 
   return (
     <Panel className="expense-table expense-table--payments-title" title="Расходы">
-      <div className="expense-table-table-wrapper">
-        <table>
-          <tbody>
-            <tr>
-              <th>Вид</th>
-              <th>Наименование</th>
-              <th>Значение</th>
-            </tr>
-            {expense.map((item, index) => {
-              const { 
-                expenseTypeName,
-                selectedPaymentToolName,
-                value
-              } = item;
-              return (
-                <tr key={index}>
-                  <td>
+      <div className="expense-table-wrapper">
+        {expense.map((item, index) => {
+          const { 
+            expenseTypeName,
+            selectedPaymentToolName,
+            value
+          } = item;
+          return (
+            <>
+              <div className="expense-table-row">
+                {/* col */}
+                <div className="expense-table-col">
+                  <div className="expense-table-key">
+                    Вид
+                  </div>
+                  <div className="expense-table-value">
                     <Select
                       value={expenseTypeName}
                       style={{ width: "100%" }}
@@ -55,8 +54,16 @@ export default function ExpenseTable() {
                         </Select.Option>
                       )}
                     </Select>
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="expense-table-col">
+                  <div className="expense-table-key">
+                    Наименование
+                  </div>
+                  <div className="expense-table-value">
                     <CustomSelect
                       type="text"
                       options={state.paymentTools}
@@ -70,10 +77,19 @@ export default function ExpenseTable() {
                         context.setState({ paymentTools: options });
                       }}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="expense-table-col">
+                  <div className="expense-table-key">
+                    Значение
+                  </div>
+                  <div className="expense-table-value">
                     <NumericInput
                       defaultValue={value}
+                      unsigned="true"
                       format={formatNumber}
                       onBlur={val => {
                         const data = cloneDeep(state.data);
@@ -81,12 +97,13 @@ export default function ExpenseTable() {
                         context.setState({ data });
                       }}
                     />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+                {/* col */}
+              </div>
+            </>
+          );
+        })}
       </div>
       <div className="buttons-container">
         <Button

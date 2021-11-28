@@ -17,77 +17,127 @@ export default function TablePanel() {
   const { month } = state;
   const data = state.data.slice((month - 1) * 30, month * 30);
   return (
-    <Panel className="table-panel" >
-      <div className="table-panel-table-wrapper">
-        <table>
-          <tbody>
-            <tr>
-              <th>Дата</th>
-              <th className="income">Доходы</th>
-              <th className="income">Постоянные<br/> доходы</th>
-              <th className="income">Периодические<br/> доходы</th>
-              <th className="payments">Расходы</th>
-              <th className="payments">Важные<br/> расходы</th>
-              <th className="payments">Необязательные<br/> расходы</th>
-              <th className="balance">Баланс</th>
-              <th></th>
-            </tr>
-            {data.map((day, index) => {
-              index = index + (month - 1) * 30;
-              const currentDay = day;
-              const { deals } = day;
-              const result = deals.reduce((acc, curr) => acc + curr.result, 0);
-              return (
-                <tr key={index}>
-                  <td>
+    <Panel className="panel" >
+      <div className="panel-table-wrapper">
+        {data.map((day, index) => {
+          index = index + (month - 1) * 30;
+          const currentDay = day;
+          const { deals } = day;
+          const result = deals.reduce((acc, curr) => acc + curr.result, 0);
+          return (
+            <>
+              <div className="panel-table-row">
+                
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key">
+                    Дата
+                  </div>
+                  <div className="panel-table-value">
                     <DatePicker
                       locale={locale}
                       format="DD.MM.YYYY"
                       value={moment(day.date)}
                       onChange={(moment, formatted) => {
                         const data = cloneDeep(state.data);
-                        data[index].date = Number(moment);
+                        data[index].date = Number(moment) === 0 ? Number(Date.now()) : Number(moment);
                         context.setState({ data });
                       }}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key income">
+                    Доходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={currentDay.income.reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key income">
+                    Постоянные<br/> доходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={currentDay.income.filter(source => source.incomeTypeName == "Постоянные").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key income">
+                    Периодические<br/> доходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={currentDay.income.filter(source => source.incomeTypeName == "Периодические").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key payments">
+                    Расходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={-currentDay.expense.reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key payments">
+                    Важные<br/> расходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={-currentDay.expense.filter(source => source.expenseTypeName == "Важные").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key payments">
+                    Необязательные<br/> расходы
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={-currentDay.expense.filter(source => source.expenseTypeName == "Необязательные").reduce((acc, row) => acc + row.value, 0)}
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key balance">
+                    Баланс
+                  </div>
+                  <div className="panel-table-value">
                     <Value
                       value={
                         currentDay.income.reduce((acc, row) => acc + row.value, 0)
@@ -96,8 +146,15 @@ export default function TablePanel() {
                       }
                       format={value => formatNumber(Math.floor(value))}
                     />
-                  </td>
-                  <td>
+                  </div>
+                </div>
+                {/* col */}
+
+                {/* col */}
+                <div className="panel-table-col">
+                  <div className="panel-table-key expense-table-key-space">
+                  </div>
+                  <div className="panel-table-value">
                     <Button
                       className="custom-btn custom-btn--edit"
                       onClick={() => {
@@ -110,17 +167,19 @@ export default function TablePanel() {
                     >
                       Редактировать
                     </Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+                {/* col */}
+              </div>
+            </>
+          );
+        })}
       </div>
+
       <div className="buttons-container">
         <Button
           id="add-day-btn"
-          className="table-panel__add-button custom-btn"
+          className="panel__add-button custom-btn"
           onClick={async e => {
             const { month} = state;
             const data = cloneDeep(state.data);
@@ -142,9 +201,9 @@ export default function TablePanel() {
           Добавить
         </Button>
         <Button
-          className="table-panel__add-button custom-btn"
+          className="panel__add-button custom-btn"
           disabled={state.data.length === 1}
-          onClick={ e => {
+          onClick={e => {
             const data = cloneDeep(state.data);
             data.pop();
             context.setState({ data });
