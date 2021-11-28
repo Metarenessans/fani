@@ -73,7 +73,11 @@ export default class FourthStep extends React.Component {
                         return (
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
-                              defaultValue={name}
+                              // В старых сейвах в name может лежать объект
+                              defaultValue={typeof name === "object" 
+                                ? `Технология ${Object.keys(technology).length + index + 1}`
+                                : name
+                              }
                               onBlur={e => {
                                 const { value } = e.target;
                                 const data = cloneDeep(state.data);
