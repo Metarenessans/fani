@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { flatten } from "lodash";
 
 import Stack from "../../../../../common/components/stack";
 import Value from "../../../../../common/components/value";
@@ -25,25 +26,7 @@ export default function Stats() {
         {/* Генеральный анализ за этот месяц */}
         <Panel className="stats-panel--indent" title="Генеральный анализ за этот месяц">
           {(() => {
-            function getRanges() {
-              let range = [];
-
-              let start = 0;
-              const mappedData = state.data.map(row => new Date(row.date).getMonth());
-              const months = Array.from(new Set(mappedData));
-
-              for (let month of months) {
-                const end = mappedData.lastIndexOf(month);
-                range.push([start, end]);
-                start = end + 1;
-              }
-
-              return range;
-            }
-
-            const ranges = getRanges();
-            const data = state.data.slice(ranges[month - 1][0], ranges[month - 1][1] + 1);
-
+            const data = context.slicedData;
             const incomeTotal = data.reduce((acc, day) => acc + day.income.reduce((acc, row) => acc + row.value, 0), 0);
             const expenseTotal = data.reduce((acc, day) => acc + day.expense.reduce((acc, row) => acc + row.value, 0), 0);
             const unnecessaryExpenses = data
@@ -138,6 +121,7 @@ export default function Stats() {
         {/* Генеральный анализ за всё время */}
         <Panel className="stats-panel--indent" title="Генеральный анализ за всё время">
           {(() => {
+            const data = flatten(state.data);
             const incomeTotal = data.reduce((acc, day) => acc + day.income.reduce((acc, row) => acc + row.value, 0), 0);
             const expenseTotal = data.reduce((acc, day) => acc + day.expense.reduce((acc, row) => acc + row.value, 0), 0);
             const unnecessaryExpenses = data

@@ -17,26 +17,7 @@ export default function TablePanel() {
   const { state } = context;
   const { month } = state;
 
-  function getRanges() {
-    let range = [];
-
-    let start = 0;
-    const { data } = state;
-    const mappedData = data.map(row => new Date(row.date).getMonth());
-    const months = Array.from(new Set(mappedData));
-
-    for (let month of months) {
-      const end = mappedData.lastIndexOf(month);
-      range.push([start, end]);
-      start = end + 1;
-    }
-
-    return range;
-  }
-
-  const ranges = getRanges();
-  const data = state.data.slice(ranges[month - 1][0], ranges[month - 1][1] + 1);
-
+  const data = context.slicedData;
   const date = new Date;
   const currentDateDay = date.getDate();
   const daysInMonth = date.daysInMonth();
@@ -49,17 +30,17 @@ export default function TablePanel() {
           const { deals } = day;
           const result = deals.reduce((acc, curr) => acc + curr.result, 0);
 
-          let realIndex = 0;
-          if (month == 1) {
-            realIndex = index;
-          }
-          else {
-            for (let i = 0; i < month - 1; i++) {
-              realIndex = ranges[i][1] + 1;
-            }
-            realIndex += index;
-          }
-          index = realIndex;
+          // let realIndex = 0;
+          // if (month == 1) {
+          //   realIndex = index;
+          // }
+          // else {
+          //   for (let i = 0; i < month - 1; i++) {
+          //     realIndex = ranges[i][1] + 1;
+          //   }
+          //   realIndex += index;
+          // }
+          // index = realIndex;
 
           return (
             <>
@@ -76,9 +57,9 @@ export default function TablePanel() {
                       value={moment(day.date)}
                       onChange={(moment, formatted) => {
                         const data = cloneDeep(state.data);
-                        data[index].date = Number(moment);
-                        if (Number(moment) === 0 ) {
-                          data[index].date = Date.now();
+                        data[month - 1][index].date = Number(moment);
+                        if (Number(moment) === 0) {
+                          data[month - 1][index].date = Date.now();
                         }
 
                         // TODO: удалить?
@@ -90,10 +71,11 @@ export default function TablePanel() {
                           //     (Number(moment) > +new Date() ? Date.now() : Number(moment));
                         
                         // Получаем номер месяца первого элемента
-                        const m = new Date(context.slicedData[0].date).getMonth();
-                        const date = new Date(data[index].date);
-                        date.setMonth(m);
-                        data[index].date = +date;
+
+                        // const m = new Date(context.slicedData[0].date).getMonth();
+                        // const date = new Date(data[index].date);
+                        // date.setMonth(m);
+                        // data[index].date = +date;
 
                         context.setState({ data });
                       }}
@@ -233,31 +215,20 @@ export default function TablePanel() {
       <div className="buttons-container">
         
         <Button
-        // ~~
           id="add-day-btn"
           className="panel__add-button custom-btn"
-          // дизейблится, если кол. строк (дней) в текущем месяце, равно кол. дней в этом месяце
-          disabled={new Date(cloneDeep(data).pop().date).daysInMonth() === data.length}
+          // ~~
+          // Дизейблится, если кол-во строк (дней) в текущем месяце равно кол-ву дней в этом месяце
+          disabled={data.length === new Date(cloneDeep(data).pop().date).daysInMonth()}
           onClick={e => {
-            let { month } = state;
             const data = cloneDeep(state.data);
-            let day = cloneDeep(context.dayTemplate);
-            const lastDay = context.slicedData[context.slicedData.length - 1];
-            const lastDayDate = new Date(lastDay?.date);
-            // Обновляем дату
-            day.date = +lastDayDate ?? Number(new Date());
             
-            // if (lastDayDate.getDate() >= lastDayDate.daysInMonth()) {
-            //   day.date = +lastDayDate + (24 * 60 * 60 * 1000);
+            let day = cloneDeep(context.dayTemplate);
+            // Обновляем дату
+            day.date = Number(new Date());
+            data[month - 1].push(day);
 
-            //   month = month + 1;
-            // }
-
-            // data.push(day);
-            const index = data.findIndex(row => isEqual(row, lastDay));
-            data.splice(index, 0, day);
-
-            context.setStateAsync({ month, data });
+            context.setStateAsync({ data });
           }}
         >
           Добавить
@@ -267,10 +238,7 @@ export default function TablePanel() {
           disabled={data.length === 1}
           onClick={e => {
             const data = cloneDeep(state.data);
-            const lastDay = context.slicedData[context.slicedData.length - 1];
-            const index = data.findIndex(row => isEqual(row, lastDay));
-
-            data.splice(index, 1);
+            data[month - 1].pop();
             context.setState({ data });
           }}
         >

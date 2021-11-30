@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Button, Select } from "antd";
-import { cloneDeep } from "lodash";
+import { cloneDeep, flatten } from "lodash";
 
 import formatNumber from "../../../../../../common/utils/format-number";
 import NumericInput from "../../../../../../common/components/numeric-input";
@@ -17,9 +17,10 @@ export default function IncomeTable() {
   const { state } = context;
   const {
     data,
+    month,
     currentRowIndex
   } = state;
-  const { income } = data[currentRowIndex];
+  const { income } = data[month - 1][currentRowIndex];
 
   return (
     <Panel className="income-table income-table--income-title" title="Доходы">
@@ -46,7 +47,7 @@ export default function IncomeTable() {
                       style={{ width: "100%" }}
                       onChange={val => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].income[index].incomeTypeName = val;
+                        data[month - 1][currentRowIndex].income[index].incomeTypeName = val;
                         context.setState({ data });
                       }}
                     >
@@ -71,7 +72,7 @@ export default function IncomeTable() {
                       value={selectedIncomeToolName}
                       onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].income[index].selectedIncomeToolName = value;
+                        data[month - 1][currentRowIndex].income[index].selectedIncomeToolName = value;
                         context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
@@ -93,7 +94,7 @@ export default function IncomeTable() {
                       unsigned="true"
                       onBlur={val => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].income[index].value = val;
+                        data[month - 1][currentRowIndex].income[index].value = val;
                         context.setState({ data });
                       }}
                     />
@@ -110,14 +111,14 @@ export default function IncomeTable() {
           className="table-panel__add-button custom-btn"
           onClick={() => {
             const data = cloneDeep(state.data);
-            const income = cloneDeep(data[currentRowIndex].income);
+            const income = cloneDeep(data[month - 1][currentRowIndex].income);
 
             income.push({
               selectedIncomeToolName: "Работа",
               incomeTypeName:         "Постоянные",
               value:                  0
             });
-            data[currentRowIndex].income = income;
+            data[month - 1][currentRowIndex].income = income;
             context.setState({ data });
           }}
         >
@@ -129,9 +130,9 @@ export default function IncomeTable() {
           disabled={income.length === 1}
           onClick={() => {
             const data = cloneDeep(state.data);
-            const income = cloneDeep(data[currentRowIndex].income);
+            const income = cloneDeep(data[month - 1][currentRowIndex].income);
             income.pop();
-            data[currentRowIndex].income = income;
+            data[month - 1][currentRowIndex].income = income;
             context.setState({ data });
           }}
         >
