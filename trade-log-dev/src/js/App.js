@@ -279,6 +279,7 @@ export default class App extends BaseComponent {
   
   componentDidMount() {
     const onResize = e => this.setState({ mobile: window.innerWidth <= 768 });
+    onResize();
     window.addEventListener("resize", onResize.call(this));
 
     this.fetchInitialData();
