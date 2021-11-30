@@ -95,13 +95,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8em;
 
     font-size: 1.3em;
-
-    @include sm {
-      gap: 6em;
-    }
 
     @include sm {
       flex-direction: column;
@@ -112,7 +107,25 @@
       position: relative;
 
       display: flex;
-      gap: .3em;
+
+      margin-right: 8em;
+
+      @include sm {
+        margin-right: 0;
+        margin-bottom: 6em;
+      }
+
+      &:last-child {
+        margin-right: 0;
+
+        @include sm {
+          margin-bottom: 0;
+        }
+
+        &::after {
+          display: none;
+        }
+      }
 
       .step-logo {
         font-size: 1.3em;
@@ -138,8 +151,15 @@
       }
 
       .step-name {
+        margin-left: .3em;
+
         font-size: 1.1em;
         color: #cacaca;
+
+        @include sm {
+          margin-left: 0;
+          margin-top: .3em;
+        }
 
         &--active {
           color: var(--primary-color);
@@ -160,8 +180,10 @@
         top:      50%;
         right: -6.3em;
 
-        width:    5em;
-        height: .01em;
+        $line-width: 0.1em;
+
+        width:  5em;
+        height: $line-width;
 
         background-color: #cacaca;
 
@@ -173,13 +195,9 @@
 
           margin-top: .5em;
           // margin-left: -1em;
-          width:  .01em;
-          height:   5em;
+          width:  $line-width;
+          height: 5em;
         }
-      }
-
-      &:last-child::after {
-        display: none;
       }
 
       span {
@@ -193,6 +211,12 @@
         margin-right: 1em;
         height: 3em;
         width:  3em;
+      }
+
+      @include sm {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
       }
     }
   }
