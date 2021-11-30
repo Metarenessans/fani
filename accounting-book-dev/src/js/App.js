@@ -16,6 +16,7 @@ import DeleteDialog from "../../../common/components/delete-dialog";
 
 import DayConfig   from "./components/day-config";
 import Stats       from "./components/stats";
+import "../js/Utils/days-in-month";
 
 /* API */
 
@@ -155,7 +156,10 @@ export default class App extends BaseComponent {
       ...this.initialState,
 
       /** @type {dayTemplate[]} */
-      data: [cloneDeep(this.dayTemplate)],
+      data: [
+        // cloneDeep(this.dayTemplate)
+        ...new Array(30).fill().map(pekora => cloneDeep(this.dayTemplate))
+      ],
 
       /**
        * Номер текущей страницы, где:
@@ -297,6 +301,7 @@ export default class App extends BaseComponent {
     }
   }
 
+  
   render() {
     const {
       step,
@@ -304,6 +309,26 @@ export default class App extends BaseComponent {
       month,
       currentRowIndex 
     } = this.state;
+    
+    function getRanges() {
+      let range = [];
+
+      let start = 0;
+      const mappedData = data.map(row => new Date(row.date).getMonth());
+      const months = Array.from(new Set(mappedData));
+
+      for (let month of months) {
+        const end = mappedData.lastIndexOf(month);
+        range.push([start, end]);
+        start = end + 1;
+      }
+
+      return range;
+    }
+
+    const ranges = getRanges();
+    const slicedData = data.slice(ranges[month - 1][0], ranges[month - 1][1] + 1);
+    this.slicedData = slicedData;
 
     return (
       <StateContext.Provider value={this}>
@@ -354,11 +379,44 @@ export default class App extends BaseComponent {
 
                     <Button
                       className="day-button"
-                      disabled={month + 1 > Math.ceil(data.length / 30)}
-                      onClick={e => {
+                      disabled={
+                        new Date(cloneDeep(slicedData).pop().date).getMonth() + 1 < new Date().getMonth() + 1
+                          ? false
+                          :
+                        new Date(slicedData[slicedData.length - 1].date).getDate() !== new Date(slicedData[0].date).daysInMonth()
+                      }
+                      onClick={async e => {
+                        const data = cloneDeep(this.state.data);
+                        const day = cloneDeep(dayTemplate);
+                        // Обновляем дату
+
+                        const daysInCurrentMonth = new Date(this.slicedData[0].date).daysInMonth();
+                        const lastDay = this.slicedData[this.slicedData.length - 1];
+                        const lastDayDate = new Date(lastDay.date).getDate();
+
+                        day.date = lastDay?.date ?? Number(new Date());
+
+                        if (lastDayDate >= daysInCurrentMonth) {
+                          day.date = lastDay.date + (24 * 60 * 60 * 1000);
+                        }
+
+                        // Добавляем строку только если мы переходим в новый месяц впервые
+                        if (!ranges[month]) {
+                          
+                          const newDate = new Date(lastDay.date);
+                          newDate.setMonth(newDate.getMonth() + 1);
+                          newDate.setDate(1);
+
+                          // day.date = lastDay.date + (24 * 60 * 60 * 1000);
+                          day.date = +newDate;
+
+                          data.push(day);
+                        }
+
                         this.setState(prevState => {
                           const month = prevState.month + 1;
                           return {
+                            data,
                             month,
                             currentRowIndex: (month - 1) * 30
                           };
@@ -381,7 +439,6 @@ export default class App extends BaseComponent {
                                   const hasChanged = 
                                     this.lastSavedState && 
                                     !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
-                                  // ~~
                                   if (false && hasChanged) {
                                     dialogAPI.open("close-slider-dialog", e.target);
                                   }
