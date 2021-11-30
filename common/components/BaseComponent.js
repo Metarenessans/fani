@@ -12,6 +12,9 @@ import extractSnapshot from "../utils/extract-snapshot";
 /** @type {React.Context<BaseComponent>} */
 export const Context = React.createContext();
 
+/** @typedef {import("../utils/extract-snapshot").SnapshotResponse} SnapshotResponse */
+
+// TODO: добавить флаг в стейте, который бы отвечал за загрузку конкретно селекта с сейвами
 export default class BaseComponent extends React.Component {
 
   constructor(props) {
@@ -100,9 +103,7 @@ export default class BaseComponent extends React.Component {
       searchVal: ""
     };
 
-    /**
-     * @type {fetchSaveById & (id: number) => Promise<import("../utils/extract-snapshot").SnapshotResponse>}
-     */
+    /** @type {fetchSaveById & (id: number) => Promise<SnapshotResponse>} */
     this.fetchSaveById = fetchSaveById.bind(this, this.pageName);
   
     /** @type {fetchInvestorInfo} */
@@ -148,6 +149,7 @@ export default class BaseComponent extends React.Component {
    * @returns {Promise}
    */
   async fetchSnapshots() {
+    await this.setStateAsync({ loading: true });
     try {
       const response = await fetch(`get${this.pageName}Snapshots`);
       // Сортировка по дате обновления
@@ -156,7 +158,7 @@ export default class BaseComponent extends React.Component {
     }
     catch (error) {
       console.error("Не удалось получить сохранения:", error);
-      message.error(error);
+      !dev && message.error(error);
     }
   }
 
@@ -167,34 +169,41 @@ export default class BaseComponent extends React.Component {
    * Пример: если `this.pageName` равен `Mts`,
    * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot
    *
+   * @param {object} options
+   * @param {?SnapshotResponse} options.fallback Фейк ответ с сервера (работает только на локальной сборке)
    * @returns {Promise}
    */
-  async fetchLastModifiedSnapshot() {
+  async fetchLastModifiedSnapshot(options) {
+    await this.setStateAsync({ loading: true });
+
+    /** @type {SnapshotResponse} */
+    let response;
     try {
-      const response = await fetch(`getLastModified${this.pageName}Snapshot`);
-      if (!response.error && response.data?.name) {
-        const pure = params.get("pure") === "true";
-        if (!pure) {
-          await this.setStateAsync({ loading: true });
-          return this.extractSnapshot(response.data);
-        }
-      }
+      response = await fetch(`getLastModified${this.pageName}Snapshot`);
     }
     catch (error) {
       console.error(error);
-      message.error(`Не удалось получить последнее сохранение: ${error}`);
+      !dev && message.error(`Не удалось получить последнее сохранение: ${error}`);
+    }
 
-      // if (dev) {
-      //   const response = options.fallback;
-      //   const { data } = response;
-      //   const { id, name, dateCreate } = data;
+    const pure = params.get("pure") === "true";
+    if (pure) {
+      await this.setStateAsync({ loading: false });
+    }
+    else {
+      const fallback = options?.fallback;
+      if (dev && fallback) {
+        response = fallback;
+        const { data } = response;
+        const { id, name, dateCreate } = data;
   
-      //   const saves = [{ id, name, dateCreate }];
-      //   await this.setStateAsync({ saves });
-      //   if (!response.error && response.data?.name) {
-      //     this.extractSnapshot(response.data);
-      //   }
-      // }
+        const saves = [{ id, name, dateCreate }];
+        await this.setStateAsync({ saves });
+      }
+
+      if (!response.error && response.data?.name) {
+        await this.extractSnapshot(response.data);
+      }
     }
   }
 

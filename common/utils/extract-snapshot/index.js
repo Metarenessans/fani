@@ -24,7 +24,10 @@
  * @param {(static: object, dynamic?: object) => object} parseFn Коллбэк-парсер
  * @returns {Promise}
  */
-export default function extractSnapshot(snapshot, parseFn) {
+export default async function extractSnapshot(snapshot, parseFn) {
+  // Начинаем обрабатывать сохранение
+  await this.setStateAsync({ loading: true });
+
   const { id, name } = snapshot;
 
   let state;
@@ -40,11 +43,13 @@ export default function extractSnapshot(snapshot, parseFn) {
     state = {
       ...state,
       id,
-      saved: true,
-      loading: false
+      saved: true
     };
   }
 
   console.log(`Сохранение '${name}' распаршено:`, state);
-  return new Promise(resolve => this.setState(state, resolve));
+  await this.setStateAsync(state);
+  // Рендеринг после пуша в стейт может быть долгим,
+  // Поэтому мы выключаем флаг загрузки отдельным шагом
+  await this.setStateAsync({ loading: false });
 }

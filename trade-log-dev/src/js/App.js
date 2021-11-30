@@ -1,7 +1,7 @@
 import React from "react"
 import $ from "jquery"
 import clsx from "clsx"
-import { cloneDeep, isEqual } from "lodash"
+import { cloneDeep, isEqual, merge } from "lodash"
 import { Button, message } from "antd"
 
 import { Tools, Tool }       from "../../../common/tools"
@@ -113,13 +113,31 @@ const dayTemplate = {
     { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
   ],
 
+  /**
+   * Технологии
+   *
+   * @type {Object.<string, boolean>}
+   */
   technology: {
-    amy: false,
-    tmo: false,
-    recapitulation: false,
-    archetypesWork: false,
+    "ЭМИ":                                               false,
+    "ТМО":                                               false,
+    "Перепросмотр":                                      false,
+    "Работа с архетипами":                               false,
+    "Работа с убеждениями":                              false,
+    "Работа с ценностями":                               false,
+    "Формирование устойчивого навыка (микро ТОТЕ)":      false,
+    "Удаленное видение":                                 false,
+    "Физическая активность: приседание, отжимание, биг": false,
+    "Аффирмации":                                        false,
+    "НАННИ":                                             false,
+    "Работа со страхами":                                false,
   },
 
+  /**
+   * Кастомные техноголии
+   *
+   * @type {{ name: string, value: boolean }[]}
+   */
   customTechnology: [],
 
   /**
@@ -128,16 +146,24 @@ const dayTemplate = {
    * @type {Object.<string, boolean>}
    */
   practiceWorkTasks: {
-    "Изменить время на сделку":                            false,
-    "Не снимать отложенные заявки, выставленные до этого": false,
-    "Не перезаходить после закрытия по Stop-Loss":         false,
-    "Не выключать робота":                                 false,
-    "Контролировать объём входа":                          false,
-    "Делать расчёты ФАНИ":                                 false,
-    "Заносить результаты в ФАНИ":                          false,
-    "Фиксировать сделки в скриншотах":                     false,
-    "Выделять ключевые поведенченские паттерны и модели":  false,
+    "Изменить время на сделку":                                false,
+    "Не снимать отложенные заявки, выставленные до этого":     false,
+    "Не перезаходить после закрытия по Stop-Loss":             false,
+    "Не выключать робота":                                     false,
+    "Контролировать объём входа":                              false,
+    "Делать расчёты ФАНИ":                                     false,
+    "Заносить результаты в ФАНИ":                              false,
+    "Фиксировать сделки в скриншотах":                         false,
+    "Выделять ключевые поведенченские паттерны и модели":      false,
+    "Анализировать текущую ситуацию в конкретных показателях": false,
+    "Смену тактики проводить через анализ и смену алгоритма":  false,
   },
+
+  /**
+   * Кастомные рактические задачи на отработку
+   *
+   * @type {{ name: string, value: boolean }[]}
+   */
   customPracticeWorkTasks: [],
 };
 
@@ -277,7 +303,7 @@ export default class App extends BaseComponent {
   fetchInitialData() {
     this.fetchTools();
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot()
+    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
     this.fetchInvestorInfo()
       .then(response => {
         const deposit = response.data.deposit;
@@ -343,11 +369,37 @@ export default class App extends BaseComponent {
   parseSnapshot = data => {
     const {} = this.state; 
     const initialState = cloneDeep(this.initialState);
+
+    // Обратная совместимость для технологий
+    data.data = data.data.map(day => {
+      const { technology } = day;
+      if (technology.amy) {
+        technology["ЭМИ"] = technology.amy;
+      }
+      if (technology.tmo) {
+        technology["ТМО"] = technology.tmo;
+      }
+      if (technology.recapitulation) {
+        technology["Перепросмотр"] = technology.recapitulation;
+      }
+      if (technology.archetypesWork) {
+        technology["Работа с архетипами"] = technology.archetypesWork;
+      }
+
+      delete technology.amy;
+      delete technology.tmo;
+      delete technology.recapitulation;
+      delete technology.archetypesWork;
+
+      return day;
+    });
+    const _data = merge(cloneDeep(initialState).data, data.data);
+
     return {
       dailyRate:                        data.dailyRate                        ?? initialState.dailyRate,
       limitUnprofitableDeals:           data.limitUnprofitableDeals           ?? initialState.limitUnprofitableDeals,
       allowedNumberOfUnprofitableDeals: data.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
-      data:                             data.data                             ?? initialState.data,
+      data: _data,
       currentRowIndex:                  data.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
       customTools:                     (data.customTools || []).map(tool => Tool.fromObject(tool)),

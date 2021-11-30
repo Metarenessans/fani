@@ -4,14 +4,13 @@ import $ from "jquery";
 import { cloneDeep, isEqual } from "lodash";
 import { Button, message } from "antd";
 
-import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
-
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
 
 import Header from "../../../common/components/header";
+import { Dialog, dialogAPI } from "../../../common/components/dialog";
+import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 
 import DayConfig   from "./components/day-config";
@@ -131,6 +130,9 @@ export default class App extends BaseComponent {
     this.lastSavedState = {};
 
     this.initialState = {
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
+
       /**
        * Номер месяца (начиная с 1)
        * 
@@ -151,9 +153,6 @@ export default class App extends BaseComponent {
        * @type {string[]}
        */
       incomeTypeTools:  ["Постоянные", "Периодические"],
-
-      // Копирует `initialState` из BaseComponent
-      ...this.initialState,
 
       /** @type {dayTemplate[]} */
       data: [
