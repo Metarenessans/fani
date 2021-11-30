@@ -1,30 +1,30 @@
-import React from "react"
-import $ from "jquery"
-import clsx from "clsx"
-import { cloneDeep, isEqual, merge } from "lodash"
-import { Button, message } from "antd"
+import React from "react";
+import $ from "jquery";
+import clsx from "clsx";
+import { cloneDeep, isEqual, merge } from "lodash";
+import { Button, message } from "antd";
 
-import { Tools, Tool }       from "../../../common/tools"
-import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import CrossButton           from "../../../common/components/cross-button"
+import { Tools, Tool }       from "../../../common/tools";
+import { Dialog, dialogAPI } from "../../../common/components/dialog";
+import CrossButton           from "../../../common/components/cross-button";
 
-import { SaveDialog } from "../../../common/components/save-dialog"
-import BaseComponent, { Context } from "../../../common/components/BaseComponent"
+import { SaveDialog } from "../../../common/components/save-dialog";
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
 
-import Header      from "../../../common/components/header"
-import FirstStep   from "./components/step-1"
-import SecondStep  from "./components/step-2"
-import ThirdStep   from "./components/step-3"
-import FourthStep  from "./components/step-4"
-import Stats       from "./components/stats"
+import Header      from "../../../common/components/header";
+import FirstStep   from "./components/step-1";
+import SecondStep  from "./components/step-2";
+import ThirdStep   from "./components/step-3";
+import FourthStep  from "./components/step-4";
+import Stats       from "./components/stats";
 
 /* API */
 
-import fetch from "../../../common/api/fetch"
+import fetch from "../../../common/api/fetch";
 
-import "../sass/style.sass"
+import "../sass/style.sass";
 
 let scrollInitiator;
 
@@ -89,7 +89,7 @@ const dayTemplate = {
       currentToolCode: "SBER",
       load:                 0,
       iterations:           1,
-      depo:              null,
+      depo:              null
     }
   ],
 
@@ -110,7 +110,7 @@ const dayTemplate = {
     { result: false, baseTrendDirection: null, momentDirection: null, doubts: null },
     { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
     { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
-    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null },
+    { result: true,  baseTrendDirection: null, momentDirection: null, doubts: null }
   ],
 
   /**
@@ -131,6 +131,7 @@ const dayTemplate = {
     "Аффирмации":                                        false,
     "НАННИ":                                             false,
     "Работа со страхами":                                false,
+    "Простукивание тимуса":                              false
   },
 
   /**
@@ -156,7 +157,7 @@ const dayTemplate = {
     "Фиксировать сделки в скриншотах":                         false,
     "Выделять ключевые поведенченские паттерны и модели":      false,
     "Анализировать текущую ситуацию в конкретных показателях": false,
-    "Смену тактики проводить через анализ и смену алгоритма":  false,
+    "Смену тактики проводить через анализ и смену алгоритма":  false
   },
 
   /**
@@ -164,7 +165,7 @@ const dayTemplate = {
    *
    * @type {{ name: string, value: boolean }[]}
    */
-  customPracticeWorkTasks: [],
+  customPracticeWorkTasks: []
 };
 
 export default class App extends BaseComponent {
@@ -240,14 +241,14 @@ export default class App extends BaseComponent {
 
       extraStep:  false,
       extraSaved: false,
-      customTools:   [],
+      customTools:   []
     };
     
     this.state = {
       // Копирует `state` из BaseComponent
       ...this.state,
 
-      ...cloneDeep(this.initialState),
+      ...cloneDeep(this.initialState)
     };
 
     // Bindings
@@ -277,12 +278,15 @@ export default class App extends BaseComponent {
   }
   
   componentDidMount() {
+    const onResize = e => this.setState({ mobile: window.innerWidth <= 768 });
+    window.addEventListener("resize", onResize.call(this));
+
     this.fetchInitialData();
     
     // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
     $(document).on("mouseenter", ".table-extra-column-container", function (e) {
       scrollInitiator = e.target.closest(".table-extra-column-container");
-    })
+    });
 
     document.addEventListener("scroll", function (e) {
       if (e?.target?.classList?.contains("table-extra-column-container")) {
@@ -300,23 +304,24 @@ export default class App extends BaseComponent {
   }
 
   // Fetching everithing we need to start working
-  fetchInitialData() {
-    this.fetchTools();
-    this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
+  async fetchInitialData() {
     this.fetchInvestorInfo()
       .then(response => {
-        const deposit = response.data.deposit;
+        const { deposit } = response.data;
         this.initialState.investorDepo = deposit;
-        this.setState({ investorDepo: deposit })
+        this.setState({ investorDepo: deposit });
       })
       .catch(error => {
         if (dev) {
           const deposit = 10_000;
           this.initialState.investorDepo = deposit;
-          this.setState({ investorDepo: deposit })
+          this.setState({ investorDepo: deposit });
         }
-      })
+      });
+
+    this.fetchTools();
+    await this.fetchSnapshots();
+    await this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
   }
 
   fetchTools() {
@@ -324,7 +329,7 @@ export default class App extends BaseComponent {
       const { investorInfo } = this.state;
       const requests = [];
       const parsedTools = [];
-      this.setState({ toolsLoading: true })
+      this.setState({ toolsLoading: true });
       for (let request of ["getFutures", "getTrademeterInfo"]) {
         requests.push(
           fetch(request)
@@ -332,13 +337,13 @@ export default class App extends BaseComponent {
             .then(tools => Tools.sort(parsedTools.concat(tools)))
             .then(tools => parsedTools.push(...tools))
             .catch(error => message.error(`Не удалось получить инстурменты! ${error}`))
-        )
+        );
       }
 
       Promise.all(requests)
         .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
-        .then(() => resolve())
-    })
+        .then(() => resolve());
+    });
   }
 
   packSave() {
@@ -359,7 +364,7 @@ export default class App extends BaseComponent {
         data,
         currentRowIndex,
         customTools
-      },
+      }
     };
 
     console.log("Packed save:", json);
@@ -367,33 +372,38 @@ export default class App extends BaseComponent {
   }
 
   parseSnapshot = data => {
-    const {} = this.state; 
     const initialState = cloneDeep(this.initialState);
 
-    // Обратная совместимость для технологий
-    data.data = data.data.map(day => {
-      const { technology } = day;
-      if (technology.amy) {
-        technology["ЭМИ"] = technology.amy;
-      }
-      if (technology.tmo) {
-        technology["ТМО"] = technology.tmo;
-      }
-      if (technology.recapitulation) {
-        technology["Перепросмотр"] = technology.recapitulation;
-      }
-      if (technology.archetypesWork) {
-        technology["Работа с архетипами"] = technology.archetypesWork;
-      }
+    let _data = merge(cloneDeep(initialState.data), data.data)
+      .map(day => {
+        let { practiceWorkTasks } = day;
+        practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
+        day.practiceWorkTasks = practiceWorkTasks;
 
-      delete technology.amy;
-      delete technology.tmo;
-      delete technology.recapitulation;
-      delete technology.archetypesWork;
+        let { technology } = day;
+        if (technology.amy) {
+          technology["ЭМИ"] = technology.amy;
+        }
+        if (technology.tmo) {
+          technology["ТМО"] = technology.tmo;
+        }
+        if (technology.recapitulation) {
+          technology["Перепросмотр"] = technology.recapitulation;
+        }
+        if (technology.archetypesWork) {
+          technology["Работа с архетипами"] = technology.archetypesWork;
+        }
 
-      return day;
-    });
-    const _data = merge(cloneDeep(initialState).data, data.data);
+        delete technology.amy;
+        delete technology.tmo;
+        delete technology.recapitulation;
+        delete technology.archetypesWork;
+
+        technology = merge(cloneDeep(dayTemplate.technology), technology);
+        day.technology = technology;
+
+        return day;
+      });
 
     return {
       dailyRate:                        data.dailyRate                        ?? initialState.dailyRate,
@@ -402,9 +412,9 @@ export default class App extends BaseComponent {
       data: _data,
       currentRowIndex:                  data.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
-      customTools:                     (data.customTools || []).map(tool => Tool.fromObject(tool)),
-    }
-  }
+      customTools:                     (data.customTools || []).map(tool => Tool.fromObject(tool))
+    };
+  };
 
   /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
   async extractSnapshot(snapshot) {
@@ -412,7 +422,7 @@ export default class App extends BaseComponent {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
     }
     catch (error) {
-      message.error(error)
+      message.error(error);
     }
   }
 
@@ -424,7 +434,7 @@ export default class App extends BaseComponent {
   getOptions() {
     return this.getTools().map((tool, idx) => ({
       idx,
-      label: String(tool),
+      label: String(tool)
     }));
   }
 
@@ -433,7 +443,8 @@ export default class App extends BaseComponent {
       step,
       currentRowIndex, 
       rowData,
-      data
+      data,
+      mobile
     } = this.state;
 
     return (
@@ -461,16 +472,17 @@ export default class App extends BaseComponent {
 
                               <div className="trade-slider-top">
                                 <Button
-                                  className={"day-button"}
+                                  className="day-button"
                                   disabled={currentRowIndex == 0}
                                   onClick={e => {
                                     this.setState(prevState => ({
                                       currentRowIndex: prevState.currentRowIndex - 1,
                                       extraStep: false
-                                    }))
+                                    }));
                                   }}
                                 >
-                                  {"<< Предыдущий день"}
+                                  <span adia-hidden="true">{"<< "}</span>
+                                  {(mobile ? "Пред." : "Предыдущий") +" день"}
                                 </Button>
                                 <div className="trade-slider-day-container">
                                   <p>День {currentRowIndex + 1}</p>
@@ -494,16 +506,17 @@ export default class App extends BaseComponent {
                                 </div>
 
                                 <Button
-                                  className={"day-button"}
+                                  className="day-button"
                                   disabled={currentRowIndex + 1 > data.length - 1}
                                   onClick={e => {
                                     this.setState(prevState => ({
                                       currentRowIndex: prevState.currentRowIndex + 1,
                                       extraStep: false
-                                    }))
+                                    }));
                                   }}
                                 >
-                                  {"Следующий день >>"}
+                                  {(mobile ? "След.": "Следующий") + " день"}
+                                  <span adia-hidden="true">{" >>"}</span>
                                 </Button>
                               </div>
 
@@ -524,7 +537,7 @@ export default class App extends BaseComponent {
 
                                 <div 
                                   className={clsx("trade-slider-middle-step", step >= 2 && ("blue-after-element"))}
-                                  onClick={ () => this.setState({ step: 2, extraStep: false })}
+                                  onClick={() => this.setState({ step: 2, extraStep: false })}
                                 >
                                   <span className={clsx("step-logo", step >= 2 && "step-logo--active")}>
                                     Тс 2
@@ -562,15 +575,15 @@ export default class App extends BaseComponent {
                                 </div>
                               </div>
 
-                              <div className={"trade-slider--main-page"}>
+                              <div className="trade-slider--main-page">
                                 <Button 
-                                  className={"main-button"}
+                                  className="main-button"
                                   onClick={async e => {
                                     if (hasChanged) {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {
-                                      await this.setStateAsync({ step: 0, extraStep: false })
+                                      await this.setStateAsync({ step: 0, extraStep: false });
                                     }
                                   }}
                                 >
@@ -585,7 +598,7 @@ export default class App extends BaseComponent {
                                     data={data[currentRowIndex]}
                                     tools={this.state.tools}
                                     searchVal={this.state.searchVal}
-                                    setSeachVal={ val => this.setState({searchVal: val}) }
+                                    setSeachVal={val => this.setState({searchVal: val})}
                                     currentRowIndex={currentRowIndex}
                                     toolsLoading={this.state.toolsLoading}
                                   />
@@ -604,7 +617,7 @@ export default class App extends BaseComponent {
                                     onChange={(prop, value, index) => {
                                       const rowDataClone = [...rowData];
                                       rowDataClone[index][prop] = value;
-                                      this.setState({ rowData: rowDataClone })
+                                      this.setState({ rowData: rowDataClone });
                                     }}
                                     onClickTab={(boolean) => this.setState({ extraStep: boolean })}
                                   />
@@ -617,7 +630,7 @@ export default class App extends BaseComponent {
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
-                                      this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }))
+                                      this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }));
                                     }}
                                     disabled={step == 1}
                                   >
@@ -629,7 +642,7 @@ export default class App extends BaseComponent {
                                   <Button 
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
-                                      this.setState(prevState => ({ step: prevState.step + 1 }))
+                                      this.setState(prevState => ({ step: prevState.step + 1 }));
                                     }}
                                     disabled={step == 4}
                                   >
@@ -677,7 +690,7 @@ export default class App extends BaseComponent {
 
                             </div>
                           </div>
-                        )
+                        );
                       })())
                   }
 
@@ -692,7 +705,7 @@ export default class App extends BaseComponent {
           <Dialog
             id="dialog4"
             title="Удаление сохранения"
-            confirmText={"Удалить"}
+            confirmText="Удалить"
             onConfirm={() => {
               const { id } = this.state;
               this.delete(id)

@@ -1,20 +1,38 @@
-import React, { useContext } from "react"
-import { Button, DatePicker } from "antd"
-import locale from "antd/es/date-picker/locale/ru_RU"
-import moment from "moment"
-import { cloneDeep } from "lodash"
-import Value        from "../../../../../../common/components/value"
-import round        from "../../../../../../common/utils/round"
-import formatNumber from "../../../../../../common/utils/format-number"
-import StatsPanel from "../../panel"
+import React, { useContext, useState, useEffect } from "react";
+import { Button, DatePicker } from "antd";
+import locale from "antd/es/date-picker/locale/ru_RU";
+import { EditOutlined, CalendarOutlined } from "@ant-design/icons";
+import moment from "moment";
+import { cloneDeep } from "lodash";
+import Value        from "../../../../../../common/components/value";
+import round        from "../../../../../../common/utils/round";
+import formatNumber from "../../../../../../common/utils/format-number";
+import StatsPanel from "../../panel";
 
-import { StateContext } from "../../../App"
+import { StateContext } from "../../../App";
 
-import "./style.scss"
+import "./style.scss";
+
+function useViewportWidth() {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  });
+
+  return width;
+}
 
 export default function TablePanel() {
   const context = useContext(StateContext);
   const { state } = context;
+  const { loading } = state;
+
+  const viewportWidth = useViewportWidth();
+
   return (
     <StatsPanel className="table-panel" title="Пошаговый план проработки">
       <div className="table-panel-table-wrapper">
@@ -34,17 +52,22 @@ export default function TablePanel() {
               return (
                 <tr key={index}>
                   <td>
-                    <DatePicker
-                      locale={locale}
-                      format="DD.MM.YYYY"
-                      value={moment(day.date)}
-                      onChange={(moment, formatted) => {
-                        const data = cloneDeep(state.data);
-                        // При сбросе значения ставим текущую дату
-                        data[index].date = Number(moment) === 0 ? Date.now() : Number(moment);
-                        context.setState({ data })
-                      }}
-                    />
+                    {viewportWidth > 768
+                      ?
+                        <DatePicker
+                          disabled={loading}
+                          locale={locale}
+                          format="DD.MM.YYYY"
+                          value={moment(day.date)}
+                          onChange={(moment, formatted) => {
+                            const data = cloneDeep(state.data);
+                            // При сбросе значения ставим текущую дату
+                            data[index].date = Number(moment) === 0 ? Date.now() : Number(moment);
+                            context.setState({ data });
+                          }}
+                        />
+                      : <CalendarOutlined />
+                    }
                   </td>
                   <td>{index + 1}</td>
                   <td>
@@ -67,6 +90,7 @@ export default function TablePanel() {
                   </td>
                   <td>
                     <Button
+                      disabled={loading}
                       className="custom-btn"
                       onClick={() => {
                         // TODO: Заменить на вызов какой-нибудь `openConfig()`
@@ -77,16 +101,17 @@ export default function TablePanel() {
                         });
                       }}
                     >
-                      Редактировать
+                      {viewportWidth > 768 ? "Редактировать" : <EditOutlined />}
                     </Button>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
       </div>
-      <Button 
+      <Button
+        disabled={loading}
         className="table-panel__add-button custom-btn"
         onClick={async e => {
           const data = cloneDeep(state.data);
@@ -101,5 +126,5 @@ export default function TablePanel() {
         Добавить
       </Button>
     </StatsPanel>
-  )
+  );
 }

@@ -1,20 +1,19 @@
-import React, { useContext } from "react"
-import { Checkbox, Progress } from "antd"
-import { mean as average } from "lodash"
+import React, { useContext } from "react";
+import { mean as average } from "lodash";
 
-import Stack from "../../../../../common/components/stack"
-import Value from "../../../../../common/components/value"
-import round from "../../../../../common/utils/round"
+import Stack        from "../../../../../common/components/stack";
+import Value        from "../../../../../common/components/value";
+import round        from "../../../../../common/utils/round";
+import formatNumber from "../../../../../common/utils/format-number";
 
-import ControlPanel from "./control-panel"
-import TablePanel   from "./table-panel"
-import StatsPanel   from "../panel"
+import ControlPanel from "./control-panel";
+import TablePanel   from "./table-panel";
+import StatsPanel   from "../panel";
+import Tasks        from "./tasks/Tasks";
 
-import { StateContext } from "../../App"
+import { StateContext } from "../../App";
 
-import "./style.scss"
-import formatNumber from "../../../../../common/utils/format-number"
-import Tasks from "./tasks/Tasks"
+import "./style.scss";
 
 export default function Stats() {
   const context = useContext(StateContext);
@@ -59,7 +58,7 @@ export default function Stats() {
                     
                     sum += totalResult;
                   }
-                  return <Value value={sum} format={value => formatNumber(round(value, 3)) + "%"} />
+                  return <Value value={sum} format={value => formatNumber(round(value, 3)) + "%"} />;
                 })()}
               </dd>
             </div>
@@ -114,7 +113,7 @@ export default function Stats() {
                   const positiveResults = data
                      .map(day => day.deals.flat())[0]
                     ?.filter(deal => deal.result > 0)
-                     .map(deal => deal.result)
+                     .map(deal => deal.result);
 
                   return (
                     <Value 
@@ -133,7 +132,7 @@ export default function Stats() {
                   const negativeResults = data
                      .map(day => day.deals.flat())[0]
                     ?.filter(deal => deal.result < 0)
-                     .map(deal => deal.result)
+                     .map(deal => deal.result);
 
                   return (
                     <Value
@@ -170,7 +169,7 @@ export default function Stats() {
                       type="success"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
-                  )
+                  );
                 })()}
               </dd>
             </div>
@@ -193,7 +192,7 @@ export default function Stats() {
                       type="danger"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
-                  )
+                  );
                 })()}
               </dd>
             </div>
@@ -216,7 +215,7 @@ export default function Stats() {
                       type="success"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
-                  )
+                  );
                 })()}
               </dd>
             </div>
@@ -239,7 +238,7 @@ export default function Stats() {
                       type="danger"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
-                  )
+                  );
                 })()}
               </dd>
             </div>
@@ -267,5 +266,5 @@ export default function Stats() {
       <Tasks />
 
     </Stack>
-  )
+  );
 }

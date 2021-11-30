@@ -1,14 +1,14 @@
-import React, { useContext } from "react"
+import React, { useContext } from "react";
 
-import { Tooltip, Checkbox } from 'antd/es'
-import { Tools } from "../../../../../common/tools"
+import { Tooltip, Checkbox } from "antd/es";
+import { Tools } from "../../../../../common/tools";
 
-import Panel from "../panel"
+import Panel from "../panel";
 
-import { StateContext } from "../../App"
+import { StateContext } from "../../App";
 
-import "./style.scss"
-import { cloneDeep } from "lodash"
+import "./style.scss";
+import { cloneDeep } from "lodash";
 
 export default function StateRegistry() {
   const context = useContext(StateContext);
@@ -171,5 +171,5 @@ export default function StateRegistry() {
         </table>
       </div>
     </Panel>
-  )
+  );
 }

@@ -41,8 +41,7 @@ export default function ResultPanel() {
 
   return (
     <Panel 
-      // title="Мониторинг раппорта" 
-      className="result-panel"
+      className="result-panel third-step__result-panel"
       contentClassName="result-panel-content"
     >
       <Stack space="1em">

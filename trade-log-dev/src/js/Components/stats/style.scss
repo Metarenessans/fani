@@ -1,6 +1,11 @@
+@import "../../../sass/mixins";
+
 .stats {
-  // TODO: удалить перез сборкой
   margin-top: 5em;
+
+  @include sm {
+    margin-top: 2em;
+  }
 
   &-container {
     display: flex;

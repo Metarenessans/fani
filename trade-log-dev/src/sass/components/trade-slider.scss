@@ -10,6 +10,8 @@
   transition: transform .3s ease-out;
   
   &-active {
+    margin-top: 1.75em;
+
     transform: translateX(0);
   }
 
@@ -27,11 +29,19 @@
   }
 
   &-top {
-    font-size: 3em;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 2em;
+
+    font-size: 3em;
+    
+    @include sm {
+      justify-content: space-between;
+      gap: .5em;
+
+      font-size: 2.6em;
+    }
 
     p {
       margin:  0;
@@ -81,16 +91,27 @@
   }
 
   &-middle {
-    font-size: 1.3em;
+    margin-top: 1em;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 1em;
     gap: 8em;
 
+    font-size: 1.3em;
+
+    @include sm {
+      gap: 6em;
+    }
+
+    @include sm {
+      flex-direction: column;
+      align-items: center;
+    }
+
     &-step {
-      display: flex;
       position: relative;
+
+      display: flex;
       gap: .3em;
 
       .step-logo {
@@ -125,14 +146,36 @@
         }
       }
 
+      // TODO: rename to "selected" or smth
+      &.blue-after-element {
+        &::after {
+          background-color: #4859b4;
+        }
+      }
+
       &::after {
-        position: absolute;
         content: "";
-        width: 5em;
-        height: .01em;
-        top: 50%;
+
+        position: absolute;
+        top:      50%;
         right: -6.3em;
+
+        width:    5em;
+        height: .01em;
+
         background-color: #cacaca;
+
+        @include sm {
+          right: initial;
+          left:   50%;
+          top:   100%;
+          transform: translateX(-50%);
+
+          margin-top: .5em;
+          // margin-left: -1em;
+          width:  .01em;
+          height:   5em;
+        }
       }
 
       &:last-child::after {
@@ -196,6 +239,10 @@
 
     gap: 1em;
 
+    @include sm {
+      justify-content: center;
+    }
+
     .trade-log-button--slider {
       border-radius: 17px;
       min-width:    8.1em;
@@ -206,16 +253,4 @@
 .main {
   position: relative;
   // overflow-x: none!important;
-}
-
-.blue-after-element {
-  &::after {
-    position: absolute;
-    content: "";
-    width: 4em;
-    height: .06em;
-    top: 50%;
-    right: -5.5em;
-    background-color: #4859b4;
-  }
 }
