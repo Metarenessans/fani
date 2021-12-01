@@ -1,7 +1,7 @@
-import React from "react"
-import PropTypes from "prop-types"
-import clsx from "clsx"
-import typeOf from "../../../../../../common/utils/type-of"
+import React from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
+import typeOf from "../../../../../../common/utils/type-of";
 
 /*
   Идея:
@@ -26,13 +26,13 @@ const propTypes = {
   className: PropTypes.string,
 
   /** @type {object} */
-  children: PropTypes.object.isRequired,
+  children: PropTypes.object.isRequired
 };
 
 /** @param {propTypes} props */
 function AssociationList(props) {
   if (typeOf(props.children) !== "object") {
-    return "Пропс `children` должен быть объектом"
+    return "Пропс `children` должен быть объектом";
   }
 
   return (
@@ -45,12 +45,12 @@ function AssociationList(props) {
             <dt>{name}</dt>
             <dd>{value}</dd>
           </div>
-        )
+        );
       })}
     </dl>
-  )
+  );
 }
 
 AssociationList.propTypes = propTypes;
 
-export default AssociationList
+export default AssociationList;

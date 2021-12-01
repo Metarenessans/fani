@@ -1,9 +1,9 @@
-import React from 'react'
-import { StateContext } from "../../App"
-import { cloneDeep } from 'lodash'
-import { Button, Checkbox, Input } from 'antd/es';
+import React from "react";
+import { StateContext } from "../../App";
+import { cloneDeep } from "lodash";
+import { Button, Checkbox, Input } from "antd/es";
 
-import "./style.scss"
+import "./style.scss";
 
 export default class FourthStep extends React.Component {
   constructor(props) {
@@ -22,7 +22,7 @@ export default class FourthStep extends React.Component {
             technology,
             customTechnology,
             practiceWorkTasks,
-            customPracticeWorkTasks,
+            customPracticeWorkTasks
           } = data[currentRowIndex];
 
           return (
@@ -32,7 +32,7 @@ export default class FourthStep extends React.Component {
               </div>
 
               <div className="pactice-container">
-                <a className="trade-log-button" target="_blank" href="https://www.youtube.com/c/zmeevtv">
+                <a className="trade-log-button" target="_blank" href="https://www.youtube.com/c/zmeevtv" rel="noreferrer">
                   Техники внутренней проработки
                 </a>
               </div>
@@ -65,7 +65,7 @@ export default class FourthStep extends React.Component {
                               />
                             </div>
                           </div>
-                        )
+                        );
                       })}
 
                       {customTechnology.map((task, index) => {
@@ -73,7 +73,11 @@ export default class FourthStep extends React.Component {
                         return (
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
-                              defaultValue={name}
+                              // В старых сейвах в name может лежать объект
+                              defaultValue={typeof name === "object" 
+                                ? `Технология ${Object.keys(technology).length + index + 1}`
+                                : name
+                              }
                               onBlur={e => {
                                 const { value } = e.target;
                                 const data = cloneDeep(state.data);
@@ -104,7 +108,7 @@ export default class FourthStep extends React.Component {
                               />
                             </div>
                           </div>
-                        )
+                        );
                       })}
 
                     </div>
@@ -132,7 +136,7 @@ export default class FourthStep extends React.Component {
                       onClick={() => {
                         const data = cloneDeep(state.data);
                         const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
-                        customTechnology.splice(customTechnology.length - 1, 1)
+                        customTechnology.splice(customTechnology.length - 1, 1);
                         data[currentRowIndex].customTechnology = customTechnology;
                         context.setState({ data });
                       }}
@@ -169,7 +173,7 @@ export default class FourthStep extends React.Component {
                               />
                             </div>
                           </div>
-                        )
+                        );
                       })}
 
                       {customPracticeWorkTasks.map((task, index) => {
@@ -210,7 +214,7 @@ export default class FourthStep extends React.Component {
                               />
                             </div>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -237,7 +241,7 @@ export default class FourthStep extends React.Component {
                       onClick={() => {
                         const data = cloneDeep(state.data);
                         const customPracticeWorkTasks = cloneDeep(data[currentRowIndex].customPracticeWorkTasks);
-                        customPracticeWorkTasks.splice(customPracticeWorkTasks.length - 1 ,1)
+                        customPracticeWorkTasks.splice(customPracticeWorkTasks.length - 1, 1);
                         data[currentRowIndex].customPracticeWorkTasks = customPracticeWorkTasks;
                         context.setState({ data });
                       }}
@@ -249,10 +253,10 @@ export default class FourthStep extends React.Component {
                 {/* col */}
               </div>
             </div>
-          )
+          );
         }}
       </StateContext.Consumer>
-    )
+    );
   }
 }
 

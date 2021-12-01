@@ -1,7 +1,7 @@
-import React from "react"
-import PropTypes from "prop-types"
-import clsx from "clsx"
-import "./style.scss"
+import React from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
+import "./style.scss";
 
 const propTypes = {
   /** @type {string} */
@@ -32,9 +32,9 @@ function Panel({
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 Panel.propTypes = propTypes;
 
-export default Panel
+export default Panel;

@@ -1,31 +1,31 @@
-import React, { useContext } from 'react'
-import { Button, Tooltip, Select, Progress, Checkbox, TimePicker } from 'antd/es'
-import moment from 'moment'
+import React, { useContext } from "react";
+import { Button, Tooltip, Select, Progress, Checkbox, TimePicker } from "antd/es";
+import moment from "moment";
 
-import { LoadingOutlined } from '@ant-design/icons'
+import { LoadingOutlined } from "@ant-design/icons";
 
-import { Tools, Tool, template, parseTool } from "../../../../../common/tools"
+import { Tools, Tool, template, parseTool } from "../../../../../common/tools";
 
-import parseEmotionalState from '../../utils/parse-emotional-state'
-import CustomSlider from "../../../../../common/components/custom-slider"
+import parseEmotionalState from "../../utils/parse-emotional-state";
+import CustomSlider from "../../../../../common/components/custom-slider";
 
 
-import NumericInput from "../../../../../common/components/numeric-input"
-import sortInputFirst from "../../../../../common/utils/sort-input-first"
-import CrossButton from "../../../../../common/components/cross-button"
+import NumericInput from "../../../../../common/components/numeric-input";
+import sortInputFirst from "../../../../../common/utils/sort-input-first";
+import CrossButton from "../../../../../common/components/cross-button";
 
-import TimeRangePicker from "../time-range-picker"
+import TimeRangePicker from "../time-range-picker";
 
-import round from "../../../../../common/utils/round"
-import num2str from "../../../../../common/utils/num2str"
-import formatNumber from "../../../../../common/utils/format-number"
-import clsx from 'clsx'
-import { data } from 'jquery'
+import round from "../../../../../common/utils/round";
+import num2str from "../../../../../common/utils/num2str";
+import formatNumber from "../../../../../common/utils/format-number";
+import clsx from "clsx";
+import { data } from "jquery";
 
-import { StateContext } from "../../App"
+import { StateContext } from "../../App";
 
-import "./style.scss"
-import { cloneDeep } from 'lodash'
+import "./style.scss";
+import { cloneDeep } from "lodash";
 
 const { Option } = Select;
 
@@ -38,7 +38,7 @@ export default class FirstStep extends React.Component {
   constructor(props) {
     super(props);
     
-    this.state = {}
+    this.state = {};
   }
 
   getOptions() {
@@ -46,7 +46,7 @@ export default class FirstStep extends React.Component {
     return tools.map((tool, idx) => {
       return {
         idx: idx,
-        label: String(tool),
+        label: String(tool)
       };
     });
   }
@@ -57,7 +57,7 @@ export default class FirstStep extends React.Component {
   }
 
   getSortedOptions() {
-    let { searchVal } = this.props
+    let { searchVal } = this.props;
     return sortInputFirst(searchVal, this.getOptions());
   }
 
@@ -73,7 +73,7 @@ export default class FirstStep extends React.Component {
             tools, 
             dailyRate, 
             toolsLoading, 
-            currentRowIndex, 
+            currentRowIndex 
           } = state;
           const { expectedDeals, deals } = data[currentRowIndex];
 
@@ -86,19 +86,19 @@ export default class FirstStep extends React.Component {
 
               <div className="pages-link-buttons">
                 
-                <a className="trade-log-button" target="_blank" href="https://fani144.ru/trademeter/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/trademeter/" rel="noreferrer">
                   Трейдометр
                 </a>
 
-                <a className="trade-log-button" target="_blank" href="https://fani144.ru/intraday/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/intraday/" rel="noreferrer">
                   Интрадей портфель
                 </a>
 
-                <a className="trade-log-button" target="_blank" href="https://fani144.ru/mts/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/mts/" rel="noreferrer">
                   Мтс
                 </a>
 
-                <a className="trade-log-button" target="_blank" href="https://fani144.ru/ksd/">
+                <a className="trade-log-button" target="_blank" href="https://fani144.ru/ksd/" rel="noreferrer">
                   Ксд
                 </a>
               </div>
@@ -127,17 +127,17 @@ export default class FirstStep extends React.Component {
                             unsigned="true"
                             round="true"
                             min={10_000}
-                            onBlur={ val => {
+                            onBlur={val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].expectedDeals[index].depo = val;
 
                               if (index === 0) {
                                 data[currentRowIndex].expectedDeals.map((item, index) => {
                                   item.depo = val;
-                                })
-                                context.setState({ data })
+                                });
+                                context.setState({ data });
                               }
-                              else context.setState({ data })
+                              else context.setState({ data });
                             }}
                           />
                           {/* Торговый инструмент */}
@@ -172,7 +172,7 @@ export default class FirstStep extends React.Component {
                                     <LoadingOutlined style={{ marginRight: ".2em" }} />
                                     Загрузка...
                                   </Option>
-                                )
+                                );
                               }
                               else {
                                 return this.getSortedOptions().map((option) => (
@@ -222,13 +222,13 @@ export default class FirstStep extends React.Component {
                                     step={step}
                                     precision={2}
                                     filter={val => val + "%"}
-                                    onChange={ val => {
+                                    onChange={val => {
                                       const data = cloneDeep(state.data);
                                       data[currentRowIndex].expectedDeals[index].load = val;
                                       context.setState({ data });
                                     }}
                                   />
-                                )
+                                );
                               })()}
                             </div>
                           </div>
@@ -285,24 +285,24 @@ export default class FirstStep extends React.Component {
                                     {(() => {
                                       let chance = 100 - ((pointsForIteration * currentTool?.priceStep) / currentTool?.adrDay * 100);
                                       if (chance < 0) {
-                                        chance = 0
+                                        chance = 0;
                                       }
-                                      return round((chance || 0), 1) + "%"
+                                      return round((chance || 0), 1) + "%";
                                     })()}
                                   </span>
                                 </p>
                               </>
-                            )
+                            );
                           })()}
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })}
-                <div className={"add-btn-container"}>
+                <div className="add-btn-container">
                   <Button 
                     className="trade-log-button"
-                    onClick={ e => {
+                    onClick={e => {
                       const data = cloneDeep(state.data);
                       const expectedDeals = cloneDeep(data[currentRowIndex].expectedDeals);
 
@@ -313,8 +313,8 @@ export default class FirstStep extends React.Component {
                       expectedDeals.push({
                         currentToolCode: "SBER",
                         depo:        10_000,
-                        iterations :      1,
-                        load:       minStep,
+                        iterations:      1,
+                        load:       minStep
                       });
                       data[currentRowIndex].expectedDeals = expectedDeals;
                       context.setState({ data });
@@ -347,10 +347,10 @@ export default class FirstStep extends React.Component {
                   const validDealsNumber = () => {
                     let arr = [];
                     deals.map((item, index) => {
-                      item.result !== 0 && arr.push(1)
-                    })
-                    return arr.length
-                  }
+                      item.result !== 0 && arr.push(1);
+                    });
+                    return arr.length;
+                  };
                   const result = deals.reduce((acc, curr) => acc + curr.result, 0);
                   /** КОД */
                   const averageResult = result / (validDealsNumber() || 0);
@@ -367,19 +367,21 @@ export default class FirstStep extends React.Component {
                         Выполнение плана<br />
                         <span className={
                           clsx((compliancingPlan || 0) >= 0 ? (compliancingPlan > 100 ? "positive" : "default") : "negative")
-                        }>
+                        }
+                        >
                           {round((compliancingPlan || 0), 0)} %
                         </span>
                       </p>
                       <p>
                         Внутридневной КОД<br />
                         <span key={averageResult} className={
-                          clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
+                          clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}
+                        >
                           {round(averageResult || 0, 3)} %
                         </span>
                       </p>
                     </div>
-                  )
+                  );
                 })()}
 
               <div className="transaction-register-table">
@@ -392,7 +394,7 @@ export default class FirstStep extends React.Component {
                     postponed,
                     levels,
                     breakout,
-                    result,
+                    result
                   } = item;
                   return (
                     <div className="first-step-row" key={index}>
@@ -438,7 +440,7 @@ export default class FirstStep extends React.Component {
                                     <LoadingOutlined style={{ marginRight: ".2em" }} />
                                     Загрузка...
                                   </Option>
-                                )
+                                );
                               }
                               else {
                                 return this.getSortedOptions().map((option) => (
@@ -465,10 +467,9 @@ export default class FirstStep extends React.Component {
                           <div className="time-picker-container">
                             <TimePicker 
                               key={currentRowIndex}
-                              format={'HH:mm'}
-                              allowClear={true}
-                              onChange={onChangeTime}
-                              defaultValue={enterTime != null ? moment(new Date(enterTime), 'HH:mm') : null}
+                              format="HH:mm"
+                              allowClear
+                              defaultValue={enterTime != null ? moment(new Date(enterTime), "HH:mm") : null}
                               placeholder="Введите время"
                               onChange={time => {
                                 let value = +time;
@@ -476,7 +477,6 @@ export default class FirstStep extends React.Component {
                                 data[currentRowIndex].deals[index].enterTime = value;
                                 context.setState({ data });
                               }}
-                              placeholder="введите время"
                             />
                           </div>
                         </div>
@@ -496,10 +496,10 @@ export default class FirstStep extends React.Component {
                           </div>
                           <div className="check-box-container check-box-container--first">
                             <Checkbox
-                              className={"green"}
+                              className="green"
                               key={currentRowIndex}
                               checked={isLong === true}
-                              onChange={ ()=> {
+                              onChange={()=> {
                                 const data = cloneDeep(state.data);
                                 if (isLong === true) {
                                   data[currentRowIndex].deals[index].isLong = null;
@@ -519,7 +519,7 @@ export default class FirstStep extends React.Component {
                           </div>
                           <div className="check-box-container check-box-container--second">
                             <Checkbox
-                              className={"red"}
+                              className="red"
                               checked={isLong === false}
                               onChange={() => {
                                 const data = cloneDeep(state.data);
@@ -551,7 +551,7 @@ export default class FirstStep extends React.Component {
                           <div className="check-box-container check-box-container--first">
                             <Checkbox
                               checked={impulse}
-                              onChange={ val => {
+                              onChange={val => {
                                 let value = val.target.checked;
                                 const data = cloneDeep(state.data);
                                 data[currentRowIndex].deals[index].impulse = value;
@@ -569,7 +569,7 @@ export default class FirstStep extends React.Component {
                           <div className="check-box-container check-box-container--second">
                             <Checkbox
                               checked={postponed}
-                              onChange={ val => {
+                              onChange={val => {
                                 let value = val.target.checked;
                                 const data = cloneDeep(state.data);
                                 data[currentRowIndex].deals[index].postponed = value;
@@ -595,7 +595,7 @@ export default class FirstStep extends React.Component {
                           <div className="check-box-container check-box-container--first">
                             <Checkbox
                               checked={levels}
-                              onChange={ val => {
+                              onChange={val => {
                                 let value = val.target.checked;
                                 const data = cloneDeep(state.data);
                                 data[currentRowIndex].deals[index].levels = value;
@@ -613,7 +613,7 @@ export default class FirstStep extends React.Component {
                             <Checkbox
                               key={breakout}
                               checked={breakout}
-                              onChange={ val => {
+                              onChange={val => {
                                 let value = val.target.checked;
                                 const data = cloneDeep(state.data);
                                 data[currentRowIndex].deals[index].breakout = value;
@@ -643,23 +643,23 @@ export default class FirstStep extends React.Component {
                         >
                           <NumericInput
                             defaultValue={result || 0}
-                            onBlur={ val => {
+                            onBlur={val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].deals[index].result = val;
                               context.setState({ data });
                             }}
                             min={0}
-                            suffix={"%"}
+                            suffix="%"
                           />
                         </div>
 
                       </div>
                       {/* col */}
                     </div>
-                  )
+                  );
                 })}
               </div>
-              <div className={"add-btn-container"}>
+              <div className="add-btn-container">
                 {(() => {
                   let disabled = 
                     state.limitUnprofitableDeals && 
@@ -685,7 +685,7 @@ export default class FirstStep extends React.Component {
                     >
                       Добавить сделку
                     </Button>
-                  )
+                  );
                 })()}
                 <Button
                   className="trade-log-button"
@@ -706,9 +706,9 @@ export default class FirstStep extends React.Component {
                 </Button>
               </div>
             </div>
-          )
+          );
         }}
       </StateContext.Consumer>
-    )
+    );
   }
 }

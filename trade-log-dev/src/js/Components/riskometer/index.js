@@ -1,7 +1,7 @@
-import React from "react"
-import { Gauge } from "@ant-design/charts"
+import React from "react";
+import { Gauge } from "@ant-design/charts";
 
-import "./style.sass"
+import "./style.sass";
 
 /**
  * @param {object} props
@@ -20,13 +20,13 @@ export default function Riskometer(props) {
     },
     axis: {
       tickLine: null,
-      label: null,
+      label: null
     },
     startAngle:   Math.PI,
     endAngle: 2 * Math.PI,
     indicator: {
-      pointer: { style: { stroke: '#D0D0D0' } },
-      pin: { style: { stroke: '#D0D0D0' } }
+      pointer: { style: { stroke: "#D0D0D0" } },
+      pin: { style: { stroke: "#D0D0D0" } }
     }
   };
 
@@ -55,5 +55,5 @@ export default function Riskometer(props) {
         </b>
       </figcaption>
     </figure>
-  )
+  );
 }

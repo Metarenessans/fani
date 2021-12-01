@@ -1,19 +1,41 @@
+@import "../../../../sass/mixins";
+
 .control-panel {
 
-  .stats-panel-content {
+  &-content {
     flex-direction: row;
     align-items: center;
     gap: 4em;
+
+    @include sm {
+      flex-direction: column;
+      gap: 2.25em;
+    }
   }
 
   .stack {
+
+    @include sm {
+      width: 100%;
+    }
+
     .input-wrapper {
       width: 100%;
+
+      &__label {
+        @include sm {
+          margin-right: auto;
+        }
+      }
     }
   }
 
   .label-with-fixed-width {
     min-width: 40ch;
+
+    @include sm {
+      min-width: unset;
+    }
   }
 
   .switch {

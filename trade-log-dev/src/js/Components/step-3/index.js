@@ -1,15 +1,15 @@
-import React, { useContext } from 'react'
-import { Tooltip, Select, Checkbox} from 'antd/es'
-import { cloneDeep } from "lodash"
-import clsx from 'clsx'
+import React, { useContext } from "react";
+import { Tooltip, Select, Checkbox} from "antd/es";
+import { cloneDeep } from "lodash";
+import clsx from "clsx";
 
-import { Tools } from "../../../../../common/tools"
+import { Tools } from "../../../../../common/tools";
 
-import ResultPanel from "../result-panel"
+import ResultPanel from "../result-panel";
 
-import { StateContext } from "../../App"
+import { StateContext } from "../../App";
 
-import "./style.scss"
+import "./style.scss";
 
 export default function ThirdStep(props) {
 
@@ -71,7 +71,7 @@ export default function ThirdStep(props) {
                       <Checkbox
                         className="green"
                         checked={baseTrendDirection === true}
-                        onChange={ e => {
+                        onChange={e => {
                           const data = cloneDeep(state.data);
                           
                           if (baseTrendDirection === true) {
@@ -104,7 +104,7 @@ export default function ThirdStep(props) {
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function ThirdStep(props) {
                       <Checkbox
                         className="green"
                         checked={momentDirection === true}
-                        onChange={ e => {
+                        onChange={e => {
                           const data = cloneDeep(state.data);
 
                           if (momentDirection === true) {
@@ -146,7 +146,7 @@ export default function ThirdStep(props) {
                       <Checkbox
                         className="red"
                         checked={momentDirection === false}
-                        onChange={ e => {
+                        onChange={e => {
                           const data = cloneDeep(state.data);
 
                           if (momentDirection === false) {
@@ -162,7 +162,7 @@ export default function ThirdStep(props) {
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function ThirdStep(props) {
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -232,14 +232,14 @@ export default function ThirdStep(props) {
           </div>
           <div className="table-extra-column-container">
             {deals.map((item, index) => {
-              const { result } = item
+              const { result } = item;
               return (
                 <div className="table-extra-column" key={index}>
                   <div className="table-extra-column-value table-extra-column-value--result">
                     <span className={clsx("circle", result >= 0 ? (result == 0 ? "default" :"positive") : "negative")} />
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>

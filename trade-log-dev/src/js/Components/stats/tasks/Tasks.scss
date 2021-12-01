@@ -1,3 +1,5 @@
+@import "../../../../sass/mixins";
+
 .tasks {
   table {
     width: 100%;
@@ -10,6 +12,10 @@
 
       font-size: 1.6em;
       text-align: center;
+
+      @include sm {
+        padding:  .5em;
+      }
     }
 
     th {
@@ -17,6 +23,10 @@
 
       &:first-of-type {
         width: 45%;
+
+        @include sm {
+          width: 35%;
+        }
       }
     }
 

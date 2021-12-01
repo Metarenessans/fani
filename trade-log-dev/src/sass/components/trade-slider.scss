@@ -10,6 +10,8 @@
   transition: transform .3s ease-out;
   
   &-active {
+    margin-top: 1.75em;
+
     transform: translateX(0);
   }
 
@@ -27,11 +29,19 @@
   }
 
   &-top {
-    font-size: 3em;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 2em;
+
+    font-size: 3em;
+    
+    @include sm {
+      justify-content: space-between;
+      gap: .5em;
+
+      font-size: 2.6em;
+    }
 
     p {
       margin:  0;
@@ -81,17 +91,41 @@
   }
 
   &-middle {
-    font-size: 1.3em;
+    margin-top: 1em;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 1em;
-    gap: 8em;
+
+    font-size: 1.3em;
+
+    @include sm {
+      flex-direction: column;
+      align-items: center;
+    }
 
     &-step {
-      display: flex;
       position: relative;
-      gap: .3em;
+
+      display: flex;
+
+      margin-right: 8em;
+
+      @include sm {
+        margin-right: 0;
+        margin-bottom: 6em;
+      }
+
+      &:last-child {
+        margin-right: 0;
+
+        @include sm {
+          margin-bottom: 0;
+        }
+
+        &::after {
+          display: none;
+        }
+      }
 
       .step-logo {
         font-size: 1.3em;
@@ -117,26 +151,52 @@
       }
 
       .step-name {
+        margin-left: .3em;
+
         font-size: 1.1em;
         color: #cacaca;
+
+        @include sm {
+          margin-left: 0;
+          margin-top: .3em;
+        }
 
         &--active {
           color: var(--primary-color);
         }
       }
 
-      &::after {
-        position: absolute;
-        content: "";
-        width: 5em;
-        height: .01em;
-        top: 50%;
-        right: -6.3em;
-        background-color: #cacaca;
+      // TODO: rename to "selected" or smth
+      &.blue-after-element {
+        &::after {
+          background-color: #4859b4;
+        }
       }
 
-      &:last-child::after {
-        display: none;
+      &::after {
+        content: "";
+
+        position: absolute;
+        top:      50%;
+        right: -6.3em;
+
+        $line-width: 0.1em;
+
+        width:  5em;
+        height: $line-width;
+
+        background-color: #cacaca;
+
+        @include sm {
+          right: initial;
+          left:   50%;
+          top:   100%;
+          transform: translateX(-50%);
+
+          margin-top: .5em;
+          width:  $line-width;
+          height: 3.75em;
+        }
       }
 
       span {
@@ -150,6 +210,12 @@
         margin-right: 1em;
         height: 3em;
         width:  3em;
+      }
+
+      @include sm {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
       }
     }
   }
@@ -196,6 +262,10 @@
 
     gap: 1em;
 
+    @include sm {
+      justify-content: center;
+    }
+
     .trade-log-button--slider {
       border-radius: 17px;
       min-width:    8.1em;
@@ -206,16 +276,4 @@
 .main {
   position: relative;
   // overflow-x: none!important;
-}
-
-.blue-after-element {
-  &::after {
-    position: absolute;
-    content: "";
-    width: 4em;
-    height: .06em;
-    top: 50%;
-    right: -5.5em;
-    background-color: #4859b4;
-  }
 }

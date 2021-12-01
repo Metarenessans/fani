@@ -33,16 +33,12 @@
     @include font("Roboto");
     font-size: 1.6em;
 
-    @include xs() {
-      font-size: 2.2em;
-    }
-
     &--centered {
       text-align: center;
       justify-content: center;
 
       @include xs() {
-        text-align: left
+        // text-align: left;
       }
     }
   }
@@ -51,7 +47,7 @@
     text-align: center;
 
     @include xs() {
-      text-align: left
+      // text-align: left
     }
 
     &.error {

@@ -1,9 +1,17 @@
+@import "../../../../sass/mixins";
+
 .table-panel {
 
   &-table-wrapper {
     width: 100%;
     max-height: 21.75vw;
     overflow-y: scroll;
+
+    @include sm {
+      min-height: 19.75ch;
+      max-height: 51.75ch;
+      // font-size: .9em;
+    }
 
     .ant-calendar-picker {
       font-size: .5em;
@@ -22,6 +30,10 @@
 
       &:first-child {
         text-align: left;
+
+        @include sm {
+          text-align: center;
+        }
       }
     }
 
@@ -53,6 +65,13 @@
 
     button {
       font-size: 0.8em;
+
+      @include sm {
+        min-width: unset;
+        padding: 0.6em;
+        width:  2.5em;
+        height: 2.5em;
+      }
     }
   }
 
@@ -60,5 +79,9 @@
     margin-top: 1.5em;
 
     font-size: 1.2em;
+
+    @include sm {
+      font-size: 1.2em !important;
+    }
   }
 }

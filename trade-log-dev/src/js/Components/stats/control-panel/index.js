@@ -1,25 +1,29 @@
-import React, { useContext } from "react"
+import React, { useContext } from "react";
 
-import { Switch } from "antd"
+import { Switch } from "antd";
 
-import { StateContext } from "../../../App"
+import { StateContext } from "../../../App";
 
-import Stack        from "../../../../../../common/components/stack"
-import NumericInput from "../../../../../../common/components/numeric-input"
+import Stack        from "../../../../../../common/components/stack";
+import NumericInput from "../../../../../../common/components/numeric-input";
 
-import Panel        from "../../panel"
-import InputWrapper from "../../input-wrapper"
+import Panel        from "../../panel";
+import InputWrapper from "../../input-wrapper";
 
-import "./style.scss"
+import "./style.scss";
 
 export default function ControlPanel() {
   const context = useContext(StateContext);
   const { state } = context;
   return (
-    <Panel className="control-panel" title="Панель управления">
+    <Panel 
+      className="control-panel" 
+      contentClassName="control-panel-content" 
+      title="Панель управления"
+    >
       <InputWrapper
         label="Дневной план"
-        labelCentered={true}
+        labelCentered
       >
         <NumericInput 
           defaultValue={state.dailyRate}
@@ -33,7 +37,7 @@ export default function ControlPanel() {
         <InputWrapper
           label={
             <span className="label-with-fixed-width">
-              Ограничение на лимит убыточных сделок
+              Ограничение на лимит<br className="sm-only" /> убыточных сделок
             </span>
           }
           direction="row"
@@ -48,7 +52,7 @@ export default function ControlPanel() {
         <InputWrapper
           label={
             <span className="label-with-fixed-width">
-              Допустимое количество убыточных сделок
+              Допустимое количество<br className="sm-only" /> убыточных сделок
             </span>
           }
           direction="row"
@@ -61,5 +65,5 @@ export default function ControlPanel() {
 
       </Stack>
     </Panel>
-  )
+  );
 }

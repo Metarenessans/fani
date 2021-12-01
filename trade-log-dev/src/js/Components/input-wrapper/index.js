@@ -1,7 +1,7 @@
-import React from "react"
-import clsx from "clsx"
+import React from "react";
+import clsx from "clsx";
 
-import "./style.scss"
+import "./style.scss";
 
 /**
  * //TODO: закончить
@@ -35,5 +35,5 @@ export default function InputWrapper({
         {children}
       </div>
     </label>
-  )
+  );
 }

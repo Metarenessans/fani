@@ -1,0 +1,13 @@
+.hide-sm {
+  @include sm {
+    display: none;
+  }
+}
+
+.sm-only {
+  display: none;
+
+  @include sm {
+    display: block;
+  }
+}

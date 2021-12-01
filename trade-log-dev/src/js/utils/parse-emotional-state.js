@@ -1,4 +1,4 @@
-import { dealTemplate } from "../App"
+import { dealTemplate } from "../App";
 
 /**
  * @typedef ParsedEmotionalState
@@ -40,5 +40,5 @@ export default function parseEmotionalState(deals) {
     negative,
     total: positive + negative,
     state
-  }
+  };
 }

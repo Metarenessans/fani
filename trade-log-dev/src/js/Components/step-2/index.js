@@ -1,7 +1,7 @@
-import React from "react"
-import StateRegistry from "../state-registry"
+import React from "react";
+import StateRegistry from "../state-registry";
 
-import "./style.scss"
+import "./style.scss";
 
 export default function SecondStep() {
   return (
@@ -10,5 +10,5 @@ export default function SecondStep() {
         <StateRegistry />
       </div>
     </div>
-  )
+  );
 }

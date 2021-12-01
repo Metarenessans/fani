@@ -1,0 +1,70 @@
+{
+  "parser": "@babel/eslint-parser",
+  "ignorePatterns": ["*.test.js"],
+  "env": {
+    "es6": true,
+    "node": true,
+    "browser": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended"
+  ],
+  "plugins": [
+    "react-hooks"
+  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020,
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    // JS
+    "quotes": [
+      "error",
+      "double"
+    ],
+    "semi": "error",
+    "no-unused-vars": "off",
+    "no-constant-condition": "off",
+    "no-useless-computed-key": "error",
+    "no-duplicate-imports": "warn",
+    "camelcase": "warn",
+    "comma-dangle": ["error", "never"],
+    "comma-spacing": [
+      "error",
+      {
+        "before": false,
+        "after": true
+      }
+    ],
+    // Пробел перед круглымы скобками при вызове функции
+    "func-call-spacing": ["error", "never"],
+    "key-spacing": [
+      "error",
+      {
+        "beforeColon": false,
+        "afterColon": true,
+        "mode": "minimum"
+      }
+    ],
+    // Пробел перед открывающей фигурной скобкой
+    "space-before-blocks": "error",
+    // JSX
+    "react/jsx-curly-spacing": "error",
+    "react/jsx-boolean-value": ["warn", "never"],
+    "react/button-has-type": "warn",
+    "react/jsx-closing-bracket-location": ["error", "tag-aligned"],
+    "react/jsx-curly-brace-presence": "error",
+    // React
+    "react/prop-types": "off",
+    "react/no-access-state-in-setstate": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "globals": {
+    "dev": true
+  }
+}

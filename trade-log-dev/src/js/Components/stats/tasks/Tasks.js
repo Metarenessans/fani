@@ -1,10 +1,10 @@
-import React, { useContext, useState, useEffect } from "react"
-import { Progress, Checkbox } from "antd"
+import React, { useContext, useState, useEffect } from "react";
+import { Progress, Checkbox } from "antd";
 import { cloneDeep } from "lodash";
-import Panel from "../../panel"
-import { StateContext } from "../../../App"
+import Panel from "../../panel";
+import { StateContext } from "../../../App";
 
-import "./Tasks.scss"
+import "./Tasks.scss";
 
 export default function Tasks() {
   const context = useContext(StateContext);
@@ -67,12 +67,12 @@ export default function Tasks() {
                       />
                     </td>
                   </tr>
-                )
+                );
               })}
           </tbody>
         </table>
       </Panel>
-    )
+    );
   }
   return null;
 }
