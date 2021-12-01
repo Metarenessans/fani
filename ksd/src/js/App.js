@@ -25,7 +25,7 @@ import Header                from "../../../common/components/header";
 import NumericInput          from "../../../common/components/numeric-input";
 import Config                from "../../../common/components/config";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
+import SaveDialog   from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 import Dashboard             from "./components/Dashboard";
 
