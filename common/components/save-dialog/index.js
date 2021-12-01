@@ -12,7 +12,7 @@ import "./style.scss";
 /** ID диалогового окна сохранения */
 export const dialogID = "save-dialog";
 
-export const SaveDialog = props => {
+export default function SaveDialog(props) {
   const context = useContext(Context);
   const { state } = context;
   const { saves, id } = state;
