@@ -11,6 +11,8 @@ import TablePanel   from "./table-panel";
 import StatsPanel   from "../panel";
 import Tasks        from "./tasks/Tasks";
 
+import parseEmotionalState from "../../utils/parse-emotional-state";
+
 import { StateContext } from "../../App";
 
 import "./style.scss";
@@ -255,17 +257,39 @@ export default function Stats() {
             <div>
               <dt>Срабатываний раппорта</dt>
               <dd>
-                <Value>
-                  0
-                </Value>
+                {(() => {
+                  let value = 0;
+                  for (let day of data) {
+                    const emotionalState = parseEmotionalState(day.deals);
+                    value += emotionalState.positive;
+                  }
+                  return (
+                    <Value
+                      value={value}
+                      type="success"
+                      format={formatNumber}
+                    />
+                  );
+                })()}
               </dd>
             </div>
             <div>
               <dt>Потерь раппорта</dt>
               <dd>
-                <Value>
-                  0
-                </Value>
+                {(() => {
+                  let value = 0;
+                  for (let day of data) {
+                    const emotionalState = parseEmotionalState(day.deals);
+                    value += emotionalState.negative;
+                  }
+                  return (
+                    <Value
+                      value={value}
+                      type="danger"
+                      format={formatNumber}
+                    />
+                  );
+                })()}
               </dd>
             </div>
           </dl>
