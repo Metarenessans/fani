@@ -17,10 +17,18 @@
 
   .day-button {
     background-color: inherit;
-  }
+  } 
 
   &-day-container {
     position: relative;
+    margin-right: 2em;
+
+    @include sm {
+      margin-right: .5em;
+    }
+    p {
+      text-align: center;
+    }
   }
 
   &-container {
@@ -29,18 +37,27 @@
   }
 
   &-top {
+    font-size: 3em;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 2em;
 
-    font-size: 3em;
-    
+    button {
+      margin-right: 2em;
+      &:last-of-type {
+        margin-right: 0;
+      }
+      @include sm {
+        margin-right: .5em;
+        &:last-of-type {
+          margin-right: 0;
+        }
+      }
+    }
+
     @include sm {
-      justify-content: space-between;
-      gap: .5em;
-
       font-size: 2.6em;
+      justify-content: space-between;
     }
 
     p {
@@ -259,8 +276,6 @@
     justify-content: flex-end;
     margin-top: 1em;
     font-size: 1.4em;
-
-    gap: 1em;
 
     @include sm {
       justify-content: center;

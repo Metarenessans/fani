@@ -7,13 +7,21 @@
     margin-top: 2em;
   }
 
+  &-panel {
+    margin-right: 2em;
+    &:last-of-type {
+      margin-right: 0;
+    }
+    @include sm {
+      margin-right: 0;
+    }
+  }
+
   &-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
     align-items: flex-start;
-
-    gap: 2em;
 
     > * {
       flex-grow: 1;
@@ -26,12 +34,15 @@
     > * {
       display: flex;
       flex-wrap: wrap;
-      gap: 1.5em;
 
       margin-bottom: 1em;
 
       &:last-child {
         margin-bottom: 0;
+      }
+
+      dt {
+        margin-right: 1.5em;
       }
 
       dt,

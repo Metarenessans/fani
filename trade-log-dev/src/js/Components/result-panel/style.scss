@@ -1,7 +1,6 @@
 @import "../../../sass/mixins";
 
 .result-panel {
-
   &-content {
     padding: 1.5em 14em;
     padding-top: 0;
@@ -13,9 +12,10 @@
 
     @include sm {
       padding: 0;
-
       flex-direction: column;
-      gap: 2em
+      & .stack {
+        margin-bottom: 2em;
+      }
     }
   }
 

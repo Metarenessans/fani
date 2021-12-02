@@ -1,3 +1,5 @@
+@import "../../../sass/mixins";
+
 .fourth-step {
   font-size: 1.8em;
   width: 100%;
@@ -6,7 +8,31 @@
     margin-top: .5em;
     display: flex;
     justify-content: flex-start;
-    gap: 1em;
+
+    button {
+      margin-right: 1em;
+
+      &:last-of-type {
+        margin-right: 0;
+      }
+    }
+
+    @include sm {
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      margin-top: 1em;
+
+      button {
+        width: 17em;
+        margin: 0;
+        margin-bottom: 1em;
+
+        &:last-of-type {
+          margin-bottom: 2em;
+        }
+      }
+    }
   }
   
   .pactice-container {
@@ -24,6 +50,10 @@
   .column-container {
     display: flex;
     justify-content: space-between;
+
+    @include sm {
+      flex-direction: column;
+    }
   }
 
   &-title {
@@ -35,7 +65,10 @@
     flex-direction: column;
   
     width: 49%;
-    gap: .5em;
+
+    @include sm {
+      width: 100%;
+    }
   }
 
   &-table {
@@ -43,17 +76,25 @@
     flex-direction: column;
     margin-top: -0.5em;
 
+    margin-right: .5em;
+    @include sm {
+      margin: 0;
+      margin-bottom: .5em;
+    }
+
     box-shadow: 0px 3px 5px rgba(0, 0, 0, .03), 0px 0px 8px rgba(12, 12, 12, 0.06);
+
+    @include sm {
+      font-size: 1.3em;
+    }
 
     &-check-box {
       display: flex;
       justify-content: center;
       align-items: center;
       border-left: .03em solid #cacaca;
+      height: 100%;
       width: 20%;
-
-      padding-top: .6em;
-      padding-bottom: .6em;
 
       .ant-check-box {
         &-inner {
@@ -88,6 +129,12 @@
         align-items: center;
         height: 2.19em;
 
+        @include sm {
+          display: flex;
+          align-items: center;
+          height: 4em;
+        }
+
         Input {
           font-size: 0.85em;
           height: 80%!important;
@@ -106,11 +153,15 @@
 
         p {
           font-size: .8em;
-            margin: 0;
+          margin: 0;
 
-            padding-left: 1em;
-            padding-top: 0.6em;
-            font-weight: 500;
+          padding-left: 1em;
+          font-weight: 500;
+
+          @include sm {
+            width: 21.5em;
+            padding-right: 1em;
+          }
         }
       }
     }

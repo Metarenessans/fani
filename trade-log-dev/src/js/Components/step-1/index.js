@@ -115,11 +115,9 @@ export default class FirstStep extends React.Component {
                   return (
                     <div className="combine-table-row" key={index}>
                       <div className="combine-table-row-col">
-                        {index === 0 && (
-                          <div className="combine-table-row-key">
-                            Инструмент
-                          </div>
-                        )}
+                        <div className="combine-table-row-key">
+                          Инструмент
+                        </div>
                         <div className="combine-table-row-val combine-table-row-val--tool">
                           <NumericInput
                             defaultValue={depo}
@@ -187,11 +185,9 @@ export default class FirstStep extends React.Component {
                       </div>
 
                       <div className="combine-table-row-col">
-                        {index === 0 && (
-                          <div className="combine-table-row-key">
-                            Калибровка
-                          </div>
-                        )}
+                        <div className="combine-table-row-key">
+                          Калибровка
+                        </div>
                         <div className="combine-table-row-val combine-table-row-val-slider">
                           <div className="combine-table-row-val-row">
                             <span>Загрузка</span>
@@ -253,11 +249,9 @@ export default class FirstStep extends React.Component {
                       </div>
 
                       <div className="combine-table-row-col">
-                        {index === 0 && (
-                          <div className="combine-table-row-key">
-                            Выходные данные
-                          </div>
-                        )}
+                        <div className="combine-table-row-key">
+                          Выходные данные
+                        </div>
                         <div className="combine-table-row-val combine-table-row-val--final">
                           {(() => {
                             let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
@@ -400,11 +394,9 @@ export default class FirstStep extends React.Component {
                     <div className="first-step-row" key={index}>
                       {/* col */}
                       <div className="first-step-row-col">
-                        {index == 0 && (
-                          <div className="first-step-row-key">
-                            Инструмент
-                          </div>
-                        )}
+                        <div className="first-step-row-key">
+                          Инструмент
+                        </div>
 
                         <div className="first-step-row-val first-step-row-val--base first-step-row-val-tool">
                           {/* Торговый инструмент */}
@@ -457,11 +449,9 @@ export default class FirstStep extends React.Component {
 
                       {/* col */}
                       <div className="first-step-row-col">
-                        {index == 0 && (
-                          <div className="first-step-row-key">
-                            Время входа
-                          </div>
-                        )}
+                        <div className="first-step-row-key">
+                          Время входа
+                        </div>
 
                         <div className="first-step-row-val first-step-row-val--base first-step-row-val-time">
                           <div className="time-picker-container">
@@ -485,11 +475,9 @@ export default class FirstStep extends React.Component {
 
                       {/* col */}
                       <div className="first-step-row-col">
-                        {index == 0 && (
-                          <div className="first-step-row-key">
-                            Направление
-                          </div>
-                        )}
+                        <div className="first-step-row-key">
+                          Направление
+                        </div>
                         <div className="first-step-row-row">
                           <div className="first-step-row-val first-step-row-val--first first-step-row-val--long">
                             Long
@@ -539,11 +527,9 @@ export default class FirstStep extends React.Component {
 
                       {/* col */}
                       <div className="first-step-row-col">
-                        {index == 0 && (
-                          <div className="first-step-row-key">
-                            Метод входа
-                          </div>
-                        )}
+                        <div className="first-step-row-key">
+                          Метод входа
+                        </div>
                         <div className="first-step-row-row">
                           <div className="first-step-row-val first-step-row-val--first">
                             Импульс
@@ -583,11 +569,9 @@ export default class FirstStep extends React.Component {
 
                       {/* col */}
                       <div className="first-step-row-col">
-                        {index == 0 && (
-                          <div className="first-step-row-key">
-                            Сигнал
-                          </div>
-                        )}
+                        <div className="first-step-row-key">
+                          Сигнал
+                        </div>
                         <div className="first-step-row-row">
                           <div className="first-step-row-val first-step-row-val--first">
                             Уровни
@@ -627,11 +611,9 @@ export default class FirstStep extends React.Component {
 
                       {/* col */}
                       <div className="first-step-row-col first-step-row-col--final">
-                        {index == 0 && (
-                          <div className="first-step-row-key first-step-row-key--final">
-                            Итог
-                          </div>
-                        )}
+                        <div className="first-step-row-key first-step-row-key--final">
+                          Итог
+                        </div>
 
                         <div 
                           className={clsx(
