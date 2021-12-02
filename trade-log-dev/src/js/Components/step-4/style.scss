@@ -145,6 +145,10 @@
           border: none;
           background-color: inherit;
           padding-left: 0.9em;
+
+          @include sm {
+            width: 20.2em !important;
+          }
         }
         
         &:nth-child(2n-1) {
