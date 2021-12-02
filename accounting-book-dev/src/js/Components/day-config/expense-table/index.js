@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Button, Select, Input  } from "antd";
-import { cloneDeep } from "lodash";
+import { cloneDeep, flatten } from "lodash";
 
 import CustomSelect from "../../../../../../common/components/custom-select";
 import NumericInput from "../../../../../../common/components/numeric-input";
@@ -17,9 +17,10 @@ export default function ExpenseTable() {
   const { state } = context;
   const {
     data,
+    month,
     currentRowIndex
   } = state;
-  const { expense } = data[currentRowIndex];
+  const { expense } = data[month - 1][currentRowIndex];
 
   return (
     <Panel className="expense-table expense-table--payments-title" title="Расходы">
@@ -44,7 +45,7 @@ export default function ExpenseTable() {
                       style={{ width: "100%" }}
                       onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].expense[index].expenseTypeName = value;
+                        data[month - 1][currentRowIndex].expense[index].expenseTypeName = value;
                         context.setState({ data });
                       }}
                     >
@@ -70,7 +71,7 @@ export default function ExpenseTable() {
                       value={selectedPaymentToolName}
                       onChange={value => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].expense[index].selectedPaymentToolName = value;
+                        data[month - 1][currentRowIndex].expense[index].selectedPaymentToolName = value;
                         context.setState({ data });
                       }}
                       onAddOption={(newOption, options) => {
@@ -93,7 +94,7 @@ export default function ExpenseTable() {
                       format={formatNumber}
                       onBlur={val => {
                         const data = cloneDeep(state.data);
-                        data[currentRowIndex].expense[index].value = val;
+                        data[month - 1][currentRowIndex].expense[index].value = val;
                         context.setState({ data });
                       }}
                     />
@@ -110,14 +111,14 @@ export default function ExpenseTable() {
           className="table-panel__add-button custom-btn"
           onClick={() => {
             const data = cloneDeep(state.data);
-            const expense = cloneDeep(data[currentRowIndex].expense);
+            const expense = cloneDeep(data[month - 1][currentRowIndex].expense);
 
             expense.push({
               expenseTypeName:         "Важные",
               selectedPaymentToolName: "Жилье",
               value:                   0
             });
-            data[currentRowIndex].expense = expense;
+            data[month - 1][currentRowIndex].expense = expense;
             context.setState({ data });
           }}
         >
@@ -129,9 +130,9 @@ export default function ExpenseTable() {
           disabled={expense.length === 1}
           onClick={() => {
             const data = cloneDeep(state.data);
-            const expense = cloneDeep(data[currentRowIndex].expense);
+            const expense = cloneDeep(data[month - 1][currentRowIndex].expense);
             expense.pop();
-            data[currentRowIndex].expense = expense;
+            data[month - 1][currentRowIndex].expense = expense;
             context.setState({ data });
           }}
         >

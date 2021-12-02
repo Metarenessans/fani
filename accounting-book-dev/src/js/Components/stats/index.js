@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { flatten } from "lodash";
 
 import Stack from "../../../../../common/components/stack";
 import Value from "../../../../../common/components/value";
@@ -25,7 +26,7 @@ export default function Stats() {
         {/* Генеральный анализ за этот месяц */}
         <Panel className="stats-panel--indent" title="Генеральный анализ за этот месяц">
           {(() => {
-            const data = state.data.slice((month - 1) * 30, month * 30 - 1);
+            const data = context.slicedData;
             const incomeTotal = data.reduce((acc, day) => acc + day.income.reduce((acc, row) => acc + row.value, 0), 0);
             const expenseTotal = data.reduce((acc, day) => acc + day.expense.reduce((acc, row) => acc + row.value, 0), 0);
             const unnecessaryExpenses = data
@@ -120,6 +121,7 @@ export default function Stats() {
         {/* Генеральный анализ за всё время */}
         <Panel className="stats-panel--indent" title="Генеральный анализ за всё время">
           {(() => {
+            const data = flatten(state.data);
             const incomeTotal = data.reduce((acc, day) => acc + day.income.reduce((acc, row) => acc + row.value, 0), 0);
             const expenseTotal = data.reduce((acc, day) => acc + day.expense.reduce((acc, row) => acc + row.value, 0), 0);
             const unnecessaryExpenses = data

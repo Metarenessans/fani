@@ -2,9 +2,10 @@ import React, { useContext } from "react";
 import { Button, DatePicker } from "antd";
 import locale from "antd/es/date-picker/locale/ru_RU";
 import moment from "moment";
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEqual, range } from "lodash";
 import Value        from "../../../../../../common/components/value";
 import formatNumber from "../../../../../../common/utils/format-number";
+import "../../../Utils/days-in-month";
 import Panel from "../../panel";
 
 import { StateContext } from "../../../App";
@@ -15,19 +16,35 @@ export default function TablePanel() {
   const context = useContext(StateContext);
   const { state } = context;
   const { month } = state;
-  const data = state.data.slice((month - 1) * 30, month * 30);
+
+  const data = context.slicedData;
+  const date = new Date;
+  const currentDateDay = date.getDate();
+  const daysInMonth = date.daysInMonth();
+  
   return (
     <Panel className="panel" >
       <div className="panel-table-wrapper">
         {data.map((day, index) => {
-          index = index + (month - 1) * 30;
           const currentDay = day;
           const { deals } = day;
           const result = deals.reduce((acc, curr) => acc + curr.result, 0);
+
+          // let realIndex = 0;
+          // if (month == 1) {
+          //   realIndex = index;
+          // }
+          // else {
+          //   for (let i = 0; i < month - 1; i++) {
+          //     realIndex = ranges[i][1] + 1;
+          //   }
+          //   realIndex += index;
+          // }
+          // index = realIndex;
+
           return (
             <>
               <div className="panel-table-row">
-                
                 {/* col */}
                 <div className="panel-table-col">
                   <div className="panel-table-key">
@@ -40,7 +57,26 @@ export default function TablePanel() {
                       value={moment(day.date)}
                       onChange={(moment, formatted) => {
                         const data = cloneDeep(state.data);
-                        data[index].date = Number(moment) === 0 ? Number(Date.now()) : Number(moment);
+                        data[month - 1][index].date = Number(moment);
+                        if (Number(moment) === 0) {
+                          data[month - 1][index].date = Date.now();
+                        }
+
+                        // TODO: удалить?
+                          // правит подставление начала отсчёта unix в дату
+                          // Number(moment) === 0 
+                          //   ? Date.now() 
+                          //   :
+                          //     // введённая дата не может быть больше текущей даты
+                          //     (Number(moment) > +new Date() ? Date.now() : Number(moment));
+                        
+                        // Получаем номер месяца первого элемента
+
+                        // const m = new Date(context.slicedData[0].date).getMonth();
+                        // const date = new Date(data[index].date);
+                        // date.setMonth(m);
+                        // data[index].date = +date;
+
                         context.setState({ data });
                       }}
                     />
@@ -177,35 +213,32 @@ export default function TablePanel() {
       </div>
 
       <div className="buttons-container">
+        
         <Button
           id="add-day-btn"
           className="panel__add-button custom-btn"
-          onClick={async e => {
-            const { month} = state;
+          // ~~
+          // Дизейблится, если кол-во строк (дней) в текущем месяце равно кол-ву дней в этом месяце
+          disabled={data.length === new Date(cloneDeep(data).pop().date).daysInMonth()}
+          onClick={e => {
             const data = cloneDeep(state.data);
-            const day = cloneDeep(context.dayTemplate);
+            
+            let day = cloneDeep(context.dayTemplate);
             // Обновляем дату
-            let time = new Date();
-            if (data[data.length - 1]) {
-              time = new Date(data[data.length - 1]?.date + (24 * 3600 * 1000));
-            }
-            day.date = Number(time);
-            data.push(day);
-            await context.setStateAsync({ data });
-            document.querySelector(".table-panel-table-wrapper").scrollTop = 99999;
-            if (data.length > month * 30) {
-              context.setState({ month: month + 1 });
-            }
+            day.date = Number(new Date());
+            data[month - 1].push(day);
+
+            context.setStateAsync({ data });
           }}
         >
           Добавить
         </Button>
         <Button
           className="panel__add-button custom-btn"
-          disabled={state.data.length === 1}
+          disabled={data.length === 1}
           onClick={e => {
             const data = cloneDeep(state.data);
-            data.pop();
+            data[month - 1].pop();
             context.setState({ data });
           }}
         >

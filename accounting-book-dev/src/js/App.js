@@ -1,8 +1,10 @@
 import React from "react";
 
 import $ from "jquery";
-import { cloneDeep, isEqual } from "lodash";
+import { cloneDeep, isEqual, flatten } from "lodash";
 import { Button, message } from "antd";
+
+import typeOf from "../../../common/utils/type-of";
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
@@ -15,6 +17,7 @@ import DeleteDialog from "../../../common/components/delete-dialog";
 
 import DayConfig   from "./components/day-config";
 import Stats       from "./components/stats";
+import "../js/Utils/days-in-month";
 
 /* API */
 
@@ -153,8 +156,19 @@ export default class App extends BaseComponent {
        */
       incomeTypeTools:  ["Постоянные", "Периодические"],
 
-      /** @type {dayTemplate[]} */
-      data: [cloneDeep(this.dayTemplate)],
+      /** @type {dayTemplate[][]} */
+      data: [
+        [
+          // {
+          //   ...cloneDeep(this.dayTemplate),
+          //   date: 0
+          // },
+          // ...new Array(29).fill().map(pekora => cloneDeep(this.dayTemplate))
+
+          // production
+          cloneDeep(this.dayTemplate)
+        ]
+      ],
 
       /**
        * Номер текущей страницы, где:
@@ -252,7 +266,7 @@ export default class App extends BaseComponent {
 
   fetchInitialData() {
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot();
+    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
   }
 
   packSave() {
@@ -278,8 +292,25 @@ export default class App extends BaseComponent {
 
   parseSnapshot = data => {
     const initialState = cloneDeep(this.initialState);
+
+    let _data = data.data ?? initialState.data;
+    // Legacy сохранение
+    if (typeOf(_data?.[0]) === "object") {
+
+      let i, j, chunk = 30;
+      const result = [];
+      for (i = 0, j = _data.length; i < j; i += chunk) {
+        let temporary = _data.slice(i, i + chunk);
+        // do whatever
+        result.push(temporary);
+      }
+      result;
+
+      _data = result;
+    }
+
     return {
-      data:             data.data             ?? initialState.data,
+      data: _data,
       month:            data.month            ?? initialState.month,
       incomeTypeTools:  data.incomeTypeTools  ?? initialState.incomeTypeTools,
       expenseTypeTools: data.expenseTypeTools ?? initialState.expenseTypeTools
@@ -296,6 +327,11 @@ export default class App extends BaseComponent {
     }
   }
 
+  getSelectedDay() {
+    const { data, currentRowIndex } = this.state;
+    return flatten(data)[currentRowIndex];
+  }
+  
   render() {
     const {
       step,
@@ -303,6 +339,26 @@ export default class App extends BaseComponent {
       month,
       currentRowIndex 
     } = this.state;
+    
+    function getRanges() {
+      let range = [];
+
+      let start = 0;
+      const mappedData = data.map(row => new Date(row.date).getMonth());
+      const months = Array.from(new Set(mappedData));
+
+      for (let month of months) {
+        const end = mappedData.lastIndexOf(month);
+        range.push([start, end]);
+        start = end + 1;
+      }
+
+      return range;
+    }
+
+    // const ranges = getRanges();
+    const slicedData = data[month - 1];
+    this.slicedData = slicedData;
 
     return (
       <StateContext.Provider value={this}>
@@ -322,8 +378,7 @@ export default class App extends BaseComponent {
                         this.setState(prevState => {
                           const month = prevState.month - 1;
                           return {
-                            month,
-                            currentRowIndex: (month - 1) * 30
+                            month
                           };
                         });
                       }}
@@ -353,13 +408,47 @@ export default class App extends BaseComponent {
 
                     <Button
                       className="day-button"
-                      disabled={month + 1 > Math.ceil(data.length / 30)}
-                      onClick={e => {
+                      // disabled={
+                      //   // Номер месяца последней строки меньше текущего месяца
+                      //   // new Date(cloneDeep(slicedData).pop().date).getMonth() + 1 === new Date().getMonth() + 1
+                      //   //   ? false
+                      //   //   : true
+                      //   // new Date(slicedData[slicedData.length - 1].date).getDate() < new Date(slicedData[slicedData.length - 1].date).daysInMonth()
+                      //   slicedData.length < 31
+                      // }
+                      //~~
+                      onClick={async e => {
+                        const data = cloneDeep(this.state.data);
+                        const day = cloneDeep(dayTemplate);
+                        // Обновляем дату
+
+                        const daysInCurrentMonth = new Date(this.slicedData[0].date).daysInMonth();
+                        const lastDay = this.slicedData[this.slicedData.length - 1];
+                        const lastDayDate = new Date(lastDay.date).getDate();
+
+                        day.date = lastDay?.date ?? Number(new Date());
+
+                        // if (lastDayDate >= daysInCurrentMonth) {
+                        //   day.date = lastDay.date + (24 * 60 * 60 * 1000);
+                        // }
+
+                        // Добавляем строку только если мы переходим в новый месяц впервые
+                        if (!data[month]) {
+                          
+                          const newDate = new Date(lastDay.date);
+                          newDate.setMonth(newDate.getMonth() + 1);
+                          newDate.setDate(1);
+
+                          day.date = +newDate;
+
+                          data[month] = [day];
+                        }
+
                         this.setState(prevState => {
                           const month = prevState.month + 1;
                           return {
-                            month,
-                            currentRowIndex: (month - 1) * 30
+                            data,
+                            month
                           };
                         });
                       }}
@@ -378,10 +467,10 @@ export default class App extends BaseComponent {
                                 className="main-button"
                                 onClick={async e => {
                                   const hasChanged = 
+                                    false &&
                                     this.lastSavedState && 
                                     !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
-                                  // ~~
-                                  if (false && hasChanged) {
+                                  if (hasChanged) {
                                     dialogAPI.open("close-slider-dialog", e.target);
                                   }
                                   else {

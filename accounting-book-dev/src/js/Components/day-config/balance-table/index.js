@@ -12,10 +12,17 @@ import "./style.scss";
 export default function BalanceTable() {
   const context = useContext(StateContext);
   const { state } = context;
-  const { data, currentRowIndex } = state;
-  const currentDay = data[currentRowIndex];
+  const { data, month, currentRowIndex } = state;
+
+  const currentDay = data[month - 1][currentRowIndex];
+
+  let realIndex = currentRowIndex;
+  for (let i = 0; i < month - 1; i++) {
+    realIndex += state.data[i].length;
+  }
+
   return (
-    <Panel className="balance-table" title={`Баланс - день ${currentRowIndex + 1}`}>
+    <Panel className="balance-table" title={`Баланс - день ${realIndex + 1}`}>
       <div className="balance-table-wrapper">
         <div className="balance-table-row">
           {/* col */}
