@@ -5,16 +5,22 @@
   &-content {
     flex-direction: row;
     align-items: center;
-    gap: 4em;
 
     @include sm {
       flex-direction: column;
-      gap: 2.25em;
+    }
+  }
+
+  .input-wrapper {
+    margin-right: 4em;
+
+    @include sm {
+      margin: 0;
+      margin-bottom: 2.25em;
     }
   }
 
   .stack {
-
     @include sm {
       width: 100%;
     }
