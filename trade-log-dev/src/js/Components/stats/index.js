@@ -115,9 +115,14 @@ export default function Stats() {
                     ?.filter(deal => deal.result > 0)
                      .map(deal => deal.result);
 
+                  let value = average(positiveResults);
+                  if (isNaN(value)) {
+                    value = 0;
+                  }
+
                   return (
                     <Value 
-                      value={~~round(average(positiveResults), 1)}
+                      value={round(value, 1)}
                       type="success"
                       format={value => formatNumber(value) + "%"}
                     />
@@ -134,9 +139,14 @@ export default function Stats() {
                     ?.filter(deal => deal.result < 0)
                      .map(deal => deal.result);
 
+                  let value = average(negativeResults);
+                  if (isNaN(value)) {
+                    value = 0;
+                  }
+
                   return (
                     <Value
-                      value={~~round(average(negativeResults), 1)}
+                      value={round(value, 1)}
                       type="danger"
                       format={value => formatNumber(value) + "%"}
                     />
