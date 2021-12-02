@@ -187,10 +187,7 @@ export default class BaseComponent extends React.Component {
     }
 
     const pure = params.get("pure") === "true";
-    if (pure) {
-      await this.setStateAsync({ loading: false });
-    }
-    else {
+    if (!pure) { 
       const fallback = options?.fallback;
       if (dev && fallback) {
         response = fallback;
@@ -205,6 +202,8 @@ export default class BaseComponent extends React.Component {
         await this.extractSnapshot(response.data);
       }
     }
+
+    await this.setStateAsync({ loading: false });
   }
 
   /**

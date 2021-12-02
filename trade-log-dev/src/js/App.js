@@ -8,7 +8,8 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
-import { SaveDialog } from "../../../common/components/save-dialog";
+import SaveDialog   from "../../../common/components/save-dialog";
+import DeleteDialog from "../../../common/components/delete-dialog";
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
@@ -703,21 +704,7 @@ export default class App extends BaseComponent {
 
           <SaveDialog />
 
-          <Dialog
-            id="dialog4"
-            title="Удаление сохранения"
-            confirmText="Удалить"
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Dialog
             id="close-slider-dialog"
