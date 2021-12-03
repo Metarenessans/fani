@@ -27,7 +27,8 @@ module.exports = (env, options) => {
       overlay: true,
       // Нужны для вставки стилей без перезагрузки
       inline: true,
-      hot: true
+      hot: true,
+      host: "192.168.0.129"
     },
     module: {
       rules: [

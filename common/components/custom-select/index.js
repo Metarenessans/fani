@@ -1,11 +1,11 @@
-import React, { memo } from 'react'
-import { Select } from 'antd/es'
+import React, { memo } from "react"
+import { Select } from "antd"
 const { Option } = Select;
+import { cloneDeep, isEqual } from "lodash";
 
-import round   from '../../utils/round';
+import round from "../../utils/round";
 
 import "./style.sass";
-import { cloneDeep, isEqual } from 'lodash';
 
 export default memo(class CustomSelect extends React.Component {
 
