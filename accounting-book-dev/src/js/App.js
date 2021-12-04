@@ -12,7 +12,7 @@ export const StateContext = Context;
 
 import Header from "../../../common/components/header";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import { SaveDialog, dialogID as saveDialogID } from "../../../common/components/save-dialog";
+import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 
 import DayConfig   from "./components/day-config";
@@ -28,7 +28,8 @@ let scrollInitiator;
 export const dealTemplate = {
   currentToolCode:      "",
   currentToolIndex:     "",
-  enterTime:  null
+  enterTime:  null,
+  changed: false,
 };
 
 const dayTemplate = {
@@ -250,8 +251,18 @@ export default class App extends BaseComponent {
   }
   
   componentDidUpdate(prevProps, prevState) {
-    const { rowData } = this.state;
-    if (prevState.rowData != rowData) {
+    const {
+      data,
+      month,
+      incomeTypeTools,
+      expenseTypeTools
+    } = this.state;
+    if (
+      prevState.data != data ||
+      prevState.month != month ||
+      prevState.incomeTypeTools != incomeTypeTools ||
+      prevState.expenseTypeTools != expenseTypeTools
+    ) {
       this.setState({ changed: true });
     }
 
@@ -266,7 +277,8 @@ export default class App extends BaseComponent {
 
   fetchInitialData() {
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
+    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") })
+      .then(() => this.setState({changed: false}))
   }
 
   packSave() {
@@ -458,48 +470,52 @@ export default class App extends BaseComponent {
                   </div>
                   {
                     step === 0
-                      ? <Stats/>
-                      :
-                        <div id="trade-slider" className="trade-slider-active">
-                          <div className="trade-slider-container">
-                            <div className="trade-slider--main-page">
-                              <Button 
-                                className="main-button"
-                                onClick={async e => {
-                                  const hasChanged = 
-                                    false &&
-                                    this.lastSavedState && 
-                                    !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
-                                  if (hasChanged) {
-                                    dialogAPI.open("close-slider-dialog", e.target);
-                                  }
-                                  else {
-                                    await this.setStateAsync({ step: 0, extraStep: false });
-                                  }
-                                }}
-                              >
-                                Главная страница
-                              </Button>
-                            </div>
+                    ? <Stats/>
+                    :
+                      <div id="trade-slider" className="trade-slider-active">
+                        <div className="trade-slider-container">
+                          <div className="trade-slider--main-page">
+                            <Button 
+                              className="main-button"
+                              onClick={async e => {
+                                const hasChanged = 
+                                  false &&
+                                  this.lastSavedState && 
+                                  !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
+                                if (hasChanged) {
+                                  dialogAPI.open("close-slider-dialog", e.target);
+                                }
+                                else {
+                                  await this.setStateAsync({ step: 0, extraStep: false });
+                                }
+                              }}
+                            >
+                              Главная страница
+                            </Button>
+                          </div>
 
-                            <DayConfig />
+                          <DayConfig />
 
-                            <div className="buttons-container buttons-container--end">
-                              <Button
-                                className="table-panel__add-button custom-btn"
-                                onClick={e => dialogAPI.open(saveDialogID, e.target)}
-                              >
-                                Сохранить
-                              </Button>
-                              <Button
-                                className="table-panel__add-button custom-btn"
-                                onClick={e => this.setState({ step: 0 })}
-                              >
-                                Закрыть
-                              </Button>
-                            </div>
+                          <div className="buttons-container buttons-container--end">
+                            <Button
+                              className="table-panel__add-button custom-btn"
+                            onClick={e => {
+                              this.state.currentSaveIndex === 0 ?
+                                dialogAPI.open(saveDialogID, e.target) :
+                                this.update();
+                            }}
+                            >
+                              Сохранить
+                            </Button>
+                            <Button
+                              className="table-panel__add-button custom-btn"
+                              onClick={e => this.setState({ step: 0 })}
+                            >
+                              Закрыть
+                            </Button>
                           </div>
                         </div>
+                      </div>
                   }
 
                 </div>
