@@ -15,6 +15,16 @@
 
     .ant-calendar-picker {
       font-size: .5em;
+
+      @include sm {
+        width: 5em;
+
+        cursor: pointer;
+
+        .ant-input {
+          display: none;
+        }
+      }
     }
   }
 

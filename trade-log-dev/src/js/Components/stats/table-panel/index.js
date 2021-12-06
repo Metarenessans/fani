@@ -52,22 +52,20 @@ export default function TablePanel() {
               return (
                 <tr key={index}>
                   <td>
-                    {viewportWidth > 768
-                      ?
-                        <DatePicker
-                          disabled={loading}
-                          locale={locale}
-                          format="DD.MM.YYYY"
-                          value={moment(day.date)}
-                          onChange={(moment, formatted) => {
-                            const data = cloneDeep(state.data);
-                            // При сбросе значения ставим текущую дату
-                            data[index].date = Number(moment) === 0 ? Date.now() : Number(moment);
-                            context.setState({ data });
-                          }}
-                        />
-                      : <CalendarOutlined />
-                    }
+                    <DatePicker
+                      disabled={loading}
+                      locale={locale}
+                      format="DD.MM.YYYY"
+                      value={moment(day.date)}
+                      allowClear={viewportWidth > 768}
+                      placeholder={viewportWidth <= 768 ? "" : null}
+                      onChange={(moment, formatted) => {
+                        const data = cloneDeep(state.data);
+                        // При сбросе значения ставим текущую дату
+                        data[index].date = Number(moment) === 0 ? Date.now() : Number(moment);
+                        context.setState({ data });
+                      }}
+                    />
                   </td>
                   <td>{index + 1}</td>
                   <td>
