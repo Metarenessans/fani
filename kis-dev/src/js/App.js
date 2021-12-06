@@ -52,7 +52,8 @@ import DashboardRow          from "./components/DashboardRow"
 /* API */
 import fetch             from "../../../common/api/fetch"
 import { applyTools }    from "../../../common/api/fetch/tools"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import { fetchInvestorInfo } from "../../../common/api/fetch/investor-info/fetch-investor-info"
+import { applyInvestorInfo} from "../../../common/api/fetch/investor-info/apply-investor-info"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
@@ -986,7 +987,6 @@ class App extends React.Component {
 
                         <span className="dashboard-val dashboard-val--wrap">
                             <NumericInput
-                              key={Math.random()}
                               className="dashboard__input"
                               defaultValue={toolType == "Недвижимость" ? depo : secondDepo}
                               onBlur={value => {
@@ -1039,8 +1039,7 @@ class App extends React.Component {
                         
                         <span className="dashboard-val dashboard-col--rate dashboard-val--invest-percent">
                           <NumericInput
-                            key={investPercent}
-                          className="dashboard__input dashboard__input--contribution"
+                            className="dashboard__input dashboard__input--contribution"
                             defaultValue={investPercent * 100}
                             onBlur={value => {
                               const dataCopy = [...data];
@@ -1067,7 +1066,6 @@ class App extends React.Component {
 
                       <span className="dashboard-val dashboard-col--rate  dashboard-val--profit-percent">
                           <NumericInput
-                            key={Math.random()}
                             className="dashboard__input"
                             defaultValue={ requiredVal * 100 }
                             onBlur={value => {
@@ -1099,7 +1097,6 @@ class App extends React.Component {
                         
                         <span className="dashboard-val dashboard-col--rate dashboard-val--ofz">
                           <NumericInput
-                            key={Math.random()}
                             className="dashboard__input"
                             defaultValue={ofzVal * 100}
                             onBlur={value => {
@@ -1128,7 +1125,6 @@ class App extends React.Component {
                           
                         <span className="dashboard-val dashboard-col--rate dashboard-val--active-invest">
                             <NumericInput
-                              key={Math.random()}
                               className="dashboard__input" 
                               defaultValue={activeInvestVal}
                               onBlur={value => {
