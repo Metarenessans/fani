@@ -17,12 +17,19 @@
       font-size: .5em;
 
       @include sm {
-        width: 5em;
+        width: 4em;
 
         cursor: pointer;
 
+        .ant-calendar-picker-icon {
+          left: 50%;
+          transform: translateX(-50%);
+        }
+
         .ant-input {
-          display: none;
+          // display: none;
+          opacity: 0;
+          pointer-events: none;
         }
       }
     }
