@@ -28,6 +28,7 @@ export default function ControlPanel() {
         <NumericInput 
           defaultValue={state.dailyRate}
           onBlur={dailyRate => context.setState({ dailyRate })}
+          unsigned="true"
           suffix="%"
         />
       </InputWrapper>
@@ -60,6 +61,9 @@ export default function ControlPanel() {
           <NumericInput
             defaultValue={state.allowedNumberOfUnprofitableDeals}
             onBlur={allowedNumberOfUnprofitableDeals => context.setState({ allowedNumberOfUnprofitableDeals })}
+            unsigned="true"
+            round="true"
+            min={0}
           />
         </InputWrapper>
 

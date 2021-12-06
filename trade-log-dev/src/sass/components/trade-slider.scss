@@ -277,6 +277,10 @@
     margin-top: 1em;
     font-size: 1.4em;
 
+    > *:first-child {
+      margin-right: 0.6em;
+    }
+
     @include sm {
       justify-content: center;
     }
