@@ -29,17 +29,7 @@ import { cloneDeep } from "lodash";
 
 const { Option } = Select;
 
-function onChangeTime(time, timeString) {
-  console.log(timeString, "timeString");
-}
-
 export default class FirstStep extends React.Component {
-
-  constructor(props) {
-    super(props);
-    
-    this.state = {};
-  }
 
   getOptions() {
     let { tools } = this.props;
@@ -455,19 +445,47 @@ export default class FirstStep extends React.Component {
 
                         <div className="first-step-row-val first-step-row-val--base first-step-row-val-time">
                           <div className="time-picker-container">
-                            <TimePicker 
-                              key={currentRowIndex}
-                              format="HH:mm"
-                              allowClear
-                              defaultValue={enterTime != null ? moment(new Date(enterTime), "HH:mm") : null}
-                              placeholder="Введите время"
-                              onChange={time => {
-                                let value = +time;
-                                const data = cloneDeep(state.data);
-                                data[currentRowIndex].deals[index].enterTime = value;
-                                context.setState({ data });
-                              }}
-                            />
+                            {state.viewportWidth <= 768
+                              ?
+                                <input
+                                  type="time"
+                                  value={moment(new Date(enterTime)).format("HH:mm")}
+                                  onChange={e => {
+                                    const { value } = e.target;
+                                    console.log(e, value);
+                                    const h = +value.split(":")[0];
+                                    const m = +value.split(":")[1];
+
+                                    const date = new Date(0);
+                                    date.setHours(h);
+                                    date.setMinutes(m);
+
+                                    const enterTime = +date;
+
+                                    const data = cloneDeep(state.data);
+                                    data[currentRowIndex].deals[index].enterTime = enterTime;
+                                    context.setState({ data });
+                                  }}
+                                />
+                              :
+                                <TimePicker 
+                                  key={currentRowIndex}
+                                  format="HH:mm"
+                                  allowClear
+                                  defaultValue={
+                                    enterTime != null 
+                                      ? moment(new Date(enterTime), "HH:mm")
+                                      : null
+                                  }
+                                  placeholder="Введите время"
+                                  onChange={time => {
+                                    let value = +time;
+                                    const data = cloneDeep(state.data);
+                                    data[currentRowIndex].deals[index].enterTime = value;
+                                    context.setState({ data });
+                                  }}
+                                />
+                            }
                           </div>
                         </div>
                       </div>

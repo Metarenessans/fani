@@ -285,9 +285,7 @@ export default class App extends BaseComponent {
   }
   
   componentDidMount() {
-    const onResize = e => this.setState({ mobile: window.innerWidth <= 768 });
-    onResize();
-    window.addEventListener("resize", onResize.call(this));
+    super.componentDidMount();
 
     this.fetchInitialData();
     
@@ -452,8 +450,10 @@ export default class App extends BaseComponent {
       currentRowIndex, 
       rowData,
       data,
-      mobile
+      viewportWidth
     } = this.state;
+
+    const mobile = viewportWidth <= 768;
 
     return (
       <StateContext.Provider value={this}>
