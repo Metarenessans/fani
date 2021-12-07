@@ -1,6 +1,7 @@
 **/node_modules
 accounting-book-prod
 trademeter-prod
+trade-log-prod
 intraday-prod
 ksd-prod
 tor-prod

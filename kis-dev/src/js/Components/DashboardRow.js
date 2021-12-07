@@ -201,7 +201,7 @@ export default class DashboardRow extends React.Component {
        @firstMonthTotalResult	общая сумма на конец первого месяца
        @averageMonthIncome    среднемесячные проценты по вкладу за период
     */
-    const contributionFinalVal = kisDepositMonth(investPercent, secondDepo, period * 260, monthOutcome , monthAppend)
+    const contributionFinalVal = kisDepositMonth(investPercent, secondDepo, period * 260, monthOutcome , monthAppend);
 
     /** Недвижимость
      * возвращает итоговую сумму в зависимости от периода
@@ -366,10 +366,11 @@ export default class DashboardRow extends React.Component {
           </span>
 
           <span className="dashboard-val dashboard-col--main">
-            {formatNumber(round(toolType !== "Недвижимость" ?
-              (toolType == "Вклад" ? contributionFinalVal.firstMonthTotalResult : tradeFinalVal(260 / 12, 1) ) :
-              realtyProfit(1))
-            ) }
+            {formatNumber(Math.round(
+              toolType !== "Недвижимость" 
+                ? (toolType == "Вклад" ? contributionFinalVal.firstMonthTotalResult : tradeFinalVal(260 / 12, 1) )
+                : realtyProfit(1)
+            ))}
           </span>
  
         </div>

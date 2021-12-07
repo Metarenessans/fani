@@ -189,6 +189,7 @@ export default class App extends BaseComponent {
       // Копирует `initialState` из BaseComponent
       ...this.initialState,
 
+      changed: false,
       /**
        * Депозит из профиля инвестора
        * 
@@ -270,8 +271,21 @@ export default class App extends BaseComponent {
   }
   
   componentDidUpdate(prevProps, prevState) {
-    const { rowData } = this.state;
-    if (prevState.rowData != rowData) {
+    const {
+      dailyRate,
+      limitUnprofitableDeals,
+      allowedNumberOfUnprofitableDeals,
+      data,
+      customTools
+    } = this.state;
+
+    if (
+      prevState.dailyRate != dailyRate ||
+      prevState.limitUnprofitableDeals != limitUnprofitableDeals ||
+      prevState.allowedNumberOfUnprofitableDeals != allowedNumberOfUnprofitableDeals ||
+      prevState.data != data ||
+      prevState.customTools != customTools
+    ) {
       this.setState({ changed: true });
     }
 
@@ -287,7 +301,8 @@ export default class App extends BaseComponent {
   componentDidMount() {
     super.componentDidMount();
 
-    this.fetchInitialData();
+    this.fetchInitialData()
+      .then(() => this.setState({ changed: false }));
     
     // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
     $(document).on("mouseenter", ".table-extra-column-container", function (e) {
@@ -306,7 +321,6 @@ export default class App extends BaseComponent {
         });
       }
     }, true /* Capture event */);
-
   }
 
   // Fetching everithing we need to start working
@@ -665,7 +679,8 @@ export default class App extends BaseComponent {
                                         className={clsx(
                                           "trade-log-button",
                                           "trade-log-button--slider",
-                                          "trade-log-button--filled"
+                                          "trade-log-button--filled",
+                                          this.state.changed && "header__changed-button"
                                         )}
                                         onClick={async e => {
                                           this.lastSavedState = cloneDeep(this.state);
