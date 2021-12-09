@@ -29,7 +29,7 @@ export const dealTemplate = {
   currentToolCode:      "",
   currentToolIndex:     "",
   enterTime:  null,
-  changed: false,
+  changed: false
 };
 
 const dayTemplate = {
@@ -278,7 +278,7 @@ export default class App extends BaseComponent {
   fetchInitialData() {
     this.fetchSnapshots();
     this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") })
-      .then(() => this.setState({changed: false}))
+      .then(() => this.setState({changed: false}));
   }
 
   packSave() {
