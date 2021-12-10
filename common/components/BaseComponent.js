@@ -98,6 +98,13 @@ export default class BaseComponent extends React.Component {
       tools: [],
 
       /**
+       * Ширина вьюпорта 
+       * 
+       * @type {number}
+       */
+      viewportWidth: 0,
+
+      /**
        * Влияет на сортировку Select'ов с инструментами
        */
       searchVal: ""
@@ -108,6 +115,19 @@ export default class BaseComponent extends React.Component {
   
     /** @type {fetchInvestorInfo} */
     this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
+  }
+
+  onResize = e => {
+    this.setState({ viewportWidth: window.innerWidth })
+  };
+
+  componentDidMount() {
+    window.addEventListener("resize", this.onResize);
+    this.onResize();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.onResize);
   }
 
   /** {@link BaseComponent.setState setState}, обернутый в {@link Promise} */

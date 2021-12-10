@@ -363,7 +363,7 @@ export default class NumericInput extends React.Component {
             value={value}
           />
 
-          {this.canBeEmpty && isMobile &&
+          {this.canBeNegative && isMobile &&
             <button
               onClick={e => {
                 const parsedValue = +(String(value).replace(/\s+/g, ""));
