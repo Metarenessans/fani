@@ -153,6 +153,7 @@ export default class CustomSlider extends React.Component {
         {withValue &&
           <Tooltip title={this.filter( croppNumber(value, 7) )}>
             <span className="custom-slider__value">
+              {/* TODO: value может быть массивом в случае range */}
               { this.filter( croppNumber(value, precision) ) }
             </span>
           </Tooltip>

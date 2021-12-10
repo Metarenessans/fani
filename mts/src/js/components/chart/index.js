@@ -150,7 +150,14 @@ class Chart extends Component {
           .join(" ")
           .trim()
       }>
-        {this.props.loading ? <LoadingOutlined /> : <div id="chart"></div>}
+        {this.props.loading ?
+          <div className="disclaimer">
+            <LoadingOutlined /> 
+            <p>Подготовка графика может занимать до 1 минуты</p>
+          </div>
+          :
+          <div id="chart"></div>
+        }
       </div>
     )
   }

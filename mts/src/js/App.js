@@ -17,7 +17,8 @@ import {
 } from "@ant-design/icons"
 
 import fetch           from "../../../common/api/fetch"
-import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+// import { applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import { applyInvestorInfo } from "../../../common/api/fetch/investor-info/apply-investor-info"
 import fetchSaveById   from "../../../common/api/fetch/fetch-save-by-id"
 import params          from "../../../common/utils/params"
 import round           from "../../../common/utils/round"
@@ -1515,6 +1516,7 @@ class App extends BaseComponent {
                             percentage={percentage}
                             step={step}
                             precision={1}
+                            withValue={false}
                             tooltipPlacement="left"
                             tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
                             onClick={e => {
@@ -1920,6 +1922,7 @@ class App extends BaseComponent {
                             }}
                             range
                             value={[0, percentage].sort((l, r) => l - r)}
+                            withValue={false}
                             min={-100}
                             max= {100}
                             step= {.5}

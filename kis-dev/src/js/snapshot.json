@@ -1,0 +1,9 @@
+{
+  "error": false,
+  "data": {
+    "id": 93,
+    "name": "Новое сохранение44",
+    "dateCreate": 1635013761,
+    "static": "{\"isLong\":true,\"data\":[{\"toolType\":\"Недвижимость\",\"tool\":{},\"saves\":[],\"currentSaveIndex\":0,\"period\":10,\"firstPay\":1000000,\"rentIncome\":20000,\"monthOutcome\":0,\"monthAppend\":0,\"depo\":5000000,\"secondDepo\":1000000,\"payPeriod\":10,\"payRate\":0.08,\"profitPercent\":0.06,\"activeInvestVal\":0.03,\"ofzVal\":0.06,\"monthPay\":40000,\"investPercent\":0.06},{\"toolType\":\"Вклад\",\"tool\":{},\"saves\":[],\"currentSaveIndex\":0,\"period\":10,\"firstPay\":1000000,\"rentIncome\":20000,\"monthOutcome\":0,\"monthAppend\":0,\"depo\":5000000,\"secondDepo\":1000000,\"payPeriod\":10,\"payRate\":0.08,\"profitPercent\":0.06,\"activeInvestVal\":0.03,\"ofzVal\":0.06,\"monthPay\":40000,\"investPercent\":0.06},{\"toolType\":\"Трейдинг\",\"tool\":{},\"saves\":[],\"currentSaveIndex\":0,\"period\":10,\"firstPay\":1000000,\"rentIncome\":20000,\"monthOutcome\":0,\"monthAppend\":0,\"depo\":5000000,\"secondDepo\":1000000,\"payPeriod\":10,\"payRate\":0.08,\"profitPercent\":0.06,\"activeInvestVal\":0.03,\"ofzVal\":0.06,\"monthPay\":40000,\"investPercent\":0.06}],\"depo\":1000000,\"customTools\":[]}"
+  }
+}

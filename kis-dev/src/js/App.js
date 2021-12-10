@@ -1,52 +1,27 @@
 import React from 'react'
 const { Provider, Consumer } = React.createContext();
-import ReactDOM from 'react-dom'
 
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
-import Config              from "../../../common/components/config"
-import CustomSelect        from "../../../common/components/custom-select"
-import afterDecimalNumbers from "./utils/after-decimal-numbers"
+import SaveDialog   from "../../../common/components/save-dialog"
+import DeleteDialog from "../../../common/components/delete-dialog"
+import Config                from "../../../common/components/config"
 
-import {
-  Row,
-  Col,
-  Select,
-  Button,
-  Tooltip,
-  Radio,
-  Typography,
-  Spin,
-  Input,
-  Switch,
-} from 'antd/es'
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+/** @type {React.Context<App>} */
+export const StateContext = Context;
 
-import {
-  PlusOutlined,
-  SettingFilled,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  QuestionCircleFilled,
-  LoadingOutlined,
-  WarningOutlined,
-} from '@ant-design/icons'
+import Header from "../../../common/components/header";
+
+import {Button, Input } from 'antd/es'
+import { PlusOutlined } from '@ant-design/icons'
 
 import "../../../common/api/fetch";
 
-import params              from "../../../common/utils/params"
-import num2str             from "../../../common/utils/num2str"
-import round               from "../../../common/utils/round";
 import formatNumber        from "../../../common/utils/format-number"
-import typeOf              from "../../../common/utils/type-of"
-import promiseWhile        from "../../../common/utils/promise-while"
-import fractionLength      from "../../../common/utils/fraction-length"
-import readyTools          from "../../../common/adr.json"
 import { Tools, Tool, template } from "../../../common/tools"
 
-import Header                from "./components/header"
 import CrossButton           from "../../../common/components/cross-button"
 import NumericInput          from "../../../common/components/numeric-input"
-import CustomSlider          from "../../../common/components/custom-slider"
-import Stack                 from "../../../common/components/stack"
 import DashboardRow          from "./components/DashboardRow"
 
 /* API */
@@ -54,7 +29,6 @@ import fetch             from "../../../common/api/fetch"
 import { applyTools }    from "../../../common/api/fetch/tools"
 import { fetchInvestorInfo } from "../../../common/api/fetch/investor-info/fetch-investor-info"
 import { applyInvestorInfo} from "../../../common/api/fetch/investor-info/apply-investor-info"
-import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 
 import { isEqual, cloneDeep } from "lodash"
@@ -88,20 +62,16 @@ const defaultToolData = {
   investPercent:   0.06,
 };
 
-class App extends React.Component {
+export default class App extends BaseComponent {
 
   constructor(props) {
     super(props);
 
+    this.deafultTitle = <>Калькулятор Инвестиционных<br /> Стратегий</>;
+
     this.initialState = {
-
-      loading: false,
-
-      id: null,
-
-      saved: false,
-
-      changed: false,
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       currentSaveIndex: 0,
 
@@ -120,14 +90,13 @@ class App extends React.Component {
     };
 
     this.state = {
+      // Копирует `state` из BaseComponent
+      ...this.state,
+
       ...cloneDeep(this.initialState),
-      ...{
-        tools: [],
 
-        toolsStorage: [],
+      toolsStorage: [],
 
-        saves: [],
-      },
       tooltipPlacement: "top",
     };
 
@@ -146,8 +115,12 @@ class App extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     // onScroll.call(this);
+    const { id, saves, data } = this.state;
 
-    const { id, saves } = this.state;
+    if (!isEqual(prevState.data, data)) {
+      this.setState({ changed: true })
+    }
+
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
       if (id != null) {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
@@ -163,8 +136,11 @@ class App extends React.Component {
   // Fetching everithing we need to start working
   fetchInitialData() {
     this.fetchTools()
-      // .then(() => this.setFetchingToolsTimeout())
-      .then(() => this.fetchSaves())
+      .then(() => this.setFetchingToolsTimeout())
+    this.fetchSnapshots();
+    this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") })
+      .then(() => this.setState({ changed: false }) )
+      // .then(() => this.fetchSaves())
       .catch(error => console.error(error))
   }
 
@@ -295,71 +271,6 @@ class App extends React.Component {
     })
   }
 
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-      fetch("getKisSnapshots")
-        .then(response => {
-          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          this.setState({ saves, loading: false });
-        })
-
-      fetch("getLastModifiedKisSnapshot")
-        .then(response => {
-          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-          if (!response.error && response.data?.name) {
-            const pure = params.get("pure") === "true";
-            if (!pure) {
-              this.setState({ loading: true });
-              return this.extractSave(response.data)
-                .then(resolve)
-                .catch(error => reject(error));
-            }
-          }
-          resolve();
-        })
-        .catch(reason => {
-          this.showAlert(`Не удалось получить сохранения! ${reason}`);
-          reject(reason);
-        })
-        .finally(() => {
-          if (dev) {
-            const response = {
-              "error": false,
-              "data": {
-                "id": 0,
-                "name": null,
-                "dateCreate": 0,
-                "dateUpdate": 0,
-                "static": null
-              }
-            };
-
-            const saves = [{
-              "id": response.data.id,
-              "name": response.data.name,
-              "dateCreate": response.data.dateCreate,
-            }];
-
-            this.setStateAsync({ saves, loading: false }).then(() => {
-              if (!response.error && response.data?.name) {
-                this.extractSave(response.data)
-              }
-            })
-          }
-        })
-    });
-  }
-
-  showMessageDialog(msg = "") {
-    console.log(`%c${msg}`, "background: #222; color: #bada55");
-    if (!dev) {
-      this.setState({ errorMessage: msg }, () => {
-        dialogAPI.open("dialog-msg");
-      });
-    }
-  }
-
-  // TODO:
   packSave() {
     const {
       isLong,
@@ -380,144 +291,26 @@ class App extends React.Component {
     console.log("Packed save:", json);
     return json;
   }
-
-   extractSave(save) {
-    const { saves, investorInfo } = this.state;
-    let staticParsed;
-
-    let state = {};
-
-    try {
-      let lastUpdated = save.dateUpdate || save.dateCreate;
-      console.log('Extracting save:', save, "last updated:", new Date(lastUpdated * 1_000).toLocaleString("ru").replace(/\./g, "/"));
-
-      staticParsed = JSON.parse(save.static);
-      console.log("Parsed static", staticParsed);
-
-      const initialState = cloneDeep(this.initialState);
-
-      // TODO:
-      state.depo = staticParsed.depo ?? initialState.depo;
-      state.isLong = staticParsed.isLong ?? initialState.isLong;
-      state.data = staticParsed.data ?? initialState.data;
-      state.customTools = staticParsed.customTools ?? initialState.customTools;
-      
-      state.id = save.id;
-      state.saved = true;
-      state.loading = false;
-    }
-    catch (e) {
-      state = {
-        id: save?.id || 0,
-        saved: true
-      };
-    }
-
-    console.log('Parsing save finished!', state);
-    return this.setStateAsync(state);
-  }
-
-  reset() {
+  
+  parseSnapshot = data => {
     const initialState = cloneDeep(this.initialState);
-    console.log(initialState);
-    return this.setStateAsync(initialState);
-  }
 
-  save(name = "") {
-    return new Promise((resolve, reject) => {
-      if (!name) {
-        reject("Name is empty!");
-      }
+    return {
+      depo:        data.depo        ?? initialState.depo,
+      isLong:      data.isLong      ?? initialState.isLong,
+      data:        data.data        ?? initialState.data,
+      customTools: data.customTools ?? initialState.customTools,
+    };
+  };
 
-      const json = this.packSave();
-      const data = {
-        name,
-        static: JSON.stringify(json.static),
-      };
-
-      fetch("addKisSnapshot", "POST", data)
-        .then(res => {
-          console.log(res);
-
-          let id = Number(res.id);
-          if (id) {
-            console.log("Saved with id = ", id);
-            this.setState({ id }, () => resolve(id));
-          }
-          else {
-            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-          }
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  update(name = "") {
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (dev) {
-        resolve();
-      }
-
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-      };
-      fetch("updateKisSnapshot", "POST", data)
-        .then(response => {
-          console.log("Updated!", response);
-          resolve();
-        })
-        .catch(error => console.error(error));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteKisSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-            this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
-              .then(() => this.setState({ id }))
-              .catch(err => this.showAlert(err));
-          }
-          else {
-            this.reset();
-
-            saved = changed = false;
-          }
-
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
+  /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
+  async extractSnapshot(snapshot) {
+    try {
+      await super.extractSnapshot(snapshot, this.parseSnapshot);
+    }
+    catch (error) {
+      message.error(error);
+    }
   }
 
   showAlert(errorMessage = "") {
@@ -542,77 +335,21 @@ class App extends React.Component {
     });
   }
 
-
-  getTitleJSX() {
-    const { saves, currentSaveIndex } = this.state;
-    let titleJSX = <span>Калькулятор Инвестиционных Стратегий</span>;
-    if (saves && saves[currentSaveIndex - 1]) {
-      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
-    }
-
-    return titleJSX;
-  }
-
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Калькулятор Инвестиционных Стратегий") */
-  getTitle() {
-    return this.getTitleJSX().props.children;
-  }
-
   render() {
     const {
       data,
       sortProp,
       sortDESC,
-      lineConfigIndex,
-      loading,
-      saves,
-      currentSaveIndex,
-      saved,
-      changed
+      lineConfigIndex
     } = this.state;
 
     return (
-      <Provider value={this}>
+      <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
+            <Header />
 
-            <Header
-              title={this.getTitleJSX()}
-              loading={loading}
-              saves={saves}
-              currentSaveIndex={currentSaveIndex}
-              changed={changed}
-              saved={saved}
-              onSaveChange={currentSaveIndex => {
-                const { saves } = this.state;
-
-                this.setState({ currentSaveIndex });
-
-                if (currentSaveIndex === 0) {
-                  this.reset();
-                }
-                else {
-                  const id = saves[currentSaveIndex - 1].id;
-                  this.setState({ loading: true });
-                  this.fetchSaveById(id)
-                    .then(response => this.extractSave(response.data))
-                    .then(() => this.fetchCompanyQuotes())
-                    .catch(error => this.showAlert(error));
-                }
-              }}
-              onSave={e => {
-                const { saved, changed } = this.state;
-                if (saved && changed) {
-                  this.update(this.getTitle());
-                  this.setState({ changed: false });
-                }
-                else {
-                  dialogAPI.open("dialog1", e.target);
-                }
-              }}
-            />
             <div className="hdOptimize" >
               <div className="main-content">
 
@@ -637,7 +374,6 @@ class App extends React.Component {
                             planIncome={item.planIncome}
                             tools={this.getTools()}
                             options={this.getOptions()}
-
                             onSort={(sortProp, sortDESC) => {
                               if (sortProp !== this.state.sortProp) {
                                 sortDESC = true;
@@ -645,16 +381,19 @@ class App extends React.Component {
                               this.setState({ sortProp, sortDESC })
                             }}
                             onUpdate={state => {
+                              const data = cloneDeep(this.state.data);
                               data[index] = { ...data[index], ...state, updatedOnce: true };
                               this.setState({ data });
                             }}
                             onChange={(prop, val) => {
+                              const data = cloneDeep(this.state.data);
                               data[index][prop] = val;
-                              this.setState({ data, changed: true });
+                              this.setState({ data });
                             }}
                             onDelete={index => {
+                              const data = cloneDeep(this.state.data);
                               data.splice(index, 1)
-                              this.setState({ data, changed: true });
+                              this.setState({ data });
                               // решение кейса undefined при удалении строки
                               this.setState({ lineConfigIndex: 0 });
                             }}
@@ -668,13 +407,12 @@ class App extends React.Component {
                   </div>
 
                   <footer className="main__footer">
-
                     <Button className="custom-btn main__save"
                       key={Math.random()}
                       onClick={() => {
-                        const { data } = this.state;
+                        const data = cloneDeep(this.state.data);
                         data.push({ ...cloneDeep(defaultToolData) });
-                        this.setState({ data, changed: true, sortDESC: undefined, sortProp: false })
+                        this.setState({ data, sortDESC: undefined, sortProp: false })
                       }}>
                       <PlusOutlined aria-label="Добавить" />
                       инструмент
@@ -690,209 +428,9 @@ class App extends React.Component {
           </main>
           {/* /.main */}
 
-          {(() => {
-            const { saves, id } = this.state;
-            const currentTitle = this.getTitle();
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? currentTitle : "Новое сохранение";
+          <SaveDialog />
 
-            /**
-             * Проверяет, может ли данная строка быть использована как название сейва
-             * 
-             * @param {String} nameToValidate
-             * 
-             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
-             */
-            const validate = (nameToValidate = "") => {
-              nameToValidate = nameToValidate.trim();
-
-              let errors = [];
-              if (nameToValidate != currentTitle) {
-                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
-                if (nameToValidate.length < 3) {
-                  errors.push("Имя должно содержать не меньше трех символов!");
-                }
-                else if (test) {
-                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
-                }
-                if (namesTaken.indexOf(nameToValidate) > -1) {
-                  console.log();
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={30}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-            let onConfirm = () => {
-              let { id, data, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(err => this.showAlert(err));
-              }
-              else {
-                const onResolve = (id) => {
-                  let index = saves.push({ id, name });
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(err => this.showAlert(err));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
-
-          <Dialog
-            id="dialog4"
-            title="Удаление сохранения"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Config
             id="config"
@@ -930,7 +468,7 @@ class App extends React.Component {
                       return;
                     }
 
-                    this.setState({ depo: val, changed: true });
+                    this.setState({ depo: val });
                   }}
                 />
               </label>
@@ -964,7 +502,8 @@ class App extends React.Component {
                 this.save(this.getTitle());
               }
               else {
-                this.update(this.getTitle());
+                this.update(this.getTitle())
+                  .then(() => this.setState({ changed: false, saved: true }))
               }
               return true;
             }}
@@ -992,7 +531,7 @@ class App extends React.Component {
                               onBlur={value => {
                                 const dataCopy = [...data];
                                 dataCopy[lineConfigIndex][toolType == "Недвижимость" ? "depo" : "secondDepo"] = value;
-                                this.setState({ data: dataCopy, changed: true });
+                                this.setState({ data: dataCopy });
                               }}
                               unsigned="true"
                               disabled={toolType === "Трейдинг"}
@@ -1018,7 +557,7 @@ class App extends React.Component {
                               onBlur={value => {
                                 const dataCopy = [...data];
                                 dataCopy[lineConfigIndex].monthPay = value;
-                                this.setState({ data: dataCopy, changed: true });
+                                this.setState({ data: dataCopy });
                               }}
                               unsigned="true"
                               format={formatNumber}
@@ -1044,7 +583,7 @@ class App extends React.Component {
                             onBlur={value => {
                               const dataCopy = [...data];
                               dataCopy[lineConfigIndex].investPercent = value / 100;
-                              this.setState({ data: dataCopy, changed: true });
+                              this.setState({ data: dataCopy });
                             }}
                             unsigned="true"
                             format={formatNumber}
@@ -1072,7 +611,7 @@ class App extends React.Component {
                               const dataCopy = [...data];
                               const prop = "profitPercent";
                               dataCopy[lineConfigIndex][prop] = value / 100;
-                              this.setState({ data: dataCopy, changed: true });
+                              this.setState({ data: dataCopy });
                             }}
                             unsigned="true"
                             format={formatNumber}
@@ -1103,7 +642,7 @@ class App extends React.Component {
                               const dataCopy = [...data];
                               const prop = "ofzVal";
                               dataCopy[lineConfigIndex][prop] = value / 100;
-                              this.setState({ data: dataCopy, changed: true });
+                              this.setState({ data: dataCopy });
                             }}
                             unsigned="true"
                             format={formatNumber}
@@ -1130,7 +669,7 @@ class App extends React.Component {
                               onBlur={value => {
                                 const dataCopy = [...data];
                                 dataCopy[lineConfigIndex].activeInvestVal = value;
-                                this.setState({ data: dataCopy, changed: true });
+                                this.setState({ data: dataCopy });
                               }}
                               unsigned="true"
                               format={formatNumber}
@@ -1149,7 +688,7 @@ class App extends React.Component {
           </Dialog>
 
         </div>
-      </Provider>
+      </StateContext.Provider>
     );
   }
 }
