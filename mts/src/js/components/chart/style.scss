@@ -7,6 +7,18 @@
   .anticon-loading {
     font-size: 3em;
   }
+
+  .disclaimer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    p {
+      font-size: 1.5em;
+      margin-top: 1em!important;
+    }
+  }
 }
 
 #chart {
