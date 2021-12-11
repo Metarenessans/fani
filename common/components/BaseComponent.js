@@ -293,7 +293,7 @@ export default class BaseComponent extends React.Component {
       message.error(`Не удалось обновить сохранение: ${error}`);
     }
 
-    return this.setStateAsync({ changed: false });
+    return this.setStateAsync({ saved: true, changed: false });
   }
 
   /**

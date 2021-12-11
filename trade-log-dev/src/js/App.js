@@ -8,7 +8,6 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
-import SaveDialog   from "../../../common/components/save-dialog";
 import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
@@ -683,15 +682,14 @@ export default class App extends BaseComponent {
                                           "trade-log-button--filled",
                                           this.state.changed && "header__changed-button"
                                         )}
-                                        onClick={async e => {
+                                        onClick={e => {
                                           this.lastSavedState = cloneDeep(this.state);
                                           const { id } = this.state;
                                           if (id == null) {
                                             dialogAPI.open(saveDialogID, e.target);
                                           }
                                           else {
-                                            await this.update(this.getTitle());
-                                            this.setStateAsync({ saved: true });
+                                            this.update(this.getTitle());
                                           }
                                         }}
                                       >
