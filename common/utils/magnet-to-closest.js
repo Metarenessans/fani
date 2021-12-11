@@ -17,5 +17,5 @@
  * @todo Написать тесты
  */
 export default function magnetToClosest(number, step) {
-  return Math.round(number / step) * step;
+  return Math.max(Math.round(number / step) * step, step);
 }
