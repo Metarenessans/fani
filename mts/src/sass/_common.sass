@@ -164,12 +164,14 @@ body
 
     .numeric-input-wrap
       font-size: .4em
-      
+
+      button
+        right:  -1em
       +xs
         button 
           height: 1.6em
           width:  1.6em
-          right:  .4rem
+          right: -1.8em!important
           svg
             height: 0.8em
             width:  0.8em
@@ -292,6 +294,11 @@ body
     +xs
       font-size: 1.4em
 
+      .numeric-input-wrap
+        button
+          height: 0.7em!important
+          width:  0.7em!important
+
     &__paginator
       margin-top: 2em
       padding: 0 2.5em
@@ -382,6 +389,7 @@ body
         background-color: #f4f7fb
 
       th
+        white-space: nowrap
         width: (100% / 4)
 
       th,

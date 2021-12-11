@@ -48,13 +48,14 @@
     "url-loader": "^4.1.0",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.1"
+    "webpack-dev-server": "^3.11.3"
   },
   "dependencies": {
     "@ant-design/charts": "^1.2.14",
     "@ant-design/icons": "^4.0.5",
     "antd": "^3.24.2",
     "anychart": "^8.7.1",
+    "development": "0.0.6",
     "jquery": "^3.6.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",

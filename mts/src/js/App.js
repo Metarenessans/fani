@@ -1909,6 +1909,7 @@ class App extends BaseComponent {
                               format={number => round(number, 2)}
                               suffix="%"
                               round={"false"}
+                              unsigned="false"
                               key={percentage}
                               defaultValue={percentage}
                               onBlur={ percentage => this.setState({ percentage }) }
@@ -2091,7 +2092,11 @@ class App extends BaseComponent {
                                   <td>{((page - 1) * period) + (index + 1)}</td>
                                   <td>{kod}</td>
                                   <td>
-                                    <Input 
+                                    {/* ~~~ */}
+                                    <NumericInput
+                                      unsigned="false"
+                                      format={number => formatNumber(number)}
+                                      round={"false"}
                                       defaultValue={kodTable[index]?.fact || 0}
                                       onBlur={e => {
                                         if (!kodTable[index]) {
@@ -2101,6 +2106,16 @@ class App extends BaseComponent {
                                         this.setState({ kodTable });
                                       }}
                                     />
+                                    {/* <Input 
+                                      defaultValue={kodTable[index]?.fact || 0}
+                                      onBlur={e => {
+                                        if (!kodTable[index]) {
+                                          kodTable[index] = {};
+                                        }
+                                        kodTable[index].fact = e.target.value;
+                                        this.setState({ kodTable });
+                                      }}
+                                    /> */}
                                   </td>
                                   <td>
                                     <Input
