@@ -449,7 +449,11 @@ export default class FirstStep extends React.Component {
                               ?
                                 <input
                                   type="time"
-                                  value={moment(new Date(enterTime)).format("HH:mm")}
+                                  value={
+                                    enterTime != null
+                                      ? moment(new Date(enterTime)).format("HH:mm")
+                                      : null
+                                  }
                                   onChange={e => {
                                     const { value } = e.target;
                                     console.log(e, value);
