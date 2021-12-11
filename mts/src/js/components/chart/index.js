@@ -153,7 +153,7 @@ class Chart extends Component {
         {this.props.loading ?
           <div className="disclaimer">
             <LoadingOutlined /> 
-            <p>Подготовка графика может занимать до 1 минуты</p>
+            <p>Подготовка графика<br className="sm-only" /> может занимать до 1 минуты</p>
           </div>
           :
           <div id="chart"></div>
