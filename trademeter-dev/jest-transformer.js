@@ -1,16 +1,17 @@
 const config = {
   babelrc: false,
   presets: [
-    [
-      "@babel/env",
-      {
-        modules: false
-      }
-    ],
-    "@babel/react"
+    // [
+    //   "@babel/preset-env",
+    //   {
+    //     modules: false
+    //   }
+    // ],
+    "@babel/preset-react"
   ],
   plugins: [
-    "@babel/plugin-transform-modules-commonjs"
+    "@babel/plugin-transform-modules-commonjs",
+    // "@babel/plugin-transform-runtime"
   ]
 };
 module.exports = require("babel-jest").createTransformer(config);
