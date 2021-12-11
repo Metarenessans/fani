@@ -41,6 +41,7 @@ import params              from "../../../common/utils/params"
 import round               from "../../../common/utils/round"
 import roundUp             from "../../../common/utils/round-up"
 import typeOf              from "../../../common/utils/type-of"
+import magnetToClosest     from "../../../common/utils/magnet-to-closest"
 import { Tools, Tool, template } from "../../../common/tools"
 
 import Iteration from "./utils/iteration"
@@ -595,17 +596,15 @@ class App extends Component {
   updateDepoPersentageStart() {
     const { currentDay, data } = this.state;
 
-    const nearest = (n, step) => step * Math.round(n / step);
-
     return new Promise((resolve, reject) => {
       let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
-      if (this.state.depoPersentageStart) {
-        depoPersentageStart = nearest(this.state.depoPersentageStart, depoPersentageStart);
+      if (this.state.depoPersentageStart != null) {
+        depoPersentageStart = magnetToClosest(
+          this.state.depoPersentageStart > 100 ? 0 : this.state.depoPersentageStart,
+          depoPersentageStart
+        );
       }
 
-      if (depoPersentageStart > 100) {
-        depoPersentageStart = 100;
-      }
       else if (depoPersentageStart < 0) {
         depoPersentageStart = 0;
       }
@@ -1603,7 +1602,7 @@ class App extends Component {
       saved,
       dataLength,
       depoEndFormat,
-      investorInfo,
+      depoPersentageStart
     } = this.state;
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
@@ -1764,7 +1763,7 @@ class App extends Component {
                           max={this.state.mode == 0 ? this.state.depoEnd : null}
                           round="true"
                           unsigned="true"
-                          onBlur={val => {
+                          onBlur={async val => {
                             let depoStart = [...this.state.depoStart];
                             const { mode } = this.state;
 
@@ -1773,11 +1772,13 @@ class App extends Component {
                             }
 
                             if (val === "") {
-                              val = 10000;
+                              val = 10_000;
                             }
 
                             depoStart[mode] = Number(val);
-                            this.setState({ depoStart }, this.recalc)
+                            await this.setStateAsync({ depoStart });
+                            await this.recalc();
+                            await this.updateDepoPersentageStart();
                           }}
                           onChange={(e, val) => {
                             if (isNaN(val)) {
@@ -2480,28 +2481,16 @@ class App extends Component {
                         </span>
 
                         {(() => {
-                          const { mode, depoStart, depoPersentageStart } = this.state;
                           let step = currentTool.guarantee / data[currentDay - 1].depoStart * 100;
-                          if (step > 100) {
-                            console.warn('step > 100');
-                            for (let i = 0; i < tools.length; i++) {
-                              let s = tools[i].guarantee / depoStart[mode] * 100;
-                              if (s < 100) {
-                                this.setState({
-                                  currentToolCode: tools[i].code,
-                                  // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
-                                  currentToolIndex: null,
-                                });
-                                step = s;
-                                break;
-                              }
-                            }
+                          if (depoPersentageStart > 100) {
+                            step = 0;
                           }
-                          let min = step;
+
+                          const min = step;
 
                           return (
                             <CustomSlider
-                              value={depoPersentageStart}
+                              value={depoPersentageStart > 100 ? 0 : depoPersentageStart}
                               min={min}
                               max={100}
                               step={step}
@@ -2566,11 +2555,7 @@ class App extends Component {
                           </Tooltip>
                         </header>
                         <ToolSelect
-                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
-                          onBlur={() => {
-                            this.setStateAsync({ isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchingTools());
-                          }}
+                          errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
                           toolsLoading={this.state.toolsLoading}
                           disabled={this.state.toolsLoading}
                           tools={tools}
@@ -2579,40 +2564,12 @@ class App extends Component {
                             const { depoStart, days, mode } = this.state;
                             const currentTool = tools[currentToolIndex]; 
 
-                            // Искомое значение на ползунке, к котором мы хотим прижаться
-                            let toFind = this.state.depoPersentageStart;
+                            let depoPersentageStart = this.state.depoPersentageStart;
                             let step = currentTool.guarantee / data[currentDay - 1].depoStartTest * 100;
                             if (step > 100) {
-                              // Тут ищем инстурмент, с которым нам хватит на 1 контракт
-                              for (let i = 0; i < tools.length; i++) {
-                                let s = tools[i].guarantee / depoStart[mode] * 100;
-                                if (s < 100) {
-                                  this.setState({ currentToolIndex: i });
-                                  step = s;
-                                  break;
-                                }
-                              }
+                              depoPersentageStart = 0;
                             }
 
-                            // Определяю кол-во шагов
-                            let rangeLength = Math.floor(100 / step);
-                            if (rangeLength < 1 || rangeLength == Infinity) {
-                              rangeLength = 1;
-                              console.warn("Range length is out of bounds!");
-                            }
-                            // Заполняю массив шагами типа 0.2, 0.4, 0.6 итд
-                            let range = new Array(rangeLength).fill(0).map((val, i) => step * (i + 1));
-
-                            // Пытаюсь найти ближайшее значение к предыдущему значеню ползунка "процент депозита на вход в сделку"
-                            let depoPersentageStart = range.reduce(function (prev, curr) {
-                              return (Math.abs(curr - toFind) < Math.abs(prev - toFind) ? curr : prev);
-                            });
-                            
-                            depoPersentageStart = round(depoPersentageStart, 2);
-                            depoPersentageStart = Math.max(depoPersentageStart, step);
-                            depoPersentageStart = Math.min(depoPersentageStart, 100);
-
-                            // console.log("to search", currentTool, currentTool.getSortProperty());
                             this.setState({ 
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               isToolsDropdownOpen: false,
@@ -2625,8 +2582,12 @@ class App extends Component {
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
+                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                          onBlur={() => {
+                            this.setStateAsync({ isToolsDropdownOpen: false })
+                              .then(() => this.imitateFetchingTools());
+                          }}
                         />
-                        
                       </div>
                     </div>
                   </Col>
@@ -2827,17 +2788,34 @@ class App extends Component {
                           <div className="section4-content card">
                             <div className="section4-row">
                               <div className="section4-l">Контрактов</div>
-                              <div className="section4-r">{ formatNumber(data[currentDay - 1].contracts) }</div>
+                              <div className="section4-r">
+                                {depoPersentageStart > 100
+                                  ? 0
+                                  : formatNumber(data[currentDay - 1].contracts)
+                                }
+                              </div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
                               <div className="section4-l">Шагов цены</div>
-                              <div className="section4-r">{ formatNumber(pointsForIteration) }</div>
+                              <div className="section4-r">
+                                {depoPersentageStart > 100
+                                  ? placeholder
+                                  : formatNumber(pointsForIteration)
+                                }
+                              </div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
                               <div className="section4-l">Итераций</div>
-                              <div className="section4-r">{ Math.min(iterations * (directUnloading ? 1 : 2), 100) }</div>
+                              <div className="section4-r">
+                                {depoPersentageStart > 100
+                                  ? placeholder
+                                  : formatNumber(
+                                      Math.min(iterations * (directUnloading ? 1 : 2), 100)
+                                    )
+                                }
+                              </div>
                             </div>
                             {/* /.row */}
                             <div className="section4-row">
