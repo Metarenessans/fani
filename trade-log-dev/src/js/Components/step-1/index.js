@@ -456,7 +456,6 @@ export default class FirstStep extends React.Component {
                                   }
                                   onChange={e => {
                                     const { value } = e.target;
-                                    console.log(e, value);
                                     const h = +value.split(":")[0];
                                     const m = +value.split(":")[1];
 
