@@ -710,6 +710,9 @@ class App extends BaseComponent {
       const currentPrice = tool.currentPrice;
       this.setState({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] }, () => resolve());
     })
+    if (!tool) {
+      tool = this.getCurrentTool();
+    }
   }
 
   packSave() {
