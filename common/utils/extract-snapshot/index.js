@@ -22,7 +22,7 @@
  * @this {import("react").Component}
  * @param {Snapshot} snapshot {@link Snapshot Ответ с сервера}, который нужно распарсить
  * @param {(static: object, dynamic?: object) => object} parseFn Коллбэк-парсер
- * @returns {Promise}
+ * @returns {Promise<{}>} Данные, пропушенные в стейт 
  */
 export default async function extractSnapshot(snapshot, parseFn) {
   // Начинаем обрабатывать сохранение
@@ -52,4 +52,5 @@ export default async function extractSnapshot(snapshot, parseFn) {
   // Рендеринг после пуша в стейт может быть долгим,
   // Поэтому мы выключаем флаг загрузки отдельным шагом
   await this.setStateAsync({ loading: false });
+  return state;
 }
