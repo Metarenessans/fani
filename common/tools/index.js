@@ -548,12 +548,58 @@ class Tools {
   /**
    * Возвращает индекс искомого инструмента
    *
-   * @argument {string} code
-   * @argument {Tool[]} tools
+   * @argument {string} search Код инструмента, индекс которого нужно найти
+   * @argument {Tool[]} tools Инструменты, среди которых идет поиск
    * @returns {number}
    */
-  static getIndexByCode(code, tools) {
-    return this.getToolIndexByCode(tools, code);
+  static getIndexByCode(search, tools) {
+    if (!search || !tools.length) {
+      return 0;
+    }
+
+    const alike = [];
+
+    let index = -1;
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+
+      if (
+        tool.getSortProperty() === search ||
+        tool.toString() === search ||
+        tool.code === search
+      ) {
+        return i;
+      }
+
+      // Текущий инструмент - фьючерс
+      if (tool.dollarRate == 0) {
+        if (tool.code.slice(0, 2).toLowerCase() == search.slice(0, 2).toLowerCase()) {
+          alike.push(tool);
+        }
+      }
+
+      // Если в id есть месяц и год, то можно начать искать ближайший
+      const regexp = /\d{1,2}\.\d{1,2}/;
+      const found = regexp.exec(search);
+      if (found) {
+        // Находим все инструменты с одинаковым кодом
+        let alike = [...tools].filter(tool =>
+          tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
+        );
+
+        const sorted = this.sort(alike.map(t => t.getSortProperty()).concat(search));
+        index = tools.indexOf(alike[0]) + sorted.indexOf(sorted.find(n => n == search));
+      }
+    }
+
+    if (index == -1 && alike.length) {
+      const toolsSorted = this.sort(alike);
+      const s = toolsSorted[0].toString();
+      return this.getIndexByCode(s, tools);
+    }
+
+    return Math.max(index, 0);
   }
 
   /**
