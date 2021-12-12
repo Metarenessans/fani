@@ -319,7 +319,7 @@ class Tool {
       return this.fullName + (str ? ` (${str})` : "");
     }
     else if (this.shortName) {
-      return this.shortName + (str ? `(${str})` : "");
+      return this.shortName + (str ? ` (${str})` : "");
     }
 
     return str;
