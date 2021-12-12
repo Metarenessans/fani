@@ -621,8 +621,6 @@ const SettingsGenerator = memo(props => {
         ranullPlusMode
       } = genaSave;
 
-      console.log("Стягиваем данные в гену", genaSave);
-
       setDepo(depo);
       setSecondaryDepo(secondaryDepo);
       setLoad(load);
@@ -643,8 +641,6 @@ const SettingsGenerator = memo(props => {
       // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
       let _presets = cloneDeep(presets);
       if (genaSave.firstLoad) {
-        console.log("ПЕРВАЯ ЗАГРУЗКА");
-
         _presets.splice(0, 3, ...initialPresets);
         // Переносится только инструмент
         _presets = _presets.map((preset, index) => {
@@ -1062,7 +1058,6 @@ const SettingsGenerator = memo(props => {
 
               <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
 
-                {/* Торговый инструмент */}
                 <label className="input-group">
                   <span className="input-group__label">
                     <span className="visually-hidden">Торговый</span>
@@ -1086,7 +1081,8 @@ const SettingsGenerator = memo(props => {
                     {toolsLoading && tools.length == 0
                       ?
                         <Select.Option key={0} value={0}>
-                          <LoadingOutlined style={{ marginRight: ".2em" }} /> Загрузка...
+                          <LoadingOutlined style={{ marginRight: ".2em" }} />
+                          Загрузка...
                         </Select.Option>
                       :
                         sortToolsBySearchValue(searchVal,tools).map((tool, index) => (
@@ -1925,13 +1921,11 @@ const SettingsGenerator = memo(props => {
 }, (prevProps, nextProps) => isEqual(prevProps.genaSave, nextProps.genaSave))
 
 const onSGOpen = () => {
-  console.log("onSGOpen WOW");
   open = true;
   changed = false;
 };
 
 const onSGClose = () => {
-  console.log("onSGClose GAY");
   open = false;
   changed = false;
 };
