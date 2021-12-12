@@ -8,7 +8,6 @@ import "./style.scss";
 const isMobile = innerWidth <= 768;
 
 const propTypes = {
-
   /**
    * Дефолтное значение
    * 
@@ -141,8 +140,8 @@ export default class NumericInput extends React.Component {
       return true;
     }
     return (
-      (canBeNegative === true || canBeNegative === "true") ||
-      (unsigned === false || unsigned === "false") // Обратная совместимость
+      (canBeNegative === true  || canBeNegative === "true") ||
+      (unsigned      === false || unsigned      === "false") // Обратная совместимость
     );
   }
 
@@ -348,7 +347,6 @@ export default class NumericInput extends React.Component {
         visible={error.length > 0}
       >
         <div className={clsx("numeric-input-wrap", className)}>
-
           <Input
             type="text"
             inputMode="decimal"
