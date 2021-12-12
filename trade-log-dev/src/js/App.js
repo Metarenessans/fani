@@ -299,7 +299,7 @@ export default class App extends BaseComponent {
   }
   
   componentDidMount() {
-    super.componentDidMount();
+    super.bindEvents();
 
     this.fetchInitialData()
       .then(() => this.setState({ changed: false }));
@@ -342,28 +342,6 @@ export default class App extends BaseComponent {
     this.fetchTools();
     await this.fetchSnapshots();
     await this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
-  }
-
-  fetchTools() {
-    return new Promise(resolve => {
-      const { investorInfo } = this.state;
-      const requests = [];
-      const parsedTools = [];
-      this.setState({ toolsLoading: true });
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(parsedTools.concat(tools)))
-            .then(tools => parsedTools.push(...tools))
-            .catch(error => message.error(`Не удалось получить инстурменты! ${error}`))
-        );
-      }
-
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ tools: parsedTools, toolsLoading: false }))
-        .then(() => resolve());
-    });
   }
 
   packSave() {
@@ -444,18 +422,6 @@ export default class App extends BaseComponent {
     catch (error) {
       message.error(error);
     }
-  }
-
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools);
-  }
-
-  getOptions() {
-    return this.getTools().map((tool, idx) => ({
-      idx,
-      label: String(tool)
-    }));
   }
 
   render() {
