@@ -767,21 +767,21 @@ class App extends BaseComponent {
     const initialState = cloneDeep(this.initialState);
     const percentage = data.percentage      ?? initialState.percentage;
     return {
-      depo:            data.depo            ?? initialState.depo,
-      priceRange:      data.priceRange      ?? initialState.priceRange,
+      depo:              data.depo            ?? initialState.depo,
+      priceRange:        data.priceRange      ?? initialState.priceRange,
       percentage,
-      profitRatio:     data.profitRatio     ?? initialState.profitRatio,
-      risk:            data.risk            ?? initialState.risk,
-      mode:            data.mode            ?? initialState.mode,
-      presetSelection: data.presetSelection ?? initialState.presetSelection,
-      days:            data.days            ?? initialState.days,
-      scaleOffset:     data.scaleOffset     ?? initialState.scaleOffset,
-      kodTable:        data.kodTable        ?? initialState.kodTable,
+      profitRatio:       data.profitRatio     ?? initialState.profitRatio,
+      risk:              data.risk            ?? initialState.risk,
+      mode:              data.mode            ?? initialState.mode,
+      presetSelection:   data.presetSelection ?? initialState.presetSelection,
+      days:              data.days            ?? initialState.days,
+      scaleOffset:       data.scaleOffset     ?? initialState.scaleOffset,
+      kodTable:          data.kodTable        ?? initialState.kodTable,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
-      customTools:    (data.customTools || []).map(tool => Tool.fromObject(tool, { investorInfo })),
-      currentToolCode: data.currentToolCode ?? initialState.currentToolCode,
-      investorInfo:   { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
+      customTools:      (data.customTools || []).map(tool => Tool.fromObject(tool, { investorInfo })),
+      currentToolCode:   data.currentToolCode ?? initialState.currentToolCode,
       currentToolRegion: data.currentToolRegion ?? "",
+      investorInfo:      { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
     }
   }
 
