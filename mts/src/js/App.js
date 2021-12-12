@@ -345,7 +345,7 @@ class App extends BaseComponent {
 
       save.firstLoad = true;
 
-      console.log("parseGENASave", save);
+      console.log("Сохранение ГЕНЫ распаршено:", save);
       return save;
     };
 
