@@ -208,6 +208,82 @@ const parseTool = tool => {
 
 class Tool {
 
+  /**
+   * Сырой инструмент, каким он пришел с сервера
+   * 
+   * @type {template}
+   */
+  ref;
+
+  /**
+   * Цена шага
+   * 
+   * @type {number}
+   */
+  stepPrice;
+
+  /**
+   * Шаг цены
+   * 
+   * @type {number}
+   */
+  priceStep;
+
+  /**
+   * TODO: добавить описание
+   * 
+   * @type {number}
+   */
+  averageProgress;
+
+  /**
+   * ГО (гарантийное обеспечение)
+   * 
+   * @type {number}
+   */
+  guarantee;
+
+  /**
+   * Текущая цена
+   * 
+   * @type {number}
+   */
+  currentPrice;
+  
+  /** @type {number} */
+  volume;
+
+  /**
+   * Размер лота
+   * 
+   * @type {number}
+   */
+  lotSize;
+
+  /** @type {number} */
+  dollarRate;
+
+  /** 
+   * Дневной АДР
+   * 
+   * @type {number}
+   */
+  adrDay;
+
+  /**
+   * Недельный АДР
+   *
+   * @type {number}
+   */
+  adrWeek;
+
+  /**
+   * Месячный АДР
+   *
+   * @type {number}
+   */
+  adrMonth;
+
   constructor(base = {}) {
     for (let prop in template) {
       this[prop] = template[prop];
