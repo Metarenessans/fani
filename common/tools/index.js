@@ -606,7 +606,7 @@ class Tools {
    * @argument {string} code
    * @argument {Tool[]} tools
    * @returns {number}
-   * @deprecated
+   * @deprecated Use {@link getIndexByCode} instead
    */
   static getToolIndexByCode(tools = [], search = "") {
     if (!search || !tools.length) {
