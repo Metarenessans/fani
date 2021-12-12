@@ -40,3 +40,9 @@ test("Правильно работает с отрицательными чис
   expect( round(-120.010007, 2) ).toBe(-120.01);
 
 });
+
+test("Использует Math.round, если не передан второй аргумент", () => {
+  expect(round(0.1)).toBe(0);
+  expect(round(0.5)).toBe(1);
+  expect(round(0.9)).toBe(1);
+});
