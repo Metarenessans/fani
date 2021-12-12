@@ -160,9 +160,9 @@ const parseTool = tool => {
     adrMonth = round(adrDay * 1.75, 4);
   }
 
-  // Оставляем такое же кол-во знаков после запятой, что и в шаге цены
   const precision = fraction(priceStep).length;
-  if (precision) {
+  // Если в шаге цены есть дробная часть, то округляем АДР до такого же кол-ва знаков после запятой
+  if (precision > 0) {
     adrDay = round(adrDay, precision);
     adrWeek = round(adrWeek, precision);
     adrMonth = round(adrMonth, precision);
