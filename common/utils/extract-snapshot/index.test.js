@@ -1,27 +1,30 @@
 import extractSnapshot from ".";
 
-const Component = {
-  state: { initial: 0 },
+const ComponentMock = {
+  state: { initialValue: 0 },
   setState(state, callback) {
     this.state = { ...this.state, ...state };
     callback?.();
+  },
+  async setStateAsync(state) {
+    this.state = { ...this.state, ...state };
   }
 };
 
 /** @type {extractSnapshot} */
-const func = extractSnapshot.bind(Component);
+const func = extractSnapshot.bind(ComponentMock);
 
-const snapshot = require("../../api/snapshot.json");
+const snapshot = require("./snapshot.json");
 
 test("Данные, которые возвращаются из коллбэка, пушатся в стейт", async () => {
   const parseFn = () => ({ test: true });
 
   await func(snapshot.data, parseFn);
   // Старые знаения в стейте остались неизмененными
-  expect(Component.state.initial).toEqual(0);
+  expect(ComponentMock.state.initialValue).toEqual(0);
   // Новые значения добавились в стейт
-  expect(Component.state).toHaveProperty("test");
-  expect(Component.state.id).toEqual(snapshot.data.id);
+  expect(ComponentMock.state).toHaveProperty("test");
+  expect(ComponentMock.state.id).toEqual(snapshot.data.id);
 })
 
 test("Коллбэк вызывается", async () => {
