@@ -78,6 +78,8 @@ class App extends BaseComponent {
 
     this.deafultTitle = <>Моделирование Торговой&nbsp;Стратегии</>;
 
+    const currentTool = this.getCurrentTool();
+
     this.initialState = {
       // Копирует `initialState` из BaseComponent
       ...this.initialState,
@@ -89,7 +91,10 @@ class App extends BaseComponent {
 
       depo: 1_000_000,
       page: 1,
-      priceRange: [null, null],
+      priceRange: [
+        currentTool.currentPrice,
+        currentTool.currentPrice
+      ],
       percentage: 10,
       days: 1,
       prevDays: 1,
@@ -289,6 +294,7 @@ class App extends BaseComponent {
 
     super.fetchSnapshots();
     await super.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
+    await this.updatePriceRange();
 
     // Поулчаем конкретный инструмент, если в сохранении есть регион инструмента
     const { currentToolCode, currentToolRegion } = this.state;
@@ -298,6 +304,8 @@ class App extends BaseComponent {
     else {
       await this.fetchFutures();
     }
+
+    this.updatePriceRange();
 
     // Фоновая загрузка всех инструментов
     (async () => {
@@ -309,9 +317,6 @@ class App extends BaseComponent {
     this.fetchCompanyQuotes();
 
     this.setFetchingToolsTimeout();
-    if (this.state.id == null) {
-      this.updatePriceRange(this.getCurrentTool());
-    }
 
     this.fetchGENA();
   }
