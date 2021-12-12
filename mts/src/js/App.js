@@ -367,7 +367,6 @@ class App extends BaseComponent {
                 lastSavedSG = cloneDeep(genaSave);
                 sgChanged = false;
 
-                console.log("getGenaSnapshot", genaSave);
                 this.setStateAsync({ genaID: id, genaSave })
                   .then(() => delay(100))
                   .then(() => this.exportDataToSG(true))
@@ -395,7 +394,6 @@ class App extends BaseComponent {
           lastSavedSG = cloneDeep(genaSave);
           sgChanged = false;
 
-          console.log("getGenaSnapshot", genaSave);
           this.setStateAsync({ genaID: response.data.id, genaSave })
             .then(() => delay(100))
             .then(() => this.exportDataToSG(true))
