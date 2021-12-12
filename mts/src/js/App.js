@@ -704,6 +704,12 @@ class App extends BaseComponent {
     }
   }
 
+  /**
+   * Задает шаг `step` относительно текущей цены инструмента `tool`
+   * 
+   * @param {Tool} tool Инструмент, текущая цена которого берется за центр
+   * @param {number} step Шаг
+   */
   updatePriceRange(tool, step = 0) {
     // console.log(`%c updatePriceRange, ${tool.code}, ${step}`, "background-color: yellow; color: black");
     return new Promise(resolve => {
