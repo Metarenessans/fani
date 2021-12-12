@@ -30,7 +30,7 @@ import stepConverter   from './components/settings-generator/step-converter';
 
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
-import { cloneDeep, isEqual } from "lodash"
+import { clamp, cloneDeep, isEqual } from "lodash"
 
 import { Tools, Tool, template } from "../../../common/tools"
 
@@ -178,9 +178,7 @@ class App extends BaseComponent {
 
     const { shouldImportSG } = this.state;
     if (shouldImportSG) {
-      setTimeout(() => {
-        this.importDataFromGENA(this.state.genaSave)
-      }, 100)
+      setTimeout(() => this.importDataFromGENA(this.state.genaSave), 100);
     }
   }
 
@@ -294,7 +292,6 @@ class App extends BaseComponent {
 
     super.fetchSnapshots();
     await super.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
-    await this.updatePriceRange();
 
     // Поулчаем конкретный инструмент, если в сохранении есть регион инструмента
     const { currentToolCode, currentToolRegion } = this.state;
@@ -305,13 +302,13 @@ class App extends BaseComponent {
       await this.fetchFutures();
     }
 
-    this.updatePriceRange();
-
     // Фоновая загрузка всех инструментов
     (async () => {
       await this.setStateAsync({ toolSelectDisabled: true });
       const tools = await this.prefetchTools();
       await this.setStateAsync({ toolSelectDisabled: false, tools });
+      await this.syncToolsWithInvestorInfo();
+      await this.clampPriceRange();
     })();
 
     this.fetchCompanyQuotes();
@@ -713,6 +710,7 @@ class App extends BaseComponent {
       tool = this.getCurrentTool();
     }
     const currentPrice = tool.currentPrice;
+    console.log("updatePriceRange", tool, step);
     return this.setStateAsync({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] });
   }
 
@@ -779,7 +777,8 @@ class App extends BaseComponent {
   }
 
   clampPriceRange(priceRange) {
-    let range = [...priceRange].sort((l, r) => l - r);
+    priceRange = priceRange || this.state.priceRange;
+    let range = priceRange.sort((l, r) => l - r);
 
     const { days, scaleOffset } = this.state;
     // Проверка на выход за диапазоны
@@ -808,10 +807,6 @@ class App extends BaseComponent {
   async extractSnapshot(snapshot) {
     try {
       const state = await super.extractSnapshot(snapshot, this.parseSnapshot);
-      await this.syncToolsWithInvestorInfo();
-      await this.clampPriceRange(state.priceRange);
-      // TODO: очевидный костыль
-      await delay(250);
       return this.setStateAsync({ presetSelection: state.presetSelection })
     }
     catch (error) {
