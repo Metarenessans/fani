@@ -24,7 +24,7 @@ import { Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
-import sortInputFirst   from "../../../../../common/utils/sort-input-first"
+import sortToolsBySearchValue   from "../../../../../common/utils/sort-tools-by-search-value"
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import round           from '../../../../../common/utils/round'
@@ -1086,18 +1086,11 @@ const SettingsGenerator = memo(props => {
                           <LoadingOutlined style={{ marginRight: ".2em" }} /> Загрузка...
                         </Select.Option>
                       :
-                        sortInputFirst(
-                          searchVal,
-                          tools.map((tool, idx) => ({
-                            idx:   idx,
-                            label: String(tool),
-                          }))
-                        )
-                          .map(option => (
-                            <Select.Option key={option.idx} value={option.idx} title={option.label}>
-                              {option.label}
-                            </Select.Option>
-                          ))
+                        sortToolsBySearchValue(searchVal,tools).map((tool, index) => (
+                          <Select.Option key={index} value={index} title={String(tool)}>
+                            {String(tool)}
+                          </Select.Option>
+                        ))
                     }
                   </Select>
                 </label>
