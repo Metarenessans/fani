@@ -141,13 +141,21 @@ export default class CustomSlider extends React.Component {
     withValue = withValue ?? true;
     withTooltip = withTooltip ?? tooltipVisible ?? false;
     return (
-      <div className={clsx("custom-slider", withValue && "with-value", className)}>
+      <div 
+        className={clsx("custom-slider", withValue && "with-value", className)}
+        onMouseEnter={() => this.setState({ changedManually: true })}
+        onMouseLeave={() => this.setState({ changedManually: false })}
+      >
         <Slider
           {...this.props}
           className="custom-slider__input"
           tooltipVisible={withTooltip}
           value={value}
-          onChange={value => this.onChange(value)}
+          onChange={value => {
+            if (this.state.changedManually) {
+              this.onChange(value);
+            }
+          }}
           onAfterChange={value => onAfterChange && onAfterChange(value)}
         />
         {withValue &&
