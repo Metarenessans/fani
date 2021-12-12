@@ -25,6 +25,7 @@
     "babel-plugin-root-import": "^6.5.0",
     "babel-plugin-transform-imports": "^2.0.0",
     "browser-sync": "^2.26.7",
+    "clean-webpack-plugin": "^0.1.18",
     "clsx": "^1.1.1",
     "css-loader": "^3.4.2",
     "eslint": "^8.2.0",
