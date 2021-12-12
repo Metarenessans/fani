@@ -1055,6 +1055,7 @@ class App extends BaseComponent {
                       <ToolSelect
                         value={this.getCurrentToolIndex()}
                         onChange={async currentToolIndex => {
+                          const tools = this.getTools();
                           const currentTool = tools[currentToolIndex];
                           await this.updatePriceRange(currentTool);
                           await this.selectBasePreset();

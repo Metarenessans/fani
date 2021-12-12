@@ -18,7 +18,7 @@ export default function ToolSelect({
   const { state } = context;
   const { toolsLoading, toolSelectDisabled } = state;
 
-  const tools = context.getTools() ?? state.tools;
+  const tools = context.getTools();
 
   const [searchValue, setSearchValue] = useState("");
 
@@ -32,6 +32,7 @@ export default function ToolSelect({
         showSearch
         onSearch={value => setSearchValue(value)}
         onChange={async currentToolIndex => {
+          const tools = context.getTools();
           const currentTool = tools[currentToolIndex];
           const currentToolCode = currentTool.code;
           await context.setStateAsync({ currentToolCode, isToolsDropdownOpen: false });
