@@ -226,6 +226,17 @@ export default class BaseComponent extends React.Component {
   }
 
   /**
+   * Возвращает инструмент по коду
+   * 
+   * @param {string} code Код инструмента
+   * @returns {Tool}
+   */
+  getToolByCode(code) {
+    const tools = this.getTools();
+    return tools[Tools.getIndexByCode(code, tools)] ?? Tools.createArray()[0];
+  }
+
+  /**
    * 1. Делает GET запрос на https://fani144.ru/local/php_interface/s1/ajax/?method=getInvestorInfo (смотри {@link fetchInvestorInfo})
    * 
    * 2. Распаковывает данные в стейт по ключу `investorInfo` (смотри {@link applyInvestorInfo})
