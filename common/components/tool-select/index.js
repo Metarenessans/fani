@@ -28,7 +28,7 @@ export default function ToolSelect({
         className={errorMessage && "error"}
         disabled={toolsLoading || toolSelectDisabled}
         loading={toolsLoading || toolSelectDisabled}
-        value={toolsLoading && tools.length == 0 ? 0 : value}
+        value={toolsLoading ? 0 : value}
         showSearch
         onSearch={value => setSearchValue(value)}
         onChange={async currentToolIndex => {
