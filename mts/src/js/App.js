@@ -711,14 +711,11 @@ class App extends BaseComponent {
    * @param {number} step Шаг
    */
   updatePriceRange(tool, step = 0) {
-    // console.log(`%c updatePriceRange, ${tool.code}, ${step}`, "background-color: yellow; color: black");
-    return new Promise(resolve => {
-      const currentPrice = tool.currentPrice;
-      this.setState({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] }, () => resolve());
-    })
     if (!tool) {
       tool = this.getCurrentTool();
     }
+    const currentPrice = tool.currentPrice;
+    return this.setStateAsync({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] });
   }
 
   packSave() {
