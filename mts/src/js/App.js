@@ -752,6 +752,7 @@ class App extends BaseComponent {
         scaleOffset,
         customTools,
         currentToolCode,
+        currentToolRegion: this.getCurrentTool().region,
         kodTable,
         current_date: "#"
       },
