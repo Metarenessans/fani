@@ -1,17 +1,10 @@
-@import "../../sass/_mixins.scss";
-
-input.iPhone {
-  // padding-right: 1.4em !important;
-}
-
-.ant-input-affix-wrapper input {
-  // padding-right: 3.2em !important;
-}
+@import "../../sass/mixins";
 
 .numeric-input {
   $root: &;
 
   width: 100%;
+
   font-size: 1em;
 
   &-wrap {
@@ -47,7 +40,6 @@ input.iPhone {
         left: 50%;
         top:  50%;
         transform: translate(-50%, -50%) rotate(90deg);
-        // margin-top: .05em;
 
         // Дебильный костыль, чтобы иконка встала по центру
         margin-left: 0.01em;
