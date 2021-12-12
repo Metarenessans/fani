@@ -1,11 +1,11 @@
 import { round } from "lodash";
-import readyTools      from "../adr.json"
-import readyToolsNew   from "../adr-new.json"
-import readyToolsMarch from "../adr-march.json"
-import readyToolsApril from "../adr-april.json"
+import readyTools      from "../adr.json";
+import readyToolsNew   from "../adr-new.json";
+import readyToolsMarch from "../adr-march.json";
+import readyToolsApril from "../adr-april.json";
 
-import fraction        from "../utils/fraction"
-import magnetToClosest from "../utils/magnet-to-closest"
+import fraction        from "../utils/fraction";
+import magnetToClosest from "../utils/magnet-to-closest";
 
 const response = require("./row-tools.json");
 const responseObject = response[0];
@@ -44,8 +44,8 @@ const template = {
     [267, 41],
     [423, 27],
     [692, 13],
-    [960,  7],
-  ],
+    [960,  7]
+  ]
 };
 
 /**
@@ -94,7 +94,7 @@ const parseTool = tool => {
     // Оставляем такое же кол-во знаков после запятой, что и в priceStep
     const match = String(priceStep).match(/\.\d+/);
     if (match) {
-      stepPrice = round(stepPrice, match[0].length - 1)
+      stepPrice = round(stepPrice, match[0].length - 1);
     }
   }
   // Фьючерсы
@@ -107,7 +107,7 @@ const parseTool = tool => {
     // Оставляем такое же кол-во знаков после запятой, что и в priceStep
     const match = String(priceStep).match(/\.\d+/);
     if (match) {
-      stepPrice = round(stepPrice, match[0].length - 1)
+      stepPrice = round(stepPrice, match[0].length - 1);
     }
   }
 
@@ -437,7 +437,7 @@ class Tools {
 
         // Истек срок действия
         if (Number(tool.updateDate) > Number(tool.lastTradeDate)) {
-          return true
+          return true;
         }
       }
 
@@ -492,8 +492,8 @@ class Tools {
     return tools
       // Сортировка по алфавиту
       .sort((a, b) => {
-        const l = String(a.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
-        const r = String(b.toString()).toLowerCase().replace(/[\"\(\)\.]+/g, "").trim();
+        const l = String(a.toString()).toLowerCase().replace(/["().]+/g, "").trim();
+        const r = String(b.toString()).toLowerCase().replace(/["().]+/g, "").trim();
 
         let res = 0;
         for (let i = 0; i < Math.min(l.length, r.length); i++) {
@@ -524,7 +524,7 @@ class Tools {
             code = a;
           }
 
-          return [code, number]
+          return [code, number];
         };
 
         const [codeA, numberA] = convert(a.toString());
@@ -542,7 +542,7 @@ class Tools {
    * @returns {Tool[]}
    */
   static createArray() {
-    return response.map(rowTool => Tool.fromObject(rowTool))
+    return response.map(rowTool => Tool.fromObject(rowTool));
   }
 
   /**
