@@ -1,11 +1,11 @@
-import React, { memo } from "react"
-import { Select } from "antd"
-const { Option } = Select;
+import React, { memo } from "react";
+import { Select } from "antd";
 import { cloneDeep, isEqual } from "lodash";
-
-import round from "../../utils/round";
+import round   from "../../utils/round";
 
 import "./style.sass";
+
+// TODO: добавить документацию
 
 export default memo(class CustomSelect extends React.Component {
 
@@ -122,7 +122,7 @@ export default memo(class CustomSelect extends React.Component {
     
     value = String(value)
       .replace(/\s+/g, "")
-      .replace(/\,/g, ".")
+      .replace(/,/g, ".")
       .replace(/^0+/g, "0");
 
     if (
@@ -191,7 +191,7 @@ export default memo(class CustomSelect extends React.Component {
             this.inputElement = e.target;
             this.inputElement.addEventListener("input", e => {
               this.inputValue = e.target.value; 
-            })
+            });
           }
 
           if (e.keyCode == 13 || e.keyCode == 27) {
@@ -208,22 +208,13 @@ export default memo(class CustomSelect extends React.Component {
           }
         }}
       >
-        {
-          options
-            .map(option => this.format( option ))
-            .map((value, index) => (
-              <Option value={index} key={index}>{value}</Option>
-            ))
+        {options
+          .map(option => this.format(option))
+          .map((value, index) =>
+            <Select.Option value={index} key={index}>{value}</Select.Option>
+          )
         }
       </Select>
-    )
+    );
   }
-}, (prevProps, nextProps) => {
-  return false;
-  console.log(prevProps.options, nextProps.options, isEqual(prevProps.options, nextProps.options));
-  return (
-    prevProps.value == nextProps.value && 
-    prevProps.disabled == nextProps.disabled &&
-    isEqual(prevProps.options, nextProps.options)
-  ) 
-})
+}, (prevProps, nextProps) => false);
