@@ -22,6 +22,7 @@ $danger-color-lighter: lighten($danger-color, 5);
 $danger-color-transparent: rgba($danger-color, .45);
 
 $outline-width: 1px;
+$focus-outline-width-multiplier: 2;
 :root {
   --bg-color:                 white;
 
@@ -44,6 +45,6 @@ $outline-width: 1px;
   --danger-color-lighter: #{$danger-color-lighter};
   --danger-color-transparent: #{$danger-color-transparent};
 
-  --focus-outline-width: calc(var(--outline-width) * 1);
   --outline-width: #{$outline-width};
+  --focus-outline-width: calc(var(--outline-width) * #{$focus-outline-width-multiplier});
 }
