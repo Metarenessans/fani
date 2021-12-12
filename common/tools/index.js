@@ -220,15 +220,8 @@ class Tool {
   /**
    * Обновляет ГО инструмента
    *
-   * @argument {{
-   *  deposit: number,
-   *  status:  "KSUR"|"KPUR",
-   *  skill:   "SKILLED"|"UNSKILLED",
-   *  type:    "LONG"|"SHORT"
-   * }} investorInfo
-   * @argument {{
-   *  useDefault: boolean
-   * }} [options]
+   * @argument {import("../api/fetch/investor-info/investor-info").InvestorInfo} investorInfo
+   * @argument {{ useDefault: boolean }} [options]
    * @returns {Tool}
    */
   update(investorInfo, options) {
