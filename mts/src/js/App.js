@@ -2091,7 +2091,6 @@ class App extends BaseComponent {
                                   <td>{((page - 1) * period) + (index + 1)}</td>
                                   <td>{kod}</td>
                                   <td>
-                                    {/* ~~~ */}
                                     <NumericInput
                                       unsigned="false"
                                       format={number => formatNumber(number)}
@@ -2105,16 +2104,6 @@ class App extends BaseComponent {
                                         this.setState({ kodTable });
                                       }}
                                     />
-                                    {/* <Input 
-                                      defaultValue={kodTable[index]?.fact || 0}
-                                      onBlur={e => {
-                                        if (!kodTable[index]) {
-                                          kodTable[index] = {};
-                                        }
-                                        kodTable[index].fact = e.target.value;
-                                        this.setState({ kodTable });
-                                      }}
-                                    /> */}
                                   </td>
                                   <td>
                                     <Input
