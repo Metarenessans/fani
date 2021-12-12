@@ -1,28 +1,25 @@
-$bgColor:     white;
-$mainColor:   #4859b4;
-$accentColor: #3f6b33;
-$dangerColor: #cf1322;
+$primary-color:            #4859b4;
+$primary-color-light:      lighten($primary-color, 15);
+$primary-color-lighter:    lighten($primary-color, 5);
 
+$accent-color:             #3f6b33;
+$accent-color-light:       lighten($accent-color, 15);
+$accent-color-lighter:     lighten($accent-color, 5);
 
-$primary-color:         #4859b4;
-$primary-color-light:   lighten($primary-color, 15);
-$primary-color-lighter: lighten($primary-color, 5);
+$success-color:            #52c41a;
+$success-color-light:      lighten($success-color, 15);
+$success-color-lighter:    lighten($success-color, 5);
 
-$accent-color:         #3f6b33;
-$accent-color-light:   lighten($accent-color, 15);
-$accent-color-lighter: lighten($accent-color, 5);
+$contrast-color:           #dcae1d;
 
-$success-color:         #52c41a;
-$success-color-light:   lighten($success-color, 15);
-$success-color-lighter: lighten($success-color, 5);
-
-$danger-color:         #f5222d;
-$danger-color-light:   lighten($danger-color, 15);
-$danger-color-lighter: lighten($danger-color, 5);
+$danger-color:             #f5222d;
+$danger-color-light:       lighten($danger-color, 15);
+$danger-color-lighter:     lighten($danger-color, 5);
 $danger-color-transparent: rgba($danger-color, .45);
 
 $outline-width: 1px;
 $focus-outline-width-multiplier: 2;
+
 :root {
   --bg-color:                 white;
 
@@ -30,19 +27,19 @@ $focus-outline-width-multiplier: 2;
   --primary-color-lighter:    #{$primary-color-light};
   --primary-color-light:      #{$primary-color-lighter};
 
-  --accent-color:         #{$accent-color};
-  --accent-color-light:   #{$accent-color-light};
-  --accent-color-lighter: #{$accent-color-lighter};
+  --accent-color:             #{$accent-color};
+  --accent-color-light:       #{$accent-color-light};
+  --accent-color-lighter:     #{$accent-color-lighter};
 
-  --success-color:         #{$success-color};
-  --success-color-light:   #{$success-color-light};
-  --success-color-lighter: #{$success-color-lighter};
+  --success-color:            #{$success-color};
+  --success-color-light:      #{$success-color-light};
+  --success-color-lighter:    #{$success-color-lighter};
 
-  --contrast-color:           #dcae1d;
+  --contrast-color:           #{$contrast-color};
 
-  --danger-color:         #{$danger-color};
-  --danger-color-light:   #{$danger-color-light};
-  --danger-color-lighter: #{$danger-color-lighter};
+  --danger-color:             #{$danger-color};
+  --danger-color-light:       #{$danger-color-light};
+  --danger-color-lighter:     #{$danger-color-lighter};
   --danger-color-transparent: #{$danger-color-transparent};
 
   --outline-width: #{$outline-width};
