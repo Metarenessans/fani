@@ -46,5 +46,6 @@ $focus-outline-width-multiplier: 2;
   --danger-color-transparent: #{$danger-color-transparent};
 
   --outline-width: #{$outline-width};
+  --focus-outline-width: #{$outline-width * $focus-outline-width-multiplier};
   --focus-outline-width: calc(var(--outline-width) * #{$focus-outline-width-multiplier});
 }
