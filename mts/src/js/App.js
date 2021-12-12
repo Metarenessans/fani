@@ -1679,16 +1679,6 @@ class App extends BaseComponent {
                                         this.setState({ kodTable });
                                       }}
                                     />
-                                    {/* <Input 
-                                      defaultValue={kodTable[index]?.fact || 0}
-                                      onBlur={e => {
-                                        if (!kodTable[index]) {
-                                          kodTable[index] = {};
-                                        }
-                                        kodTable[index].fact = e.target.value;
-                                        this.setState({ kodTable });
-                                      }}
-                                    /> */}
                                   </td>
                                   <td>
                                     <Input
