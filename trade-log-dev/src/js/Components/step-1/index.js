@@ -11,7 +11,7 @@ import CustomSlider from "../../../../../common/components/custom-slider";
 
 
 import NumericInput from "../../../../../common/components/numeric-input";
-import sortInputFirst from "../../../../../common/utils/sort-input-first";
+import sortToolsBySearchValue from "../../../../../common/utils/sort-tools-by-search-value";
 import CrossButton from "../../../../../common/components/cross-button";
 
 import TimeRangePicker from "../time-range-picker";
@@ -47,8 +47,8 @@ export default class FirstStep extends React.Component {
   }
 
   getSortedOptions() {
-    let { searchVal } = this.props;
-    return sortInputFirst(searchVal, this.getOptions());
+    let { searchVal, tools } = this.props;
+    return sortToolsBySearchValue(searchVal, tools);
   }
 
   render() {
@@ -163,9 +163,9 @@ export default class FirstStep extends React.Component {
                                 );
                               }
                               else {
-                                return this.getSortedOptions().map((option) => (
-                                  <Option key={option.idx} value={option.idx}>
-                                    {option.label}
+                                return this.getSortedOptions().map((tool, index) => (
+                                  <Option key={index} value={index}>
+                                    {String(tool)}
                                   </Option>
                                 ));
                               }
@@ -425,9 +425,9 @@ export default class FirstStep extends React.Component {
                                 );
                               }
                               else {
-                                return this.getSortedOptions().map((option) => (
-                                  <Option key={option.idx} value={option.idx}>
-                                    {option.label}
+                                return this.getSortedOptions().map((tool, index) => (
+                                  <Option key={index} value={index}>
+                                    {String(tool)}
                                   </Option>
                                 ));
                               }
