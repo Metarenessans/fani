@@ -6,7 +6,7 @@ const CleanWebpackPlugin = require("clean-webpack-plugin");
 
 /** @return {webpack.Configuration} */
 module.exports = (env, options) => {
-  const prod = process.env.NODE_ENV === "production";
+  const prod = options.mode === "production";
   return {
     entry: "./src/js/index.js",
     devtool: prod ? "source-map" : "eval-sourcemap",
