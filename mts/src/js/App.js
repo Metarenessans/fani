@@ -384,7 +384,7 @@ class App extends BaseComponent {
         }
       }))
       .catch(error => console.error(error))
-      .finally(() => {
+      .finally(async () => {
         if (dev) {
           const response = require("./dev/sg-snapshot").default;
           const { data } = response;
@@ -394,10 +394,13 @@ class App extends BaseComponent {
           lastSavedSG = cloneDeep(genaSave);
           sgChanged = false;
 
-          this.setStateAsync({ genaID: response.data.id, genaSave })
-            .then(() => delay(100))
-            .then(() => this.exportDataToSG(true))
-            .then(() => this.setStateAsync({ shouldImportSG: true }))
+          await this.setStateAsync({
+            genaID: response.data.id,
+            genaSave
+          });
+          await this.exportDataToSG(true);
+          await delay(100);
+          await this.setStateAsync({ shouldImportSG: true });
         }
       });
   }
