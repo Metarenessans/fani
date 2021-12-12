@@ -19,7 +19,6 @@
  * @param {number} number Число, которое нужно примагнитить
  * @param {number} step Шаг, к которому нужно прижать `number`
  * @returns {number}
- * @todo Написать тесты
  */
 export default function magnetToClosest(number, step) {
   return Math.max(Math.round(number / step) * step, step);
