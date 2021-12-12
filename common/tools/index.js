@@ -363,7 +363,9 @@ class Tool {
   }
 
   get region() {
-    return this.dollarRate != 1 ? "US" : "RU";
+    return this.isFutures
+      ? ""
+      : this.dollarRate == 1 ? "RU" : "US";
   }
   
   getFullName() {
