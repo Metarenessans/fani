@@ -293,10 +293,10 @@ class App extends BaseComponent {
     super.fetchSnapshots();
     await super.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
 
-    // Поулчаем конкретный инструмент, если в сохранении есть регион инструмента
     const { currentToolCode, currentToolRegion } = this.state;
+    // Поулчаем конкретную акцию, если в сохранении есть регион инструмента
     if (currentToolRegion) {
-      await this.fetchTool(currentToolCode, currentToolRegion);
+      await this.fetchTool(currentToolCode, currentToolCode === "SBER" ? "RU" : currentToolRegion);
     }
     else {
       await this.fetchFutures();

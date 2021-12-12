@@ -328,6 +328,7 @@ export default class BaseComponent extends React.Component {
    * TODO: переименовать во что-то более связанное с акциями
    */
   async fetchTool(code, region) {
+    await this.setStateAsync({ toolsLoading: true });
     const response = await fetch("getCompanyTrademeterInfo", "GET", { code, region });
     const tool = Tool.fromObject(response.data);
     console.log(tool);
@@ -341,8 +342,7 @@ export default class BaseComponent extends React.Component {
     else {
       tools[index] = tool;
     }
-
-    return this.setStateAsync({ tools });
+    return this.setStateAsync({ toolsLoading: false, tools });
   }
 
   /**
