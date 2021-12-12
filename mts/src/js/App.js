@@ -1669,7 +1669,6 @@ class App extends BaseComponent {
                                   <td>{((page - 1) * period) + (index + 1)}</td>
                                   <td>{kod}</td>
                                   <td>
-                                    {/* ~~~ */}
                                     <NumericInput
                                       unsigned="false"
                                       format={number => formatNumber(number)}
