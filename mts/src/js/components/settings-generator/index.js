@@ -1064,7 +1064,10 @@ const SettingsGenerator = memo(props => {
 
                 {/* Торговый инструмент */}
                 <label className="input-group">
-                  <span className="input-group__label">Инструмент</span>
+                  <span className="input-group__label">
+                    <span className="visually-hidden">Торговый</span>
+                    Инструмент
+                  </span>
                   <Select
                     onFocus={() => onToolSelectFocus && onToolSelectFocus()}
                     onBlur={() => onToolSelectBlur && onToolSelectBlur()}
