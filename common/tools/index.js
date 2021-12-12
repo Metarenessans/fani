@@ -300,7 +300,6 @@ class Tool {
     else return this.code;
   }
 
-
   getSortProperty() {
     if (this.shortName) {
       return this.shortName;
