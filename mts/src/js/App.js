@@ -781,6 +781,7 @@ class App extends BaseComponent {
       customTools:    (data.customTools || []).map(tool => Tool.fromObject(tool, { investorInfo })),
       currentToolCode: data.currentToolCode ?? initialState.currentToolCode,
       investorInfo:   { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
+      currentToolRegion: data.currentToolRegion ?? "",
     }
   }
 
