@@ -36,6 +36,7 @@
         "after": true
       }
     ],
+    "no-empty": "warn",
     // Пробел перед круглымы скобками при вызове функции
     "func-call-spacing": ["error", "never"],
     "key-spacing": [
