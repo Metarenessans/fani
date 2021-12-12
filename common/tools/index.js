@@ -292,6 +292,10 @@ class Tool {
   get isFutures() {
     return this.dollarRate == 0;
   }
+
+  get region() {
+    return this.dollarRate != 1 ? "US" : "RU";
+  }
   
   getFullName() {
     if (this.fullName) {
