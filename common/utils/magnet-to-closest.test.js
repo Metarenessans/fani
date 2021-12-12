@@ -1,7 +1,5 @@
 import magnetToClosest from "./magnet-to-closest";
 
-  expect(magnetToClosest(0, 3)).toEqual(0);
-  expect(magnetToClosest(1, 3)).toEqual(0);
 test("Корректно магнитит число", () => {
   expect(magnetToClosest(1.75, 3)).toEqual(3);
   expect(magnetToClosest(3.01, 3)).toEqual(3);
