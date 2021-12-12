@@ -9,3 +9,8 @@ test("works properly", () => {
   expect(magnetToClosest(1.5, 3)).toEqual(3);
   expect(magnetToClosest(5.9, 1)).toEqual(6);
 });
+
+test("Результат всегда больше или равен шагу", () => {
+  expect(magnetToClosest(0, 3)).toEqual(3);
+  expect(magnetToClosest(1, 3)).toEqual(3);
+});
