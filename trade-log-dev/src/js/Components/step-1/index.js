@@ -71,7 +71,7 @@ export default class FirstStep extends React.Component {
             <div className="first-step">
 
               <div className="title">
-                Инсрументы предварительной выборки
+                Инструменты предварительной выборки
               </div>
 
               <div className="pages-link-buttons">
@@ -342,7 +342,7 @@ export default class FirstStep extends React.Component {
                   return (
                     <div className="stats-container"> 
                       <p>
-                        Общая дохолность<br />
+                        Общая доходность<br />
                         <span className={clsx(result >= 0 ? (result == 0 ? "default" : "positive") : "negative")}>
                           {(round((result || 0), 2))} %
                         </span>
@@ -651,7 +651,6 @@ export default class FirstStep extends React.Component {
                               data[currentRowIndex].deals[index].result = val;
                               context.setState({ data });
                             }}
-                            min={0}
                             suffix="%"
                           />
                         </div>
