@@ -598,7 +598,6 @@ class App extends BaseComponent {
         }
 
         const totalStep = getStepFromPreset(currentPreset);
-        // Шаг в Гене не равен шагу в МТС
 
         // Если передвинули ползунок вручную, то перенос хода в мтс не требуется
         if (this.state.changedPriceRangeManually) {
@@ -609,6 +608,7 @@ class App extends BaseComponent {
         if (totalStep === 0) {
           this.updatePriceRange(currentTool, 0);
         }
+        // Шаг в Гене не равен шагу в МТС
         else if (totalStep !== step) {
           if (totalStep === 0) {
             console.warn("Ход в гене = 0, соответственно откатываем ползунок хода в мтс");
