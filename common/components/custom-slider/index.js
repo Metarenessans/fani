@@ -1,10 +1,10 @@
-import React from "react"
-import PropTypes from "prop-types"
-import { Slider, Tooltip } from "antd"
-import clsx from "clsx"
-import croppNumber from "../../utils/cropp-number"
+import React from "react";
+import PropTypes from "prop-types";
+import { Slider, Tooltip } from "antd";
+import clsx from "clsx";
+import croppNumber from "../../utils/cropp-number";
 
-import "./style.scss"
+import "./style.scss";
 
 const propTypes = {
   /**
@@ -91,7 +91,7 @@ const propTypes = {
    * 
    * @type {(value: number) => any}}
    */
-  filter: PropTypes.func,
+  filter: PropTypes.func
 };
 
 /** @augments React.Component<propTypes> */
@@ -110,7 +110,7 @@ export default class CustomSlider extends React.Component {
     }
     
     this.state = {
-      value: value ?? 0,
+      value: value ?? 0
     };
 
     this.filter = filter || (value => value);
@@ -167,6 +167,6 @@ export default class CustomSlider extends React.Component {
           </Tooltip>
         }
       </div>
-    )
+    );
   }
 }
