@@ -5,14 +5,18 @@ import { cloneDeep } from "lodash";
 import fetch         from "../api/fetch";
 import fetchSaveById from "../api/fetch/fetch-save-by-id";
 import { fetchInvestorInfo } from "../api/fetch/investor-info/fetch-investor-info";
+import { applyInvestorInfo } from "../api/fetch/investor-info/apply-investor-info";
 
 import params          from "../utils/params";
 import extractSnapshot from "../utils/extract-snapshot";
+import { Tools, Tool } from "../tools";
 
 /** @type {React.Context<BaseComponent>} */
 export const Context = React.createContext();
 
 /** @typedef {import("../utils/extract-snapshot").SnapshotResponse} SnapshotResponse */
+/** @typedef {import("../api/fetch/investor-info/investor-info").InvestorInfo} InvestorInfo */
+/** @typedef {import("../api/fetch/investor-info/investor-info-response").InvestorInfoResponse} InvestorInfoResponse */
 
 // TODO: добавить флаг в стейте, который бы отвечал за загрузку конкретно селекта с сейвами
 export default class BaseComponent extends React.Component {
@@ -73,6 +77,19 @@ export default class BaseComponent extends React.Component {
        */
       toolsLoading: false,
 
+      /**
+       * Флаг дизейбла селекта с инструментами
+       * 
+       * Используем, когда нужно запретить пользователю менять инструмент,
+       * но не хотим активировать прелоадеры, связанные с `toolsLoading`
+       * 
+       * @type {boolean}
+       */
+      toolSelectDisabled: false,
+
+      /** Код текущего выбранного инструмента */
+      currentToolCode: "SBER",
+
       // TODO: можно обойтись только одним флагом 
 
       saved: false,
@@ -84,6 +101,13 @@ export default class BaseComponent extends React.Component {
       ...cloneDeep(this.initialState),
 
       /**
+       * Профиль инвестора
+       * 
+       * @type {InvestorInfo}
+       */
+      investorInfo: {},
+
+      /**
        * Список сохранений
        * 
        * @type {{ id: number, name: string }[]}
@@ -93,9 +117,16 @@ export default class BaseComponent extends React.Component {
       /**
        * Торговые инструменты
        * 
-       * @type {import("../tools").Tool[]}
+       * @type {Tool[]}
        */
       tools: [],
+
+      /**
+       * Кастомные (созданные пользователем) торговые инструменты
+       * 
+       * @type {Tool[]}
+       */
+      customTools: [],
 
       /**
        * Ширина вьюпорта 
@@ -106,6 +137,8 @@ export default class BaseComponent extends React.Component {
 
       /**
        * Влияет на сортировку Select'ов с инструментами
+       * 
+       * TODO: удалить, когда полностью переедет в ToolSelect
        */
       searchVal: ""
     };
@@ -115,15 +148,22 @@ export default class BaseComponent extends React.Component {
   
     /** @type {fetchInvestorInfo} */
     this.fetchInvestorInfo = fetchInvestorInfo.bind(this);
+    
+    /** @type {applyInvestorInfo} */
+    this.applyInvestorInfo = applyInvestorInfo.bind(this);
   }
 
   onResize = e => {
-    this.setState({ viewportWidth: window.innerWidth })
+    this.setState({ viewportWidth: window.innerWidth });
   };
 
-  componentDidMount() {
+  bindEvents() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
+  }
+  
+  componentDidMount() {
+    this.bindEvents();  
   }
 
   componentWillUnmount() {
@@ -144,8 +184,6 @@ export default class BaseComponent extends React.Component {
     return this.setStateAsync(cloneDeep(this.initialState));
   }
 
-  // TODO: fetchTools
-
   /**
    * Возвращает название текущего выбранного сохранения.
    * 
@@ -159,9 +197,146 @@ export default class BaseComponent extends React.Component {
   }
 
   /**
+   * Возвращает список всех инстурментов (поулченые с бэка + кастомные)
+   * 
+   * @returns {Tool[]}
+   */
+  getTools() {
+    const { tools, customTools } = this.state;
+    return [].concat(tools).concat(customTools);
+  }
+
+  /**
+   * Возвращает индекс выбранного инструмента
+   * 
+   * @returns {number}
+   */
+  getCurrentToolIndex() {
+    const { currentToolCode } = this.state;
+    return Tools.getToolIndexByCode(this.getTools(), currentToolCode);
+  }
+
+  /**
+   * Возвращает текущий инструмент
+   * 
+   * @returns {Tool}
+   */
+  getCurrentTool() {
+    return this.getTools()[this.getCurrentToolIndex()] || Tools.createArray()[0];
+  }
+
+  /**
+   * 1. Делает GET запрос на https://fani144.ru/local/php_interface/s1/ajax/?method=getInvestorInfo (смотри {@link fetchInvestorInfo})
+   * 
+   * 2. Распаковывает данные в стейт по ключу `investorInfo` (смотри {@link applyInvestorInfo})
+   * 
+   * @param {{ fallback: InvestorInfo }} options
+   * @return {Promise<InvestorInfoResponse>}
+   */
+  async fetchInvestorInfo(options) {
+    /** @type {InvestorInfoResponse} */
+    let response;
+    try {
+      response = await fetchInvestorInfo.call(this);
+      await this.applyInvestorInfo(response);
+    }
+    catch (error) {
+      message.error(`Не удалось получить профиль инвестора: ${error}`);
+    }
+    finally {
+      const { fallback } = options;
+      if (dev && fallback) {
+        await this.setStateAsync({ investorInfo: fallback });
+      }
+    }
+
+    return response;
+  }
+
+  async fetchFutures() {
+    const { investorInfo } = this.state;
+    await this.setStateAsync({ toolsLoading: true });
+    try {
+      const response = await fetch("getFutures");
+      let tools = [];
+      tools = Tools.parse(response.data, { investorInfo, useDefault: true });
+      tools = Tools.sort(tools);
+      await this.setStateAsync({ tools, toolsLoading: false });
+      return tools;
+    }
+    catch (error) {
+      message.error(`Не удалось получить фьючерсы: ${error}`);
+    }
+  }
+
+  /**
+   * Делает GET запросы на `getFutures` и `getTrademeterInfo` с помощью {@link fetch}
+   * 
+   * @returns {Promise<Tool[]>}
+   */
+  async fetchTools() {
+    await this.setStateAsync({ toolsLoading: true });
+    const tools = await this.prefetchTools();
+    await this.setStateAsync({ toolsLoading: false, tools });
+    return tools;
+  }
+
+  // TODO: Написать тесты
+  // Должен возвращать фьючи и акции
+  // Должен содержать в себе Apple, Сбер и BR
+  async prefetchTools() {
+    const { investorInfo } = this.state;
+    let tools = [];
+    const requests = [];
+    for (let request of ["getFutures", "getTrademeterInfo"]) {
+      requests.push(
+        fetch(request)
+          .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
+          .then(parsedTools => tools.push(...parsedTools))
+          .catch(error => message.error(`Не удалось получить инстурменты: ${error}`))
+      );
+    }
+
+    await Promise.allSettled(requests);
+    tools = Tools.sort(tools);
+    this.prefetchedTools = tools;
+    return tools;
+  }
+
+  /**
+   * Получает конкретную акцию по коду и региону
+   * 
+   * Делает GET запрос на `getCompanyTrademeterInfo` с помощью {@link fetch}
+   * 
+   * Пример запроса: https://fani144.ru/local/php_interface/s1/ajax/?method=getCompanyTrademeterInfo&code=SBER&region=RU
+   * 
+   * @param {string} code Код акции
+   * @param {"RU"|"EN"} region Регион акции
+   * @returns {Promise}
+   * 
+   * TODO: переименовать во что-то более связанное с акциями
+   */
+  async fetchTool(code, region) {
+    const response = await fetch("getCompanyTrademeterInfo", "GET", { code, region });
+    const tool = Tool.fromObject(response.data);
+    console.log(tool);
+
+    const tools = cloneDeep(this.state.tools);
+    // Обновляем инструмент в массиве, если он есть
+    const index = tools.findIndex(tool => tool.code == code && tool.region == region);
+    if (index == -1) {
+      tools.push(tool);
+    }
+    else {
+      tools[index] = tool;
+    }
+
+    return this.setStateAsync({ tools });
+  }
+
+  /**
    * Делает GET запрос на `get<pageName>Snapshots` с помощью {@link fetch},
    * где `<pageName>` - это `this.pageName`
-   * 
    * 
    * Пример: если `this.pageName` равен `Mts`,
    * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getMtsSnapshots
@@ -183,11 +358,10 @@ export default class BaseComponent extends React.Component {
   }
 
   /**
-   * Делает GET запрос на `getLastModified<pageName>Snapshot` с помощью {@link fetch},
-   * где `<pageName>` - это `this.pageName`
-   *
-   * Пример: если `this.pageName` равен `Mts`,
-   * то запрос уйдет на https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot
+   * 1. Делает GET запрос на `getLastModified<pageName>Snapshot` с помощью {@link fetch},
+   * где `<pageName>` - это `this.pageName` (пример запроса: https://fani144.ru/local/php_interface/s1/ajax/?method=getLastModifiedMtsSnapshot)
+   * 
+   * 2. Передает ответ в {@link BaseComponent.extractSnapshot}
    *
    * @param {object} options
    * @param {?SnapshotResponse} options.fallback Фейк ответ с сервера (работает только на локальной сборке)
@@ -218,7 +392,7 @@ export default class BaseComponent extends React.Component {
         await this.setStateAsync({ saves });
       }
 
-      if (!response.error && response.data?.name) {
+      if (!response?.error && response?.data?.name) {
         await this.extractSnapshot(response.data);
       }
     }
