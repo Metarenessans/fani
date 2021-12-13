@@ -252,17 +252,14 @@ class App extends BaseComponent {
         const { data } = response;
         return this.setStateAsync({ data, chartLoading: false });
       })
-      .catch(reason => {
+      .catch(async reason => {
         message.error(`Не удалось получить график для ${code}: ${reason}`);
         console.warn(`Не удалось получить график для ${code}: ${reason}`);
 
         this.setStateAsync({ chartLoading: false });
         // Пробуем отправить запрос снова 2 секунды
-        return new Promise(resolve => {
-          setTimeout(() => {
-            this.fetchCompanyQuotes().then(() => resolve());
-          }, 2_000)
-        })
+        await delay(2_000);
+        return this.fetchCompanyQuotes();
       });
   }
 
