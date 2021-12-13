@@ -15,7 +15,6 @@ import { Tools, Tool } from "../../../../common/tools";
 import round           from "../../../../common/utils/round";
 import formatNumber    from "../../../../common/utils/format-number";
 import fractionLength  from "../../../../common/utils/fraction-length";
-import sortInputFirst  from "../../../../common/utils/sort-input-first";
 
 import DashboardKey from "./DashboardKey";
 
@@ -133,10 +132,6 @@ export default class DashboardRow extends React.Component {
   getCurrentToolIndex() {
     const { selectedToolName } = this.props;
     return this.getToolIndexByCode(selectedToolName);
-  }
-
-  getSortedOptions() {
-    return sortInputFirst(this.state.searchVal, this.props.options);
   }
   
   render() {
@@ -286,9 +281,9 @@ export default class DashboardRow extends React.Component {
                   );
                 }
                 else {
-                  return this.getSortedOptions().map((option) => (
-                    <Option key={option.idx} value={option.idx}>
-                      {option.label}
+                  return tools.map((tool, index) => (
+                    <Option key={index} value={index}>
+                      {String(tool)}
                     </Option>
                   ));
                 }
