@@ -209,7 +209,6 @@ export default function SGRow({
                   </label>
 
                   <label className="input-group">
-                    {/* ~~ */}
                     <span className="input-group__label">
                       % {isBying ? "докупки" : "закрытия"}
 
