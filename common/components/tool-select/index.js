@@ -32,7 +32,7 @@ export default function ToolSelect({
           const currentToolCode = currentTool.code;
           await context.setStateAsync({ currentToolCode, isToolsDropdownOpen: false });
           if (onChange) {
-            onChange(currentToolIndex);
+            onChange(currentToolIndex, currentToolCode);
           }
         }}
         onFocus={() => {
