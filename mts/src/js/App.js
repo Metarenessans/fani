@@ -1059,7 +1059,7 @@ class App extends BaseComponent {
 
           <main className="main">
 
-            <Header>
+            <Header onChange={() => this.fetchCompanyQuotes()}>
               <Tooltip title="Настройки">
                 <button
                   className="settings-button js-open-modal page-header__settings"
