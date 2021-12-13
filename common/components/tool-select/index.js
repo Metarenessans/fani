@@ -5,8 +5,6 @@ import { LoadingOutlined } from "@ant-design/icons";
 
 import { Context } from "../BaseComponent";
 
-import sortToolsBySearchValue from "../../utils/sort-tools-by-search-value";
-
 export default function ToolSelect({
   errorMessage,
   value,
@@ -20,8 +18,6 @@ export default function ToolSelect({
 
   const tools = context.getTools();
 
-  const [searchValue, setSearchValue] = useState("");
-
   return (
     <Tooltip title={errorMessage} visible={errorMessage?.length > 0}>
       <Select
@@ -30,7 +26,6 @@ export default function ToolSelect({
         loading={toolsLoading || toolSelectDisabled}
         value={toolsLoading ? 0 : value}
         showSearch
-        onSearch={value => setSearchValue(value)}
         onChange={async currentToolIndex => {
           const tools = context.getTools();
           const currentTool = tools[currentToolIndex];
@@ -65,7 +60,7 @@ export default function ToolSelect({
               Загрузка...
             </Option>
           :
-            sortToolsBySearchValue(searchValue, tools).map((tool, index) => (
+            tools.map((tool, index) => (
               <Option key={index} value={index} title={String(tool)}>
                 {String(tool)}
               </Option>
