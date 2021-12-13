@@ -363,6 +363,10 @@ class App extends BaseComponent {
 
                 await this.setStateAsync({ genaID: id, genaSave });
                 await this.exportDataToSG(true);
+                // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
+                if (this.getCurrentSGPresetIndex() < 3) {
+                  resolve();
+                }
                 await delay(150);
                 await this.setStateAsync({ shouldImportSG: true });
                 resolve();
@@ -393,6 +397,10 @@ class App extends BaseComponent {
             genaSave
           });
           await this.exportDataToSG(true);
+          // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
+          if (this.getCurrentSGPresetIndex() < 3) {
+            return;
+          }
           await delay(150);
           await this.setStateAsync({ shouldImportSG: true });
         }
