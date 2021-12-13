@@ -353,7 +353,7 @@ class App extends BaseComponent {
         const { id } = this.state.genaSaves[0];
         if (id != null) {
           fetch("getGenaSnapshot", "GET", { id })
-            .then(response => {
+            .then(async response => {
               const { data } = response;
               try {
                 let genaSave = JSON.parse(data.static);
@@ -361,11 +361,11 @@ class App extends BaseComponent {
                 lastSavedSG = cloneDeep(genaSave);
                 sgChanged = false;
 
-                this.setStateAsync({ genaID: id, genaSave })
-                  .then(() => delay(100))
-                  .then(() => this.exportDataToSG(true))
-                  .then(() => this.setStateAsync({ shouldImportSG: true }))
-                  .then(() => resolve())
+                await this.setStateAsync({ genaID: id, genaSave });
+                await this.exportDataToSG(true);
+                await delay(150);
+                await this.setStateAsync({ shouldImportSG: true });
+                resolve();
               }
               catch (e) {
                 reject("Не удалось распарсить генератор настроек!", e);
@@ -393,7 +393,7 @@ class App extends BaseComponent {
             genaSave
           });
           await this.exportDataToSG(true);
-          await delay(100);
+          await delay(150);
           await this.setStateAsync({ shouldImportSG: true });
         }
       });
