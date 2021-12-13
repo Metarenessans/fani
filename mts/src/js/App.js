@@ -400,6 +400,32 @@ class App extends BaseComponent {
   }
 
   saveGENA(save) {
+  /**
+   * Возвращает выбранный пресет ГЕНЫ
+   */
+  getCurrentSGPreset() {
+    const { mode, presetSelection } = this.state;
+    
+    const genaSave = cloneDeep(this.state.genaSave);
+    const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
+    const currentPreset = options[presetSelection[mode]];
+    return currentPreset;
+  }
+
+  /**
+   * Возвращает индекс выбранного пресета ГЕНЫ
+   */
+  getCurrentSGPresetIndex() {
+    const { mode, presetSelection } = this.state;
+    
+    const genaSave = cloneDeep(this.state.genaSave);
+    const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
+    const currentPreset = options[presetSelection[mode]];
+    const currentPresetIndex = genaSave.presets.indexOf(currentPreset);
+    return currentPresetIndex;
+  }
+
+  async saveGENA(save) {
     const { genaID } = this.state;
 
     lastSavedSG = cloneDeep(save);
