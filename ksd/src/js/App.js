@@ -150,11 +150,49 @@ class App extends BaseComponent {
   async fetchInitialData() {
     this.fetchInvestorInfo();
 
-    await this.fetchTools();
-    this.setFetchingToolsTimeout();
-
     await this.fetchSnapshots();
     await this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
+
+    let skip = false;
+    const tools = [];
+    const requests = this.state.data
+      .filter((item, index, arr) => arr.findIndex(_item => _item.selectedToolName == item.selectedToolName) == index)
+      .map(item =>  {
+        const code   = item.selectedToolName;
+        const region = item.selectedToolRegion;
+
+        if (region === "") {
+          return this.prefetchFutures()
+            .then(_tools => tools.push(..._tools));
+        }
+        else if (region) {
+          return fetch("getCompanyTrademeterInfo", "GET", { code, region: code === "SBER" ? "RU" : region })
+            .then(response => tools.push(Tool.fromObject(response.data)));
+        }
+        else {
+          skip = true;
+        }
+      });
+    
+    if (skip) {
+      console.log("skip");
+      await this.fetchTools();
+    }
+    else {
+      await Promise.allSettled(requests);
+      console.log(tools, tools.map(String));
+      await this.setStateAsync({ tools });
+
+      // Фоновая загрузка всех инструментов
+      console.log("Фоновая загрузка всех инструментов");
+      (async () => {
+        await this.setStateAsync({ toolSelectDisabled: true });
+        const tools = await this.prefetchTools();
+        await this.setStateAsync({ toolSelectDisabled: false, tools });
+      })();
+    }
+
+    this.setFetchingToolsTimeout();
   }
 
   async fetchInvestorInfo() {
@@ -223,25 +261,11 @@ class App extends BaseComponent {
     });
   }
 
-  prefetchTools() {
-    return new Promise(resolve => {
-      Tools.storage = [];
-      const { investorInfo } = this.state;
-      const requests = [];
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(Tools.storage.concat(tools)))
-            .then(tools => {
-              Tools.storage = [...tools];
-            })
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        );
-      }
-
-      Promise.all(requests).then(() => resolve());
-    });
+  async prefetchTools() {
+    Tools.storage = [];
+    const tools = await super.prefetchTools();
+    Tools.storage = cloneDeep(tools);
+    return tools;
   }
 
   fetchTools() {

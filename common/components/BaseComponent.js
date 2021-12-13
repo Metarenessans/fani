@@ -264,6 +264,20 @@ export default class BaseComponent extends React.Component {
     return response;
   }
 
+  async prefetchFutures() {
+    const { investorInfo } = this.state;
+    try {
+      const response = await fetch("getFutures");
+      let tools = [];
+      tools = Tools.parse(response.data, { investorInfo, useDefault: true });
+      tools = Tools.sort(tools);
+      return tools;
+    }
+    catch (error) {
+      message.error(`Не удалось получить фьючерсы: ${error}`);
+    }
+  }
+
   async fetchFutures() {
     const { investorInfo } = this.state;
     await this.setStateAsync({ toolsLoading: true });
