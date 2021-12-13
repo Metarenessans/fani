@@ -1089,7 +1089,7 @@ class App extends BaseComponent {
                           await this.selectBasePreset();
                           await this.exportDataToSG();
                           // TODO: возможно нужно удалить
-                          await delay(500);
+                          await delay(100);
                           await this.setStateAsync({ shouldImportSG: true });
                           await this.imitateFetchingTools();
                           await this.fetchCompanyQuotes();
