@@ -157,7 +157,7 @@ export default function CodePanel(props) {
           return null;
         }
 
-        let title = `Массив ${!arr.isBying ? "закрытия" : "докупок"}:`;
+        let title = `Массив ${!arr.isBying ? "закрытия" : "докупок ТОР"}:`;
 
         const showRollback = 
           (["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1) && 
@@ -290,7 +290,7 @@ export default function CodePanel(props) {
           param = currentPreset.type == "Лимитник" || currentPreset.type == "СМС + ТОР" ? "aapercent" : "aaperc";
         }
         else if (key == "Прямые профитные докупки") {
-          title = "Массив прямых докупок";
+          title = "Массив прямых профитных докупок";
           param = "aaperc";
           parsedData = (arr || [])
             .map((v, index, arr) => {
