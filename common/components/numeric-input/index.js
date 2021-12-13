@@ -214,11 +214,11 @@ export default class NumericInput extends React.Component {
     return new RegExp(pattern);
   }
 
-  /** @param {string} value */
+  /** @param {string|number} value */
   parse(value) {
     let { min, max } = this.props;
 
-    value = value
+    value = String(value)
       .replace(/\s+/g, "")
       .replace(/,/g, ".")
       .replace(/^0+/g, "0");
