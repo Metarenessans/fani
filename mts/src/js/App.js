@@ -904,7 +904,6 @@ class App extends BaseComponent {
       mode,
       page,
       risk,
-      chartLoading,
       currentToolCode,
       percentage,
       priceRange,
@@ -920,6 +919,9 @@ class App extends BaseComponent {
       totalStep,
       kodTable
     } = this.state;
+
+    // Считаем, что график все еще загружается, если дата пустая
+    const chartLoading = this.state.chartLoading || !data || data?.length == 0;
 
     // Вызывается в момент выбора пресета в МТС
     const onAlgorythmChange = async (index, subIndex) => {
