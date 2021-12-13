@@ -916,11 +916,6 @@ class App extends BaseComponent {
 
   render() {
     let {
-      currentSaveIndex,
-      loading,
-      saves,
-      changed,
-      saved,
       data,
       days,
       depo,
