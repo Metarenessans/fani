@@ -376,6 +376,7 @@ export default class BaseComponent extends React.Component {
    *
    * @param {object} options
    * @param {?SnapshotResponse} options.fallback Фейк ответ с сервера (работает только на локальной сборке)
+   * @param {(snapshot: SnapshotResponse) => {}} options.praseFn Фейк ответ с сервера (работает только на локальной сборке)
    * @returns {Promise}
    */
   async fetchLastModifiedSnapshot(options) {
@@ -404,7 +405,8 @@ export default class BaseComponent extends React.Component {
       }
 
       if (!response?.error && response?.data?.name) {
-        await this.extractSnapshot(response.data);
+        const parseFn = options?.praseFn ?? this.extractSnapshot;
+        await parseFn.call(this, response.data);
       }
     }
 
