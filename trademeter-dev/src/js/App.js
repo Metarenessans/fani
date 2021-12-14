@@ -1424,8 +1424,7 @@ class App extends BaseComponent {
       averageProf     = rateObj.averageProf;
     }
     else {
-      const tempObj = this.useRate({ length: days[mode] });
-      const customFuture = tempObj.future;
+      const customFuture = this.getDepoEnd(mode, false);
       if (realData.length == dataLength) {
         extraDays = this.useRate({ customFuture }).extraDays;
       }
