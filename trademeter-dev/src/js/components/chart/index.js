@@ -730,20 +730,22 @@ function updateChart(isInit = false) {
     if (factDays.length) {
       const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
       
-      const rateRecommended = this.rateRecommended;
       
       const lastFilledDayNumber = (data.lastFilledDay?.day || 0) - 1;
       recommendData = new Array(data.length - lastFilledDayNumber).fill(0);
       recommendData[0] = factData[factData.length - 1].value;
       
       for (let i = 1; i < recommendData.length; i++) {
-        recommendData[i] = recommendData[i - 1] + (recommendData[i - 1] * rateRecommended / 100);
+        recommendData[i] = recommendData[i - 1] + recommendData[i - 1] * this.rateRecommended / 100;
         
-        if ((lastFilledDayNumber + i + 1) % withdrawalInterval[mode] == 0) {
+        const day = lastFilledDayNumber + i + 1;
+        // Вычитаем плановый вывод, если запланирован
+        if (day % withdrawalInterval[mode] == 0) {
           recommendData[i] -= withdrawal[mode];
         }
         
-        if ((lastFilledDayNumber + i + 1) % payloadInterval[mode] == 0) {
+        // Вычитаем плановое пополнение, если запланировано
+        if (day % payloadInterval[mode] == 0) {
           recommendData[i] += payload[mode];
         }
       }
