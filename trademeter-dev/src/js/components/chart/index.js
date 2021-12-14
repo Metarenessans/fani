@@ -52,28 +52,37 @@ const getLen = data => {
   return len;
 };
 
-function updateChartZoom(scaleStart, scaleEnd) {
+/**
+ * Обновляет масштаб графика
+ * 
+ * Обновляет:
+ * 1. xScale
+ * 2. yScale
+ * 3. Засечки (ticks)
+ * 
+ * @param {number} start Точка начала в диапазоне от 0 до 1
+ * @param {number} end   Точка конца в диапазоне от 0 до 1
+ */
+function updateChartZoom(start, end) {
   const { data, chartScaleMode } = this.state;
-  updateChartScaleXY(scaleStart, scaleEnd, data, chartScaleMode);
-}
+  scaleStart = start;
+  scaleEnd   = end;
 
-function updateChartScaleXY(scaleStart, scaleEnd, data, scaleMode) {
   // X axis
   const step = 1 / data.length;
   
-  let start = scaleStart;
-  let end   = scaleEnd >= 1
+  start = scaleStart;
+  end   = scaleEnd >= 1
     ? 1
     : scaleEnd <= step
       ? step
-      : scaleMode == 1
+      : chartScaleMode == 1
         ? scaleEnd
         : scaleEnd - step;
   
   chart?.xZoom().setTo(start, end);
-  
-  // Y axis
   updateChartScaleY(start, end);
+  updateChartTicks(start, end, data)
 }
 
 function updateChartScaleY(start, end) {  
