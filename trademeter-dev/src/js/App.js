@@ -2571,8 +2571,8 @@ class App extends Component {
                             }
 
                             this.setState({ 
-                              // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               isToolsDropdownOpen: false,
+                              // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
