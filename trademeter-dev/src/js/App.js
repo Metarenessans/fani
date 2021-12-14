@@ -56,7 +56,7 @@ import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
-import ToolSelect      from "./components/tool-select"
+import ToolSelect      from "../../../common/components/tool-select"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
@@ -2354,12 +2354,11 @@ class App extends BaseComponent {
                         </header>
                         <ToolSelect
                           errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
-                          toolsLoading={this.state.toolsLoading}
-                          disabled={this.state.toolsLoading}
                           tools={tools}
-                          value={this.state.toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                          value={this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
+                            const tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
 
                             let depoPersentageStart = this.state.depoPersentageStart;
@@ -2380,11 +2379,7 @@ class App extends BaseComponent {
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
-                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
-                          onBlur={() => {
-                            this.setStateAsync({ isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchingTools());
-                          }}
+                          onBlur={() => this.imitateFetchingTools()}
                         />
                       </div>
                     </div>
