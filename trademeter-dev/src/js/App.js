@@ -18,7 +18,7 @@ import {
   SettingFilled
 } from "@ant-design/icons"
 
-import { merge, cloneDeep as clone } from "lodash"
+import { merge, cloneDeep } from "lodash"
 import objToPlainText from "object-plain-string"
 
 /* API */
@@ -682,7 +682,7 @@ class App extends BaseComponent {
         console.log("parsed dynamic", dynamicParsed);
       }
 
-      const initialState = clone(this.initialState);
+      const initialState = cloneDeep(this.initialState);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -1203,7 +1203,7 @@ class App extends BaseComponent {
       }
     ];
 
-    const result = extRateReal(...clone(args));
+    const result = extRateReal(...cloneDeep(args));
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
@@ -1511,12 +1511,12 @@ class App extends BaseComponent {
                   }
 
                   if (Object.keys(lastRealData).length) {
-                    const tempRealData = clone(realData);
-                    realData     = clone(lastRealData);
-                    lastRealData = clone(tempRealData);
+                    const tempRealData = cloneDeep(realData);
+                    realData     = cloneDeep(lastRealData);
+                    lastRealData = cloneDeep(tempRealData);
                   }
                   else {
-                    lastRealData = clone(realData);
+                    lastRealData = cloneDeep(realData);
                     realData = {};
                   }
 
