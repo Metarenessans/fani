@@ -572,6 +572,8 @@ class App extends BaseComponent {
       customPassiveIncomeTools
     } = this.state;
 
+    const { scaleStart, scaleEnd } = chartModule;
+
     const rate = this.getRate();
 
     const json = {
@@ -594,6 +596,8 @@ class App extends BaseComponent {
         mode:                          mode,
         customTools:                   customTools,
         currentToolCode,
+        chartScaleStart: scaleStart,
+        chartScaleEnd:   scaleEnd,
         // TODO: do we need this?
         current_date:                  "#"
       },
@@ -813,6 +817,9 @@ class App extends BaseComponent {
       if (state.dataLength == null) {
         state.dataLength = Math.max(state.days[m], dynamicParsed.length);
       }
+
+      this.scaleStart = staticParsed.chartXScaleStart;
+      this.scaleEnd   = staticParsed.chartXScaleEnd;
       
       const minRate = staticParsed.minDailyIncome[m];
       state.data = this.buildData(state.dataLength, true, 0, { $rateRequired: minRate });
