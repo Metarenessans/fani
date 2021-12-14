@@ -744,12 +744,12 @@ function updateChart(isInit = false) {
         const day = lastFilledDayNumber + i + 1;
         // Вычитаем плановый вывод, если запланирован
         if (day % withdrawalInterval[mode] == 0) {
-          recommendData[i] -= withdrawal[mode];
+          // recommendData[i] -= withdrawal[mode];
         }
         
         // Вычитаем плановое пополнение, если запланировано
         if (day % payloadInterval[mode] == 0) {
-          recommendData[i] += payload[mode];
+          // recommendData[i] += payload[mode];
         }
       }
       
