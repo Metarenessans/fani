@@ -677,17 +677,19 @@ function updateChart(isInit = false) {
       let step = planData[i].value - planData[i - 1].value;
 
       if (payment) {
-        step += payment;
+        // TODO: вероятно нужно оставить во втором режиме
+        // step -= payment;
       }
       else if (paymentPlan) {
-        step += paymentPlan;
+        step -= paymentPlan;
       }
 
       if (payload) {
-        step -= payload;
+        // TODO: вероятно нужно оставить во втором режиме
+        // step += payload;
       }
       else if (payloadPlan) {
-        step -= payloadPlan;
+        step += payloadPlan;
       }
 
       step *= weight;
