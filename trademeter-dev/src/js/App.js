@@ -3615,6 +3615,7 @@ class App extends Component {
                     onFirstRender={async e => {
                       if (chartVisible) {
                         await chartModule?.createChart.call(this);
+                        chartModule.updateChartZoom.call(this, this.scaleStart, this.scaleEnd);
                       }
                     }}
                   />
