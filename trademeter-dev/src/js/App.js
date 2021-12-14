@@ -3612,9 +3612,9 @@ class App extends Component {
                     defaultScaleMode={this.state.days[mode]} 
                     data={this.state.data}
                     currentDay={currentDay}
-                    onFirstRender={e => {
+                    onFirstRender={async e => {
                       if (chartVisible) {
-                        chartModule?.createChart.call(this);
+                        await chartModule?.createChart.call(this);
                       }
                     }}
                   />
