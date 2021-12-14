@@ -85,6 +85,8 @@ class App extends BaseComponent {
   constructor(props) {
     super(props);
 
+    this.deafultTitle = "Трейдометр";
+
     // Считываем значения из адресной строки
     const depoStart = Number( params.get("start") ) || 1_000_000;
     const depoEnd   = Number( params.get("end") )   || 3_000_000;
@@ -1458,7 +1460,7 @@ class App extends BaseComponent {
     const currentTool = this.getCurrentTool();
 
     return (
-      <Provider value={this}>
+      <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
@@ -3714,9 +3716,9 @@ class App extends BaseComponent {
           {/* Error Popup */}
 
         </div>
-      </Provider>
+      </StateContext.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App }
