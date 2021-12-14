@@ -46,7 +46,7 @@ import { Tools, Tool, template } from "../../../common/tools"
 import Iteration from "./utils/iteration"
 import Data      from "./utils/data"
 
-import Stack           from "./components/stack"
+import Stack           from "../../../common/components/stack"
 import BigNumber       from "./components/BigNumber"
 import Config          from "../../../common/components/config";
 import CustomSelect    from "../../../common/components/custom-select"
