@@ -200,7 +200,8 @@ class App extends BaseComponent {
   }
 
   fetchCompanyQuotes() {
-    // Отменяем запрос, если модуль с графиком не подгрузился или ответ от предыдущего запроса еще не был получен 
+    // Отменяем запрос, если модуль с графиком не подгрузился
+    // или ответ от предыдущего запроса еще не был получен 
     if (!Chart) {
       return Promise.resolve();
     }
@@ -317,6 +318,8 @@ class App extends BaseComponent {
     this.fetchGENA();
   }
 
+  // TODO: вынести функционал загрузки сохранения ГЕНЫ в отдельную функцию
+
   fetchGENA() {
     const parseGENASave = save => {
       save.ranull         = save.ranull == null ? 0 : save.ranull;
@@ -407,7 +410,6 @@ class App extends BaseComponent {
       });
   }
 
-  saveGENA(save) {
   /**
    * Возвращает выбранный пресет ГЕНЫ
    */
@@ -450,27 +452,26 @@ class App extends BaseComponent {
       static: JSON.stringify(save)
     };
 
-    return fetch(request, "POST", data)
-      .then(response => {
-        console.log(response);
-        if (!response.error) {
-          message.success("Сохранено!");
-          return this.setStateAsync({
-            genaID:   response.id,
-            genaSave: save
-          });
-        }
-      })
-      .catch(error => {
-        console.error(error);
-        message.error("Что-то пошло не так");
-      })
-      .finally(() => {
-        if (dev) {
-          message.success("Сохранено!");
-          return this.setStateAsync({ genaSave: save })
-        }
-      })
+    try {
+      const response = await fetch(request, "POST", data);
+      if (!response.error) {
+        message.success("Сохранено!");
+        return this.setStateAsync({
+          genaID:   response.id,
+          genaSave: save
+        });
+      }
+    }
+    catch (error) {
+      console.error(error);
+      message.error(`Не удалсь сохранить ГЕНУ: ${error}`);
+    }
+    finally {
+      if (dev) {
+        message.success("Сохранено!");
+        return this.setStateAsync({ genaSave: save })
+      }
+    }
   }
 
   exportDataToSG(initialExport = false, save) {
@@ -738,7 +739,6 @@ class App extends BaseComponent {
       tool = this.getCurrentTool();
     }
     const currentPrice = tool.currentPrice;
-    console.log("updatePriceRange", tool, step);
     return this.setStateAsync({ priceRange: [currentPrice - step / 2, currentPrice + step / 2] });
   }
 
@@ -1129,13 +1129,12 @@ class App extends BaseComponent {
                         withValue={false}
                         tooltipPlacement="left"
                         tipFormatter={value => formatNumber(+(value).toFixed(fraction))}
-                        onClick={e => {
-                          this.selectBasePreset();
-                        }}
+                        onClick={e => this.selectBasePreset()}
                         onChange={priceRange => {
+                          const step = Math.abs(priceRange[0] - priceRange[1]);
                           this.setState({
                             priceRange,
-                            totalStep: round(Math.abs(priceRange[0] - priceRange[1]), fraction),
+                            totalStep: round(step, fraction),
                             changedPriceRangeManually: false,
                             changed: true
                           });
@@ -1532,21 +1531,18 @@ class App extends BaseComponent {
                             step= {.5}
                             precision={1}
                             tooltipVisible={false}
-                            onClick={e => {
-                              this.selectBasePreset();
-                            }}
+                            onClick={e => this.selectBasePreset()}
                             onChange={(range = []) => {
                               const percentage = range[0] + range[1];
                               chartModule?.updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
                               this.setStateAsync({ percentage, changed: true });
                             }}
-                            onAfterChange={priceRange => {
+                            onAfterChange={async priceRange => {
                               console.log("onAfterChange");
-                              this.exportDataToSG()
-                                .then(() => this.setStateAsync({ shouldImportSG: true }))
+                              await this.exportDataToSG();
+                              await this.setStateAsync({ shouldImportSG: true });
                             }}
                           />
-
                           <span aria-hidden="true" className="mts-slider2-short">Short</span>
                           <span aria-hidden="true" className="mts-slider2-long">Long</span>
                         </div>
@@ -1860,7 +1856,6 @@ class App extends BaseComponent {
                     this.saveGENA(genaSave);
                   }}
                   onUpdate={(genaSave, tableData, changed) => {
-                    // console.log("onUpdate", genaSave);
                     sgChanged = sgChanged || changed;
                     genaTable = tableData;
                     this.setStateAsync({ genaSave });
