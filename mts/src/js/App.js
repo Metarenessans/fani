@@ -294,22 +294,29 @@ class App extends BaseComponent {
     await super.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
 
     const { currentToolCode, currentToolRegion } = this.state;
-    // Поулчаем конкретную акцию, если в сохранении есть регион инструмента
-    if (currentToolRegion) {
-      await this.fetchTool(currentToolCode, currentToolCode === "SBER" ? "RU" : currentToolRegion);
+    if (currentToolRegion != null || currentToolCode === "SBER") {
+      // Поулчаем конкретную акцию, если в сохранении есть регион инструмента
+      // + дефолтный SBER
+      if (currentToolRegion || currentToolCode === "SBER") {
+        await this.fetchTool(currentToolCode, currentToolCode === "SBER" ? "RU" : currentToolRegion);
+      }
+      // Фьючерс
+      else if (currentToolRegion === "") {
+        await this.fetchFutures();
+      }
+
+      // Фоновая загрузка всех инструментов
+      (async () => {
+        await this.setStateAsync({ toolSelectDisabled: true });
+        const tools = await this.prefetchTools();
+        await this.setStateAsync({ toolSelectDisabled: false, tools });
+        await this.syncToolsWithInvestorInfo();
+        await this.clampPriceRange();
+      })();
     }
     else {
-      await this.fetchFutures();
+      await this.fetchTools();
     }
-
-    // Фоновая загрузка всех инструментов
-    (async () => {
-      await this.setStateAsync({ toolSelectDisabled: true });
-      const tools = await this.prefetchTools();
-      await this.setStateAsync({ toolSelectDisabled: false, tools });
-      await this.syncToolsWithInvestorInfo();
-      await this.clampPriceRange();
-    })();
 
     this.fetchCompanyQuotes();
 
@@ -797,7 +804,7 @@ class App extends BaseComponent {
       scaleOffset:       data.scaleOffset     ?? initialState.scaleOffset,
       kodTable:          data.kodTable        ?? initialState.kodTable,
       currentToolCode:   data.currentToolCode ?? initialState.currentToolCode,
-      currentToolRegion: data.currentToolRegion ?? "",
+      currentToolRegion: data.currentToolRegion,
       investorInfo:      { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
     }
   }
