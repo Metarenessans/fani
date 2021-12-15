@@ -796,8 +796,6 @@ class App extends BaseComponent {
       days:              data.days            ?? initialState.days,
       scaleOffset:       data.scaleOffset     ?? initialState.scaleOffset,
       kodTable:          data.kodTable        ?? initialState.kodTable,
-      // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
-      customTools:      (data.customTools || []).map(tool => Tool.fromObject(tool, { investorInfo })),
       currentToolCode:   data.currentToolCode ?? initialState.currentToolCode,
       currentToolRegion: data.currentToolRegion ?? "",
       investorInfo:      { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
