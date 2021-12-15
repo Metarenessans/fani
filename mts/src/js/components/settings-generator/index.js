@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
 import { LoadingOutlined } from "@ant-design/icons"
@@ -43,7 +43,7 @@ let changed = false;
 let changedDueToCurrentPreset = false;
 let changedDueToAddPreset = false;
 
-const SettingsGenerator = memo(props => {
+const SettingsGenerator = props => {
 
   const { onClose, onUpdate, onSave, genaSave, toolsLoading, onToolSelectFocus, onToolSelectBlur } = props;
 
@@ -1918,7 +1918,7 @@ const SettingsGenerator = memo(props => {
       />
     </>
   );
-}, (prevProps, nextProps) => isEqual(prevProps.genaSave, nextProps.genaSave))
+};
 
 const onSGOpen = () => {
   open = true;
