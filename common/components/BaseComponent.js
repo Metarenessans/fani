@@ -241,7 +241,7 @@ export default class BaseComponent extends React.Component {
    * 
    * 2. Распаковывает данные в стейт по ключу `investorInfo` (смотри {@link applyInvestorInfo})
    * 
-   * @param {{ fallback: InvestorInfo }} options
+   * @param {{ fallback: InvestorInfoResponse }} options
    * @return {Promise<InvestorInfoResponse>}
    */
   async fetchInvestorInfo(options) {
@@ -257,8 +257,9 @@ export default class BaseComponent extends React.Component {
     finally {
       const { fallback } = options;
       if (dev && fallback) {
-        await this.setStateAsync({ investorInfo: fallback });
+        response = fallback;
       }
+      await this.applyInvestorInfo(response);
     }
 
     return response;

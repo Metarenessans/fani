@@ -1,6 +1,9 @@
 export default {
-  email:   "justbratka@ya.ru",
-  deposit: 50_000,
-  status:  "KSUR",
-  skill:   "UNSKILLED"
+  "error": false,
+  "data": {
+    "email": "vitajtopoev@mail.ru",
+    "deposit": 2700000,
+    "status": "KSUR",
+    "skill": "UNSKILLED"
+  }
 }
