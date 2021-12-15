@@ -985,15 +985,19 @@ class App extends BaseComponent {
 
     // TODO: вставить позже
     // const disabledModes = this.getDisabledMods();
-    const disabledModes = [
+    let disabledModes = [
       currentTool.isFutures && currentTool.volume < 1e9,
       currentTool.isFutures && currentTool.volume < 1e9 || depo <= 600_000,
       depo <= 100_000
     ];
-    // Если текущий режим заблокирован, откатываемся к доступному
+    // Если текущий режим заблокирован, пытаемся откатиться к доступному
     if (disabledModes[mode]) {
-      mode = disabledModes.indexOf(false);
       console.warn("Текущий режим заблокирован, откатываемся к доступному");
+      mode = disabledModes.indexOf(false);
+      if (mode == -1) {
+        mode = 0;
+        disabledModes = [false, false, false];
+      }
       onAlgorythmChange(mode, presetSelection[mode]);
     }
 
