@@ -154,6 +154,8 @@ class App extends BaseComponent {
 
     /** @type {syncToolsWithInvestorInfo} */
     this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
+
+    this.fetchInvestorInfo = App.prototype.fetchInvestorInfo;
   }
 
   componentDidMount() {
@@ -715,10 +717,7 @@ class App extends BaseComponent {
 
   async fetchInvestorInfo() {
     try {
-      const fallback = {
-        ...require("./dev/investor-info").default,
-        type: this.state.percentage >= 0 ? "LONG" : "SHORT"
-      };
+      const fallback = require("./dev/investor-info").default;
       const response = await super.fetchInvestorInfo({ fallback });
 
       const depo = response.data?.deposit ?? 10_000;
