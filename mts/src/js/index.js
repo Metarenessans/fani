@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { App } from "./app"
+import { App } from "./App"
 ReactDOM.render(<App pageName="Mts" />, document.querySelector("#root"));
 
 // import "../sass/style.sass"
