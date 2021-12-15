@@ -1604,7 +1604,7 @@ class App extends BaseComponent {
 
                           <button
                             className="settings-button js-open-modal main-content-options__settings"
-                            disabled={!dev && (toolsLoading || chartLoading)}
+                            disabled={toolsLoading}
                             onClick={e => {
                               lastSavedSG = cloneDeep(genaSave);
                               sgChanged = false;
