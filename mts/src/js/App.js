@@ -1585,7 +1585,7 @@ class App extends BaseComponent {
                                 <Select
                                   className={mode == index ? "selected" : ""}
                                   value={presetSelection[index]}
-                                  disabled={disabledModes[index]}
+                                  disabled={toolsLoading || disabledModes[index]}
                                   showArrow={options?.length > 1}
                                   dropdownStyle={{
                                     visibility:    options?.length > 1 ? "visible" : "hidden",
