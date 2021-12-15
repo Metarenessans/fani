@@ -1,5 +1,4 @@
 import React, { Component } from "react"
-const { Provider, Consumer } = React.createContext();
 import {
   Button,
   Col,
@@ -19,7 +18,7 @@ import {
   SettingFilled
 } from "@ant-design/icons"
 
-import { merge, cloneDeep as clone } from "lodash"
+import { merge, cloneDeep } from "lodash"
 import objToPlainText from "object-plain-string"
 
 /* API */
@@ -47,7 +46,7 @@ import { Tools, Tool, template } from "../../../common/tools"
 import Iteration from "./utils/iteration"
 import Data      from "./utils/data"
 
-import Stack           from "./components/stack"
+import Stack           from "../../../common/components/stack"
 import BigNumber       from "./components/BigNumber"
 import Config          from "../../../common/components/config";
 import CustomSelect    from "../../../common/components/custom-select"
@@ -57,8 +56,12 @@ import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
-import ToolSelect      from "./components/tool-select"
+import ToolSelect      from "../../../common/components/tool-select"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
+
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+/** @type {React.Context<App>} */
+export const StateContext = Context;
 
 import "../sass/style.sass"
 
@@ -77,10 +80,12 @@ if (!dev) {
   chartVisible = true;
 }
 
-class App extends Component {
+class App extends BaseComponent {
   
   constructor(props) {
     super(props);
+
+    this.deafultTitle = "Трейдометр";
 
     // Считываем значения из адресной строки
     const depoStart = Number( params.get("start") ) || 1_000_000;
@@ -92,13 +97,8 @@ class App extends Component {
      * Дефолтный стейт
      */
     this.initialState = {
-
-      loading: false,
-
-      investorInfo: {
-        status: "KSUR",
-        type:   "LONG",
-      },
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       // TODO: в идеале realData не нужна, все значения из факта можно хранить в data
       realData: {},
@@ -197,7 +197,6 @@ class App extends Component {
        */
       iterations: 10,
 
-      customTools: [],
       currentToolCode: "SBER",
       
       // --------------------
@@ -214,20 +213,9 @@ class App extends Component {
       // -----
 
       /**
-       * Идентификатор сохранения
-       */
-      id: null,
-
-      /**
        * Режим масштаба графика в днях
        */
       chartScaleMode: 260,
-
-      // -----
-      // Flags
-      // -----
-      saved: false,
-      changed: false,
 
       directUnloading: true,
 
@@ -244,43 +232,27 @@ class App extends Component {
       pitError: "",
 
       errorMessage: "",
-      
-      toolsLoading: false,
-
-      isToolsDropdownOpen: false
     };
 
-    this.state = merge(
-      clone(this.initialState),
-      // Здесь находятся только те дефолтные значения, которые не должны сбрасываться
-      {
-        /**
-         * Массив с данными для каждого дня
-         * @type {Array<{}>}
-         */
-         data: [],
-        
-        /**
-         * Массив с сохранениям
-         * @type {Array<{}>}
-         */
-        saves: [],
-        
-        // -----
-        // Tools
-        // -----
-        tools: [],
+    this.state = {
+      // Копирует `state` из BaseComponent
+      ...this.state,
 
-        /**
-         * Индекс текущего сохранения
-         */
-        currentSaveIndex: 0,
+      ...cloneDeep(this.initialState),
 
-        passiveIncomeTools: [],
+      // Далее идут только те дефолтные значения, которые не должны сбрасываться
+      
+      /**
+       * Массив с данными для каждого дня
+       * 
+       * @type {Array<{}>}
+       */
+      data: [],
 
-        chartModuleLoaded: false,
-      }
-    );
+      passiveIncomeTools: [],
+
+      chartModuleLoaded: false
+    };
 
     this.state.data = new Data();
     this.state.data.build(this.getDataOptions());
@@ -536,52 +508,14 @@ class App extends Component {
     })
   }
 
-  fetchSaves() {
-    fetch("getTrademeterSnapshots")
-      .then(response => {
-        const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-        this.setState({ saves, loading: false });
-      })
-
-    fetch("getLastModifiedTrademeterSnapshot")
-      .then(async response => {
-        // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-        if (!response.error && response.data?.name) {
-          const pure = params.get("pure") === "true";
-          if (!pure) {
-            await this.setStateAsync({ loading: true });
-            await this.extractSave(response.data)
-            this.setStateAsync({ loading: false });
-          }
-        }
-      })
-      .catch(reason => message.error(`Не удалось получить сохранения! ${reason}`))
-      .finally(() => {
-        if (dev && shouldLoadFakeSave && !(params.get("pure") === "true")) {
-          const { saves } = this.state;
-          const response = require("./api/fake-save.js").default;
-          const { data } = response;
-          const { id, name } = data;
-          const index = 0;
-
-          this.extractSave(data);
-
-          saves[index] = { id, name };
-          this.setState({
-            saves,
-            currentSaveIndex: index + 1,
-            loading: false
-          });
-        }
-      })
-  }
-
   fetchInitialData() {
     this.fetchInvestorInfo();
-    this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout());
-    
-    this.fetchSaves();
+    this.fetchTools().then(() => this.setFetchingToolsTimeout());
+    this.fetchSnapshots();
+    this.fetchLastModifiedSnapshot({
+      fallback: require("./dev/snapshot").default,
+      praseFn: this.extractSave
+    });
   }
 
   showAlert(msg = "") {
@@ -640,6 +574,8 @@ class App extends Component {
       customPassiveIncomeTools
     } = this.state;
 
+    const { scaleStart, scaleEnd } = chartModule;
+
     const rate = this.getRate();
 
     const json = {
@@ -662,6 +598,8 @@ class App extends Component {
         mode:                          mode,
         customTools:                   customTools,
         currentToolCode,
+        chartScaleStart: scaleStart,
+        chartScaleEnd:   scaleEnd,
         // TODO: do we need this?
         current_date:                  "#"
       },
@@ -744,7 +682,7 @@ class App extends Component {
         console.log("parsed dynamic", dynamicParsed);
       }
 
-      const initialState = clone(this.initialState);
+      const initialState = cloneDeep(this.initialState);
 
       let m = staticParsed.mode;
       if (typeOf(m) === "array") {
@@ -881,6 +819,9 @@ class App extends Component {
       if (state.dataLength == null) {
         state.dataLength = Math.max(state.days[m], dynamicParsed.length);
       }
+
+      this.scaleStart = staticParsed.chartXScaleStart;
+      this.scaleEnd   = staticParsed.chartXScaleEnd;
       
       const minRate = staticParsed.minDailyIncome[m];
       state.data = this.buildData(state.dataLength, true, 0, { $rateRequired: minRate });
@@ -1142,114 +1083,16 @@ class App extends Component {
 
   // API
 
-  reset() {
-    return new Promise(resolve => {
-      this.setStateAsync( clone(this.initialState) )
-        .then(() => this.updateDepoPersentageStart())
-        .then(() => {
-          // Check if depoStart is more than depoEnd
-          let { mode, depoStart, depoEnd } = this.state;
-          if (depoStart[mode] >= depoEnd) {
-            depoEnd = depoStart[mode] * 2;
-          }
-
-          return this.setState({ depoEnd, id: null }, () => resolve());
-        })
-    })
-  }
-  
-  save(name = "") {
-    return new Promise((resolve, reject) => {
-      if (!name) {
-        reject("Name is empty!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        name,
-        static: JSON.stringify(json.static),
-        dynamic: JSON.stringify(json.dynamic)
-      };
-
-      fetch("addTrademeterSnapshot", "POST", data)
-        .then(res => {
-          let id = Number(res.id);
-          if (id) {
-            this.setState({ id }, () => resolve(id));
-          }
-          else {
-            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-          }
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  update(name) {
-    if (!name) {
-      name = this.getTitle()
+  async reset() {
+    await super.reset();
+    await this.updateDepoPersentageStart();
+    // TODO: вынести проверку в отдельную функцию
+    // Check if depoStart is more than depoEnd
+    let { mode, depoStart, depoEnd } = this.state;
+    if (depoStart[mode] >= depoEnd) {
+      depoEnd = depoStart[mode] * 2;
+      return this.setStateAsync({ depoEnd });
     }
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-        dynamic: JSON.stringify(json.dynamic)
-      };
-      fetch("updateTrademeterSnapshot", "POST", data)
-        .then(res => {
-          console.log("Updated!", res);
-          resolve();
-        })
-        .catch(err => console.log(err));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteTrademeterSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-  
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-  
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-            this.fetchSaveById(id)
-              .then(response => this.extractSave(response.data))
-              .catch(error => this.showAlert("Error occured in 'fetchSaveById':" + error));
-          }
-          else {
-            this.reset().then(() => this.recalc())
-
-            saved = changed = false;
-          }
-  
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
   }
 
   // ==================
@@ -1346,8 +1189,8 @@ class App extends Component {
       payload,
       payloadInterval[mode],
       options.length,
-      withdrawalInterval[mode],
-      payloadInterval[mode],
+      Infinity, // withdrawalInterval[mode],
+      Infinity, // payloadInterval[mode],
       0,
       options?.realData || this._getRealData(),
       {
@@ -1360,7 +1203,7 @@ class App extends Component {
       }
     ];
 
-    const result = extRateReal(...clone(args));
+    const result = extRateReal(...cloneDeep(args));
 
     result.rate            *= 100;
     result.rateRecommended *= 100;
@@ -1386,35 +1229,6 @@ class App extends Component {
 
     passiveIncomeMonthly[mode] = Math.round(percentage * depoEnd * 21.6667);
     return this.setStateAsync({ passiveIncomeMonthly });
-  }
-
-  /**
-   * Возвращает все инструменты в одном массиве 
-   * (полученные с бэка и кастомные)
-   */
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools);
-  }
-
-  getCurrentToolIndex() {
-    let { currentToolCode, currentToolIndex } = this.state;
-    const tools = this.getTools();
-    // Обратная совместимость для сейвов, где указан только currentSaveIndex
-    if (currentToolIndex != null) {
-      // Если индекс выбранного инструмента превышает кол-во инструментов
-      // -- выбираем последний возможный инструмент
-      return Math.min(currentToolIndex, tools.length - 1);
-    }
-
-    return Tools.getToolIndexByCode(tools, currentToolCode);
-  }
-
-  /**
-   * Возвращает выбранный торговый инструмент
-   */
-  getCurrentTool() {
-    return this.getTools()[this.getCurrentToolIndex()] || Tools.createArray()[0];
   }
 
   /**
@@ -1481,20 +1295,6 @@ class App extends Component {
     }
 
     return roundUp(pointsForIteration);
-  }
-
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Трейдометр")
-   */
-  getTitle() {
-    const { saves, currentSaveIndex } = this.state;
-    let title = "Трейдометр";
-
-    if (saves.length && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
-    }
-
-    return title;
   }
 
   /**
@@ -1624,8 +1424,7 @@ class App extends Component {
       averageProf     = rateObj.averageProf;
     }
     else {
-      const tempObj = this.useRate({ length: days[mode] });
-      const customFuture = tempObj.future;
+      const customFuture = this.getDepoEnd(mode, false);
       if (realData.length == dataLength) {
         extraDays = this.useRate({ customFuture }).extraDays;
       }
@@ -1660,7 +1459,7 @@ class App extends Component {
     const currentTool = this.getCurrentTool();
 
     return (
-      <Provider value={this}>
+      <StateContext.Provider value={this}>
         <div className="page">
 
           <main className="main">
@@ -1711,12 +1510,12 @@ class App extends Component {
                   }
 
                   if (Object.keys(lastRealData).length) {
-                    const tempRealData = clone(realData);
-                    realData     = clone(lastRealData);
-                    lastRealData = clone(tempRealData);
+                    const tempRealData = cloneDeep(realData);
+                    realData     = cloneDeep(lastRealData);
+                    lastRealData = cloneDeep(tempRealData);
                   }
                   else {
-                    lastRealData = clone(realData);
+                    lastRealData = cloneDeep(realData);
                     realData = {};
                   }
 
@@ -2556,12 +2355,11 @@ class App extends Component {
                         </header>
                         <ToolSelect
                           errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
-                          toolsLoading={this.state.toolsLoading}
-                          disabled={this.state.toolsLoading}
                           tools={tools}
-                          value={this.state.toolsLoading && tools.length == 0 ? 0 : this.getCurrentToolIndex()}
+                          value={this.getCurrentToolIndex()}
                           onChange={currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
+                            const tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
 
                             let depoPersentageStart = this.state.depoPersentageStart;
@@ -2571,8 +2369,8 @@ class App extends Component {
                             }
 
                             this.setState({ 
-                              // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               isToolsDropdownOpen: false,
+                              // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
@@ -2582,11 +2380,7 @@ class App extends Component {
                                 .then(() => this.updateDepoPersentageStart())
                             });
                           }}
-                          onFocus={() => this.setState({ isToolsDropdownOpen: true })}
-                          onBlur={() => {
-                            this.setStateAsync({ isToolsDropdownOpen: false })
-                              .then(() => this.imitateFetchingTools());
-                          }}
+                          onBlur={() => this.imitateFetchingTools()}
                         />
                       </div>
                     </div>
@@ -3612,9 +3406,10 @@ class App extends Component {
                     defaultScaleMode={this.state.days[mode]} 
                     data={this.state.data}
                     currentDay={currentDay}
-                    onFirstRender={e => {
+                    onFirstRender={async e => {
                       if (chartVisible) {
-                        chartModule?.createChart.call(this);
+                        await chartModule?.createChart.call(this);
+                        chartModule.updateChartZoom.call(this, this.scaleStart, this.scaleEnd);
                       }
                     }}
                   />
@@ -3920,9 +3715,9 @@ class App extends Component {
           {/* Error Popup */}
 
         </div>
-      </Provider>
+      </StateContext.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App }

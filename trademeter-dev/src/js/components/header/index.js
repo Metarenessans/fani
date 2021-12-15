@@ -1,12 +1,13 @@
 import React from 'react'
 import { Button, Select } from "antd/es"
 
-import { Consumer }  from "../../app"
 import Stack         from "../../../../../common/components/stack"
 import CrossButton   from "../../../../../common/components/cross-button"
 import { dialogAPI } from "../../../../../common/components/dialog"
 
 import { LoadingOutlined } from "@ant-design/icons"
+
+import { StateContext } from "../../App"
 
 import "./style.scss"
 
@@ -18,9 +19,8 @@ const Header = ({
   onSave,
   onSaveChange,
 }) => {
-  
   return (
-    <Consumer>
+    <StateContext.Consumer>
       {app => {
         const state = app.state;
         return (
@@ -104,7 +104,7 @@ const Header = ({
           </div>
         )
       }}
-    </Consumer>
+    </StateContext.Consumer>
   )
 };
 

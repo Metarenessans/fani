@@ -15,6 +15,7 @@ else {
 }
 
 import { flatten } from 'lodash'
+import delay from "../../../../../common/utils/delay"
 import roundUp from "../../../../../common/utils/round-up"
 import formatNumber from "../../../../../common/utils/format-number"
 import roundToClosest from "../../../../../common/utils/round-to-closest"
@@ -52,28 +53,37 @@ const getLen = data => {
   return len;
 };
 
-function updateChartZoom(scaleStart, scaleEnd) {
+/**
+ * Обновляет масштаб графика
+ * 
+ * Обновляет:
+ * 1. xScale
+ * 2. yScale
+ * 3. Засечки (ticks)
+ * 
+ * @param {number} start Точка начала в диапазоне от 0 до 1
+ * @param {number} end   Точка конца в диапазоне от 0 до 1
+ */
+function updateChartZoom(start, end) {
   const { data, chartScaleMode } = this.state;
-  updateChartScaleXY(scaleStart, scaleEnd, data, chartScaleMode);
-}
+  scaleStart = start;
+  scaleEnd   = end;
 
-function updateChartScaleXY(scaleStart, scaleEnd, data, scaleMode) {
   // X axis
   const step = 1 / data.length;
   
-  let start = scaleStart;
-  let end   = scaleEnd >= 1
+  start = scaleStart;
+  end   = scaleEnd >= 1
     ? 1
     : scaleEnd <= step
       ? step
-      : scaleMode == 1
+      : chartScaleMode == 1
         ? scaleEnd
         : scaleEnd - step;
   
   chart?.xZoom().setTo(start, end);
-  
-  // Y axis
   updateChartScaleY(start, end);
+  updateChartTicks(start, end, data)
 }
 
 function updateChartScaleY(start, end) {  
@@ -295,198 +305,192 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
   return { start, end }
 }
 
-function createChart() {
+function getIcon(color) {
+  return `
+    <svg viewBox="0 0 10 10" 
+         width="1em"
+         height="1em" 
+         fill="${color}"
+         style="position: relative; top: 0.1em"
+    >
+      <rect x="0" y="0" width="10" height="10" />
+    </svg>
+  `
+}
+
+async function createChart() {
   if (dev) {
     if (!chartLoaded) {
-      setTimeout(() => {
-        createChart.call(this)
-      }, 500);
-      return;
+      await delay(500);
+      return createChart.call(this);
     }
   }
 
   anychart.onDocumentReady(() => {
-    chart = anychart.line();
+  });
 
-    updateChart.call(this, true);
+  chart = anychart.line();
+
+  updateChart.call(this, true);
+  
+  chart.animation(true, 3000);
+  chart.tooltip().titleFormat(e => {
+    const { data } = this.state;
     
-    chart.animation(true, 3000);
-    chart.tooltip().titleFormat(e => {
-      const { data } = this.state;
-      
-      let index;
-      for (let point of e.points) {
-        index = point.x || point.index;
-        if (index) {
-          break;
-        }
+    let index;
+    for (let point of e.points) {
+      index = point.x || point.index;
+      if (index) {
+        break;
       }
-      
-      let fraction = 0;
-      if (String(index).indexOf(".") > -1) {
-        fraction = String(index).split(".")[1];
-      }
-
-      if (fraction > 0) {
-        return `День ${Math.floor(index)}, итерация номер ${fraction}`
-      }
-      
-      return index == 1 
-        ? `Начало 1 дня` 
-        : index - 1 == data.length
-          ? `Конец ${index - 1} дня`
-          : `Конец ${index - 1} дня, начало ${index} дня`
-    });
-    
-    // set data
-    let series = chart.line(chartData);
-    series.name("Фактический рост депо");
-    series.tooltip().displayMode("separated");
-    series.tooltip().useHtml(true);
-    series.tooltip().format(e => {
-      let svg = `
-      <svg viewBox="0 0 10 10" width="1em" height="1em" 
-      fill="#87d068" style="position: relative; top: 0.1em">
-      <rect x="0" y="0" width="10" height="10" />
-      </svg>
-      `;
-      return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
-    });
-    // Line color
-    series.normal().stroke({
-      color: "#87d068",
-      thickness: "5%"
-    });
-    
-    let series3 = chart.line(chartData3);
-    series3.xMode('scatter');
-    series3.name("Рекомендуемый рост депо");
-    series3.tooltip().displayMode("separated");
-    series3.tooltip().useHtml(true);
-    series3.tooltip().format(e => {
-      if (e.index > 0) {
-        let svg = `
-        <svg viewBox="0 0 10 10" width="1em" height="1em" 
-        fill="#c46d1a" style="position: relative; top: 0.1em">
-        <rect x="0" y="0" width="10" height="10" />
-        </svg>
-        `;
-        
-        return `${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}`
-      }
-      else return `<span class="empty-tooltip-row"></span>`;
-    });
-    series3.normal().stroke({
-      color: "#c46d1a",
-      dash: '3 5',
-      thickness: "5%"
-    });
-
-    let series4 = chart.line(planEndData);
-    series4.xMode('scatter');
-    series4.name("Планируемый рост депо");
-    series4.tooltip().displayMode("separated");
-    series4.tooltip().useHtml(true);
-    series4.tooltip().format(e => {
-      let tool = this.getCurrentPassiveIncomeTool();
-
-      if (e.index > 0) {
-        let svg = `
-          <svg viewBox="0 0 10 10" width="1em" height="1em" fill="#40a9ff" style="position: relative; top: 0.1em">
-            <rect x="0" y="0" width="10" height="10" />
-          </svg>
-        `;
-        
-        return `
-          ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
-          ${tool
-            ? "<br/>Пассивный доход: " + formatNumber(Math.round(e.value * (tool.rate / 100) / 12)) + " /месяц"
-            : ""
-          }
-        `.trim().replace(/\s+/, " ");
-      }
-      else return `<span class="empty-tooltip-row"></span>`;
-    });
-    series4.normal().stroke({
-      color: "#40a9ff",
-      dash: '3 5',
-      thickness: "5%"
-    });
-    
-    let series2 = chart.line(chartData2);
-    series2.name("Планируемый рост депо");
-    series2.tooltip().displayMode("separated");
-    series2.tooltip().useHtml(true);
-    series2.tooltip().format(e => {
-      let tool = this.getCurrentPassiveIncomeTool();
-
-      let svg = `
-      <svg viewBox="0 0 10 10" width="1em" height="1em" 
-      fill="#40a9ff" style="position: relative; top: 0.1em">
-      <rect x="0" y="0" width="10" height="10" />
-      </svg>
-      `;
-      
-      return `
-        ${svg} ${e.seriesName}: ${formatNumber(Math.round(e.value))}
-        ${tool 
-          ? `<br/>Пассивный доход: ${formatNumber(Math.round(e.value * (tool.rate / 100) / 12))} /месяц` 
-          : ""
-        }
-      `.trim().replace(/\s+/, " ")
-    });
-    series2.normal().stroke({
-      color: "#40a9ff",
-      thickness: "5%"
-    });
-    
-    if (true) {
-      // turn on X Scroller
-      chart.xScroller(true);
-      // chart.xScroller().thumbs(false);
-      chart.xScroller().minHeight(40);
-      chart.xScroller().fill("#40a9ff 0.1");
-      chart.xScroller().selectedFill("#40a9ff 0.5");
-      chart.xScroller().listen("scrollerchange", e => {        
-        const { scaleStart, scaleEnd } = updateChartXZoom(e.startRatio, e.endRatio);
-        updateChartScaleY(scaleStart, scaleEnd);
-        updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
-      });
-      chart.xScroller().listen("scrollerchangefinish", e => {
-        // Меняем масштаб вручную
-        if (e.source == "thumb-drag") {
-          const step = 1 / (planData.length - 1);
-          scaleStart = roundToClosest(e.startRatio, step);
-          scaleEnd   = roundToClosest(e.endRatio,   step);
-
-          const ceiling = 1 - step;
-          if (scaleEnd >= ceiling) {
-            scaleEnd = 1;
-          }
-
-          chart?.xZoom().setTo(scaleStart, scaleEnd);
-        }
-        else {
-          const { start, end } = calcXZoom(chartScaleMode, e.startRatio, e.endRatio);
-          const xZoom = updateChartXZoom(start, end);
-          scaleStart = xZoom.scaleStart;
-          scaleEnd   = xZoom.scaleEnd;
-        }
-
-        updateChartScaleY(scaleStart, scaleEnd);
-        updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
-      })
     }
     
-    // Genetal settings
-    chart.xAxis().title("Номер дня");
-    chart.yAxis().labels().format(e => formatNumber(e.value));
+    let fraction = 0;
+    if (String(index).indexOf(".") > -1) {
+      fraction = String(index).split(".")[1];
+    }
+
+    if (fraction > 0) {
+      return `День ${Math.floor(index)}, итерация номер ${fraction}`
+    }
     
-    // set container and draw chart
-    chart.xScale().names('customName');
-    chart.xScale().mode("continuous");
-    chart.container("chart").draw();
+    return index == 1 
+      ? `Начало 1 дня` 
+      : index - 1 == data.length
+        ? `Конец ${index - 1} дня`
+        : `Конец ${index - 1} дня, начало ${index} дня`
   });
+  
+  // set data
+  let series = chart.line(chartData);
+  series.name("Фактический рост депо");
+  series.tooltip().displayMode("separated");
+  series.tooltip().useHtml(true);
+  series.tooltip().format(e => {
+    const { value, seriesName } = e;
+    const svg = getIcon("#87d068");
+    return `${svg} ${seriesName}: ${formatNumber(Math.round(value))}`
+  });
+  // Line color
+  series.normal().stroke({
+    color: "#87d068",
+    thickness: "5%"
+  });
+  
+  let series3 = chart.line(chartData3);
+  series3.xMode('scatter');
+  series3.name("Рекомендуемый рост депо");
+  series3.tooltip().displayMode("separated");
+  series3.tooltip().useHtml(true);
+  series3.tooltip().format(e => {
+    const { index, value, seriesName } = e;
+    if (index > 0) {
+      const svg = getIcon("#c46d1a");
+      return `${svg} ${seriesName}: ${formatNumber(Math.round(value))}`
+    }
+    else return `<span class="empty-tooltip-row"></span>`;
+  });
+  series3.normal().stroke({
+    color: "#c46d1a",
+    dash: '3 5',
+    thickness: "5%"
+  });
+
+  let series4 = chart.line(planEndData);
+  series4.xMode('scatter');
+  series4.name("Планируемый рост депо");
+  series4.tooltip().displayMode("separated");
+  series4.tooltip().useHtml(true);
+  series4.tooltip().format(e => {
+    const { index, value, seriesName } = e;
+    if (index > 0) {
+      let tool = this.getCurrentPassiveIncomeTool();
+      const svg = getIcon("#40a9ff");
+      return `
+        ${svg} ${seriesName}: ${formatNumber(Math.round(value))}
+        <br/>
+        ${tool
+          ? "Пассивный доход: " + formatNumber(Math.round(value * (tool.rate / 100) / 12)) + " /месяц"
+          : ""
+        }
+      `.trim().replace(/\s+/, " ");
+    }
+    else return `<span class="empty-tooltip-row"></span>`;
+  });
+  series4.normal().stroke({
+    color: "#40a9ff",
+    dash: '3 5',
+    thickness: "5%"
+  });
+  
+  let series2 = chart.line(chartData2);
+  series2.name("Планируемый рост депо");
+  series2.tooltip().displayMode("separated");
+  series2.tooltip().useHtml(true);
+  series2.tooltip().format(e => {
+    const { value, seriesName } = e;
+    const tool = this.getCurrentPassiveIncomeTool();
+    const svg = getIcon("#40a9ff");
+    return `
+      ${svg} ${seriesName}: ${formatNumber(Math.round(value))}
+      <br/>
+      ${tool 
+        ? "Пассивный доход: " + formatNumber(Math.round(value * (tool.rate / 100) / 12)) + " /месяц"
+        : ""
+      }
+    `.trim().replace(/\s+/, " ");
+  });
+  series2.normal().stroke({
+    color: "#40a9ff",
+    thickness: "5%"
+  });
+  
+  if (true) {
+    // turn on X Scroller
+    chart.xScroller(true);
+    // chart.xScroller().thumbs(false);
+    chart.xScroller().minHeight(40);
+    chart.xScroller().fill("#40a9ff 0.1");
+    chart.xScroller().selectedFill("#40a9ff 0.5");
+    chart.xScroller().listen("scrollerchange", e => {        
+      const { scaleStart, scaleEnd } = updateChartXZoom(e.startRatio, e.endRatio);
+      updateChartScaleY(scaleStart, scaleEnd);
+      updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
+    });
+    chart.xScroller().listen("scrollerchangefinish", e => {
+      // Меняем масштаб вручную
+      if (e.source == "thumb-drag") {
+        const step = 1 / (planData.length - 1);
+        scaleStart = roundToClosest(e.startRatio, step);
+        scaleEnd   = roundToClosest(e.endRatio,   step);
+
+        const ceiling = 1 - step;
+        if (scaleEnd >= ceiling) {
+          scaleEnd = 1;
+        }
+
+        chart?.xZoom().setTo(scaleStart, scaleEnd);
+      }
+      else {
+        const { start, end } = calcXZoom(chartScaleMode, e.startRatio, e.endRatio);
+        const xZoom = updateChartXZoom(start, end);
+        scaleStart = xZoom.scaleStart;
+        scaleEnd   = xZoom.scaleEnd;
+      }
+
+      updateChartScaleY(scaleStart, scaleEnd);
+      updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
+    })
+  }
+  
+  // Genetal settings
+  chart.xAxis().title("Номер дня");
+  chart.yAxis().labels().format(e => formatNumber(e.value));
+  
+  // set container and draw chart
+  chart.xScale().names('customName');
+  chart.xScale().mode("continuous");
+  return chart.container("chart").draw(true);
 }
 
 function updatePlanEndLine(start, length, value) {
@@ -653,8 +657,8 @@ function updateChart(isInit = false) {
 
   // console.log(planData);
 
-  // Сопоставляет план 1 к 1 с фактом, если не достает значения
-  // то подставляется интерполированное между двумя ближайшими
+  // Сопоставляет план 1 к 1 с фактом, и если плана для конрктеного факта нет,
+  // то в план подставляется интерполированное значение между двумя ближайшими точками факта
   for (let i = 0; i < planData.length;) {
     if (factData[i]) {
 
@@ -673,17 +677,19 @@ function updateChart(isInit = false) {
       let step = planData[i].value - planData[i - 1].value;
 
       if (payment) {
-        step += payment;
+        // TODO: вероятно нужно оставить во втором режиме
+        // step -= payment;
       }
       else if (paymentPlan) {
-        step += paymentPlan;
+        step -= paymentPlan;
       }
 
       if (payload) {
-        step -= payload;
+        // TODO: вероятно нужно оставить во втором режиме
+        // step += payload;
       }
       else if (payloadPlan) {
-        step -= payloadPlan;
+        step += payloadPlan;
       }
 
       step *= weight;
@@ -730,21 +736,23 @@ function updateChart(isInit = false) {
     if (factDays.length) {
       const { withdrawal, withdrawalInterval, payload, payloadInterval } = this.state;
       
-      const rateRecommended = this.rateRecommended;
       
       const lastFilledDayNumber = (data.lastFilledDay?.day || 0) - 1;
       recommendData = new Array(data.length - lastFilledDayNumber).fill(0);
       recommendData[0] = factData[factData.length - 1].value;
       
       for (let i = 1; i < recommendData.length; i++) {
-        recommendData[i] = recommendData[i - 1] + (recommendData[i - 1] * rateRecommended / 100);
+        recommendData[i] = recommendData[i - 1] + recommendData[i - 1] * this.rateRecommended / 100;
         
-        if ((lastFilledDayNumber + i + 1) % withdrawalInterval[mode] == 0) {
-          recommendData[i] -= withdrawal[mode];
+        const day = lastFilledDayNumber + i + 1;
+        // Вычитаем плановый вывод, если запланирован
+        if (day % withdrawalInterval[mode] == 0) {
+          // recommendData[i] -= withdrawal[mode];
         }
         
-        if ((lastFilledDayNumber + i + 1) % payloadInterval[mode] == 0) {
-          recommendData[i] += payload[mode];
+        // Вычитаем плановое пополнение, если запланировано
+        if (day % payloadInterval[mode] == 0) {
+          // recommendData[i] += payload[mode];
         }
       }
       

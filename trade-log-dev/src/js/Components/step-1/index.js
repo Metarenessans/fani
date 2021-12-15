@@ -682,6 +682,11 @@ export default class FirstStep extends React.Component {
                         const deals = cloneDeep(data[currentRowIndex].deals);
                         deals.push(cloneDeep(context.dealTemplate));
                         data[currentRowIndex].deals = deals;
+
+                        data[currentRowIndex].reportMonitor.push(
+                          { result: true, baseTrendDirection: null, momentDirection: null, doubts: null }
+                        );
+                        
                         context.setState({ data });
                       }}
                     >
@@ -692,9 +697,8 @@ export default class FirstStep extends React.Component {
                 <Button
                   className="trade-log-button"
                   disabled={
-                    state.limitUnprofitableDeals && 
-                    deals
-                      .filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals || deals.length == 1
+                    (state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals) || 
+                    deals.length == 1
                   }
                   onClick={() => {
                     const data = cloneDeep(state.data);
