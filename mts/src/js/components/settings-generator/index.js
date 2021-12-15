@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
 import { LoadingOutlined } from "@ant-design/icons"
@@ -37,6 +37,8 @@ import { isEqual, cloneDeep } from "lodash"
 import stepConverter from './step-converter'
 
 import createData from './data'
+
+import { StateContext } from "../../App"
 
 let open = false;
 let changed = false;
@@ -89,6 +91,9 @@ const SettingsGenerator = props => {
     link.click();
     link.remove();
   };
+
+  const context = useContext(StateContext);
+  const { state } = context;
 
   const firstRender = useRef(true);
   const [shouldSave, setShouldSave] = useState(false);
