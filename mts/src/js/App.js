@@ -1536,18 +1536,9 @@ class App extends BaseComponent {
                               this.selectBasePreset();
                             }}
                             onChange={(range = []) => {
-                              const { investorInfo } = this.state;
                               const percentage = range[0] + range[1];
-                              
-                              investorInfo.type = percentage >= 0 ? "LONG" : "SHORT";
-
                               chartModule?.updateChartMinMax(this.state.priceRange, percentage >= 0, possibleRisk);
-                              this.setStateAsync({
-                                investorInfo,
-                                percentage, 
-                                changed: true
-                              })
-                                .then(this.syncToolsWithInvestorInfo)
+                              this.setStateAsync({ percentage, changed: true });
                             }}
                             onAfterChange={priceRange => {
                               console.log("onAfterChange");
