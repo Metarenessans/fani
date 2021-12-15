@@ -1478,7 +1478,7 @@ class App extends BaseComponent {
                     <Chart
                       className="mts__chart"
                       // Вызывает перерендер графика при смене инструмента / флага загрузки 
-                      key={currentTool.toString() + chartLoading}
+                      key={currentTool.toString() + chartLoading + data?.length}
                       min={min}
                       max={max}
                       priceRange={priceRange}
