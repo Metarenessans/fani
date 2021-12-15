@@ -24,7 +24,6 @@ import { Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
-import sortToolsBySearchValue   from "../../../../../common/utils/sort-tools-by-search-value"
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import round           from '../../../../../common/utils/round'
@@ -1071,9 +1070,9 @@ const SettingsGenerator = props => {
                   <Select
                     onFocus={() => onToolSelectFocus && onToolSelectFocus()}
                     onBlur={() => onToolSelectBlur && onToolSelectBlur()}
-                    loading={toolsLoading}
-                    disabled={toolsLoading}
-                    value={toolsLoading && tools.length == 0 ? 0 : currentToolIndex}
+                    loading={toolsLoading || state.toolSelectDisabled}
+                    disabled={toolsLoading || state.toolSelectDisabled}
+                    value={toolsLoading ? 0 : currentToolIndex}
                     onChange={index => updateCurrentPresetTool(tools[index].code)}
                     showSearch
                     onSearch={value => setSearchVal(value)}
@@ -1083,14 +1082,14 @@ const SettingsGenerator = props => {
                     }
                     style={{ width: "100%" }}
                   >
-                    {toolsLoading && tools.length == 0
+                    {toolsLoading
                       ?
                         <Select.Option key={0} value={0}>
                           <LoadingOutlined style={{ marginRight: ".2em" }} />
                           Загрузка...
                         </Select.Option>
                       :
-                        sortToolsBySearchValue(searchVal,tools).map((tool, index) => (
+                        tools.map((tool, index) => (
                           <Select.Option key={index} value={index} title={String(tool)}>
                             {String(tool)}
                           </Select.Option>
