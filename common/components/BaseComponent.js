@@ -249,7 +249,6 @@ export default class BaseComponent extends React.Component {
     let response;
     try {
       response = await fetchInvestorInfo.call(this);
-      await this.applyInvestorInfo(response);
     }
     catch (error) {
       message.error(`Не удалось получить профиль инвестора: ${error}`);
