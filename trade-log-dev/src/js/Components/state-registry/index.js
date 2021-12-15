@@ -147,7 +147,8 @@ export default function StateRegistry() {
             {[
               "Скука",
               "Азарт",
-              "Желание торговать"
+              "Желание торговать",
+              "Спешка и суета"
             ].map((label, i) =>
               <tr key={i}>
                 <td>{label}</td>
