@@ -637,8 +637,8 @@ class App extends BaseComponent {
         if (totalStep === 0) {
           this.updatePriceRange(currentTool, 0);
         }
-        // Шаг в Гене не равен шагу в МТС
-        else if (totalStep !== step) {
+        // Шаг в Гене не равен шагу в МТС (с точностью до 1 тысячной)
+        else if (Math.abs(totalStep - step) > 0.001) {
           if (totalStep === 0) {
             console.warn("Ход в гене = 0, соответственно откатываем ползунок хода в мтс");
             this.updatePriceRange(currentTool);
