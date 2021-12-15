@@ -363,8 +363,8 @@ class App extends BaseComponent {
                 lastSavedSG = cloneDeep(genaSave);
                 sgChanged = false;
 
-                await this.setStateAsync({ genaID: id, genaSave });
-                await this.exportDataToSG(true);
+                await this.setStateAsync({ genaID: id });
+                await this.exportDataToSG(true, genaSave);
                 // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
                 if (this.getCurrentSGPresetIndex() < 3) {
                   resolve();
@@ -394,11 +394,9 @@ class App extends BaseComponent {
           lastSavedSG = cloneDeep(genaSave);
           sgChanged = false;
 
-          await this.setStateAsync({
-            genaID: response.data.id,
-            genaSave
-          });
-          await this.exportDataToSG(true);
+          // Из-за пуша genaSave в стейт ГЕНА вызывает обновление 
+          await this.setStateAsync({ genaID: response.data.id });
+          await this.exportDataToSG(true, genaSave);
           // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
           if (this.getCurrentSGPresetIndex() < 3) {
             return;
@@ -475,7 +473,7 @@ class App extends BaseComponent {
       })
   }
 
-  exportDataToSG(initialExport = false) {
+  exportDataToSG(initialExport = false, save) {
     const {
       mode,
       presetSelection,
@@ -485,7 +483,7 @@ class App extends BaseComponent {
       currentToolCode,
       risk
     } = this.state;
-    const genaSave = cloneDeep(this.state.genaSave);
+    const genaSave = cloneDeep(save || this.state.genaSave);
     const options = genaSave.presets.filter(preset => preset.type == algorithms[mode].name);
     const currentPreset = options[presetSelection[mode]];
     const currentPresetIndex = genaSave.presets.indexOf(currentPreset);
