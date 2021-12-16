@@ -513,7 +513,7 @@ export default class BaseComponent extends React.Component {
     } = this.state;
 
     // Находим индекс сохранения, которое нужно удалить
-    const index = saves.indexOf(saves.find(save => save.id === id));
+    const index = saves.indexOf(saves.find(save => save.id === id)) + 1;
     // Удаляем элемент под этим индексом из массива
     saves.splice(index - 1, 1);
     // Предотвращаем кейс, где текущий индекс больше длины самого массива
