@@ -54,6 +54,7 @@ export default class FourthStep extends React.Component {
                             <p>{taskName}</p>
                             <div className="fourth-step-table-check-box">
                               <Checkbox
+                                key={currentRowIndex}
                                 className="green"
                                 checked={technology[taskName]}
                                 onChange={e => {
@@ -73,9 +74,10 @@ export default class FourthStep extends React.Component {
                         return (
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
+                              key={currentRowIndex}
                               // В старых сейвах в name может лежать объект
                               defaultValue={typeof name === "object" 
-                                ? `Технология ${Object.keys(technology).length + index + 1}`
+                                ? `Новая технология ${index + 1}`
                                 : name
                               }
                               onBlur={e => {
@@ -92,6 +94,7 @@ export default class FourthStep extends React.Component {
                             />
                             <div className="fourth-step-table-check-box">
                               <Checkbox
+                                key={currentRowIndex}
                                 className="green"
                                 checked={value}
                                 onChange={e => {
@@ -162,6 +165,7 @@ export default class FourthStep extends React.Component {
                             <p>{taskName}</p>
                             <div className="fourth-step-table-check-box">
                               <Checkbox
+                                key={currentRowIndex}
                                 className="green"
                                 checked={practiceWorkTasks[taskName]}
                                 onChange={e => {
@@ -181,35 +185,39 @@ export default class FourthStep extends React.Component {
                         return (
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
-                              defaultValue={name}
+                              key={currentRowIndex}
+
+                              defaultValue={typeof name === "object"
+                                ? `Новая задача ${index + 1}`
+                                : name
+                              }
                               onBlur={e => {
                                 const { value } = e.target;
                                 const data = cloneDeep(state.data);
-                                const i = data[currentRowIndex].customPracticeWorkTasks.findIndex(task => task.name == name);
-                                if (i !== -1) {
-                                  data[currentRowIndex].customPracticeWorkTasks[i].value = value;
-                                  context.setState({ data });
-                                }
-                                else {
+                                let i = data[currentRowIndex].customPracticeWorkTasks.findIndex(task => task.name == name);
+                                if (i === -1) {
                                   console.warn(`Не удлось найти '${name}' среди`, data[currentRowIndex].customPracticeWorkTasks);
+                                  i = index;
                                 }
+                                data[currentRowIndex].customPracticeWorkTasks[i].name = value;
+                                context.setState({ data });
                               }}
                             />
                             <div className="fourth-step-table-check-box">
                               <Checkbox
+                                key={currentRowIndex}
                                 className="green"
                                 checked={value}
                                 onChange={e => {
                                   const { checked } = e.target;
                                   const data = cloneDeep(state.data);
-                                  const i = data[currentRowIndex].customPracticeWorkTasks.findIndex(task => task.name == name);
-                                  if (i !== -1) {
-                                    data[currentRowIndex].customPracticeWorkTasks[i].value = checked;
-                                    context.setState({ data });
-                                  }
-                                  else {
+                                  let i = data[currentRowIndex].customPracticeWorkTasks.findIndex(task => task.name == name);
+                                  if (i === -1) {
                                     console.warn(`Не удлось найти '${name}' среди`, data[currentRowIndex].customPracticeWorkTasks);
+                                    i = index; 
                                   }
+                                  data[currentRowIndex].customPracticeWorkTasks[i].value = checked;
+                                  context.setState({ data });
                                 }}
                               />
                             </div>

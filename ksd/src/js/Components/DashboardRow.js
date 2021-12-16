@@ -156,7 +156,9 @@ export default class DashboardRow extends React.Component {
     const currentToolIndex = this.getCurrentToolIndex();
     
     this.currentTool  = tools[currentToolIndex] ?? Tools.createArray()[0];
+    /** @type {Tool} */
     const currentTool = this.currentTool;
+    const selectedToolRegion = currentTool.region;
 
     const realSelectedToolName = tools[currentToolIndex].getSortProperty();
 
@@ -230,6 +232,8 @@ export default class DashboardRow extends React.Component {
       freeMoney,
       // Выбранный инструмент
       selectedToolName,
+      // Выбранный инструмент
+      selectedToolRegion,
       // Идентификатор реального найденного инструмента
       realSelectedToolName,
 

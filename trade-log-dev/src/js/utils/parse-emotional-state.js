@@ -5,6 +5,8 @@ import { dealTemplate } from "../App";
  * @property {number} positive Количество позитивных состояний
  * @property {number} negative Количество негативных состояний
  * @property {number} total Общее количество состояний
+ * @property {{ positive: number, negative: number }} emotionalStates Статистика эмоциональных состояний
+ * @property {{ positive: number, negative: number }} motives Статистика мотивационных драйверов
  * @property {"positive"|"negative"|"neutral"} state Состояние-результат
  */
 
@@ -17,11 +19,26 @@ import { dealTemplate } from "../App";
 export default function parseEmotionalState(deals) {
   let positive = 0;
   let negative = 0;
+  let emotionalStates = {
+    positive: 0,
+    negative: 0
+  };
+  let motives = {
+    positive: 0,
+    negative: 0
+  };
   for (let deal of deals) {
-    positive += deal.emotionalStates.positive.filter(value => value === true).length;
-    negative += deal.emotionalStates.negative.filter(value => value === true).length;
-    positive += deal.motives.positive.filter(value => value === true).length;
-    negative += deal.motives.negative.filter(value => value === true).length;
+    emotionalStates.positive += deal.emotionalStates.positive.filter(value => value === true).length;
+    emotionalStates.negative += deal.emotionalStates.negative.filter(value => value === true).length;
+
+    motives.positive += deal.motives.positive.filter(value => value === true).length;
+    motives.negative += deal.motives.negative.filter(value => value === true).length;
+    
+    positive += emotionalStates.positive;
+    positive += motives.positive;
+
+    negative += emotionalStates.negative;
+    negative += motives.negative;
   }
 
   let state;
@@ -39,6 +56,8 @@ export default function parseEmotionalState(deals) {
     positive,
     negative,
     total: positive + negative,
+    emotionalStates,
+    motives,
     state
   };
 }

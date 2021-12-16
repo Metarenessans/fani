@@ -166,18 +166,23 @@ export default function Stats() {
               <dt>Нормальных состояний</dt>
               <dd>
                 {(() => {
-                  let total = 0;
-                  let checked = 0;
+                  let positiveChecked = 0;
+                  let negativeChecked = 0;
+                  
                   for (let day of data) {
-                    for (let deal of day.deals) {
-                      checked += deal.emotionalStates.positive.length;
-                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
-                      total += 4;
-                    }
+                    const emotionalState = parseEmotionalState(day.deals);
+                    positiveChecked += emotionalState.emotionalStates.positive;
+                    negativeChecked += emotionalState.emotionalStates.negative;
                   }
+
+                  let value = (positiveChecked / (positiveChecked + negativeChecked)) * 100;
+                  if (!Number.isFinite(value)) {
+                    value = 0;
+                  }
+
                   return (
                     <Value 
-                      value={checked / total * 100}
+                      value={value}
                       type="success"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
@@ -189,18 +194,23 @@ export default function Stats() {
               <dt>Искаженных состояний</dt>
               <dd>
                 {(() => {
-                  let total = 0;
-                  let checked = 0;
+                  let positiveChecked = 0;
+                  let negativeChecked = 0;
+
                   for (let day of data) {
-                    for (let deal of day.deals) {
-                      checked += deal.emotionalStates.negative.length;
-                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
-                      total += 9;
-                    }
+                    const emotionalState = parseEmotionalState(day.deals);
+                    positiveChecked += emotionalState.emotionalStates.positive;
+                    negativeChecked += emotionalState.emotionalStates.negative;
                   }
+
+                  let value = (negativeChecked / (positiveChecked + negativeChecked)) * 100;
+                  if (!Number.isFinite(value)) {
+                    value = 0;
+                  }
+
                   return (
                     <Value
-                      value={checked / total * 100}
+                      value={value}
                       type="danger"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
@@ -212,18 +222,22 @@ export default function Stats() {
               <dt>Нормальных драйверов</dt>
               <dd>
                 {(() => {
-                  let total = 0;
-                  let checked = 0;
+                  let positiveChecked = 0;
+                  let negativeChecked = 0;
+
                   for (let day of data) {
-                    for (let deal of day.deals) {
-                      checked += deal.motives.positive.length;
-                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
-                      total += 6;
-                    }
+                    const emotionalState = parseEmotionalState(day.deals);
+                    positiveChecked += emotionalState.motives.positive;
+                    negativeChecked += emotionalState.motives.negative;
+                  }
+
+                  let value = (positiveChecked / (positiveChecked + negativeChecked)) * 100;
+                  if (!Number.isFinite(value)) {
+                    value = 0;
                   }
                   return (
                     <Value
-                      value={checked / total * 100}
+                      value={value}
                       type="success"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
@@ -235,18 +249,22 @@ export default function Stats() {
               <dt>Искаженных драйверов</dt>
               <dd>
                 {(() => {
-                  let total = 0;
-                  let checked = 0;
+                  let positiveChecked = 0;
+                  let negativeChecked = 0;
+
                   for (let day of data) {
-                    for (let deal of day.deals) {
-                      checked += deal.motives.negative.length;
-                      // FIXME: хардкод, в будущем должен использоваться реальный размер списка
-                      total += 3;
-                    }
+                    const emotionalState = parseEmotionalState(day.deals);
+                    positiveChecked += emotionalState.motives.positive;
+                    negativeChecked += emotionalState.motives.negative;
+                  }
+
+                  let value = (negativeChecked / (positiveChecked + negativeChecked)) * 100;
+                  if (!Number.isFinite(value)) {
+                    value = 0;
                   }
                   return (
                     <Value
-                      value={checked / total * 100}
+                      value={value}
                       type="danger"
                       format={value => formatNumber(round(value, 1)) + "%"}
                     />
