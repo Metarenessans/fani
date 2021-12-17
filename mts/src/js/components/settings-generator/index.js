@@ -541,7 +541,7 @@ const SettingsGenerator = props => {
 
     if (open) {
       dev && console.log("ГЕНА открыт, поэтому не нужно стягивать данные");
-      return;
+      // return;
     }
 
     let prevGENAToCompare;
