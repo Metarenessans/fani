@@ -941,6 +941,8 @@ const SettingsGenerator = props => {
               </li>
             )}
           </ul>
+
+          {props.loading && <LoadingOutlined className="settings-generator-preloader" />}
           
         </div>
 
