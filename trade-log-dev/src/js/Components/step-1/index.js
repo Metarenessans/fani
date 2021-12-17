@@ -667,8 +667,8 @@ export default class FirstStep extends React.Component {
                     state.limitUnprofitableDeals && 
                     deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
 
-                  // Запрещаем добавлять сделки, если эмоциональный фон вышел в негатив
                   const parsedEmotionalState = parseEmotionalState(deals);
+                  // Запрещаем добавлять сделки, если эмоциональный фон вышел в негатив
                   if (parsedEmotionalState.state === "negative") {
                     disabled = true;
                   }
