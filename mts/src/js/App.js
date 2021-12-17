@@ -321,11 +321,11 @@ class App extends BaseComponent {
       await this.fetchTools();
     }
 
+    await this.fetchGENA();
+
     this.fetchCompanyQuotes();
 
     this.setFetchingToolsTimeout();
-
-    this.fetchGENA();
   }
 
   // TODO: вынести функционал загрузки сохранения ГЕНЫ в отдельную функцию
