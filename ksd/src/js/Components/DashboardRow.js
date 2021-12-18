@@ -329,7 +329,7 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-val">
             <CustomSelect
               className="dashboard__select"
-              loading={toolsLoading}
+              // loading={toolsLoading}
               disabled={toolsLoading}
               onFocus={() => {
                 console.log("custom select focus");
@@ -353,17 +353,17 @@ export default class DashboardRow extends React.Component {
         {/* col */}
         <div className="dashboard-col">
           <span className="dashboard-key">Контракты</span>
-          {
+                <span className="dashboard-val">
+                  {contracts}
+                </span>
+          {/* {
             toolsLoading
               ?
                 <span className="dashboard-val dashboard-val--wrap">
                   <LoadingOutlined />
                 </span>
               :
-                <span className="dashboard-val">
-                  {contracts}
-                </span>
-          }
+          } */}
         </div>
         {/* col */}
         <div className="dashboard-col dashboard-col--narrow">
@@ -440,12 +440,13 @@ export default class DashboardRow extends React.Component {
               Руб.
             </Tooltip>
           </span>
-          {toolsLoading
-            ?
-            <span className="dashboard-val dashboard-val--wrap">
-              <LoadingOutlined />
-            </span>
-            :
+          {
+          //   toolsLoading
+          //   ?
+          //   <span className="dashboard-val dashboard-val--wrap">
+          //     <LoadingOutlined />
+          //   </span>
+          //   :
             <span className="dashboard-val">
               {formatNumber(Math.round(income))}
             </span>
@@ -456,32 +457,32 @@ export default class DashboardRow extends React.Component {
           <DashboardKey sortProp="incomePercentage" onSort={onSort}>
             К депо
           </DashboardKey>
-          {toolsLoading
+          {/* {toolsLoading
             ?
             <span className="dashboard-val dashboard-val--wrap">
               <LoadingOutlined />
             </span>
             :
+          } */}
             <span className="dashboard-val">
               {formatNumber(round(incomePercentage, 2))}%
             </span>
-          }
         </div>
         {/* col */}
         <div className="dashboard-col">
           <DashboardKey sortProp="loadingPercentage" onSort={onSort}>
             К загрузке
           </DashboardKey>
-          {toolsLoading
+          {/* {toolsLoading
             ?
             <span className="dashboard-val dashboard-val--wrap">
               <LoadingOutlined />
             </span>
             :
+          } */}
             <span className="dashboard-val">
               {formatNumber(round(loadingPercentage, 2))}%
             </span>
-          }
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -493,16 +494,16 @@ export default class DashboardRow extends React.Component {
               Риск
             </Tooltip>
           </span>
-          {toolsLoading
+          {/* {toolsLoading
             ?
             <span className="dashboard-val dashboard-val--wrap">
               <LoadingOutlined />
             </span>
             :
+          } */}
             <span className="dashboard-val">
               {round(risk, 2)}%
             </span>
-          }
         </div>
         {/* col */}
         <div className="dashboard-col">
@@ -514,16 +515,16 @@ export default class DashboardRow extends React.Component {
               Свободно
             </Tooltip>
           </span>
-          {toolsLoading
+          {/* {toolsLoading
             ?
             <span className="dashboard-val dashboard-val--wrap">
               <LoadingOutlined />
             </span>
             :
+          } */}
             <span className="dashboard-val">
               {round(freeMoney, 2)}%
             </span>
-          }
         </div>
         {/* col */}
 
