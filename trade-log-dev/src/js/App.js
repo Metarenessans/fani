@@ -365,7 +365,17 @@ export default class App extends BaseComponent {
       }
     };
 
+    const snapshot = {
+      name: this.getTitle(),
+      static: JSON.stringify(json.static)
+    };
+    
     console.log("Packed save:", json);
+    // console.log(
+    //   "Packed snapshot:", snapshot,
+    //   "Stringified snapshot:", JSON.stringify(snapshot.static),
+    //   "parsed snapshot", JSON.parse(snapshot.static)
+    // );
     return json;
   }
 
