@@ -1107,10 +1107,10 @@ class App extends BaseComponent {
     this.setState({ withdrawal }, this.recalc);
   }
 
-  setCurrentDay(currentDay = 1) {
-    this.setStateAsync({ currentDay })
-      .then(() => this.updateDepoPersentageStart())
-      .then(() => chartVisible && chartModule?.updateChart.call(this));
+  async setCurrentDay(currentDay = 1) {
+    await this.setStateAsync({ currentDay });
+    await this.updateDepoPersentageStart();
+    // chartVisible && chartModule?.updateChart.call(this);
   }
   
   // ==================
