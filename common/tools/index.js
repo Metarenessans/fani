@@ -216,6 +216,13 @@ class Tool {
   ref;
 
   /**
+   * Код
+   * 
+   * @type {string}
+   */
+  code;
+
+  /**
    * Цена шага
    * 
    * @type {number}
@@ -358,6 +365,7 @@ class Tool {
     else return this.code;
   }
 
+  /** Равен `true`, если инструмент является фьючерсом */
   get isFutures() {
     return this.dollarRate == 0;
   }
