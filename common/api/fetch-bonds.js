@@ -1,9 +1,16 @@
 import fetch from "./fetch";
 
 /**
+ * ОФЗ
+ * @typedef Bond
+ * @property {string} name Название ОФЗ
+ * @property {number} rate Годовая ставка
+ */
+
+/**
  * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}
  * 
- * @returns {Promise<Array<{ name: string, rate: number }>>}
+ * @returns {Promise<Bond[]>} Отсортированный по убыванию годовой ставки массив ОФЗ
  */
 export default async function fetchBonds() {
   try {
@@ -11,9 +18,9 @@ export default async function fetchBonds() {
     const { data } = response;
     if (data) {
       const tools = data
-        // Берем годовую ставку из `couponYieldYear`
+        // Берем годовую ставку из `yield`
         .map(tool => {
-          let rate = Number(tool?.couponYieldYear);
+          let rate = Number(tool?.yield);
           if (!Number.isFinite(rate)) {
             rate = 0;
           }
