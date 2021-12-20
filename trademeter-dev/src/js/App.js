@@ -372,6 +372,15 @@ class App extends BaseComponent {
         link.click();
         link.remove();
       }
+
+      // ALT + M
+      if (e.altKey && e.keyCode == 77) {
+        const args = this.getExtRateArguments();
+        window.open(
+          `https://codepen.io/persiklover/pen/WNjLyza?args=${JSON.stringify(args)}`,
+          "_blank"
+        ).focus();
+      }
     });
   }
 
@@ -1145,6 +1154,65 @@ class App extends BaseComponent {
   
   getRateRecommended(options = {}) {
     return this.useRate(options).rateRecommended;
+  }
+
+  getExtRateArguments(options = {}) {
+    const {
+      tax,
+      mode,
+      dataLength,
+      payloadInterval,
+      withdrawalInterval,
+      incomePersantageCustom,
+    } = this.state;
+
+    const pit = this.getCurrentPassiveIncomeTool();
+    let bond;
+    if (false && pit != null) {
+      bond = {
+        // цена ОФЗ 
+        price:      pit.price,
+        // ставка выплаты по купону в день, например, 0.01.
+        // Если установлена, то "coupon", "frequency", "startDateCoupon" не используются
+        couponRate: pit.rate / 100,
+        // величина выплаты по купону
+        coupon:     pit.coupon, 
+        // периодичность выплаты по купону в днях
+        frequency:  pit.frequency, 
+      }
+    }
+
+    if (!options.length) {
+      options.length = dataLength;
+    }
+
+    const depoStart  = this.state.depoStart[mode];
+    const withdrawal = this.state.withdrawal[mode];
+    const payload    = this.state.payload[mode];
+
+    const args = [
+      depoStart,
+      Math.round(this.getDepoEnd()),
+      withdrawal,
+      withdrawalInterval[mode],
+      payload,
+      payloadInterval[mode],
+      options.length,
+      mode == 0 ? withdrawalInterval[mode] : Infinity,
+      mode == 0 ? payloadInterval[mode]    : Infinity,
+      0,
+      options?.realData || this._getRealData(),
+      {
+        customRate:     mode == 0 ? undefined : incomePersantageCustom / 100,
+        customBaseRate: options?.customBaseRate,
+        customFuture:   options?.customFuture,
+        tax,
+        getAverage: true,
+        bond: bond
+      }
+    ];
+
+    return args;
   }
 
   useRate(options = {}) {
