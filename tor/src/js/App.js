@@ -18,9 +18,9 @@ import Header                from "./components/header"
 import round                 from "../../../common/utils/round"
 
 /* API */
-import fetch             from "../../../common/api/fetch"
-import { applyTools }    from "../../../common/api/fetch/tools"
-import { fetchInvestorInfo, applyInvestorInfo } from "../../../common/api/fetch/investor-info"
+import fetch                  from "../../../common/api/fetch"
+import { applyInvestorInfo }  from "../../../common/api/fetch/investor-info/apply-investor-info"
+import { applyTools }         from "../../../common/api/fetch/tools"
 import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
