@@ -1,12 +1,12 @@
-const webpack = require("webpack");
 const path = require("path");
-/* Plugins */
+const webpack = require("webpack");
+// Plugins
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 
+/** @return {webpack.Configuration} */
 module.exports = (env, options) => {
   const prod = options.mode === "production";
-
   return {
     entry: "./src/js/index.js",
     devtool: prod ? "source-map" : "eval-sourcemap",
@@ -15,11 +15,19 @@ module.exports = (env, options) => {
       filename: "js/index.js",
       chunkFilename: "js/[name].js"
     },
+    resolve: {
+      alias: {
+        // Фиксит краш при рендере компонентов на хуках из папки common
+        react: path.resolve("./node_modules/react")
+      }
+    },
     devServer: {
       contentBase: path.join(__dirname, "public"),
       publicPath: "/",
       overlay: true,
-      // host: '192.168.0.129'
+      // Нужны для вставки стилей без перезагрузки
+      inline: true,
+      hot: true
     },
     module: {
       rules: [
@@ -30,7 +38,7 @@ module.exports = (env, options) => {
           use: {
             loader: "babel-loader",
             options: {
-              rootMode: "upward",
+              rootMode: "upward"
             }
           }
         },
@@ -48,8 +56,8 @@ module.exports = (env, options) => {
                 plugins: [
                   require("postcss-custom-properties")({ preserve: true }),
                   require("autoprefixer")(),
-                  require("postcss-csso")()
-                ],
+                  prod && require("postcss-csso")()
+                ].filter(plugin => !!plugin),
                 sourceMap: true
               }
             },
@@ -57,11 +65,18 @@ module.exports = (env, options) => {
             // Compiles SASS to CSS
             {
               loader: "sass-loader",
+              /** @type {import("sass-loader").Options} */
               options: {
-                prependData: `$fonts: '../${prod ? "" : "public/"}fonts/';`,
-                webpackImporter: false,
-                sassOptions: { outputStyle: "expanded" },
-              },
+                /** @type {import("webpack").LoaderDefinition} */
+                additionalData: (content, loaderContext) => {
+                  const { resourcePath } = loaderContext;
+                  const lineSeparator = resourcePath.endsWith(".scss") ? ";" : "\n";
+                  return `$fonts: '${prod ? "../" : ""}fonts/'${lineSeparator}` + content;
+                },
+                sassOptions: {
+                  outputStyle: "expanded"
+                }
+              }
             }
           ]
         },
@@ -95,5 +110,5 @@ module.exports = (env, options) => {
       namedModules: true,
       namedChunks: true
     }
-  }
+  };
 };
