@@ -1143,13 +1143,15 @@ class App extends BaseComponent {
 
   _getRealData() {
     const { data } = this.state;
-    return data
-      .filledDays
-      .map(item => ({
+    const realData = {};
+    data.filledDays.forEach((item, index) => {
+      realData[index + 1] = {
         scale:   item.calculatedRate / 100,
         payment: item.payment || 0,
         payload: item.payload || 0,
-      }));
+      };
+    });
+    return realData;
   }
   
   getRateRecommended(options = {}) {
