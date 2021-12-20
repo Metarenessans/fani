@@ -1189,8 +1189,8 @@ class App extends BaseComponent {
       payload,
       payloadInterval[mode],
       options.length,
-      Infinity, // withdrawalInterval[mode],
-      Infinity, // payloadInterval[mode],
+      mode == 0 ? withdrawalInterval[mode] : Infinity,
+      mode == 0 ? payloadInterval[mode]    : Infinity,
       0,
       options?.realData || this._getRealData(),
       {
