@@ -1,4 +1,5 @@
 import { dealTemplate } from "../App";
+import typeOf from "../../../../common/utils/type-of";
 
 /**
  * @typedef ParsedEmotionalState
@@ -27,18 +28,28 @@ export default function parseEmotionalState(deals) {
     positive: 0,
     negative: 0
   };
-  for (let deal of deals) {
+
+  function parseDeal(deal) {
     emotionalStates.positive += deal.emotionalStates.positive.filter(value => value === true).length;
     emotionalStates.negative += deal.emotionalStates.negative.filter(value => value === true).length;
 
     motives.positive += deal.motives.positive.filter(value => value === true).length;
     motives.negative += deal.motives.negative.filter(value => value === true).length;
-    
+
     positive += emotionalStates.positive;
     positive += motives.positive;
 
     negative += emotionalStates.negative;
     negative += motives.negative;
+  }
+
+  if (typeOf(deals) == "object") {
+    parseDeal(deals);
+  }
+  else {
+    for (let deal of deals) {
+      parseDeal(deal);
+    }
   }
 
   let state;

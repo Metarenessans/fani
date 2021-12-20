@@ -130,6 +130,9 @@ class App extends BaseComponent {
       genaID:   -1,
 
       shouldImportSG: false,
+
+      /** Равен `true`, если загружается сейв ГЕНЫ */
+      loadingSG: false,
     };
 
     this.state = {
@@ -318,11 +321,11 @@ class App extends BaseComponent {
       await this.fetchTools();
     }
 
+    await this.fetchGENA();
+
     this.fetchCompanyQuotes();
 
     this.setFetchingToolsTimeout();
-
-    this.fetchGENA();
   }
 
   // TODO: вынести функционал загрузки сохранения ГЕНЫ в отдельную функцию
@@ -361,51 +364,33 @@ class App extends BaseComponent {
         console.log("getGenaSnapshots:", data);
         return this.setStateAsync({ genaSaves: data });
       })
-      .then(() => new Promise((resolve, reject) => {
+      .then(async () => {
         const { id } = this.state.genaSaves[0];
-        if (id != null) {
-          fetch("getGenaSnapshot", "GET", { id })
-            .then(async response => {
-              const { data } = response;
-              try {
-                let genaSave = JSON.parse(data.static);
-                genaSave = parseGENASave(genaSave);
-                lastSavedSG = cloneDeep(genaSave);
-                sgChanged = false;
 
-                await this.setStateAsync({ genaID: id });
-                await this.exportDataToSG(true, genaSave);
-                // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
-                if (this.getCurrentSGPresetIndex() < 3) {
-                  resolve();
-                }
-                await delay(150);
-                await this.setStateAsync({ shouldImportSG: true });
-                resolve();
-              }
-              catch (e) {
-                reject("Не удалось распарсить генератор настроек!", e);
-              }
-            })
-            .catch(error => reject(error));
-        }
-        else {
-          resolve();
-        }
-      }))
-      .catch(error => console.error(error))
-      .finally(async () => {
+        this.setStateAsync({ loadingSG: true });
+
+        let response;
         if (dev) {
-          const response = require("./dev/sg-snapshot").default;
-          const { data } = response;
+          await delay(1_000);
+          response = require("./dev/sg-snapshot").default;
+        }
+        else if (id != null) {
+          try {
+            response = await fetch("getGenaSnapshot", "GET", { id });
+          }
+          catch (error) {
+            message.error("Не удалось сохранение генератора настроек:", error);
+          }
+        }
 
+        const { data } = response;
+        try {
           let genaSave = JSON.parse(data.static);
           genaSave = parseGENASave(genaSave);
           lastSavedSG = cloneDeep(genaSave);
           sgChanged = false;
 
-          // Из-за пуша genaSave в стейт ГЕНА вызывает обновление 
-          await this.setStateAsync({ genaID: response.data.id });
+          await this.setStateAsync({ genaID: id, loadingSG: false });
           await this.exportDataToSG(true, genaSave);
           // Не стягиваем данные с ГЕНЫ, если выбран дефолтный пресет
           if (this.getCurrentSGPresetIndex() < 3) {
@@ -414,7 +399,11 @@ class App extends BaseComponent {
           await delay(150);
           await this.setStateAsync({ shouldImportSG: true });
         }
-      });
+        catch (error) {
+          message.error("Не удалось распарсить генератор настроек:", error);
+        }
+      })
+      .catch(error => console.error(error))
   }
 
   /**
@@ -463,10 +452,12 @@ class App extends BaseComponent {
       const response = await fetch(request, "POST", data);
       if (!response.error) {
         message.success("Сохранено!");
-        return this.setStateAsync({
+        await this.setStateAsync({
           genaID:   response.id,
           genaSave: save
         });
+        // Кладет в сейв id гены
+        return this.update();
       }
     }
     catch (error) {
@@ -762,7 +753,8 @@ class App extends BaseComponent {
       presetSelection,
       days,
       scaleOffset,
-      kodTable
+      kodTable,
+      genaID
     } = this.state;
 
     const json = {
@@ -780,7 +772,7 @@ class App extends BaseComponent {
         currentToolCode,
         currentToolRegion: this.getCurrentTool().region,
         kodTable,
-        current_date: "#"
+        sgID: genaID
       },
     };
 
@@ -805,6 +797,7 @@ class App extends BaseComponent {
       kodTable:          data.kodTable        ?? initialState.kodTable,
       currentToolCode:   data.currentToolCode ?? initialState.currentToolCode,
       currentToolRegion: data.currentToolRegion,
+      genaID:            data.sgID            ?? initialState.genaID,
       investorInfo:      { ...investorInfo, type: percentage >= 0 ? "LONG" : "SHORT" }
     }
   }
@@ -1848,6 +1841,7 @@ class App extends BaseComponent {
                 onClose={() => onClose()}
               >
                 <SettingsGenerator
+                  loading={this.state.loadingSG}
                   depo={depo}
                   tools={tools}
                   load={percentage}

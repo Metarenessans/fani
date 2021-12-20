@@ -541,7 +541,7 @@ const SettingsGenerator = props => {
 
     if (open) {
       dev && console.log("ГЕНА открыт, поэтому не нужно стягивать данные");
-      return;
+      // return;
     }
 
     let prevGENAToCompare;
@@ -941,6 +941,8 @@ const SettingsGenerator = props => {
               </li>
             )}
           </ul>
+
+          {props.loading && <LoadingOutlined className="settings-generator-preloader" />}
           
         </div>
 

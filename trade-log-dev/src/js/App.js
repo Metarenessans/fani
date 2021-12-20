@@ -577,7 +577,7 @@ export default class App extends BaseComponent {
                                 <Button 
                                   className="main-button"
                                   onClick={async e => {
-                                    if (hasChanged) {
+                                    if (!dev && hasChanged) {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {

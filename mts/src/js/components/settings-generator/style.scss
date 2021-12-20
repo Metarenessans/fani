@@ -40,6 +40,14 @@ $m: .4475;
     font-size: 4.3646vw;
   }
 
+  &-preloader {
+    margin: 0 auto;
+    margin-top: 1em;
+    display: block;
+
+    pointer-events: none;
+  }
+
   .round-btn {
     display: inline-flex;
     justify-content: center;

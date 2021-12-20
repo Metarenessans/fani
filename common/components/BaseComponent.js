@@ -478,6 +478,8 @@ export default class BaseComponent extends React.Component {
       throw "Не удалось обновить сохранение: 'id' равен " + id;
     }
 
+    name = name || this.getTitle();
+
     const json = this.packSave();
     const data = {
       id,
