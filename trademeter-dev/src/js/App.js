@@ -1107,10 +1107,10 @@ class App extends BaseComponent {
     this.setState({ withdrawal }, this.recalc);
   }
 
-  setCurrentDay(currentDay = 1) {
-    this.setStateAsync({ currentDay })
-      .then(() => this.updateDepoPersentageStart())
-      .then(() => chartVisible && chartModule?.updateChart.call(this));
+  async setCurrentDay(currentDay = 1) {
+    await this.setStateAsync({ currentDay });
+    await this.updateDepoPersentageStart();
+    // chartVisible && chartModule?.updateChart.call(this);
   }
   
   // ==================
@@ -1189,8 +1189,8 @@ class App extends BaseComponent {
       payload,
       payloadInterval[mode],
       options.length,
-      Infinity, // withdrawalInterval[mode],
-      Infinity, // payloadInterval[mode],
+      mode == 0 ? withdrawalInterval[mode] : Infinity,
+      mode == 0 ? payloadInterval[mode]    : Infinity,
       0,
       options?.realData || this._getRealData(),
       {

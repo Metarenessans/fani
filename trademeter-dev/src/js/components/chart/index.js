@@ -745,14 +745,18 @@ function updateChart(isInit = false) {
         recommendData[i] = recommendData[i - 1] + recommendData[i - 1] * this.rateRecommended / 100;
         
         const day = lastFilledDayNumber + i + 1;
+
+        // Последующий код выполняется только для первого режима
+        if (mode != 0) continue;
+        
         // Вычитаем плановый вывод, если запланирован
         if (day % withdrawalInterval[mode] == 0) {
-          // recommendData[i] -= withdrawal[mode];
+          recommendData[i] -= withdrawal[mode];
         }
         
         // Вычитаем плановое пополнение, если запланировано
         if (day % payloadInterval[mode] == 0) {
-          // recommendData[i] += payload[mode];
+          recommendData[i] += payload[mode];
         }
       }
       
