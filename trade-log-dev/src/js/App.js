@@ -568,7 +568,7 @@ export default class App extends BaseComponent {
                                   <span className={clsx("step-logo", step == 4 && "step-logo--active")}>Тс 4</span>
 
                                   <span className={clsx("step-name", step == 4 && "step-name--active")}>
-                                    Точечный<br/>самоанализа
+                                    Точечный<br/>самоанализ
                                   </span>
                                 </div>
                               </div>
