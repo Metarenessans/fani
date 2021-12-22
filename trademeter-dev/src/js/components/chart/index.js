@@ -431,13 +431,8 @@ async function createChart() {
     chart.xScroller().fill("#40a9ff 0.1");
     chart.xScroller().selectedFill("#40a9ff 0.5");
     chart.xScroller().listen("scrollerchange", e => {
-      console.time("updateChartXZoom");    
       const { scaleStart, scaleEnd } = updateChartXZoom(e.startRatio, e.endRatio);
-      console.timeEnd("updateChartXZoom");    
-      
-      console.time("updateChartTicks");
       updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
-      console.timeEnd("updateChartTicks");    
     });
     chart.xScroller().listen("scrollerchangefinish", e => {
       // Меняем масштаб вручную
