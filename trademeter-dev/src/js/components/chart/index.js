@@ -270,6 +270,9 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
     else if (lastEndIteration.weight) {
       max += lastEndIteration.weight;
     }
+    else {
+      max += 1;
+    }
 
     if (min < 0) {
       max += -min;
