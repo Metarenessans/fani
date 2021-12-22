@@ -73,6 +73,7 @@ let Chart;
 
 let lastRealData = {};
 let saveToDownload;
+let lastExtRateArguments = [];
 
 let shouldLoadFakeSave = true;
 let chartVisible       = true;
@@ -263,25 +264,6 @@ class App extends BaseComponent {
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.applyTools        = applyTools.bind(this);
     this.syncToolsWithInvestorInfo = syncToolsWithInvestorInfo.bind(this, null, { useDefault: true });
-    if (dev) {
-      this.fetchSaveById = () => {
-        console.log('executing custom fetchSaveById');
-        return new Promise((resolve) => {
-          resolve({
-            data: {
-              id: 1122,
-              name: '0.89',
-              dateCreate: 1610349649,
-              static: '{"depoStart":[7480000,7480000],"depoEnd":[74888180,74888180],"tax":13,"currentDay":6,"days":[260,260],"dataLength":260,"dataExtendedFrom":null,"minDailyIncome":[0.89,0.89],"payment":[0,0],"paymentInterval":[20,20],"payload":[0,0],"payloadInterval":[20,20],"passiveIncome":[0,0],"passiveIncomeTools":[{"name":"ОФЗ 26214","rate":4.99},{"name":"ОФЗ 26205","rate":5.78},{"name":"ОФЗ 26217","rate":5.99},{"name":"ОФЗ 26209","rate":6.26},{"name":"ОФЗ 26220","rate":6.41}],"currentPassiveIncomeToolIndex":[-1,-1],"mode":1,"customTools":[],"currentToolCode":"MMM","current_date":"#"}',
-              dynamic: '[{"d":1,"rr":null,"pmt":0,"pld":0,"c":true,"i":9,"il":[{"percent":0.04},{"percent":0.481},{"percent":0.735},{"percent":0.107},{"percent":0.187},{"percent":0.281},{"percent":0.307},{"percent":0.053},{"percent":0.08}],"pi":0,"du":true},{"d":2,"s":-1.307,"rr":null,"pmt":0,"pld":0,"c":true,"i":1,"il":[{"percent":-1.307}],"pi":0,"du":true},{"d":3,"rr":null,"pmt":0,"pld":0,"c":true,"i":8,"il":[{"percent":1.404},{"percent":0.053},{"percent":0.053},{"percent":0.053},{"percent":0.093},{"percent":0.119},{"percent":0.106},{"percent":0.159}],"pi":0,"du":true},{"d":4,"rr":null,"pmt":0,"pld":0,"c":true,"i":4,"il":[{"percent":0.389},{"percent":0.415},{"percent":0.13},{"percent":0.234}],"pi":0,"du":true},{"d":5,"rr":null,"ci":71000,"c":true,"i":9,"il":[{"percent":1.2830573305940915},{"percent":0.2566114661188183},{"percent":0.02566114661188183},{"percent":0.23095031950693648},{"percent":0.05132229322376366},{},{"percent":0.10264458644752732},{"percent":0.06415286652970457},{"percent":-1.1034293043109187}],"pi":0,"du":true},{"d":6,"rr":null,"ci":47000,"c":true,"i":12,"il":[{"percent":0.038144237092371615},{"percent":0.06357372848728601},{"percent":0.07628847418474323},{"percent":0.038144237092371615},{"percent":0.02542949139491441},{"percent":0.02542949139491441},{"percent":0.05085898278982882},{"percent":0.02542949139491441},{"percent":0.10171796557965763},{"percent":0.12714745697457203},{"percent":0.02542949139491441},{}],"pi":0,"du":true}]',
-            }
-          })
-        })
-      };
-    }
-    else {
-      this.fetchSaveById = fetchSaveById.bind(this, "Trademeter");
-    }
 
     this.incomePersantageCustomInput = React.createRef();
     this.withdrawalInput             = React.createRef();
@@ -371,6 +353,16 @@ class App extends BaseComponent {
         document.body.appendChild(link);
         link.click();
         link.remove();
+      }
+
+      // ALT + M
+      if (e.altKey && e.keyCode == 77) {
+        const args = lastExtRateArguments;
+        console.warn(args);
+        window.open(
+          `https://codepen.io/persiklover/pen/WNjLyza?args=${JSON.stringify(args)}`,
+          "_blank"
+        ).focus();
       }
     });
   }
@@ -1134,13 +1126,15 @@ class App extends BaseComponent {
 
   _getRealData() {
     const { data } = this.state;
-    return data
-      .filledDays
-      .map(item => ({
+    const realData = {};
+    data.filledDays.forEach((item, index) => {
+      realData[index + 1] = {
         scale:   item.calculatedRate / 100,
         payment: item.payment || 0,
         payload: item.payload || 0,
-      }));
+      };
+    });
+    return realData;
   }
   
   getRateRecommended(options = {}) {
@@ -1189,8 +1183,8 @@ class App extends BaseComponent {
       payload,
       payloadInterval[mode],
       options.length,
-      mode == 0 ? withdrawalInterval[mode] : Infinity,
-      mode == 0 ? payloadInterval[mode]    : Infinity,
+      withdrawalInterval[mode],
+      payloadInterval[mode]   ,
       0,
       options?.realData || this._getRealData(),
       {
@@ -1210,8 +1204,10 @@ class App extends BaseComponent {
     result.ratewithoutbond *= 100;
 
     if (dev && options.test) {
-      console.log(...args, "returns:", result);
+      console.log(args, "returns:", result);
     }
+
+    result.args = args;
 
     return result;
   }
@@ -1410,14 +1406,14 @@ class App extends BaseComponent {
     const realData = this._getRealData();
     if (mode == 0) {
       rate = this.useRate({ length: days[mode] }).rate;
-      // rate = this.useRate({ length: days[mode], test: true }).ratewithoutbond;
 
-      const rateObj = this.useRate({ 
+      const rateObj = this.useRate({
         customBaseRate: rate / 100,
         length: realData.length == dataLength 
           ? dataLength + extraDays 
           : undefined
       });
+      lastExtRateArguments = rateObj.args;
 
       rateRecommended = rateObj.rateRecommended;
       daysDiff        = rateObj.daysDiff;
@@ -1435,6 +1431,8 @@ class App extends BaseComponent {
           ? dataLength + extraDays 
           : undefined
       });
+      lastExtRateArguments = rateObj.args;
+
       rate            = rateObj.rate;
       // rate            = rateObj.ratewithoutbond;
       rateRecommended = rateObj.rateRecommended;

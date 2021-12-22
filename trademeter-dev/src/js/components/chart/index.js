@@ -87,24 +87,26 @@ function updateChartZoom(start, end) {
 }
 
 function updateChartScaleY(start, end) {  
-  // Y axis
-  
   const startIndex = roundUp(planData.length * start);
   const endIndex   = roundUp(planData.length * end);
 
   const DEPO_START = planData[0].value;
 
-  let recommendDataCopy = [...recommendData];
-  recommendDataCopy.splice(0, 0, ...(new Array(factData.length).fill({ value: DEPO_START })));
+  let recommendDataCopy = recommendData
+    // Копирует массив
+    .slice(0)
+    // Добавляет в начало столько же дней, сколько в факте
+    // TODO: зачем, а главное нафига?
+    .splice(0, 0, ...new Array(factData.length).fill({ value: DEPO_START }));
 
-  const dataCombined = [
+  const values = [
     ...planData.slice(startIndex, endIndex),
     ...factData.slice(startIndex, endIndex),
-    ...recommendDataCopy.slice(startIndex, endIndex),
+    ...recommendDataCopy?.slice(startIndex, endIndex),
   ].map(entry => entry.value);
 
-  let minY = Math.round( Math.min(...dataCombined) );
-  let maxY = Math.round( Math.max(...dataCombined) );
+  let minY = Math.round( Math.min(...values) );
+  let maxY = Math.round( Math.max(...values) );
   const minMaxDifference = Math.round( Math.abs(minY - maxY) * .05 );
   minY -= minMaxDifference;
   minY = Math.max(minY, 0);
@@ -119,54 +121,30 @@ function updateChartTicks(ss = scaleStart, se = scaleEnd, data) {
   const period = getLen(data);
   const step = 1 / period;
 
-  // let min = Math.round(period * ss) + 1;
-  // min = Math.max(min, 1);
-  // let max = roundUp(period * se);
-  // if (max == min) {
-  //   max = min + 1;
-  // }
-  // max = Math.min(max, period);
-
   se += step;
   if (se > 1) {
     se = 1;
   }
   
-  if (true) {
-    let emptyCount = 1;
-    const values = planData
-      .slice((planData.length) * ss, (planData.length) * se)
-      .map((entry, index) => {
-        if (
-          (index < (planData.length) - 1 && entry.customName.trim() == "") ||
-          index == (planData.length) - 1
-        ) {
-          entry.customName = " ".repeat(emptyCount++);
-        }
-        return entry.customName;
-      });
-    
-    scale?.values(values);
-  }
-  
-  if (false) {
-    scale.minimum(min);
-    scale.maximum(max);
+  let emptyCount = 1;
+  let ticks = planData
+    .slice(planData.length * ss, planData.length * se)
+    .map((entry, index) => {
+      if (
+        (index < (planData.length) - 1 && entry.customName.trim() == "") ||
+        index == (planData.length) - 1
+      ) {
+        entry.customName = " ".repeat(emptyCount++);
+      }
+      return entry.customName;
+    });
 
-    scale.ticks().interval((() => {
-      const range = Math.abs(max - min) + 1;
-      if (range >= 260) {
-        return range / 13;
-      }
-      else if (range >= 100) {
-        return 10;
-      }
-      else if (range >= 50) {
-        return 5;
-      }
-      return 1;
-    })());
+  if (ticks.length > 100) {
+    const l = Math.round(ticks.length / 10);
+    ticks = ticks.filter((tick, index, arr) => index == 0 || (index + 1) % l == 0);
   }
+
+  scale?.values(ticks);
 }
 
 function updateChartXZoom(start, end) {
@@ -203,7 +181,13 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
 
   // Находим кол-во итераций у каждого дня на экране
   // TODO: использовать weight для расчета
+
+  /** 
+   * Объект-счетчик, состоящий из пар Номер дня (строка): кол-во итераций внутри дня (число)
+   * @type {Object.<string, number>}
+   */
   const counter = {};
+
   for (let d of slicedChunk) {
     let day = d.x;
     const dotIndex = d.x.indexOf(".");
@@ -253,35 +237,29 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
   }
   else {
     // TODO: remove logs
-    
+
+    // Массив массивов вида
+    // ['1', 1], где под 0-ым индексом нахоидтся день, а под 1-ым индексом - кол-во итераций внутри дня
     const counterArr = Object.keys(counter).map(key => [key, counter[key]]);
-    // Берем N центральных дней
-    const focusArr = counterArr.slice(
-      counterArr.length / 2 - chartScaleMode / 2,
-      counterArr.length / 2 + chartScaleMode / 2
-    );
-    console.log(chartScaleMode, "центральных дней:", focusArr);
+    // Берем N первых дней
+    const focusArr = counterArr.slice(0, chartScaleMode);
     
-    const startIterations = slicedChunk.filter(value => value.x.startsWith(focusArr[0][0]));
-    console.log("startIterations:", startIterations);
-    min = planData.indexOf(planData.find(value => value.x == startIterations[0].x));
+    const startIterations = slicedChunk.filter(value => value.x === focusArr[0][0]);
+    dev && console.log("startIterations:", startIterations);
+    min = planData.findIndex(value => value.x == startIterations[0].x);
     if (startIterations[0].x.indexOf(".") > -1) {
-      min -= startIterations[0].x.replace(/\d+\./, "")
+      min -= startIterations[0].x.replace(/\d+\./, "");
     }
     
-    const endIterations = slicedChunk.filter(value => value.x.startsWith(focusArr[focusArr.length - 1][0]));
+    const endIterations = slicedChunk.filter(value => value.x === focusArr[focusArr.length - 1][0]);
     const lastEndIteration = endIterations[endIterations.length - 1];
-    console.log("endIterations:", endIterations, lastEndIteration);
-    max = planData.indexOf(planData.find(value => value.x == lastEndIteration.x));
+    dev && console.log("endIterations:", endIterations, lastEndIteration);
+    max = planData.findIndex(value => value.x == lastEndIteration.x);
     if (lastEndIteration.x.indexOf(".") > -1) {
       max += lastEndIteration.weight - lastEndIteration.x.replace(/\d+\./, "");
     }
     else if (lastEndIteration.weight) {
       max += lastEndIteration.weight;
-    }
-    // В дне нет итераций
-    else {
-      max += 1;
     }
 
     if (min < 0) {
@@ -452,10 +430,14 @@ async function createChart() {
     chart.xScroller().minHeight(40);
     chart.xScroller().fill("#40a9ff 0.1");
     chart.xScroller().selectedFill("#40a9ff 0.5");
-    chart.xScroller().listen("scrollerchange", e => {        
+    chart.xScroller().listen("scrollerchange", e => {
+      console.time("updateChartXZoom");    
       const { scaleStart, scaleEnd } = updateChartXZoom(e.startRatio, e.endRatio);
-      updateChartScaleY(scaleStart, scaleEnd);
+      console.timeEnd("updateChartXZoom");    
+      
+      console.time("updateChartTicks");
       updateChartTicks.call(this, scaleStart, scaleEnd, this.state.data);
+      console.timeEnd("updateChartTicks");    
     });
     chart.xScroller().listen("scrollerchangefinish", e => {
       // Меняем масштаб вручную
@@ -587,7 +569,6 @@ function updateChart(isInit = false) {
     return item;
   });
   factData.map(item => {
-
     // Прибавляет 1 только к числу до точки
     if (String(item.x).indexOf('.') > -1) {
       const halfs = item.x.split('.');
@@ -745,9 +726,6 @@ function updateChart(isInit = false) {
         recommendData[i] = recommendData[i - 1] + recommendData[i - 1] * this.rateRecommended / 100;
         
         const day = lastFilledDayNumber + i + 1;
-
-        // Последующий код выполняется только для первого режима
-        if (mode != 0) continue;
         
         // Вычитаем плановый вывод, если запланирован
         if (day % withdrawalInterval[mode] == 0) {
