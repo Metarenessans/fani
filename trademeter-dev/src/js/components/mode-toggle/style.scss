@@ -3,7 +3,6 @@
 .tabs {
   position: relative;
 
-  width: 100%;
   display: flex !important;
   justify-content: space-between;
   align-items: center;
@@ -16,6 +15,10 @@
 
   @include xs() {
     font-size: 2.25em;
+  }
+
+  .ant-radio-wrapper {
+    margin: 0;
   }
 
   &__centerline,
@@ -88,6 +91,15 @@
     &:hover,
     &:focus {
       color: rgba(white, .8);
+    }
+
+    &--1 {
+      margin-right: 3.5em !important;
+
+      @include sm {
+        margin-right: 0 !important;
+        margin-bottom: 1em !important;
+      }
     }
 
     span.ant-radio + * {
