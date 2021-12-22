@@ -51,13 +51,15 @@ import BigNumber       from "./components/BigNumber"
 import Config          from "../../../common/components/config";
 import CustomSelect    from "../../../common/components/custom-select"
 import CustomSlider    from "./components/custom-slider"
-import Header          from "./components/header"
+import Header          from "../../../common/components/header"
 import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
 import Value           from "./components/value"
 import ToolSelect      from "../../../common/components/tool-select"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
+import SaveDialog, { dialogID as saveDialogID }   from "../../../common/components/save-dialog"
+import DeleteDialog from "../../../common/components/delete-dialog"
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
@@ -1461,38 +1463,7 @@ class App extends BaseComponent {
         <div className="page">
 
           <main className="main">
-            <Header
-              title={this.getTitle()}
-              onSaveChange={currentSaveIndex => {
-                const { saves } = this.state;
-
-                this.setState({ currentSaveIndex });
-
-                if (currentSaveIndex === 0) {
-                  this.reset()
-                    .then(() => this.recalc())
-                    .catch(error => console.warn(error));
-                }
-                else {
-                  const id = saves[currentSaveIndex - 1].id;
-                  this.setState({ loading: true });
-                  this.fetchSaveById(id)
-                    .then(response => this.extractSave(response.data))
-                    .catch(error => this.showAlert("Error occured in 'fetchSaveById':" + error));
-                }
-              }}
-              onSave={e => {
-                const { saved, changed } = this.state;
-
-                if (saved && changed) {
-                  this.update(this.getTitle());
-                  this.setState({ changed: false });
-                }
-                else {
-                  dialogAPI.open("dialog1", e.target);
-                }
-              }}
-            >
+            <Header>
               <ModeToggle
                 mode={mode}
                 saved={saved}
@@ -2975,7 +2946,7 @@ class App extends BaseComponent {
                             if (expanded) {
 
                               if (!saved) {
-                                dialogAPI.open("dialog1", e.target);
+                                dialogAPI.open(saveDialogID, e.target);
                               }
                               else {
                                 this.update(this.getTitle());
@@ -3419,201 +3390,9 @@ class App extends BaseComponent {
           </main>
           {/* /.main */}
 
-          {(() => {
-            const { saves, id } = this.state;
-            const currentTitle = this.getTitle();
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? currentTitle : "Новый трейдометр";
+          <SaveDialog />
 
-            /**
-             * Проверяет, может ли данная строка быть использована как название сейва
-             * 
-             * @param {String} nameToValidate
-             * 
-             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
-             */
-            const validate = (nameToValidate = "") => {
-              nameToValidate = nameToValidate.trim();
-
-              let errors = [];
-              if (nameToValidate != currentTitle) {
-                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
-                if (nameToValidate.length < 3) {
-                  errors.push("Имя должно содержать не меньше трех символов!");
-                }
-                else if (test) {
-                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
-                }
-                if (namesTaken.indexOf(nameToValidate) > -1) {
-                  console.log();
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={30}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-
-            let onConfirm = () => {
-              let { id, data, currentDay, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(error => this.showAlert("Error occured in 'update':" + error));
-              }
-              else {
-                const onResolve = (id) => {
-                  const { expanded } = data[currentDay - 1];
-                  // Сохранение
-                  if (!expanded) {
-                    data[currentDay - 1].expanded = true;
-                  }
-
-                  let index = saves.push({ id, name });
-                  
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-                
-                this.save(name)
-                  .then(onResolve)
-                  .catch(error => this.showAlert("Error occured in 'save':" + error));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Введите название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => {}} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение трейдометра"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error( validate(name)[0] );
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
+          <DeleteDialog />
 
           <Config
             id="config"
@@ -3680,22 +3459,6 @@ class App extends BaseComponent {
             }}
           />
           {/* Инструменты пассивного дохода */}
-          
-          <Dialog
-            id="dialog4"
-            title="Удаление трейдометра"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
 
           {(() => {
             const { errorMessage } = this.state;
