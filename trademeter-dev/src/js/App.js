@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "antd/es"
 const { Option } = Select;
+import { message } from "antd";
 
 import {
   ArrowDownOutlined,
@@ -18,7 +19,8 @@ import {
   SettingFilled
 } from "@ant-design/icons"
 
-import { merge, cloneDeep } from "lodash"
+import { cloneDeep } from "lodash"
+import clsx from "clsx";
 import objToPlainText from "object-plain-string"
 
 /* API */
@@ -46,6 +48,7 @@ import { Tools, Tool, template } from "../../../common/tools"
 import Iteration from "./utils/iteration"
 import Data      from "./utils/data"
 
+import IterationsContainer from "./components/iterations-container"
 import Stack           from "../../../common/components/stack"
 import BigNumber       from "./components/BigNumber"
 import Config          from "../../../common/components/config";
@@ -55,7 +58,7 @@ import Header          from "../../../common/components/header"
 import ModeToggle      from "./components/mode-toggle"
 import NumericInput    from "../../../common/components/numeric-input"
 import Riskometer      from "./components/riskometer"
-import Value           from "./components/value"
+import Value           from "../../../common/components/value"
 import ToolSelect      from "../../../common/components/tool-select"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
 import SaveDialog, { dialogID as saveDialogID }   from "../../../common/components/save-dialog"
@@ -66,9 +69,6 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 export const StateContext = Context;
 
 import "../sass/style.sass"
-
-import IterationsContainer from "./components/iterations-container"
-import { message } from "antd";
 
 let chartModule;
 let Chart;
@@ -521,29 +521,23 @@ class App extends BaseComponent {
     }
   }
 
-  updateDepoPersentageStart() {
+  async updateDepoPersentageStart() {
     const { currentDay, data } = this.state;
 
-    return new Promise((resolve, reject) => {
-      let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
-      if (this.state.depoPersentageStart != null) {
-        depoPersentageStart = magnetToClosest(
-          this.state.depoPersentageStart > 100 ? 0 : this.state.depoPersentageStart,
-          depoPersentageStart
-        );
-      }
+    let depoPersentageStart = this.getCurrentTool().guarantee / data[currentDay - 1].depoStart * 100;
+    if (this.state.depoPersentageStart != null) {
+      depoPersentageStart = magnetToClosest(
+        this.state.depoPersentageStart > 100 ? 0 : this.state.depoPersentageStart,
+        depoPersentageStart
+      );
+    }
 
-      else if (depoPersentageStart < 0) {
-        depoPersentageStart = 0;
-      }
+    else if (depoPersentageStart < 0) {
+      depoPersentageStart = 0;
+    }
 
-      this.setState({ depoPersentageStart }, () => {
-        this.updateData()
-          .then(resolve)
-          .catch(reject);
-      });
-    });
-
+    await this.setStateAsync({ depoPersentageStart });
+    await this.updateData();
   }
 
   /**
@@ -983,14 +977,12 @@ class App extends BaseComponent {
     })
   }
 
-  recalc(rebuild = true) {
-    return new Promise((resolve, reject) => {
-      this.updateData(null, rebuild)
-        .then(() => this.updatePassiveIncomeMonthly())
-        .then(() => chartVisible && chartModule?.updateChart.call(this))
-        .then(() => resolve())
-        .catch(err => reject(err));
-    });
+  async recalc(rebuild = true) {
+    await this.updateData(null, rebuild);
+    await this.updatePassiveIncomeMonthly();
+    if (chartVisible) {
+      chartModule?.updateChart.call(this);
+    }
   }
 
   checkFn(withdrawal, depoStart, days, percentage) {
@@ -1031,7 +1023,6 @@ class App extends BaseComponent {
     if (days >= 2600 && dayilyIncome > 1) {
       return "Слишком большая доходность!";
     }
-
     return "";
   }
 
@@ -1060,7 +1051,6 @@ class App extends BaseComponent {
 
   validatePayment(value, frequency) {
     const max = this.getMaxPaymentValue(frequency);
-
     if (value > max) {
       return "Слишком большой вывод";
     }
@@ -1085,26 +1075,28 @@ class App extends BaseComponent {
     let { mode, depoStart, depoEnd } = this.state;
     if (depoStart[mode] >= depoEnd) {
       depoEnd = depoStart[mode] * 2;
-      return this.setStateAsync({ depoEnd });
+      await this.setStateAsync({ depoEnd });
     }
+    await this.recalc();
   }
 
   // ==================
   // Setters
   // ==================
 
-  setWithdrawal(val = 0) {
+  async setWithdrawal(value = 0) {
     const { mode } = this.state;
     let withdrawal = [...this.state.withdrawal];
 
-    withdrawal[mode] = val;
-    this.setState({ withdrawal }, this.recalc);
+    withdrawal[mode] = value;
+    await this.setStateAsync({ withdrawal });
+    await this.recalc();
   }
 
   async setCurrentDay(currentDay = 1) {
     await this.setStateAsync({ currentDay });
     await this.updateDepoPersentageStart();
-    // chartVisible && chartModule?.updateChart.call(this);
+    chartVisible && chartModule?.updateChart.call(this);
   }
   
   // ==================
@@ -2207,7 +2199,7 @@ class App extends BaseComponent {
                               <div className="stats-val">
                                 {
                                   paymentTotal != 0
-                                    ? '-'
+                                    ? placeholder
                                     : null
                                 }
                                 <Value format={formatNumber}>{ Math.round(paymentTotal) }</Value>
@@ -2490,28 +2482,20 @@ class App extends BaseComponent {
                           </div>
                           {/* /.row */}
 
-                          {/* Show if we have passive income */}
                           {(() => {
-                            let val = data[currentDay - 1].depoEnd;
+                            let value = 0;
                             let tool = this.getCurrentPassiveIncomeTool();
                             if (tool) {
-                              let persantage = tool.rate / 12 * (365 / 260) / 100;
-
-                              val = formatNumber(Math.round(val * persantage))
-                            }
-                            else {
-                              val = 0;
+                              let percent = tool.rate / 12 * (365 / 260) / 100;
+                              value = data[currentDay - 1].depoEnd * percent;
                             }
 
-                            return val == 0
-                              ? null
-                              : (
-                                <div className="section4-row">
-                                  <div className="section4-l">Пассивный доход</div>
-                                  <div className="section4-r">{ val } / месяц</div>
-                                </div>
-                              )
-                              {/* /.row */}
+                            return value != 0 && (
+                              <div className="section4-row">
+                                <div className="section4-l">Пассивный доход</div>
+                                <div className="section4-r">{formatNumber(Math.round(value))} / месяц</div>
+                              </div>
+                            )
                           })()}
                         </div>
                       </Col>
@@ -2524,7 +2508,10 @@ class App extends BaseComponent {
                               <Switch
                                 className="switch__input"
                                 checked={directUnloading}
-                                onChange={directUnloading => this.setState({ directUnloading }, () => this.recalc(false))}
+                                onChange={async directUnloading => {
+                                  await this.setStateAsync({ directUnloading });
+                                  this.recalc(false);
+                                }}
                               />
                             </label>
 
@@ -2587,7 +2574,7 @@ class App extends BaseComponent {
                                   Торговая цель
                                 </Tooltip>
                                 </div>
-                              <div className="section4-r">{formatNumber(data[currentDay - 1].goal) }</div>
+                              <div className="section4-r">{formatNumber(data[currentDay - 1].goal)}</div>
                             </div>
                             {/* /.row */}
                           </div>
@@ -2680,7 +2667,12 @@ class App extends BaseComponent {
                                         <Statistic
                                           title={
                                             <span>
-                                              <Tooltip title={"Рекомендуемая ставка доходности для достижения цели в заданный срок"}>
+                                              <Tooltip title={
+                                                <span>
+                                                  Рекомендуемая ставка доходности<br />
+                                                  для достижения цели в заданный срок
+                                                </span>
+                                              }>
                                                 рекомендуемая<br />
                                                 <span aria-label="доходность">дох-ть</span>
                                               </Tooltip>
@@ -2688,29 +2680,31 @@ class App extends BaseComponent {
                                           }
                                           value={formatNumber(round(value, 3))}
                                           formatter={node => {
-                                            const value = chartModule?.recommendData.find(row => Number(row.x) == currentDay + 1)?.value;
-  
-                                            return value != null
-                                              ?
-                                                <Tooltip
-                                                  title={
-                                                  <span style={{ whiteSpace: "nowrap" }}>
-                                                      Рекомендуемый депозит<br/>
-                                                      на конец {currentDay} {num2str(currentDay, ["дня:", "дня:", "дня:"])} {formatNumber(Math.round(value || 0))}
+                                            // Значение графика рекомендуемой доходности для следующего дня
+                                            const value = chartModule?.recommendData
+                                               .find(row => Number(row.x) == currentDay + 1)
+                                              ?.value;
+
+                                            return (
+                                              <Tooltip
+                                                title={
+                                                  value != null &&
+                                                    <span style={{ whiteSpace: "nowrap" }}>
+                                                      Рекомендуемый депозит<br />
+                                                      на конец {currentDay} {num2str(currentDay, ["дня", "дня", "дня"])}:
+                                                      {" "}
+                                                      {formatNumber(Math.round(value))}
                                                     </span>
-                                                  }
-                                                >
-                                                  {node}
-                                                </Tooltip>
-                                              :
-                                                node
+                                                }
+                                              >
+                                                {node}
+                                              </Tooltip>
+                                            );
                                           }}
                                           valueStyle={{
                                             color: `var( ${valid ? "--success-color" : "--danger-color"} )`
                                           }}
-                                          prefix={
-                                            valid ? <ArrowUpOutlined /> : <ArrowDownOutlined />
-                                          }
+                                          prefix={valid ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
                                           suffix="%"
                                         />
                                       );
@@ -2735,6 +2729,8 @@ class App extends BaseComponent {
                     dataLength,
                     currentDay
                   } = this.state;
+
+                  const { expanded, changed, calculatedRate, rateRequired, goal, pureIncome, realIncome } = data[currentDay - 1];
 
                   const lastFilledDay = data.lastFilledDay?.day || 0;
 
@@ -2868,47 +2864,39 @@ class App extends BaseComponent {
                       </div>
 
                       {
-                        (!data[currentDay - 1].expanded && !this.state.saved)
-                        ? null
-                        : (
+                        !(!expanded && !this.state.saved) &&
                           <span className="section5-content-title">
                             <span>
-                              {
-                                data[currentDay - 1].changed
-                                  ? 
-                                    <Value format={val => formatNumber(round(val, 3))}>
-                                      {data[currentDay - 1].calculatedRate || 0}
-                                    </Value>
-                                  : placeholder
+                              {changed
+                                ?
+                                  <Value format={value => formatNumber(round(value, 3))}>
+                                    {calculatedRate || 0}
+                                  </Value>
+                                : placeholder
                               }
                               &nbsp;/&nbsp;
-                              {formatNumber(round(
-                                data[currentDay - 1].rateRequired != null
-                                  ? data[currentDay - 1].rateRequired
-                                  : rate,
-                                3
-                              ))}
+                              <Value type="default" format={value => formatNumber(round(value, 3))}>
+                                {rateRequired != null
+                                  ? rateRequired
+                                  : rate
+                                }
+                              </Value>
                             </span>
-                            &nbsp;
+                            <span>{" "}</span>
                             <span>
-                              (
-                              {(() => {
-                                return data[currentDay - 1].changed
-                                  ? (
-                                    <Value format={val => val > 0 ? "+" + val : val}>
-                                      { formatNumber(data[currentDay - 1].pureIncome) }
-                                    </Value>
-                                  )
-                                  : placeholder
-                              })()}
-                              {" "}/{" "}
-                              {
-                                "+" + formatNumber(data[currentDay - 1].goal)
+                              {"("}
+                              {changed
+                                ?
+                                  <Value forcedPlus>
+                                    {pureIncome}
+                                  </Value>
+                                : placeholder
                               }
-                              )
+                              &nbsp;/&nbsp;
+                              <Value type="default" forcedPlus>{goal}</Value>
+                              {")"}
                             </span>
                           </span>
-                        )
                       }
 
                       <div className="section5-save-wrap">
@@ -2916,40 +2904,32 @@ class App extends BaseComponent {
                         <button
                           disabled={currentDay <= 5}
                           data-type="link"
-                          onClick={() => this.setCurrentDay(currentDay - 5)}>
+                          onClick={() => this.setCurrentDay(currentDay - 5)}
+                        >
                           <ArrowRight reversed />
                           Предыдущая неделя
                         </button>
 
                         <Button
-                          className={
-                            []
-                              .concat("section5__save")
-                              .concat(data.hasNoGaps && (currentDay > lastFilledDay + 1) ? "section5__save--hidden" : "")
-                              .concat("custom-btn")
-                              .concat(
-                                (data[currentDay - 1].changed || data[currentDay - 1].expanded)
-                                  ? "custom-btn--filled"
-                                  : ""
-                              )
-                              .join(" ")
-                              .trim()
-                          }
+                          className={clsx(
+                            "section5__save",
+                            data.hasNoGaps && (currentDay > lastFilledDay + 1) && "section5__save--hidden",
+                            "custom-btn",
+                            (changed || expanded) && "custom-btn--filled"
+                          )}
                           role="button"
-                          aria-expanded={data[currentDay - 1].expanded}
+                          aria-expanded={expanded}
                           aria-controls="result"
-                          type={!data[currentDay - 1].expanded ? "primary" : "default"}
+                          type={!expanded ? "primary" : "default"}
                           onClick={e => {
                             let { data, currentDay, saved } = this.state;
                             const { expanded } = data[currentDay - 1];
-
                             if (expanded) {
-
                               if (!saved) {
                                 dialogAPI.open(saveDialogID, e.target);
                               }
                               else {
-                                this.update(this.getTitle());
+                                this.update();
                                 data[currentDay - 1].expanded = !expanded;
                               }
                             }
@@ -2961,8 +2941,8 @@ class App extends BaseComponent {
                           }}
                         >
                           {
-                            !data[currentDay - 1].expanded
-                              ? data[currentDay - 1].changed
+                            !expanded
+                              ? changed
                                 ? "Изменить"
                                 : "Добавить"
                               : "Сохранить"
@@ -2982,7 +2962,7 @@ class App extends BaseComponent {
                       <div 
                         id="result"
                         className="result"
-                        hidden={!data[currentDay - 1].expanded}
+                        hidden={!expanded}
                       >
                         <div className="result-col result-col-iterations card">
                           <h3 className="result-col__title">
@@ -2992,16 +2972,16 @@ class App extends BaseComponent {
                           </h3>
                           <div className="result-col__content">
                             <IterationsContainer
-                              expanded={data[currentDay - 1].expanded}
+                              expanded={expanded}
                               data={data}
                               currentDay={currentDay}
                               placeholder={placeholder}
-                              callback={(data, callback) => {
-                                this.setStateAsync({ data })
-                                  .then(() => callback())
-                                  .then(() => this.updateData())
-                                  .then(() => chartVisible && chartModule?.updateChart.call(this))
-                                  .then(() => this.forceUpdate())
+                              callback={async (data, callback) => {
+                                await this.setStateAsync({ data });
+                                callback();
+                                await this.updateData();
+                                chartVisible && chartModule?.updateChart.call(this);
+                                this.forceUpdate();
                               }}
                             />
                           </div>
@@ -3010,21 +2990,27 @@ class App extends BaseComponent {
                         {(() => {
                           return (
                             <div className="result-col card">
-                              <Tooltip title={"Требуемая сумма прибыли для достижения дневной цели"}>
+                              <Tooltip title="Требуемая сумма прибыли для достижения дневной цели">
                                 <h3 className="result-col__title">Торговая цель</h3>
                               </Tooltip>
                               <div className="result-col__content">
                                 {(() => {
-                                  let { scale, rateRequired } = data[currentDay - 1];
+                                  let {
+                                    goal,
+                                    scale,
+                                    changed,
+                                    realIncome,
+                                    rateRequired,
+                                    calculatedRate,
+                                  } = data[currentDay - 1];
                                   if (scale == null) {
-                                    scale = data[currentDay - 1].calculatedRate || 0;
+                                    scale = calculatedRate || 0;
                                   }
-
                                   if (rateRequired == null) {
                                     rateRequired = rate;
                                   }
-
                                   const percent = round(scale, 3) / round(rateRequired, 3) * 100;
+
                                   return (
                                     <Progress
                                       className="result-round-progress"
@@ -3037,17 +3023,15 @@ class App extends BaseComponent {
                                       format={() =>
                                         <div className="result-round-progress__inner">
                                           <span>
-                                            {
-                                              data[currentDay - 1].changed && scale != null
-                                                ? formatNumber(round(scale, scale > 100? 0 : 3)) + "%"
-                                                : placeholder
+                                            {changed && scale != null
+                                              ? formatNumber(round(scale, scale > 100 ? 0 : 3)) + "%"
+                                              : placeholder
                                             }
                                           </span>
                                           <span>
-                                            из{" "}
-                                            {
-                                              formatNumber(round(rateRequired, 3))
-                                            }
+                                            из
+                                            {" "}
+                                            {formatNumber(round(rateRequired, 3))}
                                           </span>
                                         </div>
                                       }
@@ -3059,11 +3043,7 @@ class App extends BaseComponent {
                                     До цели:
                                   </Tooltip>
                                   <span>
-                                    {
-                                      formatNumber(
-                                        Math.max(data[currentDay - 1].goal - (data[currentDay - 1].realIncome || 0), 0)
-                                      )
-                                    }
+                                    {formatNumber(Math.max(goal - (realIncome || 0), 0))}
                                   </span>
                                 </p>
                               </div>
@@ -3072,7 +3052,12 @@ class App extends BaseComponent {
                         })()}
 
                         <div className="result-col result-col-additional card">
-                          <Tooltip title={"Запланированные и внеплановые выводы / пополнения, а также возможный пассивный доход с текущей суммы"}>
+                          <Tooltip title={
+                            <span>
+                              Запланированные и внеплановые выводы / пополнения,<br />
+                              а также возможный пассивный доход с текущей суммы
+                            </span>
+                          }>
                             <h3 className="result-col__title">Дополнительно</h3>
                           </Tooltip>
                           <div className="result-col__content">
@@ -3129,16 +3114,10 @@ class App extends BaseComponent {
                                   <div className="result-col-additional-row__side">
                                     {formatNumber(paymentPlan)}
                                     <Progress
-                                      className={
-                                        ["result-col-additional-row__circle-progress"]
-                                          .concat(
-                                            progress > 0 && progress < 100
-                                              ? "in-progress"
-                                              : ""
-                                          )
-                                          .join(" ")
-                                          .trim()
-                                      }
+                                      className={clsx(
+                                        "result-col-additional-row__circle-progress",
+                                        progress > 0 && progress < 100 && "in-progress"
+                                      )}
                                       type="circle"
                                       percent={progress}
                                       status={
@@ -3209,16 +3188,10 @@ class App extends BaseComponent {
                                   <div className="result-col-additional-row__side">
                                     {formatNumber(payloadPlan)}
                                     <Progress
-                                      className={
-                                        ["result-col-additional-row__circle-progress"]
-                                          .concat(
-                                            progress > 0 && progress < 100
-                                              ? "in-progress"
-                                              : ""
-                                          )
-                                          .join(" ")
-                                          .trim()
-                                      }
+                                      className={clsx(
+                                        "result-col-additional-row__circle-progress",
+                                        progress > 0 && progress < 100 && "in-progress"
+                                      )}
                                       type="circle"
                                       percent={progress}
                                       status={
@@ -3243,19 +3216,19 @@ class App extends BaseComponent {
                                   </Tooltip>
                                 </span>
                               <div className="result-col-additional-row__side">
-                                <Value>
+                                <Value format={value => formatNumber(Math.round(value))} forcedPlus>
                                   {(() => {
-                                    let val = data[currentDay - 1].depoEnd;
+                                    let value = 0;
                                     let tool = this.getCurrentPassiveIncomeTool();
                                     if (tool) {
-                                      let persantage = tool.rate / 12 * (365 / 260) / 100;
-
-                                      return "+" + formatNumber(Math.round(val * persantage))
+                                      let percent = tool.rate / 12 * (365 / 260) / 100;
+                                      value = data[currentDay - 1].depoEnd * percent;
                                     }
 
-                                    return 0;
+                                    return value;
                                   })()}
-                                </Value> / мес
+                                </Value>
+                                &nbsp;/&nbsp;мес
                               </div>
                             </div>
 
@@ -3264,7 +3237,12 @@ class App extends BaseComponent {
 
                         <div className="result-col">
                           <h3 className="result-col__title result-col__title--large">
-                            <Tooltip title={"Итоговая сумма прибыли или убытка за день с учётом торговли, выводов и пополнений"}>
+                            <Tooltip title={
+                              <span>
+                                Итоговая сумма прибыли или убытка<br />
+                                за день с учётом торговли, выводов и пополнений
+                              </span>
+                            }>
                               Дневная цель
                             </Tooltip>
                           </h3>
