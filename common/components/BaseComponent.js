@@ -345,7 +345,6 @@ export default class BaseComponent extends React.Component {
     await this.setStateAsync({ toolsLoading: true });
     const response = await fetch("getCompanyTrademeterInfo", "GET", { code, region });
     const tool = Tool.fromObject(response.data);
-    console.log(tool);
 
     const tools = cloneDeep(this.state.tools);
     // Обновляем инструмент в массиве, если он есть
