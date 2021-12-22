@@ -254,7 +254,6 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
     const focusArr = counterArr.slice(0, chartScaleMode);
     
     const startIterations = slicedChunk.filter(value => value.x === focusArr[0][0]);
-    dev && console.log("startIterations:", startIterations);
     min = planData.findIndex(value => value.x == startIterations[0].x);
     if (startIterations[0].x.indexOf(".") > -1) {
       min -= startIterations[0].x.replace(/\d+\./, "");
@@ -262,7 +261,6 @@ function calcXZoom(chartScaleMode, startRatio = 0, endRatio = 1) {
     
     const endIterations = slicedChunk.filter(value => value.x === focusArr[focusArr.length - 1][0]);
     const lastEndIteration = endIterations[endIterations.length - 1];
-    dev && console.log("endIterations:", endIterations, lastEndIteration);
     max = planData.findIndex(value => value.x == lastEndIteration.x);
     if (lastEndIteration.x.indexOf(".") > -1) {
       max += lastEndIteration.weight - lastEndIteration.x.replace(/\d+\./, "");
@@ -642,8 +640,6 @@ function updateChart(isInit = false) {
     x:          "1",
     value:      data[0].depoStartTest,
   });
-
-  // console.log(planData);
 
   // Сопоставляет план 1 к 1 с фактом, и если плана для конрктеного факта нет,
   // то в план подставляется интерполированное значение между двумя ближайшими точками факта
