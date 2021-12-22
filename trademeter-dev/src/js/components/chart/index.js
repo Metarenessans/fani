@@ -105,12 +105,21 @@ function updateChartScaleY(start, end) {
     ...recommendDataCopy?.slice(startIndex, endIndex),
   ].map(entry => entry.value);
 
-  let minY = Math.round( Math.min(...values) );
-  let maxY = Math.round( Math.max(...values) );
-  const minMaxDifference = Math.round( Math.abs(minY - maxY) * .05 );
-  minY -= minMaxDifference;
-  minY = Math.max(minY, 0);
-  maxY += minMaxDifference;
+  let maxY = Math.round(Math.max(...values));
+  let minY = Math.round(Math.min(...values));
+
+  let offset = Math.round(Math.abs(minY - maxY) * .05);
+  const minDiff = 100_000;
+  if (minY == maxY) {
+    offset = minDiff / 2;
+  }
+
+  minY -= offset;
+  if (minY < 0) {
+    minY = 0;
+  }
+
+  maxY += offset;
 
   chart?.yScale().minimum( minY );
   chart?.yScale().maximum( maxY );
