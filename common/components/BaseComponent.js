@@ -441,7 +441,8 @@ export default class BaseComponent extends React.Component {
     const json = this.packSave();
     const data = {
       name,
-      static: JSON.stringify(json.static)
+      static: JSON.stringify(json.static),
+      dynamic: JSON.stringify(json.dynamic)
     };
 
     try {
@@ -484,7 +485,8 @@ export default class BaseComponent extends React.Component {
     const data = {
       id,
       name,
-      static: JSON.stringify(json.static)
+      static: JSON.stringify(json.static),
+      dynamic: JSON.stringify(json.dynamic),
     };
 
     try {
