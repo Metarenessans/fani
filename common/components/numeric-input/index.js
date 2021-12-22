@@ -333,7 +333,7 @@ export default class NumericInput extends React.Component {
     const { className, onBlur } = this.props;
     const { value, error } = this.state;
 
-    const positive = value >= 0;
+    const positive = this.parse(value) >= 0;
 
     const safeProps = { ...this.props };
     delete safeProps.format;
