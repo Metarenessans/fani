@@ -127,8 +127,8 @@ const dayTemplate = {
     "Работа с убеждениями":                              false,
     "Работа с ценностями":                               false,
     "Формирование устойчивого навыка (микро ТОТЕ)":      false,
-    "Удаленное видение":                                 false,
-    "Физическая активность: приседание, отжимание, бег": false,
+    "Удаленное Видение (НИ Мастер)":                     false,
+    "Физическая активность: приседания, отжимания, бег": false,
     "Аффирмации":                                        false,
     "НАННИ":                                             false,
     "Работа со страхами":                                false,
@@ -136,7 +136,7 @@ const dayTemplate = {
   },
 
   /**
-   * Кастомные техноголии
+   * Кастомные технологии
    *
    * @type {{ name: string, value: boolean }[]}
    */
@@ -153,15 +153,15 @@ const dayTemplate = {
     "Не перезаходить после закрытия по Stop-Loss":             false,
     "Не выключать робота":                                     false,
     "Контролировать объём входа":                              false,
-    "Делать расчёты ФАНИ":                                     false,
+    "Делать расчёты в ФАНИ":                                   false,
     "Заносить результаты в ФАНИ":                              false,
-    "Фиксировать сделки в скриншотах":                         false,
-    "Выделять ключевые поведенченские паттерны и модели":      false,
+    "Фиксировать сделки на скриншотах":                        false,
+    "Выделять ключевые поведенческие паттерны и модели":       false,
     "Анализировать текущую ситуацию в конкретных показателях": false,
     "Смену тактики проводить через анализ и смену алгоритма":  false,
-    "Время между сделками 30 минут":                           false,
-    "Время между сделками 1 час":                              false,
-    "Время между сделками. Четко по сессиям":                  false,
+    "Время между сделками: 30 минут":                          false,
+    "Время между сделками: 1 час":                             false,
+    "Время между сделками: четко по сессиям":                  false,
     "Удержание напряжения желания торговать":                  false,
     "Удержание напряжения желания наблюдать за сделкой":       false,
     "Снятие эмоциональной привязанности от результата сделки": false,
@@ -384,29 +384,61 @@ export default class App extends BaseComponent {
     const initialState = cloneDeep(this.initialState);
 
     let _data = merge(cloneDeep(initialState.data), data.data)
-      .map(day => {
+      .map(
+        /** @param {dayTemplate} day */
+        day => {
         let { practiceWorkTasks } = day;
         practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
+        
+        const practiceBCProps = [
+          { incorrect: "Фиксировать сделки в скриншотах", correct: "Фиксировать сделки на скриншотах"},
+          { incorrect: "Выделять ключевые поведенченские паттерны и модели", correct: "Выделять ключевые поведенческие паттерны и модели"},
+          { incorrect: "Время между сделками 30 минут", correct: "Время между сделками: 30 минут" },
+          { incorrect: "Время между сделками 1 час", correct: "Время между сделками: 1 час" },
+          { incorrect: "Время между сделками. Четко по сессиям", correct: "Время между сделками: четко по сессиям" },
+          { incorrect: "Делать расчёты ФАНИ", correct: "Делать расчёты в ФАНИ"}
+        ];
+        Object.keys(practiceWorkTasks).forEach(key => {
+          const group = practiceBCProps.find(group => key == group.incorrect);
+          if (group) {
+            const value = practiceWorkTasks[key];
+            delete practiceWorkTasks[key];
+            practiceWorkTasks[group.correct] = value;
+          }
+        });
+
         day.practiceWorkTasks = practiceWorkTasks;
 
         let { technology } = day;
         if (technology.amy) {
           technology["ЭМИ"] = technology.amy;
+          delete technology.amy;
         }
         if (technology.tmo) {
           technology["ТМО"] = technology.tmo;
+          delete technology.tmo;
         }
         if (technology.recapitulation) {
           technology["Перепросмотр"] = technology.recapitulation;
+          delete technology.recapitulation;
         }
         if (technology.archetypesWork) {
           technology["Работа с архетипами"] = technology.archetypesWork;
+          delete technology.archetypesWork;
         }
 
-        delete technology.amy;
-        delete technology.tmo;
-        delete technology.recapitulation;
-        delete technology.archetypesWork;
+        const technologyBCProps = [
+          { incorrect: "Удаленное видение", correct: "Удаленное Видение (НИ Мастер)" },
+          { incorrect: "Физическая активность: приседание, отжимание, биг", correct: "Физическая активность: приседания, отжимания, бег" }
+        ];
+        Object.keys(technology).forEach(key => {
+          const group = technologyBCProps.find(group => key == group.incorrect);
+          if (group) {
+            const value = technology[key];
+            delete technology[key];
+            technology[group.correct] = value;
+          }
+        });
 
         technology = merge(cloneDeep(dayTemplate.technology), technology);
         day.technology = technology;
