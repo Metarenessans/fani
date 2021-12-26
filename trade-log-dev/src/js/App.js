@@ -8,6 +8,8 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
+import typeOf from "../../../common/utils/type-of";
+
 import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
@@ -50,16 +52,55 @@ export const dealTemplate = {
   result: 0,
 
   emotionalStates: {
-    /** @type {boolean[]} */
-    positive: [],
-    /** @type {boolean[]} */
-    negative: []
+    /** @type {Object.<string, boolean>} */
+    positive: {
+      "Спокойствие":  false,
+      "Собранность":  false,
+      "Смелость":     false,
+      "Уверенность":  false
+    },
+    /** @type {Object.<string, boolean>} */
+    negative: {
+      "Жалость":                  false,
+      "Жадность":                 false,
+      "Эго (я прав)":             false,
+      "Эйфория":                  false,
+      "Вина":                     false,
+      "Обида":                    false,
+      "Гнев":                     false,
+      "Апатия":                   false,
+      "Стагнация":                false,
+      "Cтрах":                    false,
+      "Ужас":                     false,
+      "Отчаяние":                 false,
+      "Выталкивающая сила рынка": false
+    }
   },
   motives: {
-    /** @type {boolean[]} */
-    positive: [],
-    /** @type {boolean[]} */
-    negative: []
+    /** @type {Object.<string, boolean>} */
+    positive: {
+      "Видение рынка":                                           false,
+      "Видение точки входа":                                     false,
+      "Видение точки выхода":                                    false,
+      "Видение торгового диапазона":                             false,
+      "Видение силы рынка (тенденции)":                          false,
+      "Контроль загрузки позиции без Stop Loss":                 false,
+      "Контроль Точки Входа и загрузки по позиции со Stop Loss": false,
+      "Отработка навыка входа":                                  false,
+      "Отработка навыка выхода":                                 false,
+      "Отработка пребывания в сделке":                           false,
+      "Отработка среднесрочного анализа":                        false,
+      "Создание торгового алгоритма":                            false
+    },
+    /** @type {Object.<string, boolean>} */
+    negative: {
+      "Скука":                                                        false,
+      "Азарт":                                                        false,
+      "Желание торговать":                                            false,
+      "Спешка и суета":                                               false,
+      "Желание закрыть позицию раньше изначального Намерения (цели)": false,
+      "Большая позиция без Stop Loss":                                false
+    }
   }
 };
 
@@ -442,6 +483,87 @@ export default class App extends BaseComponent {
 
         technology = merge(cloneDeep(dayTemplate.technology), technology);
         day.technology = technology;
+
+        // Сделки
+        for (let deal of day.deals) {
+          // Старая версия, где был массив с null, true и false
+          if (typeOf(deal.emotionalStates.positive) == "array") {
+            const positiveEmotionalStatesLabels = [
+              "Спокойствие",
+              "Собранность",
+              "Смелость",
+              "Уверенность"
+            ];
+
+            const positiveEmoStates = cloneDeep(deal.emotionalStates.positive);
+
+            const fixedPositiveEmoStates = {};
+            for (let i = 0; i < positiveEmoStates.length; i++) {
+              if (positiveEmoStates[i]) {
+                fixedPositiveEmoStates[positiveEmotionalStatesLabels[i]] = positiveEmoStates[i];
+              }
+            }
+            deal.emotionalStates.positive = merge(cloneDeep(dealTemplate.emotionalStates.positive), fixedPositiveEmoStates);
+
+            const negativeEmotionalStatesLabels = [
+              "Жалость",
+              "Жадность",
+              "Эго (я прав)",
+              "Эйфория",
+              "Вина",
+              "Обида",
+              "Гнев",
+              "Апатия",
+              "Стагнация"
+            ];
+
+            const negativeEmoStates = cloneDeep(deal.emotionalStates.negative);
+
+            const fixedNegativeEmoStates = {};
+            for (let i = 0; i < negativeEmoStates.length; i++) {
+              if (negativeEmoStates[i]) {
+                fixedNegativeEmoStates[negativeEmotionalStatesLabels[i - 4]] = negativeEmoStates[i];
+              }
+            }
+            deal.emotionalStates.negative = merge(cloneDeep(dealTemplate.emotionalStates.negative), fixedNegativeEmoStates);
+
+            const positiveMotives = [
+              "Видение рынка",
+              "Отработка навыка входа",
+              "Отработка навыка выхода",
+              "Отработка пребывания в сделке",
+              "Отработка среднесрочного анализа",
+              "Создание торгового алгоритма"
+            ];
+
+            const positiveMotive = cloneDeep(deal.motives.positive);
+
+            const fixedPositiveMotives = {};
+            for (let i = 0; i < positiveMotive.length; i++) {
+              if (positiveMotive[i]) {
+                fixedPositiveMotives[positiveMotives[i]] = positiveMotive[i];
+              }
+            }
+            deal.motives.positive = merge(cloneDeep(dealTemplate.motives.positive), fixedPositiveMotives);
+
+            const negativeMotives = [
+              "Скука",
+              "Азарт",
+              "Желание торговать",
+              "Спешка и суета"
+            ];
+
+            const negativeMotive = cloneDeep(deal.motives.negative);
+
+            const fixedNegativeMotives = {};
+            for (let i = 0; i < negativeMotive.length; i++) {
+              if (negativeMotive[i]) {
+                fixedNegativeMotives[negativeMotives[i - 6]] = negativeMotive[i];
+              }
+            }
+            deal.motives.negative = merge(cloneDeep(dealTemplate.motives.negative), fixedNegativeMotives);
+          }
+        }
 
         return day;
       });

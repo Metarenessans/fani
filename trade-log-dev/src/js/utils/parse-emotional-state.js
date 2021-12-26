@@ -29,12 +29,13 @@ export default function parseEmotionalState(deals) {
     negative: 0
   };
 
+  /** @param {dealTemplate} deal */
   function parseDeal(deal) {
-    emotionalStates.positive += deal.emotionalStates.positive.filter(value => value === true).length;
-    emotionalStates.negative += deal.emotionalStates.negative.filter(value => value === true).length;
-
-    motives.positive += deal.motives.positive.filter(value => value === true).length;
-    motives.negative += deal.motives.negative.filter(value => value === true).length;
+    emotionalStates.positive += Object.keys(deal.emotionalStates.positive).map(name => deal.emotionalStates.positive[name]).filter(value => value === true).length;
+    emotionalStates.negative += Object.keys(deal.emotionalStates.negative).map(name => deal.emotionalStates.negative[name]).filter(value => value === true).length;
+    
+    motives.positive += Object.keys(deal.motives.positive).map(name => deal.motives.positive[name]).filter(value => value === true).length;
+    motives.negative += Object.keys(deal.motives.negative).map(name => deal.motives.negative[name]).filter(value => value === true).length;
 
     positive += emotionalStates.positive;
     positive += motives.positive;

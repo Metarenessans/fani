@@ -15,6 +15,7 @@ export default function StateRegistry() {
   const { state } = context;
   const { data, currentRowIndex } = state;
   const currentDay = data[currentRowIndex];
+  
   return (
     <Panel 
       title="Регистр состояний" 
@@ -53,133 +54,111 @@ export default function StateRegistry() {
             <tr>
               <td className="category-title category-title--positive">Нормальные</td>
             </tr>
-            {[
-              "Спокойствие",
-              "Собранность",
-              "Смелость",
-              "Уверенность"
-            ].map((label, i) =>
-              <tr key={i}>
-                <td>{label}</td>
-                {currentDay.deals.map((deal, index) =>
-                  <td key={index}>
-                    <Checkbox
-                      className="positive" 
-                      checked={deal.emotionalStates.positive[i]}
-                      onChange={e => {
-                        const { checked } = e.target;
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].deals[index].emotionalStates.positive[i] = checked;
-                        context.setState({ data });
-                      }}
-                    />
-                  </td>
-                )}
-              </tr>
-            )}
+
+            {Object.keys(currentDay.deals[0].emotionalStates.positive).map((taskName, i) => {
+              return (
+                <tr key={i}>
+                  <td>{taskName}</td>
+                  {currentDay.deals.map((item, index) =>
+                    <td key={index}>
+                      <Checkbox
+                        className="positive"
+                        key={index}
+                        checked={currentDay.deals[index].emotionalStates.positive[taskName]}
+                        onChange={e => {
+                          const { checked } = e.target;
+                          const data = cloneDeep(state.data);
+                          data[currentRowIndex].deals[index].emotionalStates.positive[taskName] = checked;
+                          context.setState({ data });
+                        }}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+
             <tr>
               <td className="category-title category-title--negative">Искаженные</td>
             </tr>
-            {[
-              "Жалость",
-              "Жадность",
-              "Эго (я прав)",
-              "Эйфория",
-              "Вина",
-              "Обида",
-              "Гнев",
-              "Апатия",
-              "Стагнация",
-              "Cтрах",
-              "Ужас",
-              "Отчаяние",
-              "Выталкивающая сила рынка"
-            ].map((label, i) =>
-              <tr key={i}>
-                <td>{label}</td>
-                {currentDay.deals.map((deal, index) =>
-                  <td key={index}>
-                    <Checkbox
-                      className="negative"
-                      checked={deal.emotionalStates.negative[i + 4]}
-                      onChange={e => {
-                        const { checked } = e.target;
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].deals[index].emotionalStates.negative[i + 4] = checked;
-                        context.setState({ data });
-                      }}
-                    />
-                  </td>
-                )}
-              </tr>
-            )}
+
+            {Object.keys(currentDay.deals[0].emotionalStates.negative).map((taskName, i) => {
+              return (
+                <tr key={i}>
+                  <td>{taskName}</td>
+                  {currentDay.deals.map((item, index) =>
+                    <td key={index}>
+                      <Checkbox
+                        className="negative"
+                        key={index}
+                        checked={currentDay.deals[index].emotionalStates.negative[taskName]}
+                        onChange={e => {
+                          const { checked } = e.target;
+                          const data = cloneDeep(state.data);
+                          data[currentRowIndex].deals[index].emotionalStates.negative[taskName] = checked;
+                          context.setState({ data });
+                        }}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
             <tr>
               <th>Мотивационные драйверы</th>
             </tr>
             <tr>
               <td className="category-title category-title--positive">Нормальные</td>
             </tr>
-            {[
-              "Видение рынка",
-              "Видение точки входа",
-              "Видение точки выхода",
-              "Видение торгового диапазона",
-              "Видение силы рынка (тенденции)",
-              "Контроль загрузки позиции без Stop Loss",
-              "Контроль Точки Входа и загрузки по позиции со Stop Loss",
-              "Отработка навыка входа",
-              "Отработка навыка выхода",
-              "Отработка пребывания в сделке",
-              "Отработка среднесрочного анализа",
-              "Создание торгового алгоритма"
-            ].map((label, i) =>
-              <tr key={i}>
-                <td>{label}</td>
-                {currentDay.deals.map((deal, index) =>
-                  <td key={index}>
-                    <Checkbox
-                      className="positive"
-                      checked={deal.motives.positive[i]}
-                      onChange={e => {
-                        const { checked } = e.target;
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].deals[index].motives.positive[i] = checked;
-                        context.setState({ data });
-                      }}
-                    />
-                  </td>
-                )}
-              </tr>
-            )}
+
+            {Object.keys(currentDay.deals[0].motives.positive).map((taskName, i) => {
+              return (
+                <tr key={i}>
+                  <td>{taskName}</td>
+                  {currentDay.deals.map((item, index) =>
+                    <td key={index}>
+                      <Checkbox
+                        className="positive"
+                        key={index}
+                        checked={currentDay.deals[index].motives.positive[taskName]}
+                        onChange={e => {
+                          const { checked } = e.target;
+                          const data = cloneDeep(state.data);
+                          data[currentRowIndex].deals[index].motives.positive[taskName] = checked;
+                          context.setState({ data });
+                        }}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
             <tr>
               <td className="category-title category-title--negative">Искаженные</td>
             </tr>
-            {[
-              "Скука",
-              "Азарт",
-              "Желание торговать",
-              "Спешка и суета",
-              "Желание закрыть позицию раньше изначального Намерения (цели)",
-              "Большая позиция без Stop Loss"
-            ].map((label, i) =>
-              <tr key={i}>
-                <td>{label}</td>
-                {currentDay.deals.map((deal, index) =>
-                  <td key={index}>
-                    <Checkbox
-                      className="negative"
-                      checked={deal.motives.negative[i + 6]}
-                      onChange={e => {
-                        const { checked } = e.target;
-                        const data = cloneDeep(state.data);
-                        data[currentRowIndex].deals[index].motives.negative[i + 6] = checked;
-                        context.setState({ data });
-                      }}
-                    />
-                  </td>
-                )}
-              </tr>
-            )}
+
+            {Object.keys(currentDay.deals[0].motives.negative).map((taskName, i) => {
+              return (
+                <tr key={i}>
+                  <td>{taskName}</td>
+                  {currentDay.deals.map((item, index) =>
+                    <td key={index}>
+                      <Checkbox
+                        className="negative"
+                        key={index}
+                        checked={currentDay.deals[index].motives.negative[taskName]}
+                        onChange={e => {
+                          const { checked } = e.target;
+                          const data = cloneDeep(state.data);
+                          data[currentRowIndex].deals[index].motives.negative[taskName] = checked;
+                          context.setState({ data });
+                        }}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
