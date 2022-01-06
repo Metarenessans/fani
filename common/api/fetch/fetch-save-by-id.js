@@ -1,14 +1,18 @@
 import fetch from "../fetch";
 
+/** @typedef {import("../../utils/extract-snapshot").SnapshotResponse} SnapshotResponse */
+
 /**
  * Делает GET-запрос с помощью кастомной функции-обертки {@link fetch}
  * 
  * @param {string} pageName Строковый идентификатор страницы (`"Trademeter"|"Mts"|"Tor"...`)
  * @param {number} id ID запрашиваемого сохранения
- * @returns {Promise<import("../../utils/extract-snapshot").SnapshotResponse>}
+ * @returns {Promise<SnapshotResponse>}
  */
-export default function fetchSaveById(pageName, id) {
+export default async function fetchSaveById(pageName, id) {
   // Делает первую букву заглавной
   pageName = pageName[0].toUpperCase() + pageName.slice(1);
-  return fetch(`get${pageName}Snapshot`, "GET", { id });
+  const response = await fetch(`get${pageName}Snapshot`, "GET", { id });
+  window.easterEgg = response;
+  return response;
 }

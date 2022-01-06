@@ -1,6 +1,7 @@
 import React from "react";
 import { message } from "antd";
 import { cloneDeep } from "lodash";
+import objToPlainText from "object-plain-string";
 
 import fetch         from "../api/fetch";
 import fetchSaveById from "../api/fetch/fetch-save-by-id";
@@ -160,6 +161,20 @@ export default class BaseComponent extends React.Component {
   bindEvents() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
+
+    window.addEventListener("keyup", e => {
+      // Пасхалка
+      if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
+        const file = new Blob([objToPlainText(window.easterEgg)], { type: "text/plain" });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(file);
+        link.setAttribute("download", "easter_egg.txt");
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+    });
   }
   
   componentDidMount() {
@@ -416,6 +431,8 @@ export default class BaseComponent extends React.Component {
         const saves = [{ id, name, dateCreate }];
         await this.setStateAsync({ saves });
       }
+
+      window.easterEgg = response;
 
       if (!response?.error && response?.data?.name) {
         const parseFn = options?.praseFn ?? this.extractSnapshot;
