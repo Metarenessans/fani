@@ -4,9 +4,6 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 import "./style.scss";
 
-// TODO: Сделать так, чтобы условие было динамическим
-const isMobile = innerWidth <= 768;
-
 const propTypes = {
   /**
    * Дефолтное значение
@@ -121,7 +118,8 @@ export default class NumericInput extends React.Component {
 
     this.state = {
       value: this.format(value),
-      error: ""
+      error: "",
+      isMobile: false
     };
   }
 
@@ -158,6 +156,15 @@ export default class NumericInput extends React.Component {
     return this.allowEmpty;
   }
 
+  onResize = () => {
+    this.setState({ isMobile: window.innerWidth <= 768 });
+  };
+
+  componentDidMount() {
+    addEventListener("resize", this.onResize);
+    this.onResize();
+  }
+
   componentDidUpdate(prevProps, prevState) {
     const { defaultValue, test } = this.props;
     const { value } = this.state;
@@ -178,6 +185,10 @@ export default class NumericInput extends React.Component {
         this.setState({ value: this.format(value) });
       }
     }
+  }
+
+  componentWillUnmount() {
+    removeEventListener("resize", this.onResize);
   }
 
   /** @deprecated Use `setError` instead */
@@ -331,7 +342,7 @@ export default class NumericInput extends React.Component {
 
   render() {
     const { className, onBlur } = this.props;
-    const { value, error } = this.state;
+    const { value, error, isMobile } = this.state;
 
     const positive = this.parse(value) >= 0;
 
