@@ -21,8 +21,6 @@ import formatNumber from "../../../../common/utils/format-number"
 import round        from "../../../../common/utils/round"
 import num2str      from "../../../../common/utils/num2str"
 
-import sortInputFirst from "../../../../common/utils/sort-input-first"
-
 const { Option } = Select;
 
 export default class Dashboard extends React.Component {
@@ -105,19 +103,6 @@ export default class Dashboard extends React.Component {
     }
 
     return 0;
-  }
-  
-  getOptions() {
-    return this.props.tools.map((tool, idx) => {
-      return {
-        idx:   idx,
-        label: String(tool),
-      };
-    });
-  }
-
-  getSortedOptions() {
-    return sortInputFirst(this.state.searchVal, this.getOptions());
   }
   
   getContracts() {
@@ -257,7 +242,7 @@ export default class Dashboard extends React.Component {
                 style={{ width: "100%" }}
               >
                 {(() => {
-                  if (this.props.tools.length == 0) {
+                  if (tools.length == 0) {
                     return (
                       <Option key={0} value={0}>
                         <LoadingOutlined style={{ marginRight: ".2em" }} />
@@ -266,11 +251,11 @@ export default class Dashboard extends React.Component {
                     )
                   }
                   else {
-                    return this.getSortedOptions().map((option) => (
-                      <Option key={option.idx} value={option.idx}>
-                        {option.label}
+                    return tools.map((tool, index) => (
+                      <Option key={index} value={index} title={String(tool)}>
+                        {String(tool)}
                       </Option>
-                    ));
+                    ))
                   }
                 })()}
               </Select>

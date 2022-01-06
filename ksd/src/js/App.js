@@ -145,6 +145,11 @@ class App extends BaseComponent {
         this.setStateAsync({ currentSaveIndex });
       }
     }
+
+    if (this.dataBuffer && !isEqual(this.state.data, this.dataBuffer)) {
+      console.log("onUpdate", this.dataBuffer);
+      this.setStateAsync({ data: this.dataBuffer });
+    }
   }
 
   async fetchInitialData() {

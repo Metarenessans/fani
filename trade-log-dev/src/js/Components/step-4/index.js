@@ -130,7 +130,7 @@ export default class FourthStep extends React.Component {
                         context.setState({ data });
                       }}
                     >
-                      Добавить техноголию
+                      Добавить технологию
                     </Button>
 
                     <Button
@@ -144,7 +144,7 @@ export default class FourthStep extends React.Component {
                         context.setState({ data });
                       }}
                     >
-                      Удалить техноголию
+                      Удалить технологию
                     </Button>
                   </div>
                 </div>

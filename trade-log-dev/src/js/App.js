@@ -8,6 +8,8 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
+import typeOf from "../../../common/utils/type-of";
+
 import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
@@ -50,16 +52,55 @@ export const dealTemplate = {
   result: 0,
 
   emotionalStates: {
-    /** @type {boolean[]} */
-    positive: [],
-    /** @type {boolean[]} */
-    negative: []
+    /** @type {Object.<string, boolean>} */
+    positive: {
+      "Спокойствие":  false,
+      "Собранность":  false,
+      "Смелость":     false,
+      "Уверенность":  false
+    },
+    /** @type {Object.<string, boolean>} */
+    negative: {
+      "Жалость":                  false,
+      "Жадность":                 false,
+      "Эго (я прав)":             false,
+      "Эйфория":                  false,
+      "Вина":                     false,
+      "Обида":                    false,
+      "Гнев":                     false,
+      "Апатия":                   false,
+      "Стагнация":                false,
+      "Cтрах":                    false,
+      "Ужас":                     false,
+      "Отчаяние":                 false,
+      "Выталкивающая сила рынка": false
+    }
   },
   motives: {
-    /** @type {boolean[]} */
-    positive: [],
-    /** @type {boolean[]} */
-    negative: []
+    /** @type {Object.<string, boolean>} */
+    positive: {
+      "Видение рынка":                                           false,
+      "Видение точки входа":                                     false,
+      "Видение точки выхода":                                    false,
+      "Видение торгового диапазона":                             false,
+      "Видение силы рынка (тенденции)":                          false,
+      "Контроль загрузки позиции без Stop Loss":                 false,
+      "Контроль Точки Входа и загрузки по позиции со Stop Loss": false,
+      "Отработка навыка входа":                                  false,
+      "Отработка навыка выхода":                                 false,
+      "Отработка пребывания в сделке":                           false,
+      "Отработка среднесрочного анализа":                        false,
+      "Создание торгового алгоритма":                            false
+    },
+    /** @type {Object.<string, boolean>} */
+    negative: {
+      "Скука":                                                        false,
+      "Азарт":                                                        false,
+      "Желание торговать":                                            false,
+      "Спешка и суета":                                               false,
+      "Желание закрыть позицию раньше изначального Намерения (цели)": false,
+      "Большая позиция без Stop Loss":                                false
+    }
   }
 };
 
@@ -127,8 +168,8 @@ const dayTemplate = {
     "Работа с убеждениями":                              false,
     "Работа с ценностями":                               false,
     "Формирование устойчивого навыка (микро ТОТЕ)":      false,
-    "Удаленное видение":                                 false,
-    "Физическая активность: приседание, отжимание, биг": false,
+    "Удаленное Видение (НИ Мастер)":                     false,
+    "Физическая активность: приседания, отжимания, бег": false,
     "Аффирмации":                                        false,
     "НАННИ":                                             false,
     "Работа со страхами":                                false,
@@ -136,7 +177,7 @@ const dayTemplate = {
   },
 
   /**
-   * Кастомные техноголии
+   * Кастомные технологии
    *
    * @type {{ name: string, value: boolean }[]}
    */
@@ -153,18 +194,19 @@ const dayTemplate = {
     "Не перезаходить после закрытия по Stop-Loss":             false,
     "Не выключать робота":                                     false,
     "Контролировать объём входа":                              false,
-    "Делать расчёты ФАНИ":                                     false,
+    "Делать расчёты в ФАНИ":                                   false,
     "Заносить результаты в ФАНИ":                              false,
-    "Фиксировать сделки в скриншотах":                         false,
-    "Выделять ключевые поведенченские паттерны и модели":      false,
+    "Фиксировать сделки на скриншотах":                        false,
+    "Выделять ключевые поведенческие паттерны и модели":       false,
     "Анализировать текущую ситуацию в конкретных показателях": false,
     "Смену тактики проводить через анализ и смену алгоритма":  false,
-    "Время между сделками 30 минут":                           false,
-    "Время между сделками 1 час":                              false,
-    "Время между сделками. Четко по сессиям":                  false,
+    "Время между сделками: 30 минут":                          false,
+    "Время между сделками: 1 час":                             false,
+    "Время между сделками: четко по сессиям":                  false,
     "Удержание напряжения желания торговать":                  false,
     "Удержание напряжения желания наблюдать за сделкой":       false,
-    "Снятие эмоциональной привязанности от результата сделки": false
+    "Снятие эмоциональной привязанности от результата сделки": false,
+    "Удержание напряжения закрыть сделку раньше. Отпускание":  false
   },
 
   /**
@@ -365,7 +407,17 @@ export default class App extends BaseComponent {
       }
     };
 
+    const snapshot = {
+      name: this.getTitle(),
+      static: JSON.stringify(json.static)
+    };
+    
     console.log("Packed save:", json);
+    // console.log(
+    //   "Packed snapshot:", snapshot,
+    //   "Stringified snapshot:", JSON.stringify(snapshot.static),
+    //   "parsed snapshot", JSON.parse(snapshot.static)
+    // );
     return json;
   }
 
@@ -373,32 +425,145 @@ export default class App extends BaseComponent {
     const initialState = cloneDeep(this.initialState);
 
     let _data = merge(cloneDeep(initialState.data), data.data)
-      .map(day => {
+      .map(
+        /** @param {dayTemplate} day */
+        day => {
         let { practiceWorkTasks } = day;
         practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
+        
+        const practiceBCProps = [
+          { incorrect: "Фиксировать сделки в скриншотах", correct: "Фиксировать сделки на скриншотах"},
+          { incorrect: "Выделять ключевые поведенченские паттерны и модели", correct: "Выделять ключевые поведенческие паттерны и модели"},
+          { incorrect: "Время между сделками 30 минут", correct: "Время между сделками: 30 минут" },
+          { incorrect: "Время между сделками 1 час", correct: "Время между сделками: 1 час" },
+          { incorrect: "Время между сделками. Четко по сессиям", correct: "Время между сделками: четко по сессиям" },
+          { incorrect: "Делать расчёты ФАНИ", correct: "Делать расчёты в ФАНИ"}
+        ];
+        Object.keys(practiceWorkTasks).forEach(key => {
+          const group = practiceBCProps.find(group => key == group.incorrect);
+          if (group) {
+            const value = practiceWorkTasks[key];
+            delete practiceWorkTasks[key];
+            practiceWorkTasks[group.correct] = value;
+          }
+        });
+
         day.practiceWorkTasks = practiceWorkTasks;
 
         let { technology } = day;
         if (technology.amy) {
           technology["ЭМИ"] = technology.amy;
+          delete technology.amy;
         }
         if (technology.tmo) {
           technology["ТМО"] = technology.tmo;
+          delete technology.tmo;
         }
         if (technology.recapitulation) {
           technology["Перепросмотр"] = technology.recapitulation;
+          delete technology.recapitulation;
         }
         if (technology.archetypesWork) {
           technology["Работа с архетипами"] = technology.archetypesWork;
+          delete technology.archetypesWork;
         }
 
-        delete technology.amy;
-        delete technology.tmo;
-        delete technology.recapitulation;
-        delete technology.archetypesWork;
+        const technologyBCProps = [
+          { incorrect: "Удаленное видение", correct: "Удаленное Видение (НИ Мастер)" },
+          { incorrect: "Физическая активность: приседание, отжимание, биг", correct: "Физическая активность: приседания, отжимания, бег" }
+        ];
+        Object.keys(technology).forEach(key => {
+          const group = technologyBCProps.find(group => key == group.incorrect);
+          if (group) {
+            const value = technology[key];
+            delete technology[key];
+            technology[group.correct] = value;
+          }
+        });
 
         technology = merge(cloneDeep(dayTemplate.technology), technology);
         day.technology = technology;
+
+        // Сделки
+        for (let deal of day.deals) {
+          // Старая версия, где был массив с null, true и false
+          if (typeOf(deal.emotionalStates.positive) == "array") {
+            const positiveEmotionalStatesLabels = [
+              "Спокойствие",
+              "Собранность",
+              "Смелость",
+              "Уверенность"
+            ];
+
+            const positiveEmoStates = cloneDeep(deal.emotionalStates.positive);
+
+            const fixedPositiveEmoStates = {};
+            for (let i = 0; i < positiveEmoStates.length; i++) {
+              if (positiveEmoStates[i]) {
+                fixedPositiveEmoStates[positiveEmotionalStatesLabels[i]] = positiveEmoStates[i];
+              }
+            }
+            deal.emotionalStates.positive = merge(cloneDeep(dealTemplate.emotionalStates.positive), fixedPositiveEmoStates);
+
+            const negativeEmotionalStatesLabels = [
+              "Жалость",
+              "Жадность",
+              "Эго (я прав)",
+              "Эйфория",
+              "Вина",
+              "Обида",
+              "Гнев",
+              "Апатия",
+              "Стагнация"
+            ];
+
+            const negativeEmoStates = cloneDeep(deal.emotionalStates.negative);
+
+            const fixedNegativeEmoStates = {};
+            for (let i = 0; i < negativeEmoStates.length; i++) {
+              if (negativeEmoStates[i]) {
+                fixedNegativeEmoStates[negativeEmotionalStatesLabels[i - 4]] = negativeEmoStates[i];
+              }
+            }
+            deal.emotionalStates.negative = merge(cloneDeep(dealTemplate.emotionalStates.negative), fixedNegativeEmoStates);
+
+            const positiveMotives = [
+              "Видение рынка",
+              "Отработка навыка входа",
+              "Отработка навыка выхода",
+              "Отработка пребывания в сделке",
+              "Отработка среднесрочного анализа",
+              "Создание торгового алгоритма"
+            ];
+
+            const positiveMotive = cloneDeep(deal.motives.positive);
+
+            const fixedPositiveMotives = {};
+            for (let i = 0; i < positiveMotive.length; i++) {
+              if (positiveMotive[i]) {
+                fixedPositiveMotives[positiveMotives[i]] = positiveMotive[i];
+              }
+            }
+            deal.motives.positive = merge(cloneDeep(dealTemplate.motives.positive), fixedPositiveMotives);
+
+            const negativeMotives = [
+              "Скука",
+              "Азарт",
+              "Желание торговать",
+              "Спешка и суета"
+            ];
+
+            const negativeMotive = cloneDeep(deal.motives.negative);
+
+            const fixedNegativeMotives = {};
+            for (let i = 0; i < negativeMotive.length; i++) {
+              if (negativeMotive[i]) {
+                fixedNegativeMotives[negativeMotives[i - 6]] = negativeMotive[i];
+              }
+            }
+            deal.motives.negative = merge(cloneDeep(dealTemplate.motives.negative), fixedNegativeMotives);
+          }
+        }
 
         return day;
       });
@@ -558,7 +723,7 @@ export default class App extends BaseComponent {
                                   <span className={clsx("step-logo", step == 4 && "step-logo--active")}>Тс 4</span>
 
                                   <span className={clsx("step-name", step == 4 && "step-name--active")}>
-                                    Точечный<br/>самоанализа
+                                    Точечный<br/>самоанализ
                                   </span>
                                 </div>
                               </div>

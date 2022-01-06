@@ -54,7 +54,9 @@ export default function Dashboard(props) {
                   ...cloneDeep(state),
                   updatedOnce: true
                 };
-                return context.setStateAsync({ data });
+                context.dataBuffer = data;
+                // console.log("onUpdate", index);
+                // return context.setStateAsync({ data });
               }}
               onChange={async (prop, val) => {
                 if (prop == "isToolsDropdownOpen") {

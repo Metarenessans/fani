@@ -34,7 +34,7 @@ export default function ThirdStep(props) {
               </div>
 
               <div className="table-base-column-value">
-                Восприяте общего направления тренда
+                Восприятие общего направления тренда
               </div>
             </div>
             <div className="table-extra-column-container scroll-hide">
