@@ -237,8 +237,7 @@ export default class NumericInput extends React.Component {
     if (value == "-") {
       value = 0;
     }
-
-    if (
+    else if (
       !this.round &&
       value.indexOf(".") < 0 &&
       value.length > 1 &&

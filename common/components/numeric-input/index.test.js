@@ -117,6 +117,11 @@ describe("Обновление инпута (onChange)", () => {
     expect(inputElement.value).toEqual("2");
   });
 
+  test("Не крашится при вводе минуса", () => {
+    fireEvent.change(inputElement, { target: { value: "-" } });
+    expect(inputElement.value).toEqual("-");
+  });
+
   test("Автоматическая подстановка 0 перед точкой/запятой", () => {
     fireEvent.change(inputElement, { target: { value: "." } });
     expect(inputElement.value).toEqual("0.");
