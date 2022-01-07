@@ -165,7 +165,7 @@ export default class BaseComponent extends React.Component {
     window.addEventListener("keyup", e => {
       // Пасхалка
       if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
-        const file = new Blob([objToPlainText(window.easterEgg)], { type: "text/plain" });
+        const file = new Blob([JSON.stringify(window.easterEgg)], { type: "text/plain" });
 
         const link = document.createElement("a");
         link.href = URL.createObjectURL(file);
