@@ -1122,7 +1122,7 @@ class App extends BaseComponent {
     const { data } = this.state;
     const realData = {};
     data.filledDays.forEach((item, index) => {
-      realData[index + 1] = {
+      realData[index] = {
         scale:   item.calculatedRate / 100,
         payment: item.payment || 0,
         payload: item.payload || 0,
