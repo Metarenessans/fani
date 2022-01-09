@@ -8,57 +8,29 @@ export default
   // 4.1 - simple bond
   // 5 - many other
 
+  /////
+
   function extRateReal(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13, getAverage: false, bond: undefined }) {
 
+  //////////////////////// 
+  //  Version 5.0 beta  //
+  ////////////////////////
 
-  const RD_modifier = -1; // realdata[0] - same realdata[1] in past 
-  ////
+  // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
+  // bond = { 
+  // 		price,   	 				// цена ОФЗ 
+  //    couponRate,				// ставка выплаты по купону в день, например, 0.01. Если установлена, то "coupon", "frequency", "startDateCoupon" не используются
+  // 		coupon,  	 				// величина выплаты по купону 
+  // 		frequency, 				// периодичность выплаты по купону в днях 
+  // 		startDateCoupon, 	// в этой версии не используется. Зарезервировано для другой версии // первый день с которого идет первая выплата по купону, если поставить 0, то "startDateCoupon" автоматически устанавливается равен "frequency"
+  // 		date 							// в этой версии не используется. Зарезервировано для другой версии // дата выпуска ОФЗ
+  // } 
+  // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}
 
-  const bonds2 = {
-    cash: 0,
-    bondsTotal: 0,
-    get total() {
-      return this.cash + this.bondsTotal;
-    },
-
-    init(opts, cash) {
-      this.opts = opts;
-      this.cash = cash;
-      this.bondsTotal = 0;
-      this.uB(cash);
-    },
-
-    uB(s) {
-      //return s;
-      if (isNaN(s)) { return s; }
-      var d = s - this.total;
-      //if ( d!= 0) console.log('d != 0 ');//t
-
-      //console.log('s', s, 'd', d,'CR',this.opts.couponRate); // t
-
-      this.cash += this.bondsTotal * (1 + this.opts.couponRate) + d;
-
-      //console.log('cash', this.cash); // t
-
-      if (this.cash < 0) {
-        this.cash = 0;
-        this.bondsTotal = 0;
-      }
-      else {
-        if (this.cash >= this.opts.price) {
-          let t = this.cash % this.opts.price;
-          this.bondsTotal = this.cash - t;
-          this.cash = t;
-        }
-      }
-      if (isNaN(s)) { console.log(this.total); }
-      return this.total;
-    }
-
-  }
+  // точность в процентах от итоговой суммы
 
 
-  function getDataRate(rate, present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 0, dayoffirstpayload = 0, comission = 0, realdata = [], options = { customRate: undefined, bond: undefined }) {
+  function getDataRate(rate, present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = [], options = { customRate: undefined, bond: undefined }) {
 
     var res = present;
 
@@ -69,8 +41,8 @@ export default
     }
 
     // костыль для в. 3.2
-    dayoffirstpayment++;
-    dayoffirstpayload++;
+    // dayoffirstpayment++;
+    // dayoffirstpayload++;
     /////
 
     var p1 = dayoffirstpayment;
@@ -101,6 +73,8 @@ export default
       }
       x++;
 
+
+
       if (options.bond !== undefined) {
         res = bonds2.uB(res);
       }
@@ -119,7 +93,7 @@ export default
   function extRateReal2(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment = 1, dayoffirstpayload = 1, comission = 0, realdata = {}, options = { customRate: undefined, fmode: 0, tax: 0.13, getAverage: false, bond: undefined }) {
 
     //////////////////////// 
-    //  Version 5.0 beta  //
+    //  Version 4.1 beta  //
     ////////////////////////
 
     // ( Начальный депозит, Целевой депозит, Сумма на вывод, Периодичность вывода, Сумма на добавление, Периодичность добавления, Торговых дней, День от начала до первого вывода, День от начала до первого взноса (с самого начала - 1), комиссия на вывод, массив данных по реальным дням, Опции: { extendDays -> коллбэк функция, которая вызывается если не хватает дней для достижения цели, customRate -> Предлагаемая доходность, на основе которой расчитывается отставание / опережение графика}  )
@@ -147,8 +121,8 @@ export default
 
     // костыль для в. 3.2
     const RD_modifier = -1; // realdata[0] - same realdata[1] in past 
-    dayoffirstpayment++;
-    dayoffirstpayload++;
+    // dayoffirstpayment++;
+    // dayoffirstpayload++;
 
     // костыль для отрицательных процентов
     const rateInc = 100000;
@@ -165,7 +139,7 @@ export default
 
       init(opts, cash) {
         this.opts = opts;
-        if (this.opts.couponRate === undefined) this.opts.couponRate = (this.opts.coupon / this.opts.frequency) / this.opts.price;
+        // if ( this.opts.couponRate === undefined ) 
         this.cash = cash;
         this.bondsTotal = 0;
         this.uB(cash);
@@ -380,6 +354,14 @@ export default
     var rate = guess;
     var daysExtend = 0;
 
+    if (options.bond !== undefined) {
+      if (options.bond.couponRate !== undefined) {
+        options.bond.couponRate = options.bond.couponRate / 260;
+      } else {
+        options.bond.couponRate = (options.bond.coupon / options.bond.frequency) / options.bond.price * 1.40385;
+      }
+    }
+
     var averageRate = 0;
 
     var rateRecommended = 0;
@@ -441,18 +423,18 @@ export default
   }
 
   var d = extRateReal2(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment, dayoffirstpayload, comission, realdata, options);
+
   var dataArr1 = getDataRate(d.rate, present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment - 1, dayoffirstpayload - 1, comission, realdata, options);
   options.bond = undefined;
   var d2 = extRateReal2(present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment, dayoffirstpayload, comission, realdata, options);
   var dataArr2 = getDataRate(d2.rate, present, future, payment, paymentper, payload, payloadper, periods, dayoffirstpayment - 1, dayoffirstpayload - 1, comission, realdata, options);
 
-
-  return { rate: d.rate, ratewithoutbond: d2.rate, rateRecommended: d.rateRecommended, extraDays: d.extraDays, daysDiff: d.daysDiff, future: d.future, sum: d.sum, periods: d.periods, ndflSum: d.ndflSum, purePayment: d.purePayment, averageRate: d.averageRate, averageProf: d.averageProf, series1: dataArr1, series2: dataArr2 };
+  return { rate: d2.rate, rateWithBond: d.rate, rateRecommended: d2.rateRecommended, rateRecommendedWithBond: d.rateRecommended, extraDays: d.extraDays, daysDiff: d.daysDiff, future: d.future, sum: d.sum, periods: d.periods, ndflSum: d.ndflSum, purePayment: d.purePayment, averageRate: d.averageRate, averageProf: d.averageProf, series1: dataArr1, series2: dataArr2 };
 
 }
 
 // Возвращает: { rate -> Минимальная доходность в день, rateRecommended -> базовая доходность без учета рилдата, extraDays -> дополнительные дни при необходимости, daysDiff -> разница в днях между планом и реальностью, future -> цель, sum -> итоговая сумма, periods -> дней фактически, ndflSum -> сумма НДФЛ}
 
-/////////////////////////// 
+///////////////////////////
 //  ^ END extRateReal ^  //
 ///////////////////////////
