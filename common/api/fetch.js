@@ -2,13 +2,15 @@ import { ajax } from "jquery";
 
 const urlPrefix = dev ? "https://fani144.ru/" : "";
 
+/** @typedef {import("./fetch-response").FetchResponse} FetchResponse */
+
 /**
  * Отправляет запрос на https://fani144.ru/local/php_interface/s1/ajax с помощью функции {@link ajax} из jQuery
  *
  * @param {string} query Подставляется в GET-параметр "method"
  * @param {"GET"|"POST"} [method="GET"] Метод HTTP запроса. Если не указан, будет использован "GET"
  * @param {{}} [data={}] Данные для передачи
- * @returns {Promise<{ error: boolean, data: [] >}
+ * @returns {Promise<FetchResponse>}
  */
 export default function fetch(query, method = "GET", data = {}) {
   const url = `${urlPrefix}/local/php_interface/s1/ajax/?method=${query}`;
@@ -19,21 +21,22 @@ export default function fetch(query, method = "GET", data = {}) {
       data,
       success: response => {
         try {
+          /** @type {FetchResponse} */
           const parsed = JSON.parse(response);
           if (parsed.error) {
-            reject(url + " failed: " + parsed.message);
+            reject(parsed.message);
           }
           resolve(parsed);
         }
         catch (error) {
-          reject(`Не удалось распарсить JSON, полученный от ${query}: ${error}`);
+          reject(error);
         }
       },
-      error: error => {
-        if (error.status == 0) {
+      error: xhr => {
+        if (xhr.status == 0) {
           return;
         }
-        reject(error);
+        reject(xhr);
       }
     });
   });
