@@ -246,6 +246,25 @@ export const NanniBot = () => {
     document.body.style.position = "";
   };
 
+  const replaceURLs = (message) => {
+    if (!message) return;
+
+    let urlRegex = /(((https?:\/\/)|(www\.))[^\s]+)/g;
+    return message.replace(urlRegex, (url) => {
+      let hyperlink = url;
+      if (!hyperlink.match('^https?:\/\/')) {
+        hyperlink = 'http://' + hyperlink;
+      }
+      return '<a href="' + hyperlink + '" target="_blank">' + url + '</a>'
+    });
+  }
+
+  const convertToHtml = text => {
+    if (text) {
+      return replaceURLs(text).replace(/\n/g, "<br>");
+    }
+  };
+
   const { loading } = useContext(GlobalContext);
 
   return (
@@ -329,7 +348,7 @@ export const NanniBot = () => {
                           <p>
                             <b>{message.conclusion.title}</b>
                           </p>
-                          <p>{message.conclusion.description}</p>
+                          <p dangerouslySetInnerHTML={{ __html: convertToHtml(message.conclusion.description) }}/>
                         </div>
                       ) : (
                         message.conclusion.title
