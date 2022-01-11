@@ -1,7 +1,8 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { GlobalContext } from "../context/GlobalState";
 import { Col, Row } from "antd";
-import { InputNumber } from "antd4";
+import { InputNumber } from "antd";
+// import { InputNumber } from "antd4";
 
 export const DataInputs = () => {
   const {
