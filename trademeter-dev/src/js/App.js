@@ -2242,17 +2242,30 @@ class App extends BaseComponent {
 
                         {(() => {
                           let step = currentTool.guarantee / data[currentDay - 1].depoStart * 100;
+                          let min = step;
+                          let max = 100;
+                          let disabled = false;
+
+                          // Прижимает ползунок к правому краю, дизейблит его и ставит значение 100%
                           if (depoPersentageStart > 100) {
-                            step = 0;
+                            disabled = true;
+                            step = 100;
+                            min = 0;
                           }
 
-                          const min = step;
+                          // Прижимает ползунок к правому краю и дизейблит его
+                          if (step * 2 > 100) {
+                            disabled = true;
+                            min = 0;
+                            max = depoPersentageStart;
+                          }
 
                           return (
                             <CustomSlider
-                              value={depoPersentageStart > 100 ? 0 : depoPersentageStart}
+                              value={depoPersentageStart > 100 ? 100 : depoPersentageStart}
+                              disabled={disabled}
                               min={min}
-                              max={100}
+                              max={max}
                               step={step}
                               precision={2}
                               filter={val => val + "%"}
