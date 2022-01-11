@@ -19,6 +19,6 @@ test("Работает", async () => {
     expect(bond).toHaveProperty("rate");
     expect(typeof bond.rate).toBe("number");
     expect(bond.rate).not.toBeNaN();
-    expect(bond.rate).toEqual(Number(ref.couponYieldYear));
+    expect(bond.rate).toEqual(Number(ref.yield));
   }
 });
