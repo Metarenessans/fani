@@ -28,6 +28,7 @@
           width: 35%;
         }
       }
+
     }
 
     td:first-child {
@@ -54,10 +55,9 @@
   }
 
   .ant-progress {
-
-    &.urgent {
+    &.done {
       .ant-progress-bg {
-        background: var(--danger-color) !important;
+        background: var(--success-color-light) !important;
       }
     }
 
@@ -68,6 +68,12 @@
 
     &-text {
       display: none;
+    }
+  }
+
+  .trade-log-button {
+    &--do {
+      background-color: inherit;
     }
   }
 }
