@@ -2268,9 +2268,10 @@ class App extends BaseComponent {
                               max={max}
                               step={step}
                               precision={2}
-                              filter={val => val + "%"}
-                              onChange={depoPersentageStart => {
-                                this.setState({ depoPersentageStart }, () => this.updateData());
+                              filter={value => value + "%"}
+                              onChange={async depoPersentageStart => {
+                                await this.setStateAsync({ depoPersentageStart });
+                                await this.updateData()
                               }}
                             />
                           )
@@ -2331,7 +2332,7 @@ class App extends BaseComponent {
                           errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
                           tools={tools}
                           value={this.getCurrentToolIndex()}
-                          onChange={currentToolIndex => {
+                          onChange={async currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
                             const tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
@@ -2342,17 +2343,16 @@ class App extends BaseComponent {
                               depoPersentageStart = 0;
                             }
 
-                            this.setState({ 
+                            await this.setStateAsync({ 
                               isToolsDropdownOpen: false,
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
-                            }, () => {
-                              this.updateData(days[mode])
-                                .then(() => this.imitateFetchingTools())
-                                .then(() => this.updateDepoPersentageStart())
                             });
+                            await this.updateData(days[mode]);
+                            await this.imitateFetchingTools();
+                            await this.updateDepoPersentageStart()
                           }}
                           onBlur={() => this.imitateFetchingTools()}
                         />
@@ -2361,19 +2361,17 @@ class App extends BaseComponent {
                   </Col>
 
                   <Col className="card card--column section3-col2">
-                    {
-                      (() => {
-                        let pointsForIteration = this.getPointsForIteration();
+                    {(() => {
+                      let pointsForIteration = this.getPointsForIteration();
 
-                        return (
-                          <Riskometer
-                            key={pointsForIteration}
-                            value={pointsForIteration}
-                            tool={currentTool}
-                          />
-                        )
-                      })()
-                    }
+                      return (
+                        <Riskometer
+                          key={pointsForIteration}
+                          value={pointsForIteration}
+                          tool={currentTool}
+                        />
+                      )
+                    })()}
 
                     {(() => {
                       let pointsForIteration = this.getPointsForIteration();
