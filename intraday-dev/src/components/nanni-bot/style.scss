@@ -59,7 +59,6 @@
     }
   }
   .nanni-btn {
-    // display: none;
     display: flex;
     align-items: center;
     width: 100%;
@@ -291,10 +290,9 @@
     }
   }
   .choice {
-    height: 3.5em;
     justify-content: center;
 
-    margin-bottom: 10px;
+    margin-bottom: 0.6em;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -335,7 +333,6 @@
     margin: 0;
   }
   .fade-out-right {
-    // animation: removeHeight 0s, fadeOutRight 0.5s;
     animation: fadeOutRight 0.5s, removeHeight 0.3s;
     animation-fill-mode: forwards;
     visibility: visible;
@@ -355,9 +352,7 @@
     visibility: visible;
   }
   .chosen.nth {
-    // position: absolute;
     animation: moveTop 0.6s;
-    // animation-fill-mode: forwards;
     animation-fill-mode: normal;
   }
   @keyframes moveTop {
@@ -419,14 +414,6 @@
     .nanni-btn {
       font-size: 20px;
     }
-    // .nanni-btn img {
-    //   max-width : 45px;
-    //   max-height: 45px;
-    // }
-    // .bot-icon {
-    //   max-width : 45px;
-    //   max-height: 45px;
-    // }
     .chat-header .name {
       font-size: 1.4em;
     }
