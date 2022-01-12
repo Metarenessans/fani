@@ -25,9 +25,8 @@ import Stats       from "./components/stats";
 
 /* API */
 
-import fetch from "../../../common/api/fetch";
-
 import "../sass/style.sass";
+import parseTasks from "./components/stats/tasks/parse-tasks";
 
 let scrollInitiator;
 
@@ -104,7 +103,7 @@ export const dealTemplate = {
   }
 };
 
-const dayTemplate = {
+export const dayTemplate = {
   isSaved:  false,
   /**
    * Дата создания в формате Unix-time
@@ -156,7 +155,7 @@ const dayTemplate = {
   ],
 
   /**
-   * Технологии
+   * Технологии 
    *
    * @type {Object.<string, boolean>}
    */
@@ -210,11 +209,44 @@ const dayTemplate = {
   },
 
   /**
-   * Кастомные рактические задачи на отработку
+   * Массив готовности практических задач на отработку
+   * 
+   * @type {Object.<string, boolean>}
+   */
+  readyWorkTasks: {
+    "Изменить время на сделку":                                false,
+    "Не снимать отложенные заявки, выставленные до этого":     false,
+    "Не перезаходить после закрытия по Stop-Loss":             false,
+    "Не выключать робота":                                     false,
+    "Контролировать объём входа":                              false,
+    "Делать расчёты в ФАНИ":                                   false,
+    "Заносить результаты в ФАНИ":                              false,
+    "Фиксировать сделки на скриншотах":                        false,
+    "Выделять ключевые поведенческие паттерны и модели":       false,
+    "Анализировать текущую ситуацию в конкретных показателях": false,
+    "Смену тактики проводить через анализ и смену алгоритма":  false,
+    "Время между сделками: 30 минут":                          false,
+    "Время между сделками: 1 час":                             false,
+    "Время между сделками: четко по сессиям":                  false,
+    "Удержание напряжения желания торговать":                  false,
+    "Удержание напряжения желания наблюдать за сделкой":       false,
+    "Снятие эмоциональной привязанности от результата сделки": false,
+    "Удержание напряжения закрыть сделку раньше. Отпускание":  false
+  },
+
+  /**
+   * Кастомные практические задачи на отработку
    *
    * @type {{ name: string, value: boolean }[]}
    */
-  customPracticeWorkTasks: []
+  customPracticeWorkTasks: [],
+
+  /** 
+   * Массив готовности практических задачи на отработку
+   * 
+   * @type {Object.<string, boolean>}
+   */
+  readyCustomPracticeWorkTasks: {}
 };
 
 export default class App extends BaseComponent {
@@ -289,6 +321,13 @@ export default class App extends BaseComponent {
        */
       currentRowIndex: 0,
 
+      /**
+       * Массив готовности практических задач на отработку
+       * 
+       * @type {Object.<string, number>}
+       */
+      readyWorkTasksCheckTime: {},
+
       extraStep:  false,
       extraSaved: false,
       customTools:   []
@@ -328,6 +367,7 @@ export default class App extends BaseComponent {
       prevState.data != data ||
       prevState.customTools != customTools
     ) {
+      console.log("есть изменения");
       this.setState({ changed: true });
     }
 
@@ -393,7 +433,8 @@ export default class App extends BaseComponent {
       allowedNumberOfUnprofitableDeals,
       data,
       currentRowIndex,
-      customTools
+      customTools,
+      readyWorkTasksCheckTime
     } = this.state;
 
     const json = {
@@ -403,7 +444,8 @@ export default class App extends BaseComponent {
         allowedNumberOfUnprofitableDeals,
         data,
         currentRowIndex,
-        customTools
+        customTools,
+        readyWorkTasksCheckTime
       }
     };
 
@@ -413,21 +455,18 @@ export default class App extends BaseComponent {
     };
     
     console.log("Packed save:", json);
-    // console.log(
-    //   "Packed snapshot:", snapshot,
-    //   "Stringified snapshot:", JSON.stringify(snapshot.static),
-    //   "parsed snapshot", JSON.parse(snapshot.static)
-    // );
     return json;
   }
-
-  parseSnapshot = data => {
+  
+  parseSnapshot = parsedSnapshot => {
     const initialState = cloneDeep(this.initialState);
 
-    let _data = merge(cloneDeep(initialState.data), data.data)
+    let data = merge(cloneDeep(initialState.data), parsedSnapshot.data) 
       .map(
         /** @param {dayTemplate} day */
         day => {
+        day = merge(cloneDeep(dayTemplate), day);
+
         let { practiceWorkTasks } = day;
         practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
         
@@ -568,14 +607,24 @@ export default class App extends BaseComponent {
         return day;
       });
 
+    let readyWorkTasksCheckTime = parsedSnapshot.readyWorkTasksCheckTime ?? initialState.readyWorkTasksCheckTime;
+    let tasks = parseTasks(data);
+    delete tasks.count;
+    Object.keys(tasks).forEach(taskName => {
+      if (tasks[taskName].done === tasks[taskName].checked && !readyWorkTasksCheckTime[taskName]) {
+        readyWorkTasksCheckTime[taskName] = Number(new Date());
+      }
+    });
+
     return {
-      dailyRate:                        data.dailyRate                        ?? initialState.dailyRate,
-      limitUnprofitableDeals:           data.limitUnprofitableDeals           ?? initialState.limitUnprofitableDeals,
-      allowedNumberOfUnprofitableDeals: data.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
-      data: _data,
-      currentRowIndex:                  data.currentRowIndex                  ?? initialState.currentRowIndex,
+      dailyRate:                        parsedSnapshot.dailyRate                        ?? initialState.dailyRate,
+      limitUnprofitableDeals:           parsedSnapshot.limitUnprofitableDeals           ?? initialState.limitUnprofitableDeals,
+      allowedNumberOfUnprofitableDeals: parsedSnapshot.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
+      data,
+      readyWorkTasksCheckTime,
+      currentRowIndex:                  parsedSnapshot.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
-      customTools:                     (data.customTools || []).map(tool => Tool.fromObject(tool))
+      customTools:                     (parsedSnapshot.customTools || []).map(tool => Tool.fromObject(tool))
     };
   };
 
@@ -816,7 +865,7 @@ export default class App extends BaseComponent {
                                         onClick={e => {
                                           this.lastSavedState = cloneDeep(this.state);
                                           const { id } = this.state;
-                                          if (id == null) {
+                                          if (id == null ) {
                                             dialogAPI.open(saveDialogID, e.target);
                                           }
                                           else {

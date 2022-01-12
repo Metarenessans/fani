@@ -246,6 +246,25 @@ export const NanniBot = () => {
     document.body.style.position = "";
   };
 
+  const replaceURLs = (message) => {
+    if (!message) return;
+
+    let urlRegex = /(((https?:\/\/)|(www\.))[^\s]+)/g;
+    return message.replace(urlRegex, (url) => {
+      let hyperlink = url;
+      if (!hyperlink.match('^https?:\/\/')) {
+        hyperlink = 'http://' + hyperlink;
+      }
+      return '<a href="' + hyperlink + '" target="_blank">' + url + '</a>'
+    });
+  }
+
+  const convertToHtml = text => {
+    if (text) {
+      return replaceURLs(text).replace(/\n/g, "<br>");
+    }
+  };
+
   const { loading } = useContext(GlobalContext);
 
   return (
@@ -257,13 +276,13 @@ export const NanniBot = () => {
         onClick={() => botInit()}
         className="nanni-btn"
       >
-        <img className="bot-icon" src={`public/img/nanni.png`}/>
+        <img className="bot-icon" src={`img/nanni.png`}/>
         Talk to NANNI Bot
       </Button>
       <div className="nanni-chat">
         <div className="chat-header">
           <div className={`new-messages ${haveUnread ? "unread" : ""}`}>
-            <img className="bot-icon" src={`public/img/nanni.png`}/>
+            <img className="bot-icon" src={`img/nanni.png`}/>
           </div>
           <div className="info">
             <div className="name">NANNI Bot</div>
@@ -314,7 +333,7 @@ export const NanniBot = () => {
                   } ${message.hasOwnProperty("printed") ? "printed" : ""}`}
                 >
                   <div className="icon">
-                    <img className="bot-icon" src={`public/img/nanni.png`}/>
+                    <img className="bot-icon" src={`img/nanni.png`}/>
                   </div>
                   <div className="content">
                     <div className="question-header">
@@ -329,7 +348,7 @@ export const NanniBot = () => {
                           <p>
                             <b>{message.conclusion.title}</b>
                           </p>
-                          <p>{message.conclusion.description}</p>
+                          <p dangerouslySetInnerHTML={{ __html: convertToHtml(message.conclusion.description) }}/>
                         </div>
                       ) : (
                         message.conclusion.title

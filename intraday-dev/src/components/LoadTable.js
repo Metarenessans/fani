@@ -8,7 +8,8 @@ import { ExtraStepInput } from "./ExtraStepInput";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 
 import { Row, Col, Button } from "antd";
-import { InputNumber } from "antd4";
+import { InputNumber } from "antd";
+// import { InputNumber } from "antd4";
 
 export const LoadTable = ({ tableIdx }) => {
   const {

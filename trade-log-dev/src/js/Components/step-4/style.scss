@@ -4,6 +4,11 @@
   font-size: 1.8em;
   width: 100%;
 
+  p {
+    margin:  0;
+    padding: 0;
+  }
+
   &-add-button-container {
     margin-top: .5em;
     display: flex;
@@ -76,7 +81,6 @@
     flex-direction: column;
     margin-top: -0.5em;
 
-    margin-right: .5em;
     @include sm {
       margin: 0;
       margin-bottom: .5em;
@@ -96,10 +100,28 @@
       height: 100%;
       width: 20%;
 
+      @include sm {
+        width: 30%;
+      }
+      @include xs {
+        width: 46%;
+      }
+      
       .ant-check-box {
         &-inner {
           height: 20px!important;
           width:  20px!important;
+        }
+      }
+      
+      &--practice {
+        justify-content: space-between;
+        border-left: none;
+        &-container {
+          width: 50%;
+          justify-content: center;
+          text-align: center;
+          align-items: center;
         }
       }
     }
@@ -112,10 +134,37 @@
   
       width: 100%;
       font-weight: bold;
-      padding: .8em;
-
+      height: 3.2em;
+      
       border-top: .03em solid #cacaca;
       border-bottom: .03em solid #cacaca;
+      
+      &--practice {
+        justify-content: space-between;
+        &-title {
+          margin-left: 9em!important;
+          
+          @include sm {
+            margin-left: .9em!important;
+          }
+        }
+      }
+
+      &--ready {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        height: 100%;
+        border-left: .03em solid #cacaca;
+        min-width: 10%;
+        width: 10%;
+
+        @include sm {
+          min-width: 15%;
+          width: 15%;
+        }
+      }
     }
 
     &-row-container {
@@ -197,7 +246,6 @@
   .ant-checkbox-input:focus+.ant-checkbox-inner,
   .ant-checkbox-wrapper:hover
   .ant-checkbox-inner,
-  // .ant-checkbox:hover
   .ant-checkbox-inner {
     border-color: rgb(170, 166, 166)!important;
   }
