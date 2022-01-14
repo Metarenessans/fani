@@ -261,7 +261,12 @@ export const NanniBot = () => {
 
   const convertToHtml = text => {
     if (text) {
-      return replaceURLs(text).replace(/\n/g, "<br>");
+      return (
+        replaceURLs(text)
+          .replace(/\n/g, "<br>")
+          .replace(/\t/g, "&nbsp&nbsp&nbsp")
+          .replace(//g, "&#8226")
+      );
     }
   };
 
