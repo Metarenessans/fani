@@ -17,6 +17,7 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 export const StateContext = Context;
 
 import Header      from "../../../common/components/header";
+import Diary       from "./Components/diary";
 import FirstStep   from "./components/step-1";
 import SecondStep  from "./components/step-2";
 import ThirdStep   from "./components/step-3";
@@ -338,6 +339,11 @@ export default class App extends BaseComponent {
        */
       readyWorkTasksCheckTime: {},
 
+      /**
+       * Содержимое личного дневника
+       */
+      notes: "",
+
       extraStep:  false,
       extraSaved: false,
       customTools:   []
@@ -444,7 +450,8 @@ export default class App extends BaseComponent {
       data,
       currentRowIndex,
       customTools,
-      readyWorkTasksCheckTime
+      readyWorkTasksCheckTime,
+      notes
     } = this.state;
 
     const json = {
@@ -455,7 +462,8 @@ export default class App extends BaseComponent {
         data,
         currentRowIndex,
         customTools,
-        readyWorkTasksCheckTime
+        readyWorkTasksCheckTime,
+        notes
       }
     };
 
@@ -632,6 +640,7 @@ export default class App extends BaseComponent {
       allowedNumberOfUnprofitableDeals: parsedSnapshot.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
       data,
       readyWorkTasksCheckTime,
+      notes:                            parsedSnapshot.notes                            ?? initialState.notes,
       currentRowIndex:                  parsedSnapshot.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
       customTools:                     (parsedSnapshot.customTools || []).map(tool => Tool.fromObject(tool))
@@ -788,6 +797,13 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider--main-page">
+                                <Button
+                                  className={clsx("main-button", step === -1 && "active")}
+                                  onClick={e => this.setState({ step: -1, extraStep: false })}
+                                >
+                                  Личный дневник
+                                </Button>
+
                                 <Button 
                                   className="main-button"
                                   onClick={async e => {
@@ -804,6 +820,8 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider-steps">
+                                {step == -1 && <Diary />}
+
                                 {step == 1 && (
                                   <FirstStep
                                     key={data}
@@ -850,7 +868,7 @@ export default class App extends BaseComponent {
                                   </Button>
                                 )}
 
-                                {step < 4 && (
+                                {step > 0 && step < 4 && (
                                   <Button 
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
