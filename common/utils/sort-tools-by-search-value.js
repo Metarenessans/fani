@@ -13,7 +13,7 @@ export default function sortToolsBySearchValue(searchValue, tools) {
 
   searchValue = searchValue.toLowerCase();
   
-  return tools.sort((a, b) => {
+  return [...tools].sort((a, b) => {
     a = String(a).substring(0, searchValue.length).toLowerCase();
     b = String(b).substring(0, searchValue.length).toLowerCase();
 
