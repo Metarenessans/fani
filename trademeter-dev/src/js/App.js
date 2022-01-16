@@ -506,10 +506,11 @@ class App extends BaseComponent {
     this.fetchInvestorInfo();
     this.fetchTools().then(() => this.setFetchingToolsTimeout());
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot({
-      fallback: require("./dev/snapshot").default,
-      praseFn: this.extractSave
-    });
+    this.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
+  }
+
+  extractSnapshot(snapshot) {
+    return this.extractSave(snapshot);
   }
 
   showAlert(msg = "") {
