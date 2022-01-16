@@ -15,7 +15,7 @@ export default function StateRegistry() {
   const { state } = context;
   const { data, currentRowIndex } = state;
   const currentDay = data[currentRowIndex];
-  
+
   return (
     <Panel 
       title="Регистр состояний" 
@@ -25,7 +25,7 @@ export default function StateRegistry() {
       <div className="table-wrapper">
         <table>
           <tbody>
-            <tr>
+            <tr className="fixed-on-top ">
               <th>Состояния</th>
               {currentDay.deals.map((deal, index) =>
                 <Tooltip
@@ -47,12 +47,13 @@ export default function StateRegistry() {
                     else return preferableToolName;
                   }}
                 >
-                  <th key={index}>{index + 1} сделка</th>
+                  <th key={index} className="z-index">{index + 1} сделка</th>
                 </Tooltip>
               )}
             </tr>
-            <tr>
-              <td className="category-title category-title--positive">Нормальные</td>
+
+            <tr className="category-title-row">
+              <th className="category-title category-title--positive">Нормальные</th>
             </tr>
 
             {Object.keys(currentDay.deals[0].emotionalStates.positive).map((taskName, i) => {
@@ -78,7 +79,7 @@ export default function StateRegistry() {
               );
             })}
 
-            <tr>
+            <tr className="category-title-row">
               <td className="category-title category-title--negative">Искаженные</td>
             </tr>
 
@@ -104,10 +105,12 @@ export default function StateRegistry() {
                 </tr>
               );
             })}
+
             <tr>
               <th>Мотивационные драйверы</th>
             </tr>
-            <tr>
+
+            <tr className="category-title-row">
               <td className="category-title category-title--positive">Нормальные</td>
             </tr>
 
@@ -133,7 +136,7 @@ export default function StateRegistry() {
                 </tr>
               );
             })}
-            <tr>
+            <tr className="category-title-row">
               <td className="category-title category-title--negative">Искаженные</td>
             </tr>
 

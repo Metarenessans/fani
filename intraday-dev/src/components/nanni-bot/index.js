@@ -76,8 +76,8 @@ export const NanniBot = () => {
           : (whatChosen = "chosen nth");
       } else {
         choiceIdx === 0
-          ? (whatChosen = "fade-out-right")
-          : (whatChosen = "fade-to-top");
+          ? (whatChosen = "fade-out-right margin-unset")
+          : (whatChosen = "fade-to-top margin-unset");
       }
     }
     return whatChosen;
@@ -261,7 +261,12 @@ export const NanniBot = () => {
 
   const convertToHtml = text => {
     if (text) {
-      return replaceURLs(text).replace(/\n/g, "<br>");
+      return (
+        replaceURLs(text)
+          .replace(/\n/g, "<br>")
+          .replace(/\t/g, "&nbsp&nbsp&nbsp")
+          .replace(//g, "&#8226")
+      );
     }
   };
 
