@@ -119,7 +119,7 @@ export default class BaseComponent extends React.Component {
        * 
        * @type {Tool[]}
        */
-      tools: [],
+      tools: props.tools ?? [],
 
       /**
        * Кастомные (созданные пользователем) торговые инструменты
@@ -560,5 +560,13 @@ export default class BaseComponent extends React.Component {
       changed,
       currentSaveIndex
     });
+  }
+
+  render() {
+    return (
+      <Context.Provider value={this}>
+        {this.props.children}
+      </Context.Provider>
+    );
   }
 }
