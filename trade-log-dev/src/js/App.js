@@ -31,6 +31,9 @@ import parseTasks from "./components/stats/tasks/parse-tasks";
 
 let scrollInitiator;
 
+/** Страница, с которой был переход в Личный дневник */
+let previousStep = -1;
+
 export const dealTemplate = {
   currentToolCode: "SBER",
   currentToolIndex:     0,
@@ -705,7 +708,9 @@ export default class App extends BaseComponent {
                     ? <Stats />
                     :
                       ((() => {
-                        const hasChanged = this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
+                        const hasChanged = 
+                          (this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex])) ||
+                          !isEqual(this.state.notes, this.lastSavedState.notes);
 
                         return (
                           // TODO: это вернуть
@@ -821,7 +826,10 @@ export default class App extends BaseComponent {
                               <div className="trade-slider--main-page">
                                 <Button
                                   className={clsx("main-button", step === -1 && "active")}
-                                  onClick={e => this.setState({ step: -1, extraStep: false })}
+                                  onClick={e => {
+                                    previousStep = step;
+                                    this.setState({ step: -1, extraStep: false });
+                                  }}
                                 >
                                   Личный дневник
                                 </Button>
@@ -878,10 +886,13 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider-bottom">
-                                {step > 1 && (
+                                {(step == -1 || step > 1) && (
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
+                                      if (step === -1) {
+                                        return this.setState({ step: previousStep });
+                                      }
                                       this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }));
                                     }}
                                     disabled={step == 1}
@@ -902,7 +913,7 @@ export default class App extends BaseComponent {
                                   </Button>
                                 )}
 
-                                {step == 4 && (
+                                {(step == -1 || step >= 4) && (
                                   hasChanged
                                     ? (
                                       <Button
