@@ -12,6 +12,10 @@
     width: 113em;
     max-width: 101.4%;
     overflow-x: auto;
+
+    @include sm {
+      max-width: 100%;
+    }
   }
 
   .z-index {
@@ -51,10 +55,6 @@
       
       font-size: 1.6em;
       text-align: center;
-
-      @include sm {
-        z-index: initial;
-      }
     }
 
     th,
@@ -65,15 +65,14 @@
 
       position: sticky;
       left: 0;
-
-      @include sm {
-        position: initial;
-        z-index: 0;
-      }
     }
 
     th {
       min-width: 10.67ch;
+
+      @include sm {
+        min-width: 10.75ch;
+      }
 
       &.category-title {
         position: sticky;
@@ -129,11 +128,6 @@
         font-weight: 800;
         text-align: center;
         text-transform: uppercase;
-
-        @include sm {
-          position: initial!important;
-          z-index: initial;
-        }
 
         &--positive {
           background: #bce5ac;
