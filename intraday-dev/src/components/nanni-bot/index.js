@@ -77,7 +77,7 @@ export const NanniBot = () => {
       } else {
         choiceIdx === 0
           ? (whatChosen = "fade-out-right margin-unset")
-          : (whatChosen = "fade-to-top margin-unset");
+          : (whatChosen = "fade-out-right fade-to-top  margin-unset");
       }
     }
     return whatChosen;
@@ -230,7 +230,7 @@ export const NanniBot = () => {
       await askQuestion();
     }
     await setMessagePrinted();
-    scrollToBottom();
+    await setTimeout(scrollToBottom(), 700);
   };
 
   const currentTime = () => {
