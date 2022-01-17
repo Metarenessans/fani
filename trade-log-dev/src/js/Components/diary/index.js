@@ -14,9 +14,8 @@ export default function Diary() {
   return (
     <Panel className="diary" title="Подробный анализ и личностная проработка">
       <TextArea 
-        key={notes}
-        defaultValue={notes}
-        onBlur={e => {
+        value={notes}
+        onChange={e => {
           const { value } = e.target;
           context.setState({ notes: value });
         }}
