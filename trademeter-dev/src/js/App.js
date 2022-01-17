@@ -506,10 +506,11 @@ class App extends BaseComponent {
     this.fetchInvestorInfo();
     this.fetchTools().then(() => this.setFetchingToolsTimeout());
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot({
-      fallback: require("./dev/snapshot").default,
-      praseFn: this.extractSave
-    });
+    this.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
+  }
+
+  extractSnapshot(snapshot) {
+    return this.extractSave(snapshot);
   }
 
   showAlert(msg = "") {
@@ -1122,7 +1123,7 @@ class App extends BaseComponent {
     const { data } = this.state;
     const realData = {};
     data.filledDays.forEach((item, index) => {
-      realData[index + 1] = {
+      realData[index] = {
         scale:   item.calculatedRate / 100,
         payment: item.payment || 0,
         payload: item.payload || 0,
@@ -2242,22 +2243,36 @@ class App extends BaseComponent {
 
                         {(() => {
                           let step = currentTool.guarantee / data[currentDay - 1].depoStart * 100;
+                          let min = step;
+                          let max = 100;
+                          let disabled = false;
+
+                          // Прижимает ползунок к правому краю, дизейблит его и ставит значение 100%
                           if (depoPersentageStart > 100) {
-                            step = 0;
+                            disabled = true;
+                            step = 100;
+                            min = 0;
                           }
 
-                          const min = step;
+                          // Прижимает ползунок к правому краю и дизейблит его
+                          if (step * 2 > 100) {
+                            disabled = true;
+                            min = 0;
+                            max = depoPersentageStart;
+                          }
 
                           return (
                             <CustomSlider
-                              value={depoPersentageStart > 100 ? 0 : depoPersentageStart}
+                              value={depoPersentageStart > 100 ? 100 : depoPersentageStart}
+                              disabled={disabled}
                               min={min}
-                              max={100}
+                              max={max}
                               step={step}
                               precision={2}
-                              filter={val => val + "%"}
-                              onChange={depoPersentageStart => {
-                                this.setState({ depoPersentageStart }, () => this.updateData());
+                              filter={value => value + "%"}
+                              onChange={async depoPersentageStart => {
+                                await this.setStateAsync({ depoPersentageStart });
+                                await this.updateData()
                               }}
                             />
                           )
@@ -2318,7 +2333,7 @@ class App extends BaseComponent {
                           errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
                           tools={tools}
                           value={this.getCurrentToolIndex()}
-                          onChange={currentToolIndex => {
+                          onChange={async currentToolIndex => {
                             const { depoStart, days, mode } = this.state;
                             const tools = this.getTools();
                             const currentTool = tools[currentToolIndex]; 
@@ -2329,17 +2344,16 @@ class App extends BaseComponent {
                               depoPersentageStart = 0;
                             }
 
-                            this.setState({ 
+                            await this.setStateAsync({ 
                               isToolsDropdownOpen: false,
                               // Очищаем currentToolIndex, чтобы отдать приоритет currentToolCode
                               currentToolIndex: null,
                               currentToolCode: currentTool.getSortProperty(),
                               depoPersentageStart
-                            }, () => {
-                              this.updateData(days[mode])
-                                .then(() => this.imitateFetchingTools())
-                                .then(() => this.updateDepoPersentageStart())
                             });
+                            await this.updateData(days[mode]);
+                            await this.imitateFetchingTools();
+                            await this.updateDepoPersentageStart()
                           }}
                           onBlur={() => this.imitateFetchingTools()}
                         />
@@ -2348,19 +2362,17 @@ class App extends BaseComponent {
                   </Col>
 
                   <Col className="card card--column section3-col2">
-                    {
-                      (() => {
-                        let pointsForIteration = this.getPointsForIteration();
+                    {(() => {
+                      let pointsForIteration = this.getPointsForIteration();
 
-                        return (
-                          <Riskometer
-                            key={pointsForIteration}
-                            value={pointsForIteration}
-                            tool={currentTool}
-                          />
-                        )
-                      })()
-                    }
+                      return (
+                        <Riskometer
+                          key={pointsForIteration}
+                          value={pointsForIteration}
+                          tool={currentTool}
+                        />
+                      )
+                    })()}
 
                     {(() => {
                       let pointsForIteration = this.getPointsForIteration();

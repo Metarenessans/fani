@@ -1,7 +1,6 @@
 import React from "react";
 import { message } from "antd";
 import { cloneDeep } from "lodash";
-import objToPlainText from "object-plain-string";
 
 import fetch         from "../api/fetch";
 import fetchSaveById from "../api/fetch/fetch-save-by-id";
@@ -120,7 +119,7 @@ export default class BaseComponent extends React.Component {
        * 
        * @type {Tool[]}
        */
-      tools: [],
+      tools: props.tools ?? [],
 
       /**
        * Кастомные (созданные пользователем) торговые инструменты
@@ -134,14 +133,7 @@ export default class BaseComponent extends React.Component {
        * 
        * @type {number}
        */
-      viewportWidth: 0,
-
-      /**
-       * Влияет на сортировку Select'ов с инструментами
-       * 
-       * TODO: удалить, когда полностью переедет в ToolSelect
-       */
-      searchVal: ""
+      viewportWidth: 0
     };
 
     /** @type {fetchSaveById & (id: number) => Promise<SnapshotResponse>} */
@@ -502,7 +494,7 @@ export default class BaseComponent extends React.Component {
       id,
       name,
       static: JSON.stringify(json.static),
-      dynamic: JSON.stringify(json.dynamic),
+      dynamic: JSON.stringify(json.dynamic)
     };
 
     try {
@@ -568,5 +560,13 @@ export default class BaseComponent extends React.Component {
       changed,
       currentSaveIndex
     });
+  }
+
+  render() {
+    return (
+      <Context.Provider value={this}>
+        {this.props.children}
+      </Context.Provider>
+    );
   }
 }

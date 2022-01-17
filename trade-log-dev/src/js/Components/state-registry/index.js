@@ -5,7 +5,7 @@ import { Tools } from "../../../../../common/tools";
 
 import Panel from "../panel";
 
-import { StateContext } from "../../App";
+import { StateContext, recommendedEmotionalStateTasks } from "../../App";
 
 import "./style.scss";
 import { cloneDeep } from "lodash";
@@ -15,6 +15,13 @@ export default function StateRegistry() {
   const { state } = context;
   const { data, currentRowIndex } = state;
   const currentDay = data[currentRowIndex];
+
+  function formatTitle(taskName) {
+    if (recommendedEmotionalStateTasks[taskName]) {
+      return <><b>{taskName}</b> | Проработка: {recommendedEmotionalStateTasks[taskName].join(", ")}</>;
+    }
+    return <b>{taskName}</b>;
+  }
 
   return (
     <Panel 
@@ -59,7 +66,7 @@ export default function StateRegistry() {
             {Object.keys(currentDay.deals[0].emotionalStates.positive).map((taskName, i) => {
               return (
                 <tr key={i}>
-                  <td>{taskName}</td>
+                  <td>{formatTitle(taskName)}</td>
                   {currentDay.deals.map((item, index) =>
                     <td key={index}>
                       <Checkbox
@@ -86,7 +93,7 @@ export default function StateRegistry() {
             {Object.keys(currentDay.deals[0].emotionalStates.negative).map((taskName, i) => {
               return (
                 <tr key={i}>
-                  <td>{taskName}</td>
+                  <td>{formatTitle(taskName)}</td>
                   {currentDay.deals.map((item, index) =>
                     <td key={index}>
                       <Checkbox
@@ -117,7 +124,7 @@ export default function StateRegistry() {
             {Object.keys(currentDay.deals[0].motives.positive).map((taskName, i) => {
               return (
                 <tr key={i}>
-                  <td>{taskName}</td>
+                  <td>{formatTitle(taskName)}</td>
                   {currentDay.deals.map((item, index) =>
                     <td key={index}>
                       <Checkbox
@@ -143,7 +150,7 @@ export default function StateRegistry() {
             {Object.keys(currentDay.deals[0].motives.negative).map((taskName, i) => {
               return (
                 <tr key={i}>
-                  <td>{taskName}</td>
+                  <td>{formatTitle(taskName)}</td>
                   {currentDay.deals.map((item, index) =>
                     <td key={index}>
                       <Checkbox

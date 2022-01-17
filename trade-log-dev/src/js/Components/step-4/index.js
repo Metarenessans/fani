@@ -192,6 +192,8 @@ export default class FourthStep extends React.Component {
                                 <Checkbox
                                   key={currentRowIndex}
                                   className="green"
+                                  // Дизейблит чекбокс, если задача не была выбрана на отработку
+                                  disabled={!practiceWorkTasks[taskName]}
                                   checked={readyWorkTasks[taskName]}
                                   onChange={e => {
                                     const readyWorkTasksCheckTime = cloneDeep(state.readyWorkTasksCheckTime);
@@ -200,8 +202,8 @@ export default class FourthStep extends React.Component {
                                     const data = cloneDeep(state.data);
                                     data[currentRowIndex].readyWorkTasks[taskName] = checked;
 
-                                    let tasks = parseTasks(data);
-                                    if (tasks[taskName].done == tasks[taskName].checked) {
+                                    const tasks = parseTasks(data);
+                                    if (tasks[taskName]?.done === tasks[taskName]?.checked) {
                                       readyWorkTasksCheckTime[taskName] = Number(new Date());
                                     }
 

@@ -3,9 +3,12 @@ import { Select, Tooltip } from "antd";
 const { Option } = Select;
 import { LoadingOutlined } from "@ant-design/icons";
 
+import sortInputBySearhValue from "../../utils/sort-tools-by-search-value";
+
 import { Context } from "../BaseComponent";
 
 export default function ToolSelect({
+  test,
   errorMessage,
   value,
   onChange,
@@ -15,8 +18,13 @@ export default function ToolSelect({
   const context = useContext(Context);
   const { state } = context;
   const { toolsLoading, toolSelectDisabled } = state;
-
   const tools = context.getTools();
+  
+  const [searchValue, setSearchValue] = useState("");
+  
+  const code = tools[value]?.code;
+  const filteredTools = sortInputBySearhValue(searchValue, tools);
+  value = Math.max(filteredTools.findIndex(tool => tool.code === code), 0);
 
   return (
     <Tooltip title={errorMessage} visible={errorMessage?.length > 0}>
@@ -26,10 +34,13 @@ export default function ToolSelect({
         loading={toolsLoading || toolSelectDisabled}
         value={toolsLoading ? 0 : value}
         showSearch
+        onSearch={value => setSearchValue(value)}
         onChange={async currentToolIndex => {
           const tools = context.getTools();
-          const currentTool = tools[currentToolIndex];
+          const filteredTools = sortInputBySearhValue(searchValue, tools);
+          const currentTool = filteredTools[currentToolIndex];
           const currentToolCode = currentTool.code;
+          currentToolIndex = tools.findIndex(tool => tool.code == currentToolCode);
           await context.setStateAsync({ currentToolCode, isToolsDropdownOpen: false });
           if (onChange) {
             onChange(currentToolIndex, currentToolCode);
@@ -60,8 +71,13 @@ export default function ToolSelect({
               Загрузка...
             </Option>
           :
-            tools.map((tool, index) => (
-              <Option key={index} value={index} title={String(tool)}>
+            filteredTools.map((tool, index) => (
+              <Option
+                key={index}
+                value={index}
+                title={String(tool)}
+                data-code={tool.code}
+              >
                 {String(tool)}
               </Option>
             ))

@@ -239,10 +239,15 @@
 
   &--main-page {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100%;
     margin: 1.5em 0 0.5em;
+
+    > * + * {
+      margin-top: .75em;
+    }
 
     .main-button {
       font-size: 1.8em;
@@ -256,7 +261,7 @@
       padding: 0.9em 3em;
       height: 2em;
       border-radius: 1.1em;
-      border: 0.2em solid #cacaca;
+      border: 0.2em solid currentColor;
 
       font-weight: 600;
       color: #cacaca;
@@ -266,6 +271,14 @@
         color: #fff;
         border: 0.2em solid var(--primary-color);
         background: var(--primary-color);
+      }
+
+      &.active {
+        color: var(--primary-color);
+
+        &:hover {
+          color: white;
+        }
       }
     }
   }

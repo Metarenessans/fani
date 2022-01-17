@@ -97,7 +97,7 @@
       }
       
       &:first-of-type {
-        min-width: 40ch;
+        width: 42ch;
 
         @include sm {
           min-width: 12.3em;
@@ -112,6 +112,10 @@
 
       &:first-child {
         text-align: left;
+
+        b {
+          text-transform: uppercase;
+        }
       }
 
       &.category-title {

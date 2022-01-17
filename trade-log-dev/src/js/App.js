@@ -17,6 +17,7 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 export const StateContext = Context;
 
 import Header      from "../../../common/components/header";
+import Diary       from "./Components/diary";
 import FirstStep   from "./components/step-1";
 import SecondStep  from "./components/step-2";
 import ThirdStep   from "./components/step-3";
@@ -29,6 +30,9 @@ import "../sass/style.sass";
 import parseTasks from "./components/stats/tasks/parse-tasks";
 
 let scrollInitiator;
+
+/** Страница, с которой был переход в Личный дневник */
+let previousStep = -1;
 
 export const dealTemplate = {
   currentToolCode: "SBER",
@@ -101,6 +105,28 @@ export const dealTemplate = {
       "Большая позиция без Stop Loss":                                false
     }
   }
+};
+
+/**
+ * Рекомендуемые задачи на отработку для конкретного эмоционального состояния
+ *  
+ * @type {Object.<string, string[]>}
+ */
+export const recommendedEmotionalStateTasks = {
+  "Жалость":      ["ЭМИ", "ТМО", "Препросмотр"],
+  "Жадность":     ["Воля"],
+  "Эго (я прав)": ["Кто я", "ОВД"],
+  "Эйфория":      ["ЭМИ", "Физические упражнения"],
+  "Вина":         ["ЭМИ", "ТМО", "Анализ", "ЭУЛ", "Работа с тимусом"],
+  "Обида":        ["ЭМИ", "ТМО", "Анализ", "ЭУЛ", "Работа с тимусом"],
+  "Гнев":         ["ЭМИ", "ТМО", "Анализ", "ЭУЛ", "Работа с тимусом", "Физические упражнения"],
+  "Апатия":       ["ЭМИ", "ТМО", "Анализ", "ЭУЛ", "Работа с тимусом", "Физические упражнения"],
+  "Стагнация":    ["ЭМИ", "ТМО", "Анализ", "ЭУЛ", "Работа с тимусом", "Физические упражнения"],
+  
+  "Скука":             ["Счет", "Математические задачи", "Дыхательные упражнения и энергопрактики"],
+  "Азарт":             ["Дыхание, ЭМИ", "Планка", "Ходьба"],
+  "Желание торговать": ["Анализ \"Что конкретно и зачем?\""],
+  "Спешка и суета":    ["Дыхание", "Работа с тимусом"]
 };
 
 export const dayTemplate = {
@@ -193,7 +219,7 @@ export const dayTemplate = {
     "Не перезаходить после закрытия по Stop-Loss":             false,
     "Не выключать робота":                                     false,
     "Контролировать объём входа":                              false,
-    "Делать расчёты в ФАНИ":                                   false,
+    "Делать более детальные расчёты в ФАНИ":                   false,
     "Заносить результаты в ФАНИ":                              false,
     "Фиксировать сделки на скриншотах":                        false,
     "Выделять ключевые поведенческие паттерны и модели":       false,
@@ -202,10 +228,15 @@ export const dayTemplate = {
     "Время между сделками: 30 минут":                          false,
     "Время между сделками: 1 час":                             false,
     "Время между сделками: четко по сессиям":                  false,
-    "Удержание напряжения желания торговать":                  false,
-    "Удержание напряжения желания наблюдать за сделкой":       false,
+    "Удержание напряжения от желания торговать":               false,
+    "Удержание напряжения от желания наблюдать за сделкой":    false,
+    "Удержание напряжения закрыть сделку раньше. Отпускание":  false,
     "Снятие эмоциональной привязанности от результата сделки": false,
-    "Удержание напряжения закрыть сделку раньше. Отпускание":  false
+    "Переторговка: сделок больше чем":                         false,
+    "Переторговка: время более чем":                           false,
+    "Инструментов в работе: более чем":                        false,
+    "Торговля без четкого алгоритма (ручная)":                 false,
+    "Торговля избыточным количеством инструментов":            false
   },
 
   /**
@@ -219,7 +250,7 @@ export const dayTemplate = {
     "Не перезаходить после закрытия по Stop-Loss":             false,
     "Не выключать робота":                                     false,
     "Контролировать объём входа":                              false,
-    "Делать расчёты в ФАНИ":                                   false,
+    "Делать более детальные расчёты в ФАНИ":                   false,
     "Заносить результаты в ФАНИ":                              false,
     "Фиксировать сделки на скриншотах":                        false,
     "Выделять ключевые поведенческие паттерны и модели":       false,
@@ -228,10 +259,15 @@ export const dayTemplate = {
     "Время между сделками: 30 минут":                          false,
     "Время между сделками: 1 час":                             false,
     "Время между сделками: четко по сессиям":                  false,
-    "Удержание напряжения желания торговать":                  false,
-    "Удержание напряжения желания наблюдать за сделкой":       false,
+    "Удержание напряжения от желания торговать":                false,
+    "Удержание напряжения от желания наблюдать за сделкой":     false,
+    "Удержание напряжения закрыть сделку раньше. Отпускание":  false,
     "Снятие эмоциональной привязанности от результата сделки": false,
-    "Удержание напряжения закрыть сделку раньше. Отпускание":  false
+    "Переторговка: сделок больше чем":                         false,
+    "Переторговка: время более чем":                           false,
+    "Инструментов в работе: более чем":                        false,
+    "Торговля без четкого алгоритма (ручная)":                 false,
+    "Торговля избыточным количеством инструментов":            false
   },
 
   /**
@@ -327,6 +363,11 @@ export default class App extends BaseComponent {
        * @type {Object.<string, number>}
        */
       readyWorkTasksCheckTime: {},
+
+      /**
+       * Содержимое личного дневника
+       */
+      notes: "",
 
       extraStep:  false,
       extraSaved: false,
@@ -434,7 +475,8 @@ export default class App extends BaseComponent {
       data,
       currentRowIndex,
       customTools,
-      readyWorkTasksCheckTime
+      readyWorkTasksCheckTime,
+      notes
     } = this.state;
 
     const json = {
@@ -445,7 +487,8 @@ export default class App extends BaseComponent {
         data,
         currentRowIndex,
         customTools,
-        readyWorkTasksCheckTime
+        readyWorkTasksCheckTime,
+        notes
       }
     };
 
@@ -471,18 +514,27 @@ export default class App extends BaseComponent {
         practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
         
         const practiceBCProps = [
-          { incorrect: "Фиксировать сделки в скриншотах", correct: "Фиксировать сделки на скриншотах"},
-          { incorrect: "Выделять ключевые поведенченские паттерны и модели", correct: "Выделять ключевые поведенческие паттерны и модели"},
+          { incorrect: "Фиксировать сделки в скриншотах", correct: "Фиксировать сделки на скриншотах" },
+          { incorrect: "Выделять ключевые поведенченские паттерны и модели", correct: "Выделять ключевые поведенческие паттерны и модели" },
           { incorrect: "Время между сделками 30 минут", correct: "Время между сделками: 30 минут" },
           { incorrect: "Время между сделками 1 час", correct: "Время между сделками: 1 час" },
           { incorrect: "Время между сделками. Четко по сессиям", correct: "Время между сделками: четко по сессиям" },
-          { incorrect: "Делать расчёты ФАНИ", correct: "Делать расчёты в ФАНИ"}
+          { incorrect: ["Делать расчёты ФАНИ", "Делать расчёты в ФАНИ"], correct: "Делать более детальные расчёты в ФАНИ" },
+          { incorrect: "Удержание напряжения желания торговать", correct: "Удержание напряжения от желания торговать" },
+          { incorrect: "Удержание напряжения желания наблюдать за сделкой", correct: "Удержание напряжения от желания наблюдать за сделкой" }
         ];
-        Object.keys(practiceWorkTasks).forEach(key => {
-          const group = practiceBCProps.find(group => key == group.incorrect);
+
+        Object.keys(practiceWorkTasks).forEach(taskName => {
+        const group = practiceBCProps.find(group => {
+            // Внутри incorrect лежит массив строк
+            if (typeof group.incorrect == "object") {
+              return group.incorrect.some(name => name === taskName);
+            }
+            return taskName == group.incorrect;
+          });
           if (group) {
-            const value = practiceWorkTasks[key];
-            delete practiceWorkTasks[key];
+            const value = practiceWorkTasks[taskName];
+            delete practiceWorkTasks[taskName];
             practiceWorkTasks[group.correct] = value;
           }
         });
@@ -622,6 +674,7 @@ export default class App extends BaseComponent {
       allowedNumberOfUnprofitableDeals: parsedSnapshot.allowedNumberOfUnprofitableDeals ?? initialState.allowedNumberOfUnprofitableDeals,
       data,
       readyWorkTasksCheckTime,
+      notes:                            parsedSnapshot.notes                            ?? initialState.notes,
       currentRowIndex:                  parsedSnapshot.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
       customTools:                     (parsedSnapshot.customTools || []).map(tool => Tool.fromObject(tool))
@@ -664,7 +717,9 @@ export default class App extends BaseComponent {
                     ? <Stats />
                     :
                       ((() => {
-                        const hasChanged = this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex]);
+                        const hasChanged = 
+                          (this.lastSavedState && !isEqual(data[currentRowIndex], this.lastSavedState.data[currentRowIndex])) ||
+                          !isEqual(this.state.notes, this.lastSavedState.notes);
 
                         return (
                           // TODO: это вернуть
@@ -778,6 +833,16 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider--main-page">
+                                <Button
+                                  className={clsx("main-button", step === -1 && "active")}
+                                  onClick={e => {
+                                    previousStep = step;
+                                    this.setState({ step: -1, extraStep: false });
+                                  }}
+                                >
+                                  Личный дневник
+                                </Button>
+
                                 <Button 
                                   className="main-button"
                                   onClick={async e => {
@@ -794,6 +859,8 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider-steps">
+                                {step == -1 && <Diary />}
+
                                 {step == 1 && (
                                   <FirstStep
                                     key={data}
@@ -828,10 +895,13 @@ export default class App extends BaseComponent {
                               </div>
 
                               <div className="trade-slider-bottom">
-                                {step > 1 && (
+                                {(step == -1 || step > 1) && (
                                   <Button
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
+                                      if (step === -1) {
+                                        return this.setState({ step: previousStep });
+                                      }
                                       this.setState(prevState => ({ step: prevState.step - 1, extraStep: false }));
                                     }}
                                     disabled={step == 1}
@@ -840,7 +910,7 @@ export default class App extends BaseComponent {
                                   </Button>
                                 )}
 
-                                {step < 4 && (
+                                {step > 0 && step < 4 && (
                                   <Button 
                                     className="trade-log-button trade-log-button--slider"
                                     onClick={e => {
@@ -852,7 +922,7 @@ export default class App extends BaseComponent {
                                   </Button>
                                 )}
 
-                                {step == 4 && (
+                                {(step == -1 || step >= 4) && (
                                   hasChanged
                                     ? (
                                       <Button

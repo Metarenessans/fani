@@ -17,7 +17,9 @@
     "@babel/plugin-transform-runtime": "^7.13.8",
     "@babel/preset-env": "^7.11.5",
     "@babel/preset-react": "^7.10.4",
+    "@testing-library/dom": "^8.11.1",
     "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^26.0.14",
     "autoprefixer": "^9.8.5",
     "babel-jest": "^26.6.3",
@@ -60,6 +62,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.0.5",
+    "@testing-library/jest-dom": "^5.16.1",
     "antd": "^3.24.2",
     "anychart": "^8.7.1",
     "chart.js": "^2.9.3",
