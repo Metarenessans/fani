@@ -1,7 +1,6 @@
 @import "../../../sass/mixins";
 
 .state-registry {
-
   &-content {
     margin-top: 1.5em;
     padding: 0;
@@ -9,17 +8,19 @@
 
   .table-wrapper {
     height: 53.8em;
-    width: 113em;
-    max-width: 101.4%;
     overflow-x: auto;
 
+    min-width: 101.4%;
+    max-width: 101.4%;
+
     @include sm {
+      min-width: 100%;
       max-width: 100%;
     }
   }
 
   .z-index {
-    overflow: hidden;
+    // overflow: hidden;
     z-index: 0;
   }
 
@@ -64,6 +65,10 @@
       z-index: 3;
 
       position: sticky;
+      position: -webkit-sticky;
+      position: -moz-sticky;
+      position: -o-sticky;
+      position: -ms-sticky;
       left: 0;
     }
 
@@ -76,6 +81,10 @@
 
       &.category-title {
         position: sticky;
+        position: -webkit-sticky;
+        position: -moz-sticky;
+        position: -o-sticky;
+        position: -ms-sticky;
         top: 0;
         z-index: 4;
 
@@ -119,9 +128,13 @@
       }
 
       &.category-title {
-        overflow: hidden;
+        // overflow: hidden;
         
         position: sticky;
+        position: -webkit-sticky;
+        position: -moz-sticky;
+        position: -o-sticky;
+        position: -ms-sticky;
         top: 0;
         left: 0;
         z-index: 5;
@@ -148,6 +161,10 @@
 
       &:first-child th {
         position: sticky;
+        position: -webkit-sticky;
+        position: -moz-sticky;
+        position: -o-sticky;
+        position: -ms-sticky;
         top: 0;
         z-index: 2;
 
