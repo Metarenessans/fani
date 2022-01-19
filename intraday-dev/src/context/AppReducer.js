@@ -190,7 +190,6 @@ export default (state, action) => {
         currentSaveIdx: 1,
       };
     case "UPDATE_SAVE":
-      console.log(action.payload);
       let updatedSaves = [...state.saves].map((save) => {
         if (save.id == action.payload.id) {
           save.name = action.payload.name;
@@ -218,6 +217,11 @@ export default (state, action) => {
       return {
         ...state,
         loading: action.payload,
+      };
+    case "SET_IMAGE_URL":
+      return {
+        ...state,
+        imageUrl: action.payload,
       };
     case "ADD_TOOL":
       return addTool(action.payload);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import { GlobalContext } from "../../context/GlobalState";
 
 
@@ -149,6 +149,7 @@ export const NanniBot = () => {
       },
     });
     const message = JSON.parse(response);
+    console.log(message);
     message.time = currentTime();
 
     setTimeout(() => {
@@ -160,7 +161,7 @@ export const NanniBot = () => {
       setHaveUnread(true);
       setMessageLog([...messageLog, message]);
       scrollToMessage();
-    }, 1500);
+    }, 800);
   };
 
   const sendAnswer = async (choiceIdx, messageIdx) => {
@@ -270,7 +271,7 @@ export const NanniBot = () => {
     }
   };
 
-  const { loading } = useContext(GlobalContext);
+  const { loading, imageUrl, setImageUrl } = useContext(GlobalContext);
 
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>
@@ -354,6 +355,76 @@ export const NanniBot = () => {
                             <b>{message.conclusion.title}</b>
                           </p>
                           <p dangerouslySetInnerHTML={{ __html: convertToHtml(message.conclusion.description) }}/>
+
+                          {(() => {
+                              return (
+                              message.attributes.attributes && (
+                                message.attributes.attributes.map((item, index) => {
+                                  let base = message.attributes.attributes[index];
+                                  return (
+                                    <>
+                                      {base.type == "video" && (
+                                        <div key={index}>
+                                          {
+                                            base.description && (
+                                              <>
+                                                <br/>
+                                                <b>{base.description}:</b>
+                                                <br/>
+                                              </>
+                                            )
+                                          }
+                                          {
+                                            base.value && (
+                                              <iframe width="560" height="315" 
+                                                src={
+                                                  `https://www.youtube.com/embed/${
+                                                    base.value
+                                                    .replace("https://youtu.be/", "")
+                                                    .replace("embed//", "embed/")
+                                                  }`
+                                                } 
+                                                title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                            )
+                                          }
+                                        </div>
+                                      )}
+
+                                      {base.type == "file" && (
+                                        <div key={index} className={base.type}>
+                                          {base.description && (<b>{base.description}:</b>)}
+                                          { 
+                                            base.value && (
+                                              <Tooltip title="Перейти к документу" placement="left">
+                                                <Button>
+                                                  <a href={base.value} target="_blank">
+                                                    <svg width="1em" height="1em" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M239.029 384.97a24 24 0 0033.942 0l90.509-90.509a24 24 0 000-33.941 24 24 0 00-33.941 0L280 310.059V48a24 24 0 00-48 0v262.059l-49.539-49.539a24 24 0 00-33.941 0 24 24 0 000 33.941z"></path><path d="M464 232a24 24 0 00-24 24v184H72V256a24 24 0 00-48 0v192a40 40 0 0040 40h384a40 40 0 0040-40V256a24 24 0 00-24-24z"></path></svg>
+                                                  </a>
+                                                </Button>
+                                              </Tooltip>
+                                            )
+                                          }
+                                        </div>
+                                      )}
+                                      
+                                      {base.type == "image" && (
+                                        <div className="image-container">
+                                          {base.description && (<b>{base.description}:</b>)}
+                                          <img
+                                            src={"https://drive.google.com/uc?export=view&id=19KgDjYH1Ud0ID3vl5VSXco8tukE_5mbc"}
+                                            onClick={() => {
+                                              setImageUrl("https://drive.google.com/uc?export=view&id=19KgDjYH1Ud0ID3vl5VSXco8tukE_5mbc")
+                                              document.querySelector(".image-zoom-container").classList.add(("block"));
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </>
+                                  )
+                                })
+                              )
+                            )
+                          })()}
                         </div>
                       ) : (
                         message.conclusion.title
