@@ -411,9 +411,9 @@ export const NanniBot = () => {
                                         <div className="image-container">
                                           {base.description && (<b>{base.description}:</b>)}
                                           <img
-                                            src={"https://drive.google.com/uc?export=view&id=19KgDjYH1Ud0ID3vl5VSXco8tukE_5mbc"}
+                                            src={String(base.value)}
                                             onClick={() => {
-                                              setImageUrl("https://drive.google.com/uc?export=view&id=19KgDjYH1Ud0ID3vl5VSXco8tukE_5mbc")
+                                              setImageUrl(String(base.value))
                                               document.querySelector(".image-zoom-container").classList.add(("block"));
                                             }}
                                           />
