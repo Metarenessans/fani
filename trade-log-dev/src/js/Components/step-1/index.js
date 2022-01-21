@@ -26,6 +26,7 @@ import { StateContext } from "../../App";
 
 import "./style.scss";
 import { cloneDeep } from "lodash";
+import countPointsForDay from "../../utils/count-points-for-day";
 
 const { Option } = Select;
 
@@ -673,10 +674,12 @@ export default class FirstStep extends React.Component {
                     disabled = true;
                   }
 
+                  const points = countPointsForDay(data[currentRowIndex]).reduce((prev, curr) => prev + curr, 0);
+
                   return (
                     <Button
                       className="trade-log-button"
-                      disabled={disabled}
+                      disabled={points < 0}
                       onClick={() => {
                         const data = cloneDeep(state.data);
                         const deals = cloneDeep(data[currentRowIndex].deals);

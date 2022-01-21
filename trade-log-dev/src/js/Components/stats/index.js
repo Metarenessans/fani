@@ -12,62 +12,11 @@ import StatsPanel   from "../panel";
 import Tasks        from "./tasks/Tasks";
 
 import parseEmotionalState from "../../utils/parse-emotional-state";
+import countPointsForDay from "../../utils/count-points-for-day";
 
 import { StateContext } from "../../App";
 
 import "./style.scss";
-
-function countPointsForDay(day) {
-  return [...cloneDeep(day.deals)]
-    .filter(deal => deal.result !== 0)
-    .map((deal, i) => {
-      let points = 0;
-
-      const emotionalState = parseEmotionalState(deal);
-      // Каждое положительное состояние: +1 очко
-      if (emotionalState.positive > emotionalState.negative) {
-        points++;
-      }
-      // Каждое отрицательное состояние: -1 очко
-      else if (emotionalState.positive < emotionalState.negative) {
-        points--;
-      }
-
-      // Положительная сделка: +5 очков
-      if (deal.result > 0) {
-        points += 5;
-      }
-      // Отрицательная сделка: - 5 очков
-      else if (deal.result < 0) {
-        points -= 5;
-      }
-
-      const { baseTrendDirection, momentDirection, doubts } = day.reportMonitor[i];
-
-      // LONG  - true
-      // SHORT - false
-      if (
-        (baseTrendDirection === true  && momentDirection === true) ||
-        (baseTrendDirection === false && momentDirection === false)
-      ) {
-        points++;
-      }
-      else {
-        points--;
-      }
-
-      // Сомнения в решении отсутствуют: +1 очко
-      if (doubts === false) {
-        points++;
-      }
-      // Сомнения в решении присутствуют: -1 очко
-      else if (doubts === true) {
-        points--;
-      }
-
-      return points;
-    });
-}
 
 export default function Stats() {
   const context = useContext(StateContext);
