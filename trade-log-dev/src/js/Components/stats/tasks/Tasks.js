@@ -41,6 +41,11 @@ export default function Tasks() {
             </tr>
             {[...undone, ...done]
               .map((taskName, index) => {
+                if (!taskMap[taskName]) {
+                  console.warn(taskName, taskMap, [...undone, ...done]);
+                  return null;
+                }
+
                 let allChecked = taskMap[taskName].checked;
                 let allDone    = taskMap[taskName].done;
                 const percent = (allDone / allChecked) * 100;
