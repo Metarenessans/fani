@@ -504,43 +504,84 @@ export default class App extends BaseComponent {
   parseSnapshot = parsedSnapshot => {
     const initialState = cloneDeep(this.initialState);
 
-    let data = merge(cloneDeep(initialState.data), parsedSnapshot.data) 
-      .map(
-        /** @param {dayTemplate} day */
-        day => {
+    const technologyBCProps = [
+      {
+        incorrect: "Удаленное видение",
+        correct: "Удаленное Видение (НИ Мастер)"
+      },
+      {
+        incorrect: "Физическая активность: приседание, отжимание, биг",
+        correct: "Физическая активность: приседания, отжимания, бег"
+      }
+    ];
+
+    const practiceBCProps = [
+      {
+        incorrect: "Фиксировать сделки в скриншотах",
+        correct: "Фиксировать сделки на скриншотах"
+      },
+      {
+        incorrect: "Выделять ключевые поведенченские паттерны и модели",
+        correct: "Выделять ключевые поведенческие паттерны и модели"
+      },
+      {
+        incorrect: "Время между сделками 30 минут",
+        correct: "Время между сделками: 30 минут"
+      },
+      {
+        incorrect: "Время между сделками 1 час",
+        correct: "Время между сделками: 1 час"
+      },
+      {
+        incorrect: "Время между сделками. Четко по сессиям",
+        correct: "Время между сделками: четко по сессиям"
+      },
+      {
+        incorrect: ["Делать расчёты ФАНИ", "Делать расчёты в ФАНИ"],
+        correct: "Делать более детальные расчёты в ФАНИ"
+      },
+      {
+        incorrect: "Удержание напряжения желания торговать",
+        correct: "Удержание напряжения от желания торговать"
+      },
+      {
+        incorrect: "Удержание напряжения желания наблюдать за сделкой",
+        correct: "Удержание напряжения от желания наблюдать за сделкой"
+      }
+    ];
+
+    function applyFallbackProperties(object, fallbackProperties) {
+      Object.keys(object).forEach(taskName => {
+        const group = fallbackProperties.find((group) => {
+          // Внутри incorrect лежит массив строк
+          if (typeof group.incorrect == "object") {
+            return group.incorrect.some((name) => name === taskName);
+          }
+          return taskName == group.incorrect;
+        });
+        if (group) {
+          const value = object[taskName];
+          delete object[taskName];
+          object[group.correct] = value;
+        }
+      });
+      return object;
+    }
+
+    let data = merge(cloneDeep(initialState.data), parsedSnapshot.data)
+      .map(/** @param {dayTemplate} day */ day => {
         day = merge(cloneDeep(dayTemplate), day);
 
-        let { practiceWorkTasks } = day;
+        let { practiceWorkTasks, readyWorkTasks } = day;
         practiceWorkTasks = merge(cloneDeep(dayTemplate.practiceWorkTasks), practiceWorkTasks);
-        
-        const practiceBCProps = [
-          { incorrect: "Фиксировать сделки в скриншотах", correct: "Фиксировать сделки на скриншотах" },
-          { incorrect: "Выделять ключевые поведенченские паттерны и модели", correct: "Выделять ключевые поведенческие паттерны и модели" },
-          { incorrect: "Время между сделками 30 минут", correct: "Время между сделками: 30 минут" },
-          { incorrect: "Время между сделками 1 час", correct: "Время между сделками: 1 час" },
-          { incorrect: "Время между сделками. Четко по сессиям", correct: "Время между сделками: четко по сессиям" },
-          { incorrect: ["Делать расчёты ФАНИ", "Делать расчёты в ФАНИ"], correct: "Делать более детальные расчёты в ФАНИ" },
-          { incorrect: "Удержание напряжения желания торговать", correct: "Удержание напряжения от желания торговать" },
-          { incorrect: "Удержание напряжения желания наблюдать за сделкой", correct: "Удержание напряжения от желания наблюдать за сделкой" }
-        ];
 
-        Object.keys(practiceWorkTasks).forEach(taskName => {
-        const group = practiceBCProps.find(group => {
-            // Внутри incorrect лежит массив строк
-            if (typeof group.incorrect == "object") {
-              return group.incorrect.some(name => name === taskName);
-            }
-            return taskName == group.incorrect;
-          });
-          if (group) {
-            const value = practiceWorkTasks[taskName];
-            delete practiceWorkTasks[taskName];
-            practiceWorkTasks[group.correct] = value;
-          }
-        });
+        // practiceWorkTasks
+        day.practiceWorkTasks = applyFallbackProperties(practiceWorkTasks, practiceBCProps);
 
-        day.practiceWorkTasks = practiceWorkTasks;
+        // readyWorkTasks
+        day.readyWorkTasks = applyFallbackProperties(readyWorkTasks, practiceBCProps);
 
+        // Технологии
         let { technology } = day;
         if (technology.amy) {
           technology["ЭМИ"] = technology.amy;
@@ -559,19 +600,7 @@ export default class App extends BaseComponent {
           delete technology.archetypesWork;
         }
 
-        const technologyBCProps = [
-          { incorrect: "Удаленное видение", correct: "Удаленное Видение (НИ Мастер)" },
-          { incorrect: "Физическая активность: приседание, отжимание, биг", correct: "Физическая активность: приседания, отжимания, бег" }
-        ];
-        Object.keys(technology).forEach(key => {
-          const group = technologyBCProps.find(group => key == group.incorrect);
-          if (group) {
-            const value = technology[key];
-            delete technology[key];
-            technology[group.correct] = value;
-          }
-        });
-
+        technology = applyFallbackProperties(technology, technologyBCProps);
         technology = merge(cloneDeep(dayTemplate.technology), technology);
         day.technology = technology;
 
@@ -667,6 +696,8 @@ export default class App extends BaseComponent {
         readyWorkTasksCheckTime[taskName] = Number(new Date());
       }
     });
+    // Обратная совместимость свойств
+    readyWorkTasksCheckTime = applyFallbackProperties(readyWorkTasksCheckTime, practiceBCProps);
 
     return {
       dailyRate:                        parsedSnapshot.dailyRate                        ?? initialState.dailyRate,
