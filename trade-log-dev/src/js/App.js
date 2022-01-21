@@ -17,7 +17,7 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 export const StateContext = Context;
 
 import Header      from "../../../common/components/header";
-import Diary       from "./Components/diary";
+import Diary       from "./components/diary";
 import FirstStep   from "./components/step-1";
 import SecondStep  from "./components/step-2";
 import ThirdStep   from "./components/step-3";
