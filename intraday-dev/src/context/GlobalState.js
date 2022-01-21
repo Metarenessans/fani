@@ -35,6 +35,7 @@ const initialState = {
   loading: false,
   snapshotIsSaved: true,
   snapshotIsChanged: false,
+  imageUrl: ""
 };
 
 export const GlobalContext = createContext(initialState);
@@ -564,6 +565,20 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
+  async function setImageUrl(value) {
+    try {
+      dispatch({
+        type: "SET_IMAGE_URL",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+
   return (
     <GlobalContext.Provider
       value={{
@@ -582,6 +597,7 @@ export const GlobalProvider = ({ children }) => {
         snapshotIsSaved: state.snapshotIsSaved,
         currentSaveIdx: state.currentSaveIdx,
         customTools: state.customTools,
+        imageUrl: state.imageUrl,
 
         setInitialState,
         setIsLoading,
@@ -611,6 +627,7 @@ export const GlobalProvider = ({ children }) => {
         addLoadTable,
         deleteLoadTable,
         updateDeposit,
+        setImageUrl
       }}
     >
       {children}

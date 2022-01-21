@@ -44,6 +44,50 @@
   font-family: "SF Pro Display", "sans-serif";
   transition: height 0.3s ease-out, width 0.3s ease-out;
 
+  .image-container {
+    img {
+      cursor: pointer;
+      height: 100%;
+      width:  100%;
+      margin-top:     1em;
+      margin-bottom: .5em;
+      border-radius: 0.5em;
+      transition: opacity 0.3s;
+
+      &:hover {
+        opacity: .8;
+      }
+    }
+  }
+
+  iframe {
+    height: 100%;
+    width:  100%;
+  }
+
+  .file {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top:    .5em;
+    margin-bottom: .5em;
+
+    svg {
+      transform: rotate(270deg);
+    }
+  }
+
+  .image {
+    display: flex;
+    justify-content: space-between;
+    margin-top:    .5em;
+    margin-bottom: .5em;
+
+    svg {
+      transform: rotate(270deg);
+    }
+  }
+
   .margin-unset {
     margin-bottom: 0!important;
   }
@@ -301,6 +345,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    transition: margin-bottom 0.5s;
   }
   .choice.hidden {
     opacity: 0;
@@ -322,7 +367,9 @@
     line-height: 26px;
     color: #2b303c;
     cursor: pointer;
-    transition: 0.5s;
+    transition: transform 0.5s;
+    opacity: 1;
+    height: 100%;
   }
   .choice:last-child {
     margin-bottom: 0;
@@ -337,7 +384,8 @@
     margin: 0;
   }
   .fade-out-right {
-    animation: fadeOutRight 0.5s, removeHeight 0.3s;
+    animation:  fadeOutRight 0.3s, removeHeight 0.3s;
+    display: none;
     animation-fill-mode: forwards;
     visibility: visible;
   }
@@ -352,7 +400,7 @@
     }
   }
   .chosen {
-    animation-name: none;
+    // animation-name: none;
     visibility: visible;
   }
   .chosen.nth {
@@ -368,7 +416,7 @@
     }
   }
   .fade-to-top {
-    animation: fadeTop 0.3s, removeHeight 0.3s;
+    animation: fadeTop 0.7s, removeHeight 0.7s;
     animation-fill-mode: forwards;
     visibility: visible;
   }
@@ -377,16 +425,28 @@
       opacity: 1;
       transform: translateY(0);
     }
+    50% {
+      opacity: .5;
+      transform: translateY(-50%);
+    }
+    75% {
+      opacity: .7;
+      transform: translateY(-75%);
+    }
     100% {
       opacity: 0;
       transform: translateY(-100%);
     }
   }
   @keyframes removeHeight {
-    100% {
-      height: 0;
+    0% {
+      height: 100%;
+      opacity: 1;
     }
-
+    100% {
+      opacity: 0;
+      height:  0;
+    }
   }
   .printed {
     animation-name: none;
