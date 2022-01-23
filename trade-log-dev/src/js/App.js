@@ -8,7 +8,10 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
-import typeOf from "../../../common/utils/type-of";
+import typeOf  from "../../../common/utils/type-of";
+import num2str from "../../../common/utils/num2str";
+import parseTasks          from "./components/stats/tasks/parse-tasks";
+import parseEmotionalState from "./utils/parse-emotional-state";
 
 import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
 import DeleteDialog from "../../../common/components/delete-dialog";
@@ -27,7 +30,6 @@ import Stats       from "./components/stats";
 /* API */
 
 import "../sass/style.sass";
-import parseTasks from "./components/stats/tasks/parse-tasks";
 
 let scrollInitiator;
 
@@ -369,6 +371,20 @@ export default class App extends BaseComponent {
        */
       notes: "",
 
+      /**
+       * Время блокировки сделок в минутах
+       * 
+       * `9999` считается за "до конца дня"
+       */
+      lockTimeoutMinutes: 9999,
+
+      /**
+       * Массив тайм-аутов в минутах для каждого дня
+       * 
+       * @type {number[]}
+       */
+      timeoutMinutes: [],
+
       extraStep:  false,
       extraSaved: false,
       customTools:   []
@@ -398,7 +414,8 @@ export default class App extends BaseComponent {
       limitUnprofitableDeals,
       allowedNumberOfUnprofitableDeals,
       data,
-      customTools
+      customTools,
+      lockTimeoutMinutes
     } = this.state;
 
     if (
@@ -410,6 +427,39 @@ export default class App extends BaseComponent {
     ) {
       console.log("есть изменения");
       this.setState({ changed: true });
+
+      // Проверяем, нужно ли блокировать добавление сделок и ставить тайм-ауты
+      for (let i = 0; i < data.length; i++) {
+        const day = data[i];
+        const deals = day.deals;
+        const emotionalState = parseEmotionalState(deals);
+        const isNegativeEmotionalState = emotionalState.negative > emotionalState.positive;
+
+        // Убыточные сделки
+        const unprofitableDeals = deals.filter(deal => deal.result < 0);
+        // Если включен лимит убыточных сделок и мы превышаем допустимый лимит - запрещаем торговлю
+        let tradingNotAllowed = 
+          this.state.limitUnprofitableDeals && unprofitableDeals.length >= this.state.allowedNumberOfUnprofitableDeals;
+
+        // Вышли в негативный эмоциональный фон
+        if (tradingNotAllowed || isNegativeEmotionalState) {
+          let msg = `Добавление сделок для ${i + 1} дня заблокировано`;
+          if (location.href.replace(/\/$/g, "").endsWith("-dev") || dev) {
+            if (lockTimeoutMinutes === 9999) {
+              msg += " до конца дня";
+            }
+            else {
+              msg += `на ${lockTimeoutMinutes} ${num2str(lockTimeoutMinutes, ["минута", "минуты", "минут"])}`;
+            }
+            message.warn(msg);
+          }
+          console.warn(msg);
+          
+          const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
+          timeoutMinutes[i] = lockTimeoutMinutes;
+          this.setState({ timeoutMinutes });
+        }
+      }
     }
 
     const { id, saves } = this.state;
@@ -444,6 +494,26 @@ export default class App extends BaseComponent {
         });
       }
     }, true /* Capture event */);
+
+    setInterval(() => {
+      const oldTimeoutMinutes = cloneDeep(this.state.timeoutMinutes);
+      const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
+      for (let i = 0; i < timeoutMinutes.length; i++) {
+        if (timeoutMinutes[i] === 9999) {
+          continue;
+        }
+        timeoutMinutes[i] -= 1;
+        if (timeoutMinutes[i] < 0) {
+          timeoutMinutes[i] = 0;
+        }
+      }
+
+      if (!isEqual(oldTimeoutMinutes, timeoutMinutes)) {
+        this.setState({ timeoutMinutes });
+        localStorage.setItem("timeoutMinutes", JSON.stringify(timeoutMinutes));
+        console.log(timeoutMinutes);
+      }
+    }, dev ? 1_000 : 60_000);
   }
 
   // Fetching everithing we need to start working
@@ -476,7 +546,8 @@ export default class App extends BaseComponent {
       currentRowIndex,
       customTools,
       readyWorkTasksCheckTime,
-      notes
+      notes,
+      lockTimeoutMinutes
     } = this.state;
 
     const json = {
@@ -488,7 +559,8 @@ export default class App extends BaseComponent {
         currentRowIndex,
         customTools,
         readyWorkTasksCheckTime,
-        notes
+        notes,
+        lockTimeoutMinutes
       }
     };
 
@@ -706,6 +778,7 @@ export default class App extends BaseComponent {
       data,
       readyWorkTasksCheckTime,
       notes:                            parsedSnapshot.notes                            ?? initialState.notes,
+      lockTimeoutMinutes:               parsedSnapshot.lockTimeoutMinutes               ?? initialState.lockTimeoutMinutes,
       currentRowIndex:                  parsedSnapshot.currentRowIndex                  ?? initialState.currentRowIndex,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
       customTools:                     (parsedSnapshot.customTools || []).map(tool => Tool.fromObject(tool))
@@ -716,6 +789,14 @@ export default class App extends BaseComponent {
   async extractSnapshot(snapshot) {
     try {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
+
+      // Считываем кол-во минут до разблокировки сделок из localStorage
+      let timeoutMinutes = JSON.parse(localStorage.getItem("timeoutMinutes"));
+      if (typeOf(timeoutMinutes) !== "array") {
+        timeoutMinutes = [];
+      }
+      console.log(timeoutMinutes, `из localStorage (${typeof timeoutMinutes})`);
+      await this.setStateAsync({ timeoutMinutes });
     }
     catch (error) {
       message.error(error);

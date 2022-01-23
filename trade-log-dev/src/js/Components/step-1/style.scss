@@ -588,7 +588,6 @@
   justify-content: flex-start;
   margin-top: 1em;
   width: 100%;
-  min-height: 2.8em;
 
   @include sm {
     justify-content: center;
@@ -596,17 +595,17 @@
     flex-direction: column;
   }
 
-  button {
-    margin-right: 1em;
-  
-    &:last-child {
-      margin-right: 0;
-    }
+  > * + * {
+    margin-left: 1em;
 
     @include sm {
-      margin: 0;
-      margin-bottom: 1em;
+      margin-left: 0;
+      margin-top: 1em;
+    }
+  }
 
+  button {
+    @include sm {
       height: 2.1em;
       width: 15em;
     }

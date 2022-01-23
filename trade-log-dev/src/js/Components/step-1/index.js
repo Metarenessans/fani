@@ -676,25 +676,42 @@ export default class FirstStep extends React.Component {
 
                   const points = countPointsForDay(data[currentRowIndex]).reduce((prev, curr) => prev + curr, 0);
 
-                  return (
-                    <Button
-                      className="trade-log-button"
-                      disabled={points < 0}
-                      onClick={() => {
-                        const data = cloneDeep(state.data);
-                        const deals = cloneDeep(data[currentRowIndex].deals);
-                        deals.push(cloneDeep(context.dealTemplate));
-                        data[currentRowIndex].deals = deals;
+                  const { timeoutMinutes } = state;
+                  const timeout = timeoutMinutes[currentRowIndex];
 
-                        data[currentRowIndex].reportMonitor.push(
-                          { result: true, baseTrendDirection: null, momentDirection: null, doubts: null }
-                        );
-                        
-                        context.setState({ data });
-                      }}
+                  return (
+                    <Tooltip
+                      title={timeout > 0 &&
+                        <span>
+                          Достигнут лимит отрицательных сделок<br />
+                          Ограничение сделок {timeout === 9999 
+                            ? "до конца дня" 
+                            : `на ${formatNumber(timeout)} мин`
+                          }
+                        </span>
+                      }
                     >
-                      Добавить сделку
-                    </Button>
+                      <div>
+                        <Button
+                          className="trade-log-button"
+                          disabled={timeout > 0}
+                          onClick={() => {
+                            const data = cloneDeep(state.data);
+                            const deals = cloneDeep(data[currentRowIndex].deals);
+                            deals.push(cloneDeep(context.dealTemplate));
+                            data[currentRowIndex].deals = deals;
+
+                            data[currentRowIndex].reportMonitor.push(
+                              { result: true, baseTrendDirection: null, momentDirection: null, doubts: null }
+                            );
+                            
+                            context.setState({ data });
+                          }}
+                        >
+                          Добавить сделку
+                        </Button>
+                      </div>
+                    </Tooltip>
                   );
                 })()}
                 <Button

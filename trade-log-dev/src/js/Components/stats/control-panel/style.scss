@@ -4,19 +4,27 @@
 
   &-content {
     flex-direction: row;
+    justify-content: space-between;
     align-items: center;
 
     @include sm {
       flex-direction: column;
+
+      > * + * {
+        margin-top: 2.25em;
+      }
     }
   }
 
-  .input-wrapper {
-    margin-right: 4em;
+  &__lock {
+    width: 17em;
 
-    @include sm {
-      margin: 0;
-      margin-bottom: 2.25em;
+    .ant-select-selection--single {
+      height: 1.8em;
+    }
+
+    .ant-select-selection-selected-value {
+      line-height: 1.7em;
     }
   }
 
