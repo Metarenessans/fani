@@ -419,11 +419,11 @@ export default class App extends BaseComponent {
     } = this.state;
 
     if (
-      prevState.dailyRate != dailyRate ||
-      prevState.limitUnprofitableDeals != limitUnprofitableDeals ||
+      prevState.dailyRate                        != dailyRate                        ||
+      prevState.limitUnprofitableDeals           != limitUnprofitableDeals           ||
       prevState.allowedNumberOfUnprofitableDeals != allowedNumberOfUnprofitableDeals ||
-      prevState.data != data ||
-      prevState.customTools != customTools
+      !isEqual(prevState.data, data)                                                 ||
+      !isEqual(prevState.customTools, customTools)
     ) {
       console.log("есть изменения");
       this.setState({ changed: true });
