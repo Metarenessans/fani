@@ -133,6 +133,7 @@ export const recommendedEmotionalStateTasks = {
 
 export const dayTemplate = {
   isSaved:  false,
+
   /**
    * Дата создания в формате Unix-time
    * 
@@ -315,7 +316,6 @@ export default class App extends BaseComponent {
        */
       dailyRate: 0.5,
 
-
       /** 
        * Флаг ограничения на лимит убыточных сделок
        * 
@@ -417,7 +417,6 @@ export default class App extends BaseComponent {
       customTools,
       lockTimeoutMinutes
     } = this.state;
-
     if (
       prevState.dailyRate                        != dailyRate                        ||
       prevState.limitUnprofitableDeals           != limitUnprofitableDeals           ||
@@ -425,7 +424,7 @@ export default class App extends BaseComponent {
       !isEqual(prevState.data, data)                                                 ||
       !isEqual(prevState.customTools, customTools)
     ) {
-      console.log("есть изменения");
+      dev && console.log("есть изменения");
       this.setState({ changed: true });
 
       // Проверяем, нужно ли блокировать добавление сделок и ставить тайм-ауты
@@ -834,8 +833,6 @@ export default class App extends BaseComponent {
                           !isEqual(this.state.notes, this.lastSavedState.notes);
 
                         return (
-                          // TODO: это вернуть
-                          // <div className="trade-slider" id="trade-slider">
                           <div className="trade-slider-active" id="trade-slider">
                             <div className="trade-slider-container">
 
@@ -985,9 +982,7 @@ export default class App extends BaseComponent {
                                   />
                                 )}
 
-                                {step == 2 && (
-                                  <SecondStep/>
-                                )}
+                                {step == 2 && <SecondStep />}
 
                                 <ThirdStep hidden={step != 3} />
 

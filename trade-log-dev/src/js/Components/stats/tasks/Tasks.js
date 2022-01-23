@@ -12,7 +12,7 @@ export default function Tasks() {
 
   const context = useContext(StateContext);
   const { state } = context;
-  const { data, currentRowIndex, readyWorkTasksCheckTime } = state;
+  const { data, readyWorkTasksCheckTime } = state;
 
   const tasks = parseTasks(data);
   // Количество зачеканных задач на отработку во всех днях

@@ -176,7 +176,6 @@ export default class FourthStep extends React.Component {
                             <div className="fourth-step-table-check-box fourth-step-table-check-box--practice">
                               <div className="fourth-step-table-check-box fourth-step-table-check-box--practice-container">
                                 <Checkbox
-                                  key={currentRowIndex}
                                   className="green" 
                                   checked={practiceWorkTasks[taskName]}
                                   onChange={e => {
@@ -190,7 +189,6 @@ export default class FourthStep extends React.Component {
 
                               <div className="fourth-step-table-check-box fourth-step-table-check-box--practice-container">
                                 <Checkbox
-                                  key={currentRowIndex}
                                   className="green"
                                   // Дизейблит чекбокс, если задача не была выбрана на отработку
                                   disabled={!practiceWorkTasks[taskName]}
@@ -222,7 +220,6 @@ export default class FourthStep extends React.Component {
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
                               key={currentRowIndex}
-
                               defaultValue={typeof name === "object"
                                 ? `Новая задача ${index + 1}`
                                 : name
