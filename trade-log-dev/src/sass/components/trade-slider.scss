@@ -21,11 +21,12 @@
 
   &-day-container {
     position: relative;
-    margin-right: 2em;
+    margin: 0 2em;
 
     @include sm {
-      margin-right: .5em;
+      margin: 0 1em;
     }
+
     p {
       text-align: center;
     }
@@ -43,10 +44,10 @@
     align-items: center;
 
     button {
-      margin-right: 2em;
       &:last-of-type {
         margin-right: 0;
       }
+      
       @include sm {
         margin-right: .5em;
         &:last-of-type {
@@ -108,6 +109,8 @@
   }
 
   &-middle {
+    margin-left: 2em;
+
     margin-top: 1em;
     display: flex;
     justify-content: center;
@@ -116,6 +119,8 @@
     font-size: 1.3em;
 
     @include sm {
+      margin-left: 0;
+
       flex-direction: column;
       align-items: center;
     }
