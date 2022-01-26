@@ -62,7 +62,7 @@
   }
 
   &__drawdown {
-    color: $dangerColor;
+    color: var(--danger-color);
   }
 
   .card {
