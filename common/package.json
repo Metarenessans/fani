@@ -67,6 +67,8 @@
     "anychart": "^8.7.1",
     "chart.js": "^2.9.3",
     "core-js": "^3.6.5",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.6",
     "jquery": "^3.5.1",
     "lodash": "^4.17.20",
     "object-plain-string": "^1.0.4",
