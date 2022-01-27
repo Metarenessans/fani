@@ -408,7 +408,7 @@ export default class BaseComponent extends React.Component {
       response = await fetch(`getLastModified${this.pageName}Snapshot`);
     }
     catch (error) {
-      console.error(error);
+      // console.error(error);
       !dev && message.error(`Не удалось получить последнее сохранение: ${error}`);
     }
 

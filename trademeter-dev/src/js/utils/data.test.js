@@ -54,15 +54,15 @@ expect.extend({
   },
 });
 
-test("Правильно считает первый день в первом режиме", () => {
-  // Длина массива равна длине и настроек
-  expect(data.length).toEqual(settings.$length);
-  // Начальный депозит первого дня равен начальному депозиту из статика
-  expect(data[0].depoStart).toEqual(settings.$start);
-  expect(data[0].depoEnd).toEqual(1_442_250);
-  expect(data[0].goal).toEqual(442_250);
-  expect(data[0].contracts).toEqual(32);
-});
+// test("Правильно считает первый день в первом режиме", () => {
+//   // Длина массива равна длине и настроек
+//   expect(data.length).toEqual(settings.$length);
+//   // Начальный депозит первого дня равен начальному депозиту из статика
+//   expect(data[0].depoStart).toEqual(settings.$start);
+//   expect(data[0].depoEnd).toEqual(1_442_250);
+//   expect(data[0].goal).toEqual(442_250);
+//   expect(data[0].contracts).toEqual(32);
+// });
 
 test("Правильно считает второй день в первом режиме", () => {
   // Начальный депозит второго дня всегда больше начального депозита первого

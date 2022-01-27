@@ -304,7 +304,11 @@ class App extends BaseComponent {
 
     this.fetchInitialData();
 
-    import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
+    if (this.props.test) {
+      return;
+    }
+
+    this.props.test && import("./components/chart" /* webpackChunkName: "chart" */).then(module => {
       console.log("chart loaded!", module);
       chartModule = module;
       Chart = module.Chart;
@@ -506,7 +510,11 @@ class App extends BaseComponent {
     this.fetchInvestorInfo();
     this.fetchTools().then(() => this.setFetchingToolsTimeout());
     this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot({ fallback: require("./dev/snapshot").default });
+    this.fetchLastModifiedSnapshot({ fallback: this.getTestSnapshot() });
+  }
+
+  getTestSnapshot() {
+    return require("./dev/snapshot").default;
   }
 
   extractSnapshot(snapshot) {
@@ -1395,6 +1403,10 @@ class App extends BaseComponent {
       depoEndFormat,
       depoPersentageStart
     } = this.state;
+
+    if (this.props.test) {
+      return <div>Hey b0ss</div>
+    }
 
     let { rate, rateRecommended, extraDays, daysDiff } = this.useRate();
     let averageProf = 0;

@@ -26,7 +26,6 @@ import { StateContext } from "../../App";
 
 import "./style.scss";
 import { cloneDeep } from "lodash";
-import countPointsForDay from "../../utils/count-points-for-day";
 
 const { Option } = Select;
 
@@ -674,43 +673,39 @@ export default class FirstStep extends React.Component {
                     disabled = true;
                   }
 
-                  const points = countPointsForDay(data[currentRowIndex]).reduce((prev, curr) => prev + curr, 0);
-
-                  const { timeoutMinutes } = state;
-                  const timeout = timeoutMinutes[currentRowIndex];
-
                   return (
                     <Tooltip
-                      title={timeout > 0 &&
-                        <span>
-                          Достигнут лимит отрицательных сделок<br />
-                          Ограничение сделок {timeout === 9999 
-                            ? "до конца дня" 
-                            : `на ${formatNumber(timeout)} мин`
-                          }
-                        </span>
-                      }
+                      dangerouslySetInnerHTML={{ __html: convertToHtml(message.conclusion.description) }}
+                      // title={"достигнут лимит отрицательных сделок ".concat("&shy").concat("dd")}
                     >
-                      <div>
-                        <Button
-                          className="trade-log-button"
-                          disabled={timeout > 0}
-                          onClick={() => {
-                            const data = cloneDeep(state.data);
-                            const deals = cloneDeep(data[currentRowIndex].deals);
-                            deals.push(cloneDeep(context.dealTemplate));
-                            data[currentRowIndex].deals = deals;
+                      <Button
+                        className="trade-log-button"
+                        key={Math.random()}
+                        disabled={disabled}
+                        onClick={() => {
+                          const data = cloneDeep(state.data);
+                          const deals = cloneDeep(data[currentRowIndex].deals);
+                          deals.push(cloneDeep(context.dealTemplate));
+                          data[currentRowIndex].deals = deals;
 
-                            data[currentRowIndex].reportMonitor.push(
-                              { result: true, baseTrendDirection: null, momentDirection: null, doubts: null }
-                            );
-                            
-                            context.setState({ data });
-                          }}
-                        >
-                          Добавить сделку
-                        </Button>
-                      </div>
+                          data[currentRowIndex].reportMonitor.push(
+                            { result: true, baseTrendDirection: null, momentDirection: null, doubts: null }
+                          );
+                          
+                          context.setState({ data });
+                        }}
+                      >
+                        {(() => {
+                          {
+                            if (!disabled) {
+                              return "Добавить сделку";
+                            }
+                            else if (state.selectedBlockTimeValue !== 999_999) {
+                              return `"Блокировка сделок:"${state.selectedBlockTimeValue}`;
+                            }
+                          }
+                        })()}
+                      </Button>
                     </Tooltip>
                   );
                 })()}
