@@ -170,11 +170,11 @@ export default class Dashboard extends React.Component {
       // (Депозит * процент догрузки) / ГО
       ((depo * (additionalLoading / 100)) / currentTool.guarantee) * 
       // Ожидаемый ход / шаг цены * цена шага
-      (stepExpected / currentTool.priceStep * currentTool.stepPrice) + 
-      // Кол-во контрактов
-      contracts * 
-      //  Ожидаемый ход / шаг цены * цена шага
       (stepExpected / currentTool.priceStep * currentTool.stepPrice);
+      // // Кол-во контрактов
+      // contracts * 
+      // // Ожидаемый ход / шаг цены * цена шага
+      // (stepExpected / currentTool.priceStep * currentTool.stepPrice);
 
     const incomeExpected2 = ((depo * (additionalLoading2 / 100)) / currentTool.guarantee) * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice) + contracts * (stepExpected2 / currentTool.priceStep * currentTool.stepPrice);
 
@@ -710,8 +710,8 @@ export default class Dashboard extends React.Component {
 
                       <div className="tool-main-card-body-pair">
                         <h3 className="tool-main-card-body-pair-key">
-                          Убыток <br className="hide-xs" />
-                          на догрузку:
+                          Суммарная<br className="hide-xs" />
+                          просадка
                         </h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={val => formatNumber(round(val, 3))}>{loss}</Value>
@@ -731,7 +731,7 @@ export default class Dashboard extends React.Component {
                     
                     <div className="tool-main-card-body__row--mobile">
                       <div className="tool-main-card-body-pair tool-main-card-body-pair--mobile">
-                        <h3 className="tool-main-card-body-pair-key">Убыток на догрузку</h3>
+                        <h3 className="tool-main-card-body-pair-key">Суммарная просадка</h3>
                         <span className="tool-main-card-body-pair-val">
                           <Value format={formatNumber}>{loss}</Value>
                         </span>
