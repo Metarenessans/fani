@@ -134,6 +134,7 @@ class App extends BaseComponent {
   }
 
   componentDidMount() {
+    super.bindEvents();
     this.fetchInitialData();
   }
 
