@@ -1,6 +1,5 @@
 .fixed-width {
   min-width: 21.6em;
-  // width: 16em;
 }
 
 .row-modify__container {
@@ -47,7 +46,7 @@
   font-size: 1rem;
 
   .custom-btn {
-    font-size: .7em;
+    font-size: .75em;
   }
 
   &--stats {
@@ -76,8 +75,6 @@
     }
 
     #{$root}-inner {
-      // height: initial;
-
       &:first-of-type {
         height: 0;
       }
@@ -146,17 +143,11 @@
   }
 
   &__icon {
-    // background: pink;
     margin-right: 0.2em;
     display: inline-flex;
-    // width:  1ch;
-    height: 1ch;
 
     position: relative;
-    top: 0.1em;
     
-    font-size: 1.5em;
-
     transform: scaleX(0.8);
 
     &--plus {
