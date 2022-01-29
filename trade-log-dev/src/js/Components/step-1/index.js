@@ -10,10 +10,10 @@ import parseEmotionalState from "../../utils/parse-emotional-state";
 import CustomSlider from "../../../../../common/components/custom-slider";
 
 
+import NumericInput from "../../../../../common/components/numeric-input";
 import sortToolsBySearchValue from "../../../../../common/utils/sort-tools-by-search-value";
-import NumericInput           from "../../../../../common/components/numeric-input";
-import CrossButton            from "../../../../../common/components/cross-button";
-import ToolSelect             from "../../../../../common/components/tool-select";
+import CrossButton from "../../../../../common/components/cross-button";
+import ToolSelect from "../../../../../common/components/tool-select";
 
 import TimeRangePicker from "../time-range-picker";
 
@@ -607,14 +607,6 @@ export default class FirstStep extends React.Component {
                   let reachedLimitOfUnprofitableDeals =
                     state.limitUnprofitableDeals && 
                     deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
-
-                  const parsedEmotionalState = parseEmotionalState(deals);
-                  // Запрещаем добавлять сделки, если эмоциональный фон вышел в негатив
-                  if (parsedEmotionalState.state === "negative") {
-                    // 
-                  }
-
-                  const points = countPointsForDay(data[currentRowIndex]).reduce((prev, curr) => prev + curr, 0);
 
                   const { timeoutMinutes } = state;
                   const timeout = timeoutMinutes[currentRowIndex];

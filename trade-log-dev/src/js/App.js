@@ -84,6 +84,8 @@ export const dealTemplate = {
       "Апатия":                   false,
       "Стагнация":                false,
       "Тревожность":              false,
+      "Перевозбуждение":          false,
+      "Гиперактивность":          false,
       "Cтрах":                    false,
       "Ужас":                     false,
       "Отчаяние":                 false,
@@ -210,7 +212,22 @@ export const dayTemplate = {
     "Аффирмации":                                        false,
     "НАННИ":                                             false,
     "Работа со страхами":                                false,
-    "Простукивание тимуса":                              false
+    "Простукивание тимуса":                              false,
+    "Ладони магниты (точка лаотгун). Биомагнетизм":      false,
+    "Работа со страхами (НИ Мастер, МКС)":               false,
+    "Тенсегрити (шаманские танцы) МКС":                  false,
+    "Быстрый счет до 120":                               false,
+    "Спонтанное движение пальцем по лужице воды (интуиция)": false,
+    "Световая медитация (энерго финансовый марафон, МКС)":   false,
+    "Медитация планеты":                                     false,
+    "Медитация пройти через стену ограничений":              false,
+    "Мантра Ом Мани":                                        false,
+    "Жонглирование":                                         false,
+    "Рисование":                                             false,
+    "Чтение и написание стихов":                             false,
+    "Обратный просмотр дня. С \"Фотографией\" момента (МКС)": false,
+    "Медитация на объем капитала. Визуализация, кинестетика": false
+
   },
 
   /**
@@ -249,7 +266,15 @@ export const dayTemplate = {
     "Инструментов в работе: более чем":                        false,
     "Торговля без четкого алгоритма (ручная)":                 false,
     "Торговля избыточным количеством инструментов":            false,
-    "Проработка иллюзии очевидности прошлого":                 false
+    "Проработка иллюзии очевидности прошлого":                 false,
+    "Не открывать сразу сделку после закрытия по профиту":     false,
+    "Не торговать импульсный вход, только от уровней отложения": false,
+    "\"Бумажная\" торговля. Прогноз точки входа и выхода":     false,
+    "Анализ торговых показателей из инфобота":                 false,
+    "Торговать только уровни (откаты игнорировать)":           false,
+    "Ставить заявки в \"невозможную\" точну входа (ВИДЕНИЕ)":  false,
+    "Думать только о рынке. Гасить мысли о деньгах":           false,
+    "Не гнаться за рынком (жалость, спешка, суета)":           false
   },
 
   /**
@@ -537,7 +562,7 @@ export default class App extends BaseComponent {
         localStorage.setItem("timeoutMinutes", JSON.stringify(timeoutMinutes));
         console.log(timeoutMinutes);
       }
-    }, dev ? 60_000 : 60_000);
+    }, 60_000);
   }
 
   // Fetching everithing we need to start working
@@ -736,6 +761,8 @@ export default class App extends BaseComponent {
               "Апатия",
               "Стагнация",
               "Тревожность",
+              "Перевозбуждение",
+              "Гиперактивность",
               "Cтрах",
               "Ужас",
               "Отчаяние",
@@ -823,16 +850,14 @@ export default class App extends BaseComponent {
     try {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
 
-      // Считываем время начала блокировки сделок из localStorage
+      // Считываем время начала блокировок из localStorage
       timeoutStartTime = JSON.parse(localStorage.getItem("timeoutStartTime"));
-      console.log("timeoutStartTime", timeoutStartTime, `из localStorage (${typeof timeoutStartTime})`);
 
-      // Считываем кол-во минут до разблокировки сделок из localStorage
+      // Считываем кол-во минут до конца разблокировки сделок из localStorage
       let timeoutMinutes = JSON.parse(localStorage.getItem("timeoutMinutes"));
       if (typeOf(timeoutMinutes) !== "array") {
         timeoutMinutes = [];
       }
-      console.log("timeoutMinutes", timeoutMinutes, `из localStorage (${typeof timeoutMinutes})`);
 
       // Тайм-аут мог закончиться, перерасчитываем timeoutMinutes
       for (let i = 0; i < timeoutMinutes.length; i++) {
@@ -845,14 +870,12 @@ export default class App extends BaseComponent {
         }
         
         const minElapsed = Math.floor(msElapsed / 1_000 / 60);
-        console.log(`Прошло ms с момента блокировки ${i + 1} дня: ${msElapsed}, min: ${minElapsed}`);
 
         const prevValue = timeoutMinutes[i];
         timeoutMinutes[i] -= minElapsed;
         if (timeoutMinutes[i] < 0) {
           timeoutMinutes[i] = 0;
         }
-        console.log(`> Обновляем кол-во оставшихся минут для ${i + 1} дня: ${prevValue} -> ${timeoutMinutes[i]}`);
       }
 
       await this.setStateAsync({ timeoutMinutes });
