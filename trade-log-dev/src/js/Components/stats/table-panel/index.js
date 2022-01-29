@@ -121,7 +121,7 @@ export default function TablePanel() {
           document.querySelector(".table-panel-table-wrapper").scrollTop = 99999;
         }}
       >
-        Добавить
+        Добавить день
       </Button>
     </StatsPanel>
   );
