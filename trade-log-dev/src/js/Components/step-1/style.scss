@@ -190,7 +190,11 @@
             margin-bottom: 1em;
           }
 
-          Input {
+          .ant-select-selection {
+            font-size: 1.1em;
+          }
+
+          input {
             width: 100%!important;
             text-align: center;
           }
