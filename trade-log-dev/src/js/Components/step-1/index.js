@@ -101,8 +101,8 @@ export default class FirstStep extends React.Component {
               </div>
 
               <div className="first-step-combine-table">
-                {expectedDeals.map((item, index) => {
-                  let { currentToolCode, load, iterations, depo } = item;
+                {expectedDeals.map((deal, index) => {
+                  let { currentToolCode, load, iterations, depo } = deal;
                   depo = depo == null ? (state.investorDepo || 0) : depo;
                   return (
                     <div className="combine-table-row" key={index}>

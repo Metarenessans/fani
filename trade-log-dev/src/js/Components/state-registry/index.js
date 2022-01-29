@@ -87,9 +87,8 @@ export default function StateRegistry() {
               );
             })}
 
-              <td className="category-title category-title--negative">Искаженные</td>
-            <tr className="category-title-row">
-            </tr>
+            <td className="category-title category-title--negative">Искаженные</td>
+            <tr className="category-title-row"></tr>
 
             {Object.keys(currentDay.deals[0].emotionalStates.negative).map((taskName, i) => {
               return (
@@ -119,9 +118,8 @@ export default function StateRegistry() {
               <th>Мотивационные драйверы</th>
             </tr>
 
-              <td className="category-title category-title--positive">Нормальные</td>
-            <tr className="category-title-row">
-            </tr>
+            <td className="category-title category-title--positive">Нормальные</td>
+            <tr className="category-title-row"></tr>
 
             {Object.keys(currentDay.deals[0].motives.positive).map((taskName, i) => {
               return (
@@ -146,9 +144,9 @@ export default function StateRegistry() {
                 </tr>
               );
             })}
-              <td className="category-title category-title--negative">Искаженные</td>
-            <tr className="category-title-row">
-            </tr>
+            
+            <td className="category-title category-title--negative">Искаженные</td>
+            <tr className="category-title-row"></tr>
 
             {Object.keys(currentDay.deals[0].motives.negative).map((taskName, i) => {
               return (
