@@ -13,6 +13,7 @@ import CustomSlider from "../../../../../common/components/custom-slider";
 import NumericInput from "../../../../../common/components/numeric-input";
 import sortToolsBySearchValue from "../../../../../common/utils/sort-tools-by-search-value";
 import CrossButton from "../../../../../common/components/cross-button";
+import ToolSelect from "../../../../../common/components/tool-select";
 
 import TimeRangePicker from "../time-range-picker";
 
@@ -130,12 +131,8 @@ export default class FirstStep extends React.Component {
                             }}
                           />
                           {/* Торговый инструмент */}
-                          <Select
-                            value={
-                              toolsLoading && tools.length == 0 
-                                ? 0
-                                : Tools.getToolIndexByCode(tools, currentToolCode)
-                            }
+                          <ToolSelect
+                            value={Tools.getToolIndexByCode(tools, currentToolCode)}
                             onChange={currentToolIndex => {
                               const currentTool = tools[currentToolIndex];
                               const currentToolCode = currentTool.code;
@@ -144,34 +141,7 @@ export default class FirstStep extends React.Component {
                               data[currentRowIndex].expectedDeals[index].currentToolCode = currentToolCode;
                               context.setState({ data });
                             }}
-                            disabled={toolsLoading}
-                            loading={toolsLoading}
-                            showSearch
-                            onSearch={(value) => setSeachVal(value)}
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                            style={{ width: "100%" }}
-                          >
-                            {(() => {
-                              if (toolsLoading && tools.length == 0) {
-                                return (
-                                  <Option key={0} value={0}>
-                                    <LoadingOutlined style={{ marginRight: ".2em" }} />
-                                    Загрузка...
-                                  </Option>
-                                );
-                              }
-                              else {
-                                return this.getSortedOptions().map((tool, index) => (
-                                  <Option key={index} value={index}>
-                                    {String(tool)}
-                                  </Option>
-                                ));
-                              }
-                            })()}
-                          </Select>
+                          />
                         </div>
                       </div>
 
@@ -391,12 +361,8 @@ export default class FirstStep extends React.Component {
 
                         <div className="first-step-row-val first-step-row-val--base first-step-row-val-tool">
                           {/* Торговый инструмент */}
-                          <Select
-                            value={
-                              toolsLoading && tools.length == 0
-                                ? 0
-                                : Tools.getToolIndexByCode(tools, currentToolCode)
-                            }
+                          <ToolSelect
+                            value={Tools.getToolIndexByCode(tools, currentToolCode)}
                             onChange={currentToolIndex => {
                               const currentTool = tools[currentToolIndex];
                               const currentToolCode = currentTool.code;
@@ -406,34 +372,7 @@ export default class FirstStep extends React.Component {
                               data[currentRowIndex].deals[index].currentToolIndex = currentToolIndex;
                               context.setState({ data });
                             }}
-                            disabled={toolsLoading}
-                            loading ={toolsLoading}
-                            showSearch
-                            onSearch={(value) => setSeachVal(value)}
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                            }
-                            style={{ width: "100%" }}
-                          >
-                            {(() => {
-                              if (toolsLoading && tools.length == 0) {
-                                return (
-                                  <Option key={0} value={0}>
-                                    <LoadingOutlined style={{ marginRight: ".2em" }} />
-                                    Загрузка...
-                                  </Option>
-                                );
-                              }
-                              else {
-                                return this.getSortedOptions().map((tool, index) => (
-                                  <Option key={index} value={index}>
-                                    {String(tool)}
-                                  </Option>
-                                ));
-                              }
-                            })()}
-                          </Select>
+                          />
                         </div>
                       </div>
                       {/* col */}
