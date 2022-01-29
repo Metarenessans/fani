@@ -583,7 +583,11 @@ export default class App extends BaseComponent {
 
     this.fetchTools();
     await this.fetchSnapshots();
-    await this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") });
+    await this.fetchLastModifiedSnapshot({ fallback: this.getTestSpapshot() });
+  }
+
+  getTestSpapshot() {
+    return require("./snapshot.json");
   }
 
   packSave() {
