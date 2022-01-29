@@ -647,10 +647,11 @@ export default class FirstStep extends React.Component {
                         >
                           <NumericInput
                             defaultValue={result || 0}
-                            onBlur={val => {
+                            onBlur={async val => {
                               const data = cloneDeep(state.data);
                               data[currentRowIndex].deals[index].result = val;
-                              context.setState({ data });
+                              await context.setStateAsync({ data });
+                              context.checkForLockingDeals();
                             }}
                             suffix="%"
                           />
@@ -664,17 +665,9 @@ export default class FirstStep extends React.Component {
               </div>
               <div className="add-btn-container">
                 {(() => {
-                  let disabled = 
+                  let reachedLimitOfUnprofitableDeals =
                     state.limitUnprofitableDeals && 
                     deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals;
-
-                  const parsedEmotionalState = parseEmotionalState(deals);
-                  // Запрещаем добавлять сделки, если эмоциональный фон вышел в негатив
-                  if (parsedEmotionalState.state === "negative") {
-                    disabled = true;
-                  }
-
-                  const points = countPointsForDay(data[currentRowIndex]).reduce((prev, curr) => prev + curr, 0);
 
                   const { timeoutMinutes } = state;
                   const timeout = timeoutMinutes[currentRowIndex];
@@ -683,7 +676,11 @@ export default class FirstStep extends React.Component {
                     <Tooltip
                       title={timeout > 0 &&
                         <span>
-                          Достигнут лимит отрицательных сделок<br />
+                          {reachedLimitOfUnprofitableDeals
+                            ? "Достигнут лимит отрицательных сделок"
+                            : "Негативный эмоциональный фон"
+                          }
+                          <br />
                           Ограничение сделок {timeout === 9999 
                             ? "до конца дня" 
                             : `на ${formatNumber(timeout)} мин`

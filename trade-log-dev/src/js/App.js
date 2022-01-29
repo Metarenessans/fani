@@ -36,6 +36,14 @@ let scrollInitiator;
 /** Страница, с которой был переход в Личный дневник */
 let previousStep = -1;
 
+/**
+ * Локальное время пользователя на момент запуска тайм-аута для каждого дня
+ * в формате Unix-time
+ * 
+ * @type {number[]}
+ */
+let timeoutStartTime = [];
+
 export const dealTemplate = {
   currentToolCode: "SBER",
   currentToolIndex:     0,
@@ -76,6 +84,8 @@ export const dealTemplate = {
       "Апатия":                   false,
       "Стагнация":                false,
       "Тревожность":              false,
+      "Перевозбуждение":          false,
+      "Гиперактивность":          false,
       "Cтрах":                    false,
       "Ужас":                     false,
       "Отчаяние":                 false,
@@ -202,7 +212,22 @@ export const dayTemplate = {
     "Аффирмации":                                        false,
     "НАННИ":                                             false,
     "Работа со страхами":                                false,
-    "Простукивание тимуса":                              false
+    "Простукивание тимуса":                              false,
+    "Ладони магниты (точка лаотгун). Биомагнетизм":      false,
+    "Работа со страхами (НИ Мастер, МКС)":               false,
+    "Тенсегрити (шаманские танцы) МКС":                  false,
+    "Быстрый счет до 120":                               false,
+    "Спонтанное движение пальцем по лужице воды (интуиция)": false,
+    "Световая медитация (энерго финансовый марафон, МКС)":   false,
+    "Медитация планеты":                                     false,
+    "Медитация пройти через стену ограничений":              false,
+    "Мантра Ом Мани":                                        false,
+    "Жонглирование":                                         false,
+    "Рисование":                                             false,
+    "Чтение и написание стихов":                             false,
+    "Обратный просмотр дня. С \"Фотографией\" момента (МКС)": false,
+    "Медитация на объем капитала. Визуализация, кинестетика": false
+
   },
 
   /**
@@ -241,7 +266,15 @@ export const dayTemplate = {
     "Инструментов в работе: более чем":                        false,
     "Торговля без четкого алгоритма (ручная)":                 false,
     "Торговля избыточным количеством инструментов":            false,
-    "Проработка иллюзии очевидности прошлого":                 false
+    "Проработка иллюзии очевидности прошлого":                 false,
+    "Не открывать сразу сделку после закрытия по профиту":     false,
+    "Не торговать импульсный вход, только от уровней отложения": false,
+    "\"Бумажная\" торговля. Прогноз точки входа и выхода":     false,
+    "Анализ торговых показателей из инфобота":                 false,
+    "Торговать только уровни (откаты игнорировать)":           false,
+    "Ставить заявки в \"невозможную\" точну входа (ВИДЕНИЕ)":  false,
+    "Думать только о рынке. Гасить мысли о деньгах":           false,
+    "Не гнаться за рынком (жалость, спешка, суета)":           false
   },
 
   /**
@@ -417,8 +450,7 @@ export default class App extends BaseComponent {
       limitUnprofitableDeals,
       allowedNumberOfUnprofitableDeals,
       data,
-      customTools,
-      lockTimeoutMinutes
+      customTools
     } = this.state;
     if (
       prevState.dailyRate                        != dailyRate                        ||
@@ -429,39 +461,6 @@ export default class App extends BaseComponent {
     ) {
       dev && console.log("есть изменения");
       this.setState({ changed: true });
-
-      // Проверяем, нужно ли блокировать добавление сделок и ставить тайм-ауты
-      for (let i = 0; i < data.length; i++) {
-        const day = data[i];
-        const deals = day.deals;
-        const emotionalState = parseEmotionalState(deals);
-        const isNegativeEmotionalState = emotionalState.negative > emotionalState.positive;
-
-        // Убыточные сделки
-        const unprofitableDeals = deals.filter(deal => deal.result < 0);
-        // Если включен лимит убыточных сделок и мы превышаем допустимый лимит - запрещаем торговлю
-        let tradingNotAllowed = 
-          this.state.limitUnprofitableDeals && unprofitableDeals.length >= this.state.allowedNumberOfUnprofitableDeals;
-
-        // Вышли в негативный эмоциональный фон
-        if (tradingNotAllowed || isNegativeEmotionalState) {
-          let msg = `Добавление сделок для ${i + 1} дня заблокировано`;
-          if (location.href.replace(/\/$/g, "").endsWith("-dev") || dev) {
-            if (lockTimeoutMinutes === 9999) {
-              msg += " до конца дня";
-            }
-            else {
-              msg += `на ${lockTimeoutMinutes} ${num2str(lockTimeoutMinutes, ["минута", "минуты", "минут"])}`;
-            }
-            message.warn(msg);
-          }
-          console.warn(msg);
-          
-          const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
-          timeoutMinutes[i] = lockTimeoutMinutes;
-          this.setState({ timeoutMinutes });
-        }
-      }
     }
 
     const { id, saves } = this.state;
@@ -470,6 +469,54 @@ export default class App extends BaseComponent {
         const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
         this.setStateAsync({ currentSaveIndex });
       }
+    }
+  }
+
+  checkForLockingDeals(dayIndex) {
+    const { data, lockTimeoutMinutes } = this.state;
+
+    const i = dayIndex || this.state.currentRowIndex;
+
+    // Проверяем, нужно ли блокировать добавление сделок и ставить тайм-ауты
+    const day = data[i];
+    const deals = day.deals;
+    const emotionalState = parseEmotionalState(deals);
+    const isNegativeEmotionalState = emotionalState.negative > emotionalState.positive;
+
+    // Убыточные сделки
+    const unprofitableDeals = deals.filter(deal => deal.result < 0);
+    // Если включен лимит убыточных сделок и мы превышаем допустимый лимит - запрещаем торговлю
+    let tradingNotAllowed =
+      this.state.limitUnprofitableDeals && unprofitableDeals.length >= this.state.allowedNumberOfUnprofitableDeals;
+
+    console.log("tradingNotAllowed", tradingNotAllowed, "isNegativeEmotionalState", isNegativeEmotionalState);
+
+    // Вышли в негативный эмоциональный фон
+    if (tradingNotAllowed || isNegativeEmotionalState) {
+      let msg = `Добавление сделок для ${i + 1} дня заблокировано`;
+      if (location.href.replace(/\/$/g, "").endsWith("-dev") || dev) {
+        if (lockTimeoutMinutes === 9999) {
+          msg += " до конца дня";
+        }
+        else {
+          msg += `на ${lockTimeoutMinutes} ${num2str(lockTimeoutMinutes, ["минута", "минуты", "минут"])}`;
+        }
+        message.warn(msg);
+      }
+
+      console.warn(msg);
+
+      const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
+      timeoutMinutes[i] = lockTimeoutMinutes;
+      localStorage.setItem("timeoutMinutes", JSON.stringify(timeoutMinutes));
+      this.setState({ timeoutMinutes });
+
+      if (!timeoutStartTime) {
+        timeoutStartTime = [];
+      }
+      timeoutStartTime[i] = Number(new Date());
+      console.log("Записываем timeoutStartTime в localStorage", timeoutStartTime, new Date(timeoutStartTime[i]));
+      localStorage.setItem("timeoutStartTime", JSON.stringify(timeoutStartTime));
     }
   }
   
@@ -515,7 +562,7 @@ export default class App extends BaseComponent {
         localStorage.setItem("timeoutMinutes", JSON.stringify(timeoutMinutes));
         console.log(timeoutMinutes);
       }
-    }, dev ? 1_000 : 60_000);
+    }, 60_000);
   }
 
   // Fetching everithing we need to start working
@@ -797,12 +844,34 @@ export default class App extends BaseComponent {
     try {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
 
-      // Считываем кол-во минут до разблокировки сделок из localStorage
+      // Считываем время начала блокировок из localStorage
+      timeoutStartTime = JSON.parse(localStorage.getItem("timeoutStartTime"));
+
+      // Считываем кол-во минут до конца разблокировки сделок из localStorage
       let timeoutMinutes = JSON.parse(localStorage.getItem("timeoutMinutes"));
       if (typeOf(timeoutMinutes) !== "array") {
         timeoutMinutes = [];
       }
-      console.log(timeoutMinutes, `из localStorage (${typeof timeoutMinutes})`);
+
+      // Тайм-аут мог закончиться, перерасчитываем timeoutMinutes
+      for (let i = 0; i < timeoutMinutes.length; i++) {
+        if (timeoutStartTime[i] == null) {
+          continue;
+        }
+        let msElapsed = Number(new Date()) - timeoutStartTime[i];
+        if (msElapsed < 0) {
+          msElapsed = 0;
+        }
+        
+        const minElapsed = Math.floor(msElapsed / 1_000 / 60);
+
+        const prevValue = timeoutMinutes[i];
+        timeoutMinutes[i] -= minElapsed;
+        if (timeoutMinutes[i] < 0) {
+          timeoutMinutes[i] = 0;
+        }
+      }
+
       await this.setStateAsync({ timeoutMinutes });
     }
     catch (error) {

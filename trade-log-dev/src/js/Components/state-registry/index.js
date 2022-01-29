@@ -73,11 +73,12 @@ export default function StateRegistry() {
                         className="positive"
                         key={index}
                         checked={currentDay.deals[index].emotionalStates.positive[taskName]}
-                        onChange={e => {
+                        onChange={async e => {
                           const { checked } = e.target;
                           const data = cloneDeep(state.data);
                           data[currentRowIndex].deals[index].emotionalStates.positive[taskName] = checked;
-                          context.setState({ data });
+                          await context.setStateAsync({ data });
+                          context.checkForLockingDeals();
                         }}
                       />
                     </td>
@@ -100,11 +101,12 @@ export default function StateRegistry() {
                         className="negative"
                         key={index}
                         checked={currentDay.deals[index].emotionalStates.negative[taskName]}
-                        onChange={e => {
+                        onChange={async e => {
                           const { checked } = e.target;
                           const data = cloneDeep(state.data);
                           data[currentRowIndex].deals[index].emotionalStates.negative[taskName] = checked;
-                          context.setState({ data });
+                          await context.setStateAsync({ data });
+                          context.checkForLockingDeals();
                         }}
                       />
                     </td>
@@ -131,11 +133,12 @@ export default function StateRegistry() {
                         className="positive"
                         key={index}
                         checked={currentDay.deals[index].motives.positive[taskName]}
-                        onChange={e => {
+                        onChange={async e => {
                           const { checked } = e.target;
                           const data = cloneDeep(state.data);
                           data[currentRowIndex].deals[index].motives.positive[taskName] = checked;
-                          context.setState({ data });
+                          await context.setStateAsync({ data });
+                          context.checkForLockingDeals();
                         }}
                       />
                     </td>
@@ -157,11 +160,12 @@ export default function StateRegistry() {
                         className="negative"
                         key={index}
                         checked={currentDay.deals[index].motives.negative[taskName]}
-                        onChange={e => {
+                        onChange={async e => {
                           const { checked } = e.target;
                           const data = cloneDeep(state.data);
                           data[currentRowIndex].deals[index].motives.negative[taskName] = checked;
-                          context.setState({ data });
+                          await context.setStateAsync({ data });
+                          context.checkForLockingDeals();
                         }}
                       />
                     </td>
