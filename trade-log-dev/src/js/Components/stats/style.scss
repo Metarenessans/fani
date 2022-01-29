@@ -1,0 +1,61 @@
+@import "../../../sass/mixins";
+
+.stats {
+  margin-top: 5em;
+
+  @include sm {
+    margin-top: 2em;
+  }
+
+  &-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+
+    > * {
+      flex-grow: 1;
+
+      + * {
+        margin-left: 2em;
+
+        @include sm {
+          margin-left: 0;
+          margin-top: 2em;
+        }
+      }
+    }
+  }
+
+  .association-list {
+    width: 100%;
+
+    > * {
+      display: flex;
+      flex-wrap: wrap;
+
+      margin-bottom: 1em;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      dt {
+        margin-right: 1.5em;
+      }
+
+      dt,
+      dd {
+        font-size: 1.6em;
+      }
+
+      dd {
+        margin: 0;
+        margin-left: auto;
+        min-width: 8ch;
+
+        text-align: center;
+      }
+    }
+  }
+}

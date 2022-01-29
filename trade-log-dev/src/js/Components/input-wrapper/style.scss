@@ -1,0 +1,81 @@
+@import "../../../sass/mixins";
+
+.input-wrapper {
+  $root: &;
+
+  max-width: 20em;
+  display: flex;
+  flex-direction: column;
+
+  &--fluid {
+    max-width: unset;
+    flex-direction: row;
+    align-items: center;
+
+    #{$root}__label {
+      flex-shrink: 0;
+      margin-bottom: 0;
+      margin-right: 1.5em;
+
+      line-height: 1em;
+    }
+
+    #{$root}__input {
+      flex-grow: 1;
+      max-width: 10em;
+    }
+  }
+
+  &__label {
+    display: flex;
+    margin-bottom: .5em;
+
+    @include font("Roboto");
+    font-size: 1.6em;
+
+    &--centered {
+      text-align: center;
+      justify-content: center;
+
+      @include xs() {
+        // text-align: left;
+      }
+    }
+  }
+
+  &__input {
+    text-align: center;
+
+    @include xs() {
+      // text-align: left
+    }
+
+    &.error {
+      border-color: var( --danger-color ) !important;
+
+      &:focus {
+        box-shadow: 0 0 0 2px var( --danger-color--transparent );
+      }
+
+      &:hover {
+        border-color: var( --danger-color );
+      }
+
+      .ant-input {
+        border-color: inherit;
+
+        &:focus {
+          box-shadow: 0 0 0 2px var( --danger-color--transparent );
+        }
+
+        &:hover {
+          border-color: var( --danger-color );
+        }
+      }
+
+      .ant-input-suffix {
+        pointer-events: none;
+      }
+    }
+  }
+}

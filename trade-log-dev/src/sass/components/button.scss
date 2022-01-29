@@ -1,0 +1,36 @@
+.trade-log-button {
+  height: 2.2em;
+  padding: 0.2em 1em;
+  border: var(--outline-width) solid var(--primary-color);
+  border-radius: 1.1em;
+  
+  color: var(--primary-color);
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.85em;
+  text-transform: uppercase;
+  
+  white-space: nowrap;
+
+  transition: all 0.3s;
+
+  &:hover {
+    color: #fff;
+    background: var(--primary-color);
+  }
+
+  &--filled {
+    border: var(--outline-width) solid var(--primary-color);
+    background: var(--primary-color);
+
+    color: white;
+
+    &:hover,
+    &:focus {
+      border: var(--outline-width) solid var(--primary-color);
+      background: var(--primary-color);
+
+      color: white;
+    }
+  }
+}

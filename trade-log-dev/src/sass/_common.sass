@@ -1,0 +1,129 @@
+*,
+*::before,
+*::after
+  box-sizing: border-box
+
+button,
+input,
+a
+  &:focus
+    outline: none
+    box-shadow: 0
+
+a
+  display: inline-flex
+  color: inherit
+  text-decoration: none
+
+.visually-hidden
+  +visually-hidden
+
+html
+  -webkit-font-smoothing: antialiased
+  text-rendering: optimizeLegibility
+  text-size-adjust: 100%
+
+body
+  // +font("SF UI Text")
+  +font("Circe")
+
+  min-width: 320px
+  overflow-x: hidden
+  background-color: var( --bg-color )
+
+  &.scroll-disabled
+    overflow: hidden
+
+    main
+      filter: blur(.4em)
+
+.page
+  font-size: 0.80357em
+
+  +lg
+    font-size: 0.9vw
+  
+  +sm
+    font-size: 1.45vw
+
+  +xs
+    font-size: 2.25vw
+
+/* Components */
+
+@import "components/index"
+
+/* Sections */
+
+@import "sections/index"
+
+/* Layout */
+
+@import "layout/index"
+
+// Fix
+.footer__links a
+  white-space: nowrap !important
+
+.ksd
+  &-config
+    &__depo
+      .ant-input
+        font-size: 1em !important 
+
+/* Extract these sections into separate files */
+
+.section
+  &1,
+  &2,
+  &3,
+  &4
+    display: flex
+    justify-content: space-between
+
+.pi-dialog
+  &-th
+    &:last-of-type
+      width: 2em
+
+/* ant */
+
+.ant
+  &-input
+    &.error
+      border-color: var( --danger-color ) !important
+
+      &:focus
+        box-shadow: 0 0 0 .3em var( --danger-color-transparent )
+
+      &:hover
+        border-color: var( --danger-color )
+
+  &-tooltip-inner
+    text-align: center
+  
+  &-select-search__field
+    box-shadow: none !important
+
+#_chart
+  height: 58em
+
+/* anychart */
+
+.anychart
+
+  &-credits
+    display: none
+
+  &-tooltip
+    width: 18rem
+
+.hide-sm
+  +sm
+    display: none
+
+.xs-only
+  display: none
+
+  +xs
+    display: block
