@@ -10,6 +10,7 @@ import {
 import NumericInput from "../../../../common/components/numeric-input";
 import CustomSelect from "../../../../common/components/custom-select";
 import CrossButton  from "../../../../common/components/cross-button";
+import ToolSelect   from "../../../../common/components/tool-select";
 
 import { Tools, Tool } from "../../../../common/tools";
 import round           from "../../../../common/utils/round";
@@ -252,47 +253,20 @@ export default class DashboardRow extends React.Component {
         <div className="dashboard-col dashboard-col--wide">
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
-            <Select
-              className="dashboard__select dashboard__select--wide" 
-              value={toolsLoading && tools.length == 0 ? 0 : currentToolIndex}
-              onFocus={() => onChange("isToolsDropdownOpen", true)}
-              onBlur={() => {
-                onChange("isToolsDropdownOpen", false);
-                onDropdownClose();
-              }}
+            <ToolSelect
+              className="dashboard__select dashboard__select--wide"
+              value={currentToolIndex}
               onChange={currentToolIndex => {
                 onDropdownClose();
                 onChange("isToolsDropdownOpen", false);
                 onChange("selectedToolName", tools[currentToolIndex].getSortProperty());
               }}
-              loading={toolsLoading}
-              disabled={toolsLoading}
-              showSearch
-              onSearch={(value) => this.setState({ searchVal: value })}
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
-              style={{ width: "100%" }}
-            >
-              {(() => {
-                if (toolsLoading && tools.length == 0) {
-                  return (
-                    <Option key={0} value={0}>
-                      <LoadingOutlined style={{ marginRight: ".2em" }} />
-                        Загрузка...
-                    </Option>
-                  );
-                }
-                else {
-                  return tools.map((tool, index) => (
-                    <Option key={index} value={index}>
-                      {String(tool)}
-                    </Option>
-                  ));
-                }
-              })()}
-            </Select>
+              onFocus={() => onChange("isToolsDropdownOpen", true)}
+              onBlur={() => {
+                onChange("isToolsDropdownOpen", false);
+                onDropdownClose();
+              }}
+            />
           </span>
         </div>
         {/* col */}
