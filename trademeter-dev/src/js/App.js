@@ -1180,7 +1180,7 @@ class App extends BaseComponent {
 
     const args = [
       depoStart,
-      Math.round(this.getDepoEnd()),
+      this.getDepoEnd(),
       withdrawal,
       withdrawalInterval[mode],
       payload,
