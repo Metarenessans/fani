@@ -68,7 +68,7 @@ export default class Data extends Array {
 
       let goal = Math.round(depoStart * $rate / 100);
 
-      let incomePlan = Math.round(depoStartPlan * $rate / 100);
+      let incomePlan = depoStartPlan * $rate / 100;
       incomePlan -= paymentPlan;
       incomePlan += payloadPlan;
 
