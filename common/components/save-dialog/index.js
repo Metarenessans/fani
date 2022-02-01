@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Input, message } from "antd";
 import { cloneDeep } from "lodash";
 import clsx from "clsx";
@@ -20,6 +20,8 @@ export default function SaveDialog(props) {
   const namesTaken = saves.map(save => save.name);
 
   const [name, setName] = useState(id ? currentTitle : "Новое сохранение");
+
+  useEffect(() => setName(id ? currentTitle : "Новое сохранение"), [id]);
 
   /**
    * Проверяет, может ли данная строка быть использована как название сейва
