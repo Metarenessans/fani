@@ -40,10 +40,14 @@ export default async function extractSnapshot(snapshot, parseFn) {
     console.error("Не удалось распарсить сохранение: " + error);
   }
   finally {
+    const { saves } = this.state;
+    const currentSaveIndex = saves.indexOf(saves.find(snapshot => snapshot.id === id)) + 1;
+
     state = {
       ...state,
       id,
-      saved: true
+      saved: true,
+      currentSaveIndex
     };
   }
 
