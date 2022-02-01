@@ -113,7 +113,12 @@ export default function TablePanel() {
         className="table-panel__add-button custom-btn"
         onClick={async e => {
           const data = state.data;
-          const day = context.dayTemplate;
+          const day = cloneDeep(context.dayTemplate);
+          // Добавляем все кастомные технологии
+          // Если есть хотя бы один день, то можно брать его кастомные технологии
+          if (data.length > 0) {
+            day.customTechnology = cloneDeep(data[data.length - 1].customTechnology);
+          }
           // Обновляем дату
           day.date = Number(new Date());
           data.push(day);

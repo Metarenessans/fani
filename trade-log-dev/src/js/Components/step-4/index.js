@@ -150,15 +150,14 @@ export default class FourthStep extends React.Component {
                     <Button
                       className="trade-log-button"
                       onClick={() => {
-                        const cloneData = cloneDeep(data);
-
-                        cloneData.map((item, index) => {
-                          cloneData[index].customTechnology.push({
+                        const data = cloneDeep(state.data).map((item, index) => {
+                          item.customTechnology.push({
                             name: "Новая технология " + (customTechnology.length + 1),
                             value: false
                           });
+                          return item;
                         });
-                        context.setState({ data: cloneData });
+                        context.setState({ data });
                       }}
                     >
                       Добавить технологию
