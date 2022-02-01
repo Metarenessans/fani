@@ -13,7 +13,8 @@ export default function ToolSelect({
   value,
   onChange,
   onFocus,
-  onBlur
+  onBlur,
+  tooltipPlacement
 }) {
   const context = useContext(Context);
   const { state } = context;
@@ -27,7 +28,11 @@ export default function ToolSelect({
   value = Math.max(filteredTools.findIndex(tool => tool.code === code), 0);
 
   return (
-    <Tooltip title={errorMessage} visible={errorMessage?.length > 0}>
+    <Tooltip
+      title={errorMessage}
+      visible={errorMessage?.length > 0}
+      placement={tooltipPlacement}
+    >
       <Select
         className={errorMessage && "error"}
         disabled={toolsLoading || toolSelectDisabled}
