@@ -21,7 +21,9 @@ export default function SaveDialog(props) {
 
   const [name, setName] = useState(id ? currentTitle : "Новое сохранение");
 
-  useEffect(() => setName(id ? currentTitle : "Новое сохранение"), [id]);
+  useEffect(() => {
+    setName(id ? currentTitle : "Новое сохранение");
+  }, [id]);
 
   /**
    * Проверяет, может ли данная строка быть использована как название сейва
