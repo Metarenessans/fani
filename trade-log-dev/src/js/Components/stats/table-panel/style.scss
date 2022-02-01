@@ -16,6 +16,10 @@
     .ant-calendar-picker {
       font-size: .5em;
 
+      .anticon {
+        z-index: 0;
+      }
+
       @include sm {
         width: 4em;
 
