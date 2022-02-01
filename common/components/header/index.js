@@ -34,7 +34,6 @@ const propTypes = {
 /** @param {propTypes} props */
 const Header = ({
   children,
-  onSave,
   onChange
 }) => {
   const context = useContext(Context);
