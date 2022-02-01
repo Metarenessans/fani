@@ -19,6 +19,11 @@ export default function fetch(query, method = "GET", data = {}) {
       url,
       method,
       data,
+      complete: xhr => {
+        if (xhr.readyState === 0) {
+          reject(xhr);
+        }
+      },
       success: response => {
         try {
           /** @type {FetchResponse} */
