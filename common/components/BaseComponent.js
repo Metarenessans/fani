@@ -421,7 +421,7 @@ export default class BaseComponent extends React.Component {
         const { id, name, dateCreate } = data;
   
         const saves = [{ id, name, dateCreate }];
-        await this.setStateAsync({ saves });
+        await this.setStateAsync({ saves, currentSaveIndex: 1 });
       }
 
       window.easterEgg = response;
