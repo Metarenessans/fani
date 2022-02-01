@@ -109,6 +109,7 @@ export default class App extends BaseComponent {
 
   componentDidMount() {
     this.fetchInitialData();
+    this.bindEvents();
 
     // window.addEventListener( "scroll", () => onScroll.call(this) );
   }

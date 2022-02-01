@@ -113,6 +113,9 @@ export default class ActiveIncomeCalculator extends React.Component {
         <h2 className="page-footer-header-title page-footer-header-title--uppercase">Требуемый активный доход</h2>
         <div className="page-footer-header-section">
           <div className="page-footer-header-section-col">
+            <svg className="page-footer-arrow page-footer-arrow--second" width="18" height="32" viewBox="0 0 18 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 30L16 16L2 2" stroke="#3D5AB8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
 
             <div className="page-footer-col">
               <span className="page-footer-key" >
@@ -152,10 +155,6 @@ export default class ActiveIncomeCalculator extends React.Component {
                 max={2600}
                 onChange={days => this.setState({ days })}
               />
-
-              <svg className="page-footer-arrow" width="18" height="32" viewBox="0 0 18 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 30L16 16L2 2" stroke="#3D5AB8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
             </div>
 
             <Stack space="1em">

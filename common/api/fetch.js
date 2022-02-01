@@ -39,7 +39,7 @@ export default function fetch(query, method = "GET", data = {}) {
       },
       error: xhr => {
         if (xhr.status == 0) {
-          return;
+          reject(xhr);
         }
         reject(xhr);
       }

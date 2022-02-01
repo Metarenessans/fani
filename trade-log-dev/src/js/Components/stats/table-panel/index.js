@@ -113,7 +113,7 @@ export default function TablePanel() {
         className="table-panel__add-button custom-btn"
         onClick={async e => {
           const data = state.data;
-          const day = cloneDeep(context.dayTemplate);
+          const day = context.dayTemplate;
           // Обновляем дату
           day.date = Number(new Date());
           data.push(day);

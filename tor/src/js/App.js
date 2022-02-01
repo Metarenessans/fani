@@ -25,9 +25,11 @@ import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
 import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+
 import "../sass/style.sass"
 
-class App extends React.Component {
+export default class App extends BaseComponent {
 
 constructor(props) {
     super(props);
@@ -109,7 +111,8 @@ constructor(props) {
   }
 
   componentDidMount() {
-    this.bindEvents();
+    super.bindEvents();
+    // this.bindEvents();
     this.fetchInitialData()
   }
 

@@ -5,7 +5,6 @@
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: 1em;
 
   padding: 2em 1em;
   
@@ -71,14 +70,17 @@
 
   &-arrow {
     position: absolute;
-    left: 100%;
-    top: 4.4em;
-    transform: translateY(-50%);
-    margin-left: 4.5em;
-
+    
     --size: 3.75em;
     width:  var(--size);
     height: var(--size);
+
+    left: 48.5%;
+    top:    40%;
+
+    &--second {
+      top: 18%;
+    }
   }
 
   &-header {
@@ -104,15 +106,27 @@
       justify-content: space-between;
       align-items: flex-start;
 
-      gap: 12em;
+      display: -webkit-box;
+      display: -ms-flexbox;
+      -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+      justify-content: space-between;
+      -webkit-box-align: start;
+      -ms-flex-align: start;
+
+      margin-top: 1em;
 
       &-col {
         display: inline-flex;
+        display: -webkit-inline-flex;
         justify-content: space-between;
+        -webkit-justify-content: space-between;
         flex-wrap: wrap;
-    
-        width: 50%;
-        gap: 1.5em;
+        
+        h2 {
+          margin-bottom: 1.5em;
+        }
+        width: 62em;
       }
     }
   }
@@ -135,19 +149,16 @@
 
     display: inline-flex;
     flex-direction: column;
+
+    &:first-of-type {
+      margin-right:  1.5em;
+      margin-bottom: 1.5em;
+    }
     
     width: 30em;
 
     &--fluid {
       width: 100%;
-
-      .ant-input-suffix {
-        // right: unset;
-        // left: 50%;
-        // transform: translateX(-50%);
-
-        // margin-left: 1.75em;
-      }
     }
 
     &__select {

@@ -78,6 +78,33 @@ export default class FourthStep extends React.Component {
                           <div className="fourth-step-table-row-container-row" key={index}>
                             <Input
                               key={currentRowIndex}
+                              defaultValue={typeof name === "object"
+                                ? `Новая задача ${index + 1}`
+                                : name
+                              }
+                              onBlur={e => {
+                                const { value } = e.target;
+                                let i = data[currentRowIndex].customTechnology.findIndex(task => task.name == name);
+                                if (i === -1) {
+                                  console.warn(`Не удлось найти '${name}' среди`, data[currentRowIndex].customTechnology);
+                                  i = index;
+                                }
+                                const oldName = data[currentRowIndex].customTechnology[i].name;
+                                data[currentRowIndex].customTechnology[i].name = value;
+
+                                // Меняем ключ в массиве готовых задачу
+                                for (let day of data) {
+                                  const customTask = day.customTechnology.find(task => task.name == oldName);
+                                  if (customTask) {
+                                    customTask.name = value;
+                                  }
+                                }
+
+                                context.setState({ data });
+                              }}
+                            />
+                            {/* <Input
+                              key={currentRowIndex}
                               // В старых сейвах в name может лежать объект
                               defaultValue={typeof name === "object" 
                                 ? `Новая технология ${index + 1}`
@@ -94,7 +121,7 @@ export default class FourthStep extends React.Component {
                                 data[currentRowIndex].customTechnology[i].name = value;
                                 context.setState({ data });
                               }}
-                            />
+                            /> */}
                             <div className="fourth-step-table-check-box">
                               <Checkbox
                                 key={currentRowIndex}
@@ -123,31 +150,39 @@ export default class FourthStep extends React.Component {
                     <Button
                       className="trade-log-button"
                       onClick={() => {
-                        const data = cloneDeep(state.data);
-                        const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
-                        customTechnology.push({
-                          name: "Новая технология " + (customTechnology.length + 1),
-                          value: false
+                        const cloneData = cloneDeep(data);
+
+                        cloneData.map((item, index) => {
+                          cloneData[index].customTechnology.push({
+                            name: "Новая технология " + (customTechnology.length + 1),
+                            value: false
+                          });
                         });
-                        data[currentRowIndex].customTechnology = customTechnology;
-                        context.setState({ data });
+                        context.setState({ data: cloneData });
                       }}
                     >
                       Добавить технологию
                     </Button>
+
 
                     <Button
                       className="trade-log-button"
                       disabled={customTechnology.length === 0}
                       onClick={() => {
                         const data = cloneDeep(state.data);
-                        const customTechnology = cloneDeep(data[currentRowIndex].customTechnology);
-                        customTechnology.splice(customTechnology.length - 1, 1);
-                        data[currentRowIndex].customTechnology = customTechnology;
-                        context.setState({ data });
+                        const certaincustomTechnology = cloneDeep(data[currentRowIndex].customTechnology);
+                        const name = cloneDeep(data[currentRowIndex].customTechnology[certaincustomTechnology.length - 1].name);
+
+
+                        let newData = data.map(day => {
+                          day.customTechnology = day.customTechnology.filter(item => item.name !== name);
+                          return day;
+                        });
+
+                        context.setState({ data: newData });
                       }}
                     >
-                      Удалить технологию
+                      Удалить задачу
                     </Button>
                   </div>
                 </div>
