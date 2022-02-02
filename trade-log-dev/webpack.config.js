@@ -55,7 +55,7 @@ module.exports = (env, options) => {
               options: {
                 plugins: [
                   require("postcss-custom-properties")({ preserve: true }),
-                  require("autoprefixer")(),
+                  require("autoprefixer")({ overrideBrowserslist: ['last 2 versions'] })
                   prod && require("postcss-csso")()
                 ].filter(plugin => !!plugin),
                 sourceMap: true
