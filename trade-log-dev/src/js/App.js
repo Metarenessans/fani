@@ -885,6 +885,18 @@ export default class App extends BaseComponent {
     }
   }
 
+  /** @type {BaseComponent.prototype.save} */
+  async save(name) {
+    this.lastSavedState = cloneDeep(this.state);
+    return super.save(name);
+  }
+
+  /** @type {BaseComponent.prototype.update} */
+  async update(name) {
+    this.lastSavedState = cloneDeep(this.state);
+    return super.update(name);
+  }
+
   render() {
     const {
       step,

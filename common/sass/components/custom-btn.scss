@@ -16,7 +16,7 @@
   text-transform: uppercase;
 
   &:focus {
-    border: var(--focus-outline-width) solid var(--primary-color);
+    border: var(--outline-width) solid var(--primary-color);
     background: none;
     box-shadow: none;
 
