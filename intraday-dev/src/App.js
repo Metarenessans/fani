@@ -24,6 +24,7 @@ function App() {
       {(
         location.href.replace(/\/$/g, "").endsWith("-dev")  ||
         location.href.replace(/\/$/g, "").endsWith(":8080") ||
+        location.href.replace(/\/$/g, "").endsWith(":8081") ||
         location.href.replace(/\/$/g, "").endsWith("-ex")
       ) && (
         <NanniBot />
