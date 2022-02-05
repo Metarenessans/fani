@@ -142,7 +142,7 @@ export const NanniBot = () => {
       data: {
         url: "http://nimba.ru:82/nanni/ask",
         method: "GET",
-        data: JSON.stringify({ user_id: userID }),
+        data: JSON.stringify({ user_id: userID }) 
       },
       success: function (response) {
         return response;
@@ -165,6 +165,7 @@ export const NanniBot = () => {
   };
 
   const sendAnswer = async (choiceIdx, messageIdx) => {
+    console.log("answer");
     const response = await $.ajax({
       url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
       method: "POST",
@@ -172,7 +173,9 @@ export const NanniBot = () => {
         url: "http://nimba.ru:82/nanni/answer",
         method: "POST",
         data: JSON.stringify({
-          user_id: userID,
+          user_id:      userID,
+          ask_unique_id:    "",
+          answer_unique_id: "",
           answer: { choice: choiceIdx },
         }),
       },
@@ -244,7 +247,7 @@ export const NanniBot = () => {
     setChatOpen(false);
     setHaveUnread(false);
     document.body.style.overflowY = "";
-    document.body.style.position = "";
+    document.body.style.position  = "";
   };
 
   const replaceURLs = (message) => {
