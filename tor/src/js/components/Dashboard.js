@@ -78,7 +78,7 @@ export default class Dashboard extends React.Component {
   getCurrentTool() {
     const { data } = this.props;
     const { selectedToolName } = data;
-    return this.getToolByName(selectedToolName);
+    return this.getToolByName(selectedToolName) ?? Tools.createArray()[0];
   }
 
   getToolByName(name) {
