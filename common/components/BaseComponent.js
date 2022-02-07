@@ -308,7 +308,11 @@ export default class BaseComponent extends React.Component {
    */
   async fetchTools() {
     await this.setStateAsync({ toolsLoading: true });
-    const tools = await this.prefetchTools();
+    let tools = await this.prefetchTools();
+    if (!tools) {
+      console.warn(`Метод prefetchTools вернул ${tools}!`);
+      tools = [];
+    }
     await this.setStateAsync({ toolsLoading: false, tools });
     return tools;
   }
