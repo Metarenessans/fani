@@ -185,7 +185,7 @@ export default class Footer extends React.Component {
           <div className="page-footer-header-section-col">
 
             <svg className="page-footer-arrow" width="18" height="32" viewBox="0 0 18 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 30L16 16L2 2" stroke="#3D5AB8" strokeWidth="4" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M2 30L16 16L2 2" stroke="#3D5AB8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
             <h2 className="page-footer-header-title">Текущий уровень жизни</h2>
