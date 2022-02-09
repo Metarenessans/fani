@@ -154,7 +154,7 @@ export default class DashboardRow extends React.Component {
             <p>{firstTitle || ""}</p>
             {data.length == 0 && <Footer />}
             <p >{secondTitle || ""}</p>
-            <p className={thirdTitleVerticalLine && "trird-title-before-element"}>
+            <p className={clsx(thirdTitleVerticalLine && "trird-title-before-element")}>
               {thirdTitle || ""}
             </p>
           </div>
@@ -322,7 +322,7 @@ export default class DashboardRow extends React.Component {
 
                   return (
                     numericKeys.map((numericKey, columnIndex) =>
-                      <div className="dashboard-col">
+                      <div key={columnIndex} className="dashboard-col">
 
                         <span className="dashboard-key" hidden={rowIndex > 0}>
                           <NumericInput
