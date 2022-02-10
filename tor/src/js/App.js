@@ -4,7 +4,6 @@ import { Input } from 'antd/es'
 
 import {} from '@ant-design/icons'
 
-import params       from "../../../common/utils/params";
 import formatNumber from "../../../common/utils/format-number"
 
 import { cloneDeep, isEqual } from "lodash"
@@ -12,29 +11,37 @@ import { cloneDeep, isEqual } from "lodash"
 import NumericInput          from "../../../common/components/numeric-input"
 import Config                from "../../../common/components/config"
 import { Dialog, dialogAPI } from "../../../common/components/dialog"
+import Header                from "../../../common/components/header"
+import SaveDialog            from "../../../common/components/save-dialog"
+import DeleteDialog          from "../../../common/components/delete-dialog"
 import { Tools, Tool, template }   from "../../../common/tools"
 import Dashboard             from "./components/Dashboard"
-import Header                from "./components/header"
 import round                 from "../../../common/utils/round"
 
 /* API */
-import fetch                  from "../../../common/api/fetch"
 import { applyInvestorInfo }  from "../../../common/api/fetch/investor-info/apply-investor-info"
 import { applyTools }         from "../../../common/api/fetch/tools"
-import fetchSavesFor     from "../../../common/api/fetch-saves"
 import fetchSaveById     from "../../../common/api/fetch/fetch-save-by-id"
-import syncToolsWithInvestorInfo from "../../../common/utils/sync-tools-with-investor-info"
 
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+/** @type {React.Context<App>} */
+export const StateContext = Context;
 
 import "../sass/style.sass"
 
 export default class App extends BaseComponent {
 
-constructor(props) {
+  constructor(props) {
     super(props);
 
+    this.deafultTitle = "ТОР";
+
+    /**
+     * Дефолтный стейт
+     */
     this.initialState = {
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       id: null,
 
@@ -92,14 +99,16 @@ constructor(props) {
     };
 
     this.state = {
-      ...this.initialState,
-      ...{
-        tools: [],
+      // Копирует `state` из BaseComponent
+      ...this.state,
 
-        toolsStorage: [],
+      ...cloneDeep(this.initialState),
 
-        saves: [],
-      }
+      tools: [],
+
+      toolsStorage: [],
+
+      saves: [],
     };
 
     this.state.loading = true;
@@ -111,8 +120,7 @@ constructor(props) {
   }
 
   componentDidMount() {
-    super.bindEvents();
-    // this.bindEvents();
+    this.bindEvents();
     this.fetchInitialData()
   }
 
@@ -164,60 +172,31 @@ constructor(props) {
   }
 
   bindEvents() {
-
-  }
-  
-  fetchInitialData() {
-    this.fetchInvestorInfo();
-    this.fetchTools()
-      .then(() => this.setFetchingToolsTimeout())
-    if (dev) {
-      // this.loadFakeSave();
-      setTimeout(() => this.setState({ loading: false }), 1_000);
-      return;
-    }
-    this.fetchSaves()
+    super.bindEvents();
   }
 
-  loadFakeSave() {
-    this.setState({ loading: true });
-
-    setTimeout(() => {
-      let { saves } = this.state;
-      let save = {
-        error: false,
-        data: {
-          id: 21,
-          name: "Новое сохранение",
-          dateCreate: 1602504603,
-          static: `{"depo":1000000,"items":[{"id":1,"selectedToolName":"AFLT-3.21","drawdown":100000,"contracts":40,"additionalLoading":45,"stepExpected":10,"directUnloading":true,"isLong":false,"freeMoney":0,"pointsAgainst":0,"incomeExpected":0,"additionalLoading2":45,"stepExpected2":10}],"customTools":[],"current_date":"#"}`
-        }
-      };
-  
-      const index = 0;
-      this.extractSave(save.data);
-  
-      saves[index] = {
-        id:      save.data.id,
-        name:    save.data.name,
-      };
-      this.setState({ 
-        saves, 
-        currentSaveIndex: index + 1,
-        loading: false
-      });
-    }, 1500);
-  }
-
-  fetchInvestorInfo() {
-    fetch("getInvestorInfo")
-      .then(response => this.applyInvestorInfo(response))
+  async fetchInitialData() {
+    this.fetchInvestorInfo()
       .then(response => {
-        console.log(response);
-        return this.setStateAsync({ depo: response.data.deposit || 10_000 })
+        const { deposit } = response.data;
+        this.initialState.investorDepo = deposit;
+        this.setState({ investorDepo: deposit });
       })
-      .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
-      .catch(err => this.showAlert(`Не удалось получить начальный депозит! ${err}`));
+      .catch(error => {
+        if (dev) {
+          const deposit = 10_000;
+          this.initialState.investorDepo = deposit;
+          this.setState({ investorDepo: deposit });
+        }
+      });
+
+    this.fetchTools();
+    await this.fetchSnapshots();
+    await this.fetchLastModifiedSnapshot({ fallback: this.getTestSpapshot() });
+  }
+
+  getTestSpapshot() {
+    return require("./snapshot.json");
   }
   
   setFetchingToolsTimeout() {
@@ -263,111 +242,6 @@ constructor(props) {
     })
   }
 
-  prefetchTools() {
-    return new Promise(resolve => {
-      Tools.storage = [];
-      const requests = [];
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        const { investorInfo } = this.state;
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(Tools.storage.concat(tools)))
-            .then(tools => {
-              Tools.storage = [...tools];
-            })
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        )
-      }
-
-      Promise.all(requests).then(() => resolve())
-    })
-  }
-
-  fetchTools() {
-    return new Promise(resolve => {
-      let first = true;
-      const requests = [];
-      this.setState({ toolsLoading: true });
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        const { investorInfo } = this.state;
-        fetch(request)
-          .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-          .then(tools => Tools.sort(this.state.tools.concat(tools)))
-          .then(tools => this.setStateAsync({ tools }))
-          .then(syncToolsWithInvestorInfo.bind(this, null, { useDefault: true }))
-          .then(() => {
-            if (first) {
-              first = false;
-              const selectedToolName = this.getTools()[0].getSortProperty();
-              this.setStateAsync({ selectedToolName });
-            }
-          })
-          .catch(error => console.error(error));
-      }
-
-    Promise.all(requests)
-      .then(() => this.setStateAsync({ toolsLoading: false }))
-      .then(() => resolve())
-    })
-  }
-
-  fetchSaves() {
-    return new Promise((resolve, reject) => {
-
-      fetchSavesFor("tor")
-        .then(response => {
-          const saves = response.data.sort((l, r) => r.dateUpdate - l.dateUpdate);
-          return new Promise(resolve => this.setState({ saves, loading: false }, () => resolve(saves)))
-        })
-  
-      fetch("getLastModifiedTorSnapshot")
-        .then(response => {
-          // TODO: нужен метод проверки адекватности ответа по сохранению для всех проектов
-          if (!response.error && response.data?.name) {
-            const pure = params.get("pure") === "true";
-            if (!pure) {
-              this.setState({ loading: true });
-              return this.extractSave(response.data)
-                .then(resolve())
-                .catch(error => reject(error));
-            }
-          }
-          resolve();
-        })
-        .catch(reason => {
-          this.showAlert(`Не удалось получить сохранения! ${reason}`);
-          reject(reason);
-        })
-        .finally(() => {
-          if (dev) {
-            const response = {
-              "error": false,
-              "data": {
-                "id": 0,
-                "name": null,
-                "dateCreate": 0,
-                "dateUpdate": 0,
-                "static": null
-              }
-            };
-  
-            const saves = [{
-              "id": response.data.id,
-              "name": response.data.name,
-              "dateCreate": response.data.dateCreate,
-            }];
-  
-            this.setStateAsync({ saves }).then(() => {
-              if (!response.error && response.data?.name) {
-                this.extractSave(response.data)
-              }
-            })
-          }
-        })
-    })
-  }
-
   showAlert(msg = "") {
     console.log(`%c${msg}`, "background: #222; color: #bada55");
     if (!dev) {
@@ -390,10 +264,6 @@ constructor(props) {
 
     console.log("Save packed!", json);
     return json;
-  }
-
-  validateSave() {
-    return true;
   }
 
   extractSave(save) {
@@ -443,155 +313,17 @@ constructor(props) {
     return this.setStateAsync(state)
   }
 
-  reset() {
-    return new Promise(resolve => this.setState(JSON.parse(JSON.stringify(this.initialState)), () => resolve()))
-  }
-
-  save(name = "") {
-    return new Promise((resolve, reject) => {
-      if (!name) {
-        reject("Name is empty!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        name,
-        static: JSON.stringify(json.static),
-      };
-
-      fetch("addTorSnapshot", "POST", data)
-        .then(res => {
-          console.log(res);
-
-          let id = Number(res.id);
-          if (id) {
-            console.log("Saved with id = ", id);
-            this.setState({ id }, () => resolve(id));
-          }
-          else {
-            reject(`Произошла незвестная ошибка! Пожалуйста, повторите действие позже еще раз`);
-          }
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  update(name = "") {
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-      };
-      fetch("updateTorSnapshot", "POST", data)
-        .then(res => {
-          console.log("Updated!", res);
-          resolve();
-        })
-        .catch(err => console.log(err));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteTorSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-            this.fetchSaveById(id)
-              .then(save => this.extractSave(Object.assign(save, { id })))
-              .then(() => this.setState({ id }))
-              .catch(err => this.showAlert(err));
-          }
-          else {
-            this.reset()
-              .catch(err => this.showAlert(err));
-
-            saved = changed = false;
-          }
-
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
-  }
-
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools)
-  }
-
-  getTitle() {
-    const { saves, currentSaveIndex, id } = this.state;
-    let title = "ТОР";
-
-    if (id && saves[currentSaveIndex - 1]) {
-      title = saves[currentSaveIndex - 1].name;
-    }
-
-    return title;
+  extractSnapshot(snapshot) {
+    return this.extractSave(snapshot);
   }
 
   render() {
     return (
-      <Provider value={this}>
+      <Context.Provider value={this}>
         <div className="page">
           <main className="main">
             
-            <Header 
-              onSaveChange={currentSaveIndex => {
-                const { saves } = this.state;
-
-                this.setState({ currentSaveIndex });
-
-                if (currentSaveIndex === 0) {
-                  this.reset();
-                }
-                else {
-                  const id = saves[currentSaveIndex - 1].id;
-                  this.setState({ loading: true });
-                  this.fetchSaveById(id)
-                    .then(response => this.extractSave(response.data))
-                    .catch(error => this.showAlert(error));
-                }
-              }}
-              onSave={e => {
-                const { saved, changed } = this.state;
-
-                if (saved && changed) {
-                  this.update(this.getTitle());
-                  this.setState({ changed: false });
-                }
-                else {
-                  dialogAPI.open("dialog1", e.target);
-                }
-              }}
-            />
+            <Header />
 
             <div className="main-content">
               <div className="container">
@@ -669,204 +401,9 @@ constructor(props) {
           </main>
           {/* /.main */}
 
-          {(() => {
-            let { saves, id } = this.state;
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = (id) ? this.getTitle() : "Новое сохранение";
+          <SaveDialog />
 
-            function validate(str = "") {
-              str = str.trim();
-
-              let errors = [];
-
-              let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(str);
-              if (str.length < 3) {
-                errors.push("Имя должно содержать не меньше трех символов!");
-              }
-              else if (test) {
-                errors.push(`Нельзя использовать символ "${test[0]}"!`);
-              }
-              if (!id) {
-                if (namesTaken.indexOf(str) > -1) {
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={20}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-
-            let onConfirm = () => {
-              let { id, data, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(err => this.showAlert(err));
-              }
-              else {
-                const onResolve = (id) => {
-                  let index = saves.push({ id, name });
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(err => this.showAlert(err));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
-
-          <Dialog
-            id="dialog4"
-            title="Удаление трейдометра"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Config
             id="config"
@@ -926,9 +463,9 @@ constructor(props) {
           })()}
           {/* Error Popup */}
         </div>
-      </Provider>
+      </Context.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App }

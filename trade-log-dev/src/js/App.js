@@ -18,6 +18,7 @@ import DeleteDialog from "../../../common/components/delete-dialog";
 import BaseComponent, { Context } from "../../../common/components/BaseComponent";
 /** @type {React.Context<App>} */
 export const StateContext = Context;
+import customTasksParse from "./utils/custom-tasks-parse";
 
 import Header      from "../../../common/components/header";
 import Diary       from "./components/diary";
@@ -823,6 +824,11 @@ export default class App extends BaseComponent {
     let readyWorkTasksCheckTime = parsedSnapshot.readyWorkTasksCheckTime ?? initialState.readyWorkTasksCheckTime;
     let tasks = parseTasks(data);
     delete tasks.count;
+    
+    // проверка всех кастомных тасков и подставление недостающих
+    customTasksParse(data, "customTechnology");
+    customTasksParse(data, "customPracticeWorkTasks");
+    
     Object.keys(tasks).forEach(taskName => {
       if (tasks[taskName].done === tasks[taskName].checked && !readyWorkTasksCheckTime[taskName]) {
         readyWorkTasksCheckTime[taskName] = Number(new Date());

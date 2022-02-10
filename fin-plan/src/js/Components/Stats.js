@@ -136,7 +136,7 @@ export default class Stats extends React.Component {
                   {(() => {
                     return (
                       numericKeys.map((numericKey, columnIndex) =>
-                        <div className="dashboard-col">
+                        <div key={columnIndex} className="dashboard-col">
 
                           {/* Выводится только в последней строке */}
                           <span className="dashboard-key dashboard-key-result">
@@ -165,7 +165,7 @@ export default class Stats extends React.Component {
                         {/* Перебор массива и рендеринг каждой отдельного стобца */ }
                         return (
                           numericKeys.map((numericKey, columnIndex) =>
-                            <div className="dashboard-col">
+                            <div key={columnIndex} className="dashboard-col">
 
                               <span className="dashboard-key dashboard-key-result">
                                 {formatNumber(data[numericKeys.length + 2 + columnIndex] * multiplier)}

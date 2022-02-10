@@ -23,26 +23,31 @@ import "../sass/style.sass"
 
 import NumericInput           from "../../../common/components/numeric-input"
 import Stack                  from "../../../common/components/stack"
-import Header                 from "./components/header"
+import Header                 from "../../../common/components/header"
+import SaveDialog             from "../../../common/components/save-dialog"
+import DeleteDialog           from "../../../common/components/delete-dialog"
 import Dashboard              from "./components/Dashboard"
 import Credit                 from "./Components/Credit"
 import Stats                  from "./Components/Stats"
 import Footer                 from "./components/footer"
 import ActiveIncomeCalculator from "./components/ActiveIncomeCalculator"
 
+import BaseComponent, { Context } from "../../../common/components/BaseComponent";
+/** @type {React.Context<App>} */
+export const StateContext = Context;
+
 let scrollInitiator;
 
-class App extends React.Component {
+export default class App extends BaseComponent {
 
   constructor(props) {
     super(props);
 
-    this.initialState = {
+    this.deafultTitle = "Финансовый планировщик";
 
-      loading: false,
-      id: null,
-      saved: false,
-      changed: false,
+    this.initialState = {
+      // Копирует `initialState` из BaseComponent
+      ...this.initialState,
 
       incomeTools: ["Работа", "Бизнес", "Пассивный доход"],
       paymentTools: [
@@ -272,21 +277,20 @@ class App extends React.Component {
     };
 
     this.state = {
-      ...this.initialState,
-      saves: [],
-      currentSaveIndex: 0,
-    };
+      // Копирует `state` из BaseComponent
+      ...this.state,
+
+      ...cloneDeep(this.initialState)
+    }
 
     // Bindings
     this.applyInvestorInfo = applyInvestorInfo.bind(this);
     this.fetchSaveById = fetchSaveById.bind(this, "Finplan");
   }
 
-  setStateAsync(state = {}) {
-    return new Promise(resolve => this.setState(state, resolve))
-  }
-
   bindEvents() {
+    super.bindEvents();
+
     // При наведении мыши на .dashboard-extra-container, элемент записывается в `scrollInitiator`
     $(document).on("mouseenter", ".dashboard-extra-container", function (e) {
       scrollInitiator = e.target.closest(".dashboard-extra-container");
@@ -303,17 +307,6 @@ class App extends React.Component {
     }, true /* Capture event */);
   }
 
-  componentDidMount() {
-    this.bindEvents();
-
-    this.updateLoanArr();
-
-    this.fetchBonds();
-    // this.fetchInvestorInfo();
-    this.fetchSnapshots();
-    this.fetchLastModifiedSnapshot();
-  }
-
   componentDidUpdate(prevProps, prevState) {
     const { id, saves } = this.state;
     if (prevState.id != id || !isEqual(prevState.saves, saves)) {
@@ -324,92 +317,27 @@ class App extends React.Component {
     }
   }
 
-  /* API */
+  componentDidMount() {
+    this.bindEvents();
+    this.fetchInitialData();
+  }
 
+  /* API */
+  async fetchInitialData() {
+    this.updateLoanArr();
+    this.fetchBonds();
+
+    await this.fetchSnapshots();
+    await this.fetchLastModifiedSnapshot({ fallback: this.getTestSpapshot() });
+  }
+
+  getTestSpapshot() {
+    return require("./snapshot.json");
+  }
+  
   async fetchBonds() {
     const passiveIncomeTools = await fetchBonds();
     return this.setStateAsync({ passiveIncomeTools });
-  }
-
-  fetchInvestorInfo() {
-    return new Promise((resolve, reject) => {
-      fetch("getInvestorInfo")
-        .then(this.applyInvestorInfo)
-        .then(response => {
-          const depo = response.data.deposit || 10_000;
-          return this.setStateAsync({ depo });
-        })
-        .then(() => resolve())
-        .catch(reason => message.error(`Не удалось получить профиль инвестора: ${reason}`))
-        .finally(() => {
-          if (dev) {
-            this.setStateAsync({
-              investorInfo: {
-                email: "justbratka@ya.ru",
-                deposit: 1_500_000,
-                status: "KSUR",
-                skill: "SKILLED",
-                type: "LONG"
-              }
-            })
-          }
-        })
-    })
-  }
-
-  async fetchSnapshots() {
-    try {
-      await this.setStateAsync({ loading: true });
-      const saves = await fetchSnapshotsFor("finplan");
-      return this.setStateAsync({ saves, loading: false });
-    }
-    catch (error) {
-      message.error(error);
-    }
-  }
-
-  fetchLastModifiedSnapshot() {
-    return fetchLastModifiedSnapshot("finplan")
-      .then(async save => {
-        console.log(save);
-        if (save == null) {
-          return;
-        }
-
-        const pure = params.get("pure") === "true";
-        if (!pure) {
-          await this.setStateAsync({ loading: true });
-          return this.extractSnapshot(save);
-        }
-      })
-      .catch(error => {
-        message.error(`Не удалось получить последнее сохранение: ${error}`);
-        throw error;
-      })
-      .finally(() => {
-        if (dev) {
-          const response = {
-            "error": false,
-            "data": {
-              "id": 0,
-              "name": null,
-              "dateCreate": 0,
-              "dateUpdate": 0,
-              "static": null
-            }
-          };
-
-          const { error, data } = response;
-          const { id, name, dateCreate } = data;
-          const saves = [{ id, name, dateCreate }];
-
-          this.setStateAsync({ saves }).then(() => {
-            if (!error && data?.name) {
-              this.extractSnapshot(data)
-            }
-          })
-        }
-      })
   }
 
   packSave() {
@@ -443,7 +371,7 @@ class App extends React.Component {
     return json;
   }
 
-  parseSnapshot(snapshot) {
+  parseSnapshot = snapshot => {
     const parsedStatic = JSON.parse(snapshot);
     console.log("Parsed static", parsedStatic);
 
@@ -451,152 +379,20 @@ class App extends React.Component {
 
     const state = {};
     // TODO:
-    state.depo = parsedStatic.depo ?? initialState.depo;
-    state.incomeTools = parsedStatic.incomeTools ?? initialState.incomeTools;
-    state.paymentTools = parsedStatic.paymentTools ?? initialState.paymentTools;
-    state.incomeArr = parsedStatic.incomeArr ?? initialState.incomeArr;
-    state.paymentArr = parsedStatic.paymentArr ?? initialState.paymentArr;
-    state.desirableArr = parsedStatic.desirableArr ?? initialState.desirableArr;
-    state.loanArr = parsedStatic.loanArr ?? initialState.loanArr;
-    state.savingsArr = parsedStatic.savingsArr ?? initialState.savingsArr;
+    state.depo                = parsedStatic.depo                ?? initialState.depo;
+    state.incomeTools         = parsedStatic.incomeTools         ?? initialState.incomeTools;
+    state.paymentTools        = parsedStatic.paymentTools        ?? initialState.paymentTools;
+    state.incomeArr           = parsedStatic.incomeArr           ?? initialState.incomeArr;
+    state.paymentArr          = parsedStatic.paymentArr          ?? initialState.paymentArr;
+    state.desirableArr        = parsedStatic.desirableArr        ?? initialState.desirableArr;
+    state.loanArr             = parsedStatic.loanArr             ?? initialState.loanArr;
+    state.savingsArr          = parsedStatic.savingsArr          ?? initialState.savingsArr;
     state.targetPassiveIncome = parsedStatic.targetPassiveIncome ?? initialState.targetPassiveIncome;
 
     return state;
   }
 
   // TODO: убедиться, что все extractSnapshot переименованы в extractSnapshot
-  /**
-   * @param {{ id: number, name: string, dateCreate: number, dateUpdate: number, static: {} }} snapshot
-   */
-  extractSnapshot(snapshot) {
-    const { saves } = this.state;
-    const { id } = snapshot;
-
-    let state = {
-      id,
-      saved: true,
-      loading: false
-    };
-
-    try {
-      state = {
-        ...state,
-        ...this.parseSnapshot(snapshot.static),
-      };
-    }
-    catch (error) {
-      message.error(error);
-
-      state = {
-        id,
-        saved: true,
-        loading: false
-      };
-    }
-
-    console.log("Parsing snapshot finished!", state);
-    return this.setStateAsync(state)
-  }
-
-  reset() {
-    const initialState = JSON.parse(JSON.stringify(this.initialState));
-    return this.setStateAsync(initialState);
-  }
-
-  async save(name = "") {
-    if (!name) {
-      throw "Название сохранения пустое";
-    }
-
-    const json = this.packSave();
-    const data = {
-      name,
-      static: JSON.stringify(json.static),
-    };
-
-    try {
-      const response = await fetch("addFinplanSnapshot", "POST", data);
-      message.success("Сохранено!");
-
-      const { id } = response;
-      if (id) {
-        await this.setStateAsync({ id });
-        return id;
-      }
-      else {
-        throw "Произошла незвестная ошибка! Пожалуйста, повторите действие позже";
-      }
-    } catch (error) {
-      message.error(`Произошла ошибка: ${error}`);
-    }
-  }
-
-  update(name = "") {
-    const { id } = this.state;
-    return new Promise((resolve, reject) => {
-      if (dev) {
-        resolve();
-      }
-
-      if (!id) {
-        reject("id must be present!");
-      }
-
-      const json = this.packSave();
-      const data = {
-        id,
-        name,
-        static: JSON.stringify(json.static),
-      };
-      fetch("updateFinplanSnapshot", "POST", data)
-        .then(response => {
-          console.log("Updated!", response);
-          resolve();
-        })
-        .catch(error => console.error(error));
-    })
-  }
-
-  delete(id = 0) {
-    console.log(`Deleting id: ${id}`);
-
-    return new Promise((resolve, reject) => {
-      fetch("deleteFinplanSnapshot", "POST", { id })
-        .then(() => {
-          let {
-            id,
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          } = this.state
-
-          saves.splice(currentSaveIndex - 1, 1);
-
-          currentSaveIndex = Math.min(Math.max(currentSaveIndex, 1), saves.length);
-
-          if (saves.length > 0) {
-            id = saves[currentSaveIndex - 1].id;
-            this.fetchSaveById(id)
-              .then(save => this.extractSnapshot(Object.assign(save, { id })))
-              .then(() => this.setState({ id }))
-              .catch(error => message.error(error));
-          }
-          else {
-            this.reset();
-            saved = changed = false;
-          }
-
-          this.setState({
-            saves,
-            saved,
-            changed,
-            currentSaveIndex,
-          }, resolve);
-        })
-        .catch(err => reject(err));
-    });
-  }
 
   updateLoanArr() {
     const { incomeArr } = this.state;
@@ -669,30 +465,8 @@ class App extends React.Component {
       .reduce((acc, curr) => acc + curr, 0)
   }
 
-  getTitleJSX() {
-    const { saves, currentSaveIndex } = this.state;
-    let titleJSX = <span>Финансовый планировщик</span>;
-    if (saves && saves[currentSaveIndex - 1]) {
-      titleJSX = <span>{saves[currentSaveIndex - 1].name}</span>;
-    }
-    return titleJSX;
-  }
-
-  /**
-   * Возвращает название текущего сейва (по дефолту возвращает строку "Моделирование Торговой Стратегии") */
-  getTitle() {
-    return this.getTitleJSX().props.children;
-  }
-
   render() {
     const {
-      loading,
-      id,
-      saved,
-      saves,
-      currentSaveIndex,
-      changed,
-
       incomeArr,
       incomeTools,
       paymentArr,
@@ -742,46 +516,11 @@ class App extends React.Component {
       .reduce((acc, curr) => acc + curr, 0);
 
     return (
-      <Provider value={this}>
+      <Context.Provider value={this}>
         <div className="page">
 
           <main className="main">
-
-            <Header
-              title={this.getTitleJSX()}
-              loading={loading}
-              saves={saves}
-              currentSaveIndex={currentSaveIndex}
-              changed={changed}
-              saved={saved}
-              onSaveChange={currentSaveIndex => {
-                const { saves } = this.state;
-
-                this.setState({ currentSaveIndex });
-
-                if (currentSaveIndex === 0) {
-                  this.reset().catch(error => console.warn(error));
-                }
-                else {
-                  const id = saves[currentSaveIndex - 1].id;
-                  this.setState({ loading: true });
-                  this.fetchSaveById(id)
-                    .then(response => this.extractSnapshot(response.data))
-                    .catch(error => message.error(error));
-                }
-              }}
-              onSave={e => {
-                const { saved, changed } = this.state;
-                if (saved && changed) {
-                  this.update(this.getTitle());
-                  this.setState({ changed: false });
-                }
-                else {
-                  dialogAPI.open("dialog1", e.target);
-                }
-              }}
-            />
-
+            <Header/>
             <div className="hdOptimize" >
               <div className="main-content">
 
@@ -1134,210 +873,9 @@ class App extends React.Component {
           </main>
           {/* /.main */}
 
-          {(() => {
-            const { saves, id } = this.state;
-            const currentTitle = this.getTitle();
-            let namesTaken = saves.slice().map(save => save.name);
-            let name = id ? currentTitle : "Новое сохранение";
+          <SaveDialog />
 
-            /**
-             * Проверяет, может ли данная строка быть использована как название сейва
-             * 
-             * @param {String} nameToValidate
-             * 
-             * @returns {Array<String>} Массив ошибок (строк). Если текущее название валидно, массив будет пустым
-             */
-            const validate = (nameToValidate = "") => {
-              nameToValidate = nameToValidate.trim();
-
-              let errors = [];
-              if (nameToValidate != currentTitle) {
-                let test = /[\!\?\@\#\$\%\^\&\*\+\=\`\"\"\;\:\<\>\{\}\~]/g.exec(nameToValidate);
-                if (nameToValidate.length < 3) {
-                  errors.push("Имя должно содержать не меньше трех символов!");
-                }
-                else if (test) {
-                  errors.push(`Нельзя использовать символ "${test[0]}"!`);
-                }
-                if (namesTaken.indexOf(nameToValidate) > -1) {
-                  console.log();
-                  errors.push(`Сохранение с таким именем уже существует!`);
-                }
-              }
-              return errors;
-            }
-
-            class ValidatedInput extends React.Component {
-
-              constructor(props) {
-                super(props);
-
-                let { defaultValue } = props;
-
-                this.state = {
-                  error: "",
-                  value: defaultValue || ""
-                }
-              }
-              vibeCheck() {
-                const { validate } = this.props;
-                let { value } = this.state;
-
-                let errors = validate(value);
-                this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                return errors;
-              }
-
-              render() {
-                const { validate, label } = this.props;
-                const { value, error } = this.state;
-
-                return (
-                  <label className="save-modal__input-wrap">
-                    {
-                      label
-                        ? <span className="save-modal__input-label">{label}</span>
-                        : null
-                    }
-                    <Input
-                      className={
-                        ["save-modal__input"]
-                          .concat(error ? "error" : "")
-                          .join(" ")
-                          .trim()
-                      }
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      value={value}
-                      maxLength={20}
-                      onChange={e => {
-                        let { value } = e.target;
-                        let { onChange } = this.props;
-
-                        this.setState({ value });
-
-                        if (onChange) {
-                          onChange(value);
-                        }
-                      }}
-                      onKeyDown={e => {
-                        // Enter
-                        if (e.keyCode === 13) {
-                          let { value } = e.target;
-                          let { onBlur } = this.props;
-
-                          let errors = validate(value);
-                          if (errors.length === 0) {
-                            if (onBlur) {
-                              onBlur(value);
-                            }
-                          }
-
-                          this.setState({ error: (errors.length > 0) ? errors[0] : "" });
-                        }
-                      }}
-                      onBlur={() => {
-                        this.vibeCheck();
-                      }} />
-
-                    <span className={
-                      ["save-modal__error"]
-                        .concat(error ? "visible" : "")
-                        .join(" ")
-                        .trim()
-                    }>
-                      {error}
-                    </span>
-                  </label>
-                )
-              }
-            }
-            let onConfirm = () => {
-              let { id, data, saves, currentSaveIndex } = this.state;
-
-              if (id) {
-                this.update(name)
-                  .then(() => {
-                    saves[currentSaveIndex - 1].name = name;
-                    this.setState({
-                      saves,
-                      changed: false,
-                    })
-                  })
-                  .catch(error => message.error(error));
-              }
-              else {
-                const onResolve = id => {
-                  // TODO: проверить, возвращается ли
-                  let index = saves.push({ id, name });
-
-                  this.setState({
-                    data,
-                    saves,
-                    saved: true,
-                    changed: false,
-                    currentSaveIndex: index,
-                  });
-                };
-
-                this.save(name)
-                  .then(onResolve)
-                  .catch(error => message.error(error));
-
-                if (dev) {
-                  onResolve();
-                }
-              }
-            }
-
-            let inputJSX = (
-              <ValidatedInput
-                label="Название сохранения"
-                validate={validate}
-                defaultValue={name}
-                onChange={val => name = val}
-                onBlur={() => { }} />
-            );
-            let modalJSX = (
-              <Dialog
-                id="dialog1"
-                className="save-modal"
-                title={"Сохранение"}
-                onConfirm={() => {
-                  if (validate(name).length) {
-                    console.error(validate(name)[0]);
-                  }
-                  else {
-                    onConfirm();
-                    return true;
-                  }
-                }}
-              >
-                {inputJSX}
-              </Dialog>
-            );
-
-            return modalJSX;
-          })()}
-          {/* Save Popup */}
-
-          <Dialog
-            id="dialog4"
-            title="Удаление сохранения"
-            confirmText={"Удалить"}
-            onConfirm={() => {
-              const { id } = this.state;
-              this.delete(id)
-                .then(() => console.log("Deleted!"))
-                .catch(err => console.warn(err));
-              return true;
-            }}
-          >
-            Вы уверены, что хотите удалить {this.getTitle()}?
-          </Dialog>
-          {/* Delete Popup */}
+          <DeleteDialog />
 
           <Config
             id="config"
@@ -1399,9 +937,9 @@ class App extends React.Component {
           {/* Error Popup */}
 
         </div>
-      </Provider>
+      </Context.Provider>
     );
   }
 }
 
-export { App, Consumer }
+export { App }

@@ -1,0 +1,10 @@
+{
+  "error": false,
+  "data": {
+    "id": 55,
+    "name": "TOR - test",
+    "dateCreate": 1619636445,
+    "dateUpdate": 1635871640,
+    "static": "{\"items\":[{\"id\":1,\"selectedToolName\":\"SBER\",\"drawdown\":2000,\"contracts\":4,\"additionalLoading\":20,\"stepExpected\":1,\"directUnloading\":true,\"isLong\":false,\"freeMoney\":0,\"pointsAgainst\":0,\"incomeExpected\":0}],\"customTools\":[],\"current_date\":\"#\"}"
+  }
+}

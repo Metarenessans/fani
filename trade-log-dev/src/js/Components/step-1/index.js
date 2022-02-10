@@ -131,17 +131,31 @@ export default class FirstStep extends React.Component {
                             }}
                           />
                           {/* Торговый инструмент */}
-                          <ToolSelect
-                            value={Tools.getToolIndexByCode(tools, currentToolCode)}
-                            onChange={currentToolIndex => {
-                              const currentTool = tools[currentToolIndex];
-                              const currentToolCode = currentTool.code;
+                          {(() => {
+                            let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+                            let currentTool = tools[currentToolIndex] ?? Tools.createArray()[0];
 
-                              const data = cloneDeep(state.data);
-                              data[currentRowIndex].expectedDeals[index].currentToolCode = currentToolCode;
-                              context.setState({ data });
-                            }}
-                          />
+                            let depoPersentageStart = currentTool.guarantee / depo * 100;
+                            if (depoPersentageStart < 0) {
+                              depoPersentageStart = 0;
+                            }
+
+                            return (
+                              <ToolSelect
+                                tooltipPlacement="right"
+                                errorMessage={depoPersentageStart > 100 && "Недостаточный депозит для покупки 1 контракта!"}
+                                value={Tools.getToolIndexByCode(tools, currentToolCode)}
+                                onChange={currentToolIndex => {
+                                  const currentTool = tools[currentToolIndex];
+                                  const currentToolCode = currentTool.code;
+    
+                                  const data = cloneDeep(state.data);
+                                  data[currentRowIndex].expectedDeals[index].currentToolCode = currentToolCode;
+                                  context.setState({ data });
+                                }}
+                              />
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -156,26 +170,33 @@ export default class FirstStep extends React.Component {
                               {(() => {
                                 let currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
                                 let currentTool = tools[currentToolIndex];
-                                let step = currentTool?.guarantee / depo * 100;
-                                if (step > 100) {
-                                  for (let i = 0; i < tools.length; i++) {
-                                    let s = tools[i].guarantee / depo * 100;
-                                    if (s < 100) {
-                                      const data = cloneDeep(state.data);
-                                      data[currentRowIndex].expectedDeals[index].currentToolCode = tools[i].code;
-                                      context.setState({ data });
-                                      step = s;
-                                      break;
-                                    }
-                                  }
-                                }
+                                
+                                let step = currentTool.guarantee / depo * 100;
+                                let depoPersentageStart = currentTool.guarantee / depo * 100;
                                 let min = step;
+                                let max = 100;
+                                let disabled = false;
+
+                                // Прижимает ползунок к правому краю, дизейблит его и ставит значение 100%
+                                if (depoPersentageStart > 100) {
+                                  disabled = true;
+                                  step = 100;
+                                  min = 0;
+                                }
+
+                                // Прижимает ползунок к правому краю и дизейблит его
+                                if (step * 2 > 100) {
+                                  disabled = true;
+                                  min = 0;
+                                  max = depoPersentageStart;
+                                }
 
                                 return (
                                   <CustomSlider
+                                    disabled={disabled}
                                     value={load}
                                     min={min}
-                                    max={100}
+                                    max={max}
                                     step={step}
                                     precision={2}
                                     filter={val => val + "%"}

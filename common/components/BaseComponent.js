@@ -157,11 +157,11 @@ export default class BaseComponent extends React.Component {
     window.addEventListener("keyup", e => {
       // Пасхалка
       if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
-        const file = new Blob([JSON.stringify(window.easterEgg)], { type: "text/plain" });
+        const file = new Blob([JSON.stringify(window.easterEgg, null, 2)], { type: "text/plain" });
 
         const link = document.createElement("a");
         link.href = URL.createObjectURL(file);
-        link.setAttribute("download", "easter_egg.txt");
+        link.setAttribute("download", "easter_egg.json");
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -308,7 +308,11 @@ export default class BaseComponent extends React.Component {
    */
   async fetchTools() {
     await this.setStateAsync({ toolsLoading: true });
-    const tools = await this.prefetchTools();
+    let tools = await this.prefetchTools();
+    if (!tools) {
+      console.warn(`Метод prefetchTools вернул ${tools}!`);
+      tools = [];
+    }
     await this.setStateAsync({ toolsLoading: false, tools });
     return tools;
   }
