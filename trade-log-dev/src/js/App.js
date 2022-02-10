@@ -548,7 +548,7 @@ export default class App extends BaseComponent {
       const oldTimeoutMinutes = cloneDeep(this.state.timeoutMinutes);
       const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
       for (let i = 0; i < timeoutMinutes.length; i++) {
-        if (timeoutMinutes[i] === 9999) {
+        if (timeoutMinutes[i] >= 9999) {
           continue;
         }
         timeoutMinutes[i] -= 1;
@@ -864,17 +864,19 @@ export default class App extends BaseComponent {
         if (timeoutStartTime[i] == null) {
           continue;
         }
+
         let msElapsed = Number(new Date()) - timeoutStartTime[i];
         if (msElapsed < 0) {
           msElapsed = 0;
         }
         
-        const minElapsed = Math.floor(msElapsed / 1_000 / 60);
-
-        const prevValue = timeoutMinutes[i];
-        timeoutMinutes[i] -= minElapsed;
+        const minutesElapsed = Math.floor(msElapsed / 1_000 / 60);
+        timeoutMinutes[i] -= minutesElapsed;
         if (timeoutMinutes[i] < 0) {
           timeoutMinutes[i] = 0;
+        }
+        else if (timeoutMinutes[i] > 60) {
+          timeoutMinutes[i] = 9999;
         }
       }
 
