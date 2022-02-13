@@ -220,7 +220,8 @@ class App extends BaseComponent {
   
   setFetchingToolsTimeout() {
     return new Promise(resolve => {
-      console.log("staring 10sec timeout");
+      const ms = dev ? 15_000 : 1 * 60 * 1_000;
+      console.log(`Staring ${ms / 1_000}sec timeout`);
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
@@ -238,7 +239,7 @@ class App extends BaseComponent {
             });
         }
         else resolve();
-      }, dev ? 15_000 : 1 * 60 * 1_000);
+      }, ms);
 
     }).then(() => this.setFetchingToolsTimeout());
   }
