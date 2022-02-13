@@ -319,29 +319,25 @@ class App extends BaseComponent {
     return json;
   }
 
-  parseSnapshot = data => {
+  parseSnapshot = parsedStatic => {
     let state = {};
     try {
-      data.data.map(item => {
-        delete item.selectedToolCode;
-        return item;
-      });
-
-      // console.log("static", save.static);
-      // console.log("staticParsed", staticParsed);
-
-      let m = data.mode;
+      let m = parsedStatic.mode;
       if (typeOf(m) === "array") {
         m = Number(m[0]);
       }
 
       state.mode = m;
-      state.sortProp = data.sortProp;
-      state.sortDESC = data.sortDESC;
+      state.sortProp = parsedStatic.sortProp;
+      state.sortDESC = parsedStatic.sortDESC;
 
-      state.depo = data.depo || this.state.depo;
-      state.data = data.data;
-      state.data = state.data
+      state.depo = parsedStatic.depo || this.state.depo;
+
+      state.data = parsedStatic.data
+        .map(item => {
+          delete item.selectedToolCode;
+          return item;
+        })
         .map(item => {
           item = { ...defaultToolData, ...item };
 
@@ -353,7 +349,7 @@ class App extends BaseComponent {
           delete item.planIncome;
           return item;
         });
-      state.customTools = data.customTools || [];
+      state.customTools = parsedStatic.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tool.fromObject(tool, { investorInfo: this.state.investorInfo }));
     }
