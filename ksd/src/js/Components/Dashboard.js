@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { cloneDeep } from "lodash";
 import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -39,7 +39,6 @@ export default function Dashboard(props) {
               selectedToolName={item.selectedToolName}
               planIncome={item.planIncome}
               tools={context.getTools()}
-              options={context.getOptions()}
               onDropdownClose={() => context.imitateFetchcingTools()}
               onSort={(sortProp, sortDESC) => {
                 if (sortProp !== state.sortProp) {
@@ -48,15 +47,12 @@ export default function Dashboard(props) {
                 context.setState({ sortProp, sortDESC });
               }}
               onUpdate={async state => {
-                // const data = cloneDeep(state.data);
                 data[index] = {
                   ...cloneDeep(data[index]),
                   ...cloneDeep(state),
                   updatedOnce: true
                 };
                 context.dataBuffer = data;
-                // console.log("onUpdate", index);
-                // return context.setStateAsync({ data });
               }}
               onChange={async (prop, val) => {
                 if (prop == "isToolsDropdownOpen") {

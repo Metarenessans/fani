@@ -274,35 +274,8 @@ class App extends BaseComponent {
     return tools;
   }
 
-  fetchTools() {
-    return new Promise(resolve => {
-      const { investorInfo } = this.state;
-      const requests = [];
-      this.setState({ toolsLoading: true });
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(this.state.tools.concat(tools)))
-            .then(tools => this.setStateAsync({ tools }))
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        );
-      }
-
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ toolsLoading: false }))
-        .then(() => resolve());
-    });
-  }
-
   packSave() {
-    let { depo, sortProp, sortDESC, mode, customTools } = this.state;
-
-    const data = this.state.data.map(item => {
-      item.selectedToolName = item.realSelectedToolName;
-      delete item.realSelectedToolName;
-      return item;
-    });
+    let { depo, data, sortProp, sortDESC, mode, customTools } = this.state;
 
     const json = {
       static: {
@@ -370,20 +343,6 @@ class App extends BaseComponent {
     catch (error) {
       message.error(error);
     }
-  }
-
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools);
-  }
-
-  getOptions() {
-		return this.getTools().map((tool, idx) => {
-      return {
-        idx:   idx,
-        label: String(tool)
-      };
-    });
   }
 
   render() {

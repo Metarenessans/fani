@@ -1,5 +1,5 @@
 import React from "react";
-import { Tooltip, Select } from "antd";
+import { Tooltip } from "antd";
 import { isEqual, cloneDeep } from "lodash";
 import clsx from "clsx";
 
@@ -19,7 +19,6 @@ import fractionLength  from "../../../../common/utils/fraction-length";
 
 import DashboardKey from "./DashboardKey";
 
-const { Option } = Select;
 const withoutFunctions = obj => {
   const stringified = JSON.stringify(obj);
   const parsed = JSON.parse(stringified);
