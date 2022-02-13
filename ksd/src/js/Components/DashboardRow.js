@@ -163,6 +163,10 @@ export default class DashboardRow extends React.Component {
 
     const realSelectedToolName = tools[currentToolIndex].getSortProperty();
 
+    const toolNotFound =
+      selectedToolName.slice(0, currentTool.isFutures ? 2 : undefined) !==
+      realSelectedToolName.slice(0, currentTool.isFutures ? 2 : undefined);
+
     var planIncome = this.getPlanIncome();
 
     var contracts = Math.floor(depo * (percentage / 100) / currentTool.guarantee);
@@ -254,7 +258,12 @@ export default class DashboardRow extends React.Component {
           <span className="dashboard-key">Инструмент</span>
           <span className="dashboard-val">
             <ToolSelect
-              className="dashboard__select dashboard__select--wide"
+              errorMessage={toolNotFound && <span>Код инструмента не найден</span>}
+              errorTrigger="hover"
+              className={clsx(
+                "dashboard__select",
+                "dashboard__select--wide"
+              )}
               value={currentToolIndex}
               onChange={currentToolIndex => {
                 onDropdownClose();
