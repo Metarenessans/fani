@@ -20,6 +20,11 @@ import fractionLength  from "../../../../common/utils/fraction-length";
 import DashboardKey from "./DashboardKey";
 
 const { Option } = Select;
+const withoutFunctions = obj => {
+  const stringified = JSON.stringify(obj);
+  const parsed = JSON.parse(stringified);
+  return parsed;
+};
 
 export default class DashboardRow extends React.Component {
 
@@ -41,6 +46,11 @@ export default class DashboardRow extends React.Component {
       searchVal: "",
       planIncomeCustom: ""
     };
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return !isEqual(withoutFunctions(this.props), withoutFunctions(nextProps)) || 
+           !isEqual(this.state, nextState);
   }
 
   onScroll = () => {
