@@ -259,7 +259,7 @@ class App extends BaseComponent {
             Tools.storageReady = false;
             resolve();
           });
-        }, 2_000);
+        }, 700);
       }
       else {
         resolve();
