@@ -35,7 +35,10 @@ const initialState = {
   loading: false,
   snapshotIsSaved: true,
   snapshotIsChanged: false,
-  imageUrl: ""
+  imageUrl:   "",
+  nodeId:    "",
+  askNumber: "",
+  continueNaniSession: false,
 };
 
 export const GlobalContext = createContext(initialState);
@@ -579,6 +582,47 @@ export const GlobalProvider = ({ children }) => {
     }
   }
 
+  async function setNodeId (value) {
+    try {
+      dispatch({
+        type: "SET_NODE_ID",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+ 
+  async function setAskNumber(value) {
+    try {
+      dispatch({
+        type: "SET_ASK_NUMBER",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+  async function setContinueNaniSession(value) {
+    try {
+      dispatch({
+        type: "SET_COMTINUE_NANI_SESSION",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
+
   return (
     <GlobalContext.Provider
       value={{
@@ -598,6 +642,10 @@ export const GlobalProvider = ({ children }) => {
         currentSaveIdx: state.currentSaveIdx,
         customTools: state.customTools,
         imageUrl: state.imageUrl,
+        nodeId: state.nodeId,
+        askNumber: state.askNumber,
+        continueNaniSession: state.continueNaniSession,
+        
 
         setInitialState,
         setIsLoading,
@@ -627,7 +675,10 @@ export const GlobalProvider = ({ children }) => {
         addLoadTable,
         deleteLoadTable,
         updateDeposit,
-        setImageUrl
+        setImageUrl,
+        setNodeId,
+        setAskNumber,
+        setContinueNaniSession,
       }}
     >
       {children}

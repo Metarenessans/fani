@@ -223,6 +223,21 @@ export default (state, action) => {
         ...state,
         imageUrl: action.payload,
       };
+    case "SET_NODE_ID":
+      return {
+        ...state,
+        nodeId: action.payload,
+      };
+    case "SET_ASK_NUMBER":
+      return {
+        ...state,
+        askNumber: action.payload,
+      };
+    case "SET_COMTINUE_NANI_SESSION":
+      return {
+        ...state,
+        continueNaniSession: action.payload,
+      };
     case "ADD_TOOL":
       return addTool(action.payload);
     case "UPDATE_TOOL":

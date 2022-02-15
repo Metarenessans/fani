@@ -11,19 +11,21 @@ import "./style.scss";
 import $ from "jquery";
 
 export const NanniBot = () => {
-  const [userID, setUserID] = useState("user@mail.ru");
-  const [chatOpen, setChatOpen] = useState(false);
-  const [botTyping, setBotTyping] = useState(false);
+  const [userID,     setUserID]     = useState("user@mail.ru");
+  const [chatOpen,   setChatOpen]   = useState(false);
+  const [botTyping,  setBotTyping]  = useState(false);
   const [haveUnread, setHaveUnread] = useState(false);
   const [messageLog, setMessageLog] = useState([]);
+
+  const { loading, setImageUrl, nodeId, setNodeId, askNumber, setAskNumber, setContinueNaniSession, continueNaniSession} = useContext(GlobalContext);
 
   useEffect(() => {
     getInvestorInfo();
   }, []);
 
-  useEffect(() => {
-    cancelSession();
-  }, [userID]);
+  // useEffect(() => {
+  //   cancelSession();
+  // }, [userID]);
 
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
@@ -89,6 +91,7 @@ export const NanniBot = () => {
   };
 
   const hasSession = async () => {
+    console.log("hasSession");
     const response = await $.ajax({
       url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
       method: "POST",
@@ -98,6 +101,11 @@ export const NanniBot = () => {
         data: JSON.stringify({ user_id: userID }),
       },
       success: function (response) {
+        let res = JSON.parse(response);
+        console.log(res, "has_session (response)");
+        if (res.has_session == true) {
+          setContinueNaniSession(true)
+        }
         return response;
       },
     });
@@ -136,6 +144,7 @@ export const NanniBot = () => {
   };
 
   const askQuestion = async () => {
+    console.log("ask с (node_id, ask_number) | вопрос и варианты ответа ");
     const response = await $.ajax({
       url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
       method: "POST",
@@ -145,11 +154,12 @@ export const NanniBot = () => {
         data: JSON.stringify({ user_id: userID }) 
       },
       success: function (response) {
+        setNodeId(   JSON.parse(response).node_id);
+        setAskNumber(JSON.parse(response).ask_number);
         return response;
       },
     });
     const message = JSON.parse(response);
-    console.log(message);
     message.time = currentTime();
 
     setTimeout(() => {
@@ -164,8 +174,35 @@ export const NanniBot = () => {
     }, 800);
   };
 
+  const answerConclusion = async (messageIdx) => {
+    console.log("answerConclusion");
+    await $.ajax({
+      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+      method: "POST",
+      data: {
+        url: "http://nimba.ru:82/nanni/answer",
+        method: "POST",
+        data: JSON.stringify({
+          user_id: userID,
+          answer: {
+            node_id: nodeId,
+            ask_number: askNumber
+          },
+        }),
+      },
+      success: function (response) {
+        return response;
+      },
+    });
+
+    setMessageChosen(0, messageIdx);
+    setHaveUnread(false);
+
+    await askQuestion();
+  };
+
   const sendAnswer = async (choiceIdx, messageIdx) => {
-    console.log("answer");
+    console.log("answer в который передаём node_id ask_number | choiceId (выбранный вариант) и messageIdx");
     const response = await $.ajax({
       url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
       method: "POST",
@@ -176,7 +213,11 @@ export const NanniBot = () => {
           user_id:      userID,
           ask_unique_id:    "",
           answer_unique_id: "",
-          answer: { choice: choiceIdx },
+          answer: {
+            choice:     choiceIdx,
+            node_id:       nodeId,
+            ask_number: askNumber
+          },
         }),
       },
       success: function (response) {
@@ -196,31 +237,11 @@ export const NanniBot = () => {
     }
   };
 
-  const answerConclusion = async (messageIdx) => {
-    await $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
-      method: "POST",
-      data: {
-        url: "http://nimba.ru:82/nanni/answer",
-        method: "POST",
-        data: JSON.stringify({
-          user_id: userID,
-          answer: {},
-        }),
-      },
-      success: function (response) {
-        return response;
-      },
-    });
-
-    setMessageChosen(0, messageIdx);
-    setHaveUnread(false);
-
-    await askQuestion();
-  };
-
   const botInit = async () => {
     setChatOpen(true);
+
+    let node_id
+    let ask_number
 
     if (window.matchMedia("(max-width: 767px)").matches) {
       document.body.style.overflowY = "hidden";
@@ -273,8 +294,6 @@ export const NanniBot = () => {
       );
     }
   };
-
-  const { loading, imageUrl, setImageUrl } = useContext(GlobalContext);
 
   return (
     <div className={`nanni ${chatOpen ? "active" : ""}`}>
@@ -437,6 +456,7 @@ export const NanniBot = () => {
                 </div>
                 {message.question_with_choice ? (
                   <div className="choices">
+                    
                     {message.question_with_choice.possible_answers.map(
                       (choice, choiceIdx) => {
                         return (
@@ -499,6 +519,24 @@ export const NanniBot = () => {
               </div>
             );
           })}
+          {continueNaniSession === true && messageLog.length == 0 && (
+            <div className="continue-chat-container">
+              <Button
+                onClick={() => {
+                  askQuestion();
+                  setContinueNaniSession(false)
+
+                  setTimeout(() => {
+                    setBotTyping(true);
+                  }, 500);
+
+                  setTimeout(() => {
+                    setBotTyping(false);
+                  }, 800);
+                }}
+              >Продолжить чат</Button>
+            </div>
+          )}
           <div
             style={{ float: "left", clear: "both" }}
             ref={messagesEndRef}
