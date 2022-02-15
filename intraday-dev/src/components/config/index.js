@@ -190,6 +190,7 @@ class Config extends React.Component {
                       .map((info) => info.name)
                       .map((name, index) => (
                         <th
+                          key={index}
                           style={{ minWidth: index == 0 ? "14em" : "" }}
                           className="config-th table-th"
                         >
