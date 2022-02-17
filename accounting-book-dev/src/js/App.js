@@ -10,14 +10,13 @@ import BaseComponent, { Context } from "../../../common/components/BaseComponent
 /** @type {React.Context<App>} */
 export const StateContext = Context;
 
-import Header from "../../../common/components/header";
-import { Dialog, dialogAPI } from "../../../common/components/dialog";
-import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
-import DeleteDialog from "../../../common/components/delete-dialog";
-
-import DayConfig   from "./components/day-config";
-import Stats       from "./components/stats";
-import "../js/Utils/days-in-month";
+import   Header                                   from "../../../common/components/header";
+import { Dialog, dialogAPI }                      from "../../../common/components/dialog";
+import   SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
+import   DeleteDialog                             from "../../../common/components/delete-dialog";
+import   DayConfig                                from "./components/day-config";
+import   Stats                                    from "./components/stats";
+import   "../js/Utils/days-in-month";
 
 /* API */
 
@@ -229,6 +228,7 @@ export default class App extends BaseComponent {
   }
 
   componentDidMount() {
+    this.bindEvents();
     this.fetchInitialData();
 
     // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
@@ -279,6 +279,10 @@ export default class App extends BaseComponent {
     this.fetchSnapshots();
     this.fetchLastModifiedSnapshot({ fallback: require("./snapshot.json") })
       .then(() => this.setState({changed: false}));
+  }
+
+  bindEvents() {
+    super.bindEvents();
   }
 
   packSave() {
