@@ -18,9 +18,9 @@ import "./App.scss";
 function App() {
   return (
     <GlobalProvider>
-      {/* <PriceMove />
+      <PriceMove />
       <DataInputs />
-      <LoadTables /> */}
+      <LoadTables />
       {(
         location.href.replace(/\/$/g, "").endsWith("-dev" ) ||
         location.href.replace(/\/$/g, "").endsWith("-ex"  ) ||
