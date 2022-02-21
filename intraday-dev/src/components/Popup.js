@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { GlobalContext } from "../context/GlobalState";
 
 export const Popup = () => {
-  const { loading, imageUrl, setImageUrl } = useContext(GlobalContext);
+  const { imageUrl } = useContext(GlobalContext);
 
   return (
     <div className="image-zoom-container">

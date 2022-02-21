@@ -18,14 +18,15 @@ import "./App.scss";
 function App() {
   return (
     <GlobalProvider>
-      <PriceMove />
+      {/* <PriceMove />
       <DataInputs />
-      <LoadTables />
+      <LoadTables /> */}
       {(
-        location.href.replace(/\/$/g, "").endsWith("-dev")  ||
+        location.href.replace(/\/$/g, "").endsWith("-dev" ) ||
+        location.href.replace(/\/$/g, "").endsWith("-ex"  ) ||
         location.href.replace(/\/$/g, "").endsWith(":8080") ||
         location.href.replace(/\/$/g, "").endsWith(":8081") ||
-        location.href.replace(/\/$/g, "").endsWith("-ex")
+        location.href.replace(/\/$/g, "").endsWith("nanni-dev")
       ) && (
         <NanniBot />
       )};
