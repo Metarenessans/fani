@@ -549,7 +549,7 @@ export default class App extends BaseComponent {
       const oldTimeoutMinutes = cloneDeep(this.state.timeoutMinutes);
       const timeoutMinutes = cloneDeep(this.state.timeoutMinutes);
       for (let i = 0; i < timeoutMinutes.length; i++) {
-        if (timeoutMinutes[i] === 9999) {
+        if (timeoutMinutes[i] >= 9999) {
           continue;
         }
         timeoutMinutes[i] -= 1;
@@ -584,7 +584,10 @@ export default class App extends BaseComponent {
 
     this.fetchTools();
     await this.fetchSnapshots();
-    await this.fetchLastModifiedSnapshot({ fallback: this.getTestSpapshot() });
+    const hasParsedSnapshot = await this.fetchLastModifiedSnapshot({ fallback: this.getTestSpapshot() });
+    if (!hasParsedSnapshot) {
+      await this.readLocalStorage();
+    }
   }
 
   getTestSpapshot() {
@@ -851,40 +854,46 @@ export default class App extends BaseComponent {
     };
   };
 
+  readLocalStorage() {
+    // Считываем время начала блокировок из localStorage
+    timeoutStartTime = JSON.parse(localStorage.getItem("timeoutStartTime"));
+
+    // Считываем кол-во минут до конца разблокировки сделок из localStorage
+    let timeoutMinutes = JSON.parse(localStorage.getItem("timeoutMinutes"));
+    if (typeOf(timeoutMinutes) !== "array") {
+      timeoutMinutes = [];
+    }
+
+    // Тайм-аут мог закончиться, перерасчитываем timeoutMinutes
+    for (let i = 0; i < timeoutMinutes.length; i++) {
+      if (timeoutStartTime[i] == null) {
+        continue;
+      }
+
+      let msElapsed = Number(new Date()) - timeoutStartTime[i];
+      if (msElapsed < 0) {
+        msElapsed = 0;
+      }
+
+      const minutesElapsed = Math.floor(msElapsed / 1_000 / 60);
+      timeoutMinutes[i] -= minutesElapsed;
+      if (timeoutMinutes[i] < 0) {
+        timeoutMinutes[i] = 0;
+      }
+      else if (timeoutMinutes[i] > 60) {
+        timeoutMinutes[i] = 9999;
+      }
+    }
+
+    localStorage.setItem("timeoutMinutes", JSON.stringify(timeoutMinutes));
+    return this.setStateAsync({ timeoutMinutes });
+  }
+
   /** @param {import('../../../common/utils/extract-snapshot').Snapshot} snapshot */
   async extractSnapshot(snapshot) {
     try {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
-
-      // Считываем время начала блокировок из localStorage
-      timeoutStartTime = JSON.parse(localStorage.getItem("timeoutStartTime"));
-
-      // Считываем кол-во минут до конца разблокировки сделок из localStorage
-      let timeoutMinutes = JSON.parse(localStorage.getItem("timeoutMinutes"));
-      if (typeOf(timeoutMinutes) !== "array") {
-        timeoutMinutes = [];
-      }
-
-      // Тайм-аут мог закончиться, перерасчитываем timeoutMinutes
-      for (let i = 0; i < timeoutMinutes.length; i++) {
-        if (timeoutStartTime[i] == null) {
-          continue;
-        }
-        let msElapsed = Number(new Date()) - timeoutStartTime[i];
-        if (msElapsed < 0) {
-          msElapsed = 0;
-        }
-        
-        const minElapsed = Math.floor(msElapsed / 1_000 / 60);
-
-        const prevValue = timeoutMinutes[i];
-        timeoutMinutes[i] -= minElapsed;
-        if (timeoutMinutes[i] < 0) {
-          timeoutMinutes[i] = 0;
-        }
-      }
-
-      await this.setStateAsync({ timeoutMinutes });
+      await this.readLocalStorage();
     }
     catch (error) {
       message.error(error);

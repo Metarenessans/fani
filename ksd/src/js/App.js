@@ -220,7 +220,8 @@ class App extends BaseComponent {
   
   setFetchingToolsTimeout() {
     return new Promise(resolve => {
-      console.log("staring 10sec timeout");
+      const ms = dev ? 15_000 : 1 * 60 * 1_000;
+      console.log(`Staring ${ms / 1_000}sec timeout`);
       setTimeout(() => {
         if (!document.hidden) {
           this.prefetchTools()
@@ -238,7 +239,7 @@ class App extends BaseComponent {
             });
         }
         else resolve();
-      }, dev ? 15_000 : 1 * 60 * 1_000);
+      }, ms);
 
     }).then(() => this.setFetchingToolsTimeout());
   }
@@ -259,7 +260,7 @@ class App extends BaseComponent {
             Tools.storageReady = false;
             resolve();
           });
-        }, 2_000);
+        }, 700);
       }
       else {
         resolve();
@@ -274,35 +275,8 @@ class App extends BaseComponent {
     return tools;
   }
 
-  fetchTools() {
-    return new Promise(resolve => {
-      const { investorInfo } = this.state;
-      const requests = [];
-      this.setState({ toolsLoading: true });
-      for (let request of ["getFutures", "getTrademeterInfo"]) {
-        requests.push(
-          fetch(request)
-            .then(response => Tools.parse(response.data, { investorInfo, useDefault: true }))
-            .then(tools => Tools.sort(this.state.tools.concat(tools)))
-            .then(tools => this.setStateAsync({ tools }))
-            .catch(error => this.showAlert(`Не удалось получить инстурменты! ${error}`))
-        );
-      }
-
-      Promise.all(requests)
-        .then(() => this.setStateAsync({ toolsLoading: false }))
-        .then(() => resolve());
-    });
-  }
-
   packSave() {
-    let { depo, sortProp, sortDESC, mode, customTools } = this.state;
-
-    const data = this.state.data.map(item => {
-      item.selectedToolName = item.realSelectedToolName;
-      delete item.realSelectedToolName;
-      return item;
-    });
+    let { depo, data, sortProp, sortDESC, mode, customTools } = this.state;
 
     const json = {
       static: {
@@ -319,29 +293,25 @@ class App extends BaseComponent {
     return json;
   }
 
-  parseSnapshot = data => {
+  parseSnapshot = parsedStatic => {
     let state = {};
     try {
-      data.data.map(item => {
-        delete item.selectedToolCode;
-        return item;
-      });
-
-      // console.log("static", save.static);
-      // console.log("staticParsed", staticParsed);
-
-      let m = data.mode;
+      let m = parsedStatic.mode;
       if (typeOf(m) === "array") {
         m = Number(m[0]);
       }
 
       state.mode = m;
-      state.sortProp = data.sortProp;
-      state.sortDESC = data.sortDESC;
+      state.sortProp = parsedStatic.sortProp;
+      state.sortDESC = parsedStatic.sortDESC;
 
-      state.depo = data.depo || this.state.depo;
-      state.data = data.data;
-      state.data = state.data
+      state.depo = parsedStatic.depo || this.state.depo;
+
+      state.data = parsedStatic.data
+        .map(item => {
+          delete item.selectedToolCode;
+          return item;
+        })
         .map(item => {
           item = { ...defaultToolData, ...item };
 
@@ -353,7 +323,7 @@ class App extends BaseComponent {
           delete item.planIncome;
           return item;
         });
-      state.customTools = data.customTools || [];
+      state.customTools = parsedStatic.customTools || [];
       state.customTools = state.customTools
         .map(tool => Tool.fromObject(tool, { investorInfo: this.state.investorInfo }));
     }
@@ -374,20 +344,6 @@ class App extends BaseComponent {
     catch (error) {
       message.error(error);
     }
-  }
-
-  getTools() {
-    const { tools, customTools } = this.state;
-    return [].concat(tools).concat(customTools);
-  }
-
-  getOptions() {
-		return this.getTools().map((tool, idx) => {
-      return {
-        idx:   idx,
-        label: String(tool)
-      };
-    });
   }
 
   render() {

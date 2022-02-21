@@ -401,7 +401,7 @@ export default class BaseComponent extends React.Component {
    * @param {object} options
    * @param {?SnapshotResponse} options.fallback Фейк ответ с сервера (работает только на локальной сборке)
    * @param {(snapshot: SnapshotResponse) => {}} options.praseFn Фейк ответ с сервера (работает только на локальной сборке)
-   * @returns {Promise}
+   * @returns {Promise<boolean>}
    */
   async fetchLastModifiedSnapshot(options) {
     await this.setStateAsync({ loading: true });
@@ -416,6 +416,7 @@ export default class BaseComponent extends React.Component {
       !dev && message.error(`Не удалось получить последнее сохранение: ${error}`);
     }
 
+    let success = false;
     const pure = params.get("pure") === "true";
     if (!pure) { 
       const fallback = options?.fallback;
@@ -433,10 +434,12 @@ export default class BaseComponent extends React.Component {
       if (!response?.error && response?.data?.name) {
         const parseFn = options?.praseFn ?? this.extractSnapshot;
         await parseFn.call(this, response.data);
+        success = true;
       }
     }
 
     await this.setStateAsync({ loading: false });
+    return success;
   }
 
   /**
