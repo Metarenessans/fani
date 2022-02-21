@@ -1,3 +1,15 @@
+.continue-container {
+  display:           flex;
+  justify-content: center;
+  align-items:     center;
+  width:             100%;
+
+  user-select: none;
+  background:   #f1f1f1;
+  border-radius:     10px;
+  box-shadow: 5px 5px 30px rgba(42, 139, 242, 0.1);
+}
+
 @font-face {
   font-family: 'SF Pro Display';
   src:
@@ -180,9 +192,29 @@
   }
   .chat-header .close-session {
     font-size: 0.85em;
+
+    display:           flex;
+    justify-content: center;
+    align-items:     center;
+    padding-bottom:   0.1em;
+    padding-right:    0.4em;
+    background-color: transparent;
+    
     border:      none;
     box-shadow:  none;
     line-height: 1.25;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: black;
+    }
+    
+    span {
+      color:        inherit;
+      font-size:     1.15em;
+      padding-bottom: 0.4em;
+    }
+
   }
   .chat-header .botTyping {
     display: flex;

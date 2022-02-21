@@ -9,6 +9,8 @@ import { CloseOutlined } from "@ant-design/icons";
 import "./style.scss";
 
 import $ from "jquery";
+import { cloneDeep } from "lodash";
+import clsx from "clsx";
 
 export const NanniBot = () => {
   const [userID,     setUserID]     = useState("user@mail.ru");
@@ -17,15 +19,38 @@ export const NanniBot = () => {
   const [haveUnread, setHaveUnread] = useState(false);
   const [messageLog, setMessageLog] = useState([]);
 
-  const { loading, setImageUrl, nodeId, setNodeId, askNumber, setAskNumber, setContinueNaniSession, continueNaniSession} = useContext(GlobalContext);
+  const {
+    loading,
+    setImageUrl,
+    nodeId,
+    setNodeId,
+    askNumber,
+    setAskNumber,
+    setContinueNaniSession,
+    continueNaniSession,
+    graphRevision,
+    setGraphRevision,
+  } = useContext(GlobalContext);
+
+  // useEffect(() => {
+  //   window.addEventListener("keyup", e => {
+  //     // Пасхалка
+  //     if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
+  //       const file = new Blob([JSON.stringify(window.easterEgg, null, 2)], { type: "text/plain" });
+
+  //       const link = document.createElement("a");
+  //       link.href = URL.createObjectURL(file);
+  //       link.setAttribute("download", "easter_egg.json");
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       link.remove();
+  //     }
+  //   });
+  // }, []);
 
   useEffect(() => {
     getInvestorInfo();
   }, []);
-
-  // useEffect(() => {
-  //   cancelSession();
-  // }, [userID]);
 
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
@@ -92,42 +117,35 @@ export const NanniBot = () => {
 
   const hasSession = async () => {
     console.log("hasSession");
-    const response = await $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
-      method: "POST",
-      data: {
-        url: "http://nimba.ru:82/nanni/has_session",
-        method: "GET",
-        data: JSON.stringify({ user_id: userID }),
-      },
-      success: function (response) {
-        let res = JSON.parse(response);
-        console.log(res, "has_session (response)");
-        if (res.has_session == true) {
-          setContinueNaniSession(true)
+    let res;
+    await new Promise((resolve, reject) => {
+      $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+        method: "POST",
+        data: {
+          url: "http://nimba.ru:82/nanni/has_session",
+          method: "GET",
+          data: JSON.stringify({ user_id: userID }),
+        },
+        success: function (response) {
+          const cutIndex = String(response).indexOf("SNAPSHOT)\r\n\r\n")
+          const base = String(response);
+          res  = JSON.parse(base.slice(cutIndex + 13, base.length));
+          
+          if (res.has_session == true) {
+            setContinueNaniSession(true)
+          }
+          resolve();
+        },
+        error: error => {
+          console.log("hasSession | status:", error.status);
+          reject(error)
         }
-        return response;
-      },
+      });
     });
 
-    return JSON.parse(response).has_session;
-  };
-
-  const startSession = async () => {
-    await $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
-      method: "POST",
-      data: {
-        url: "http://nimba.ru:82/nanni/start_session",
-        method: "PUT",
-        data: JSON.stringify({ user_id: userID }),
-      },
-      success: function (response) {
-        console.log("Session has started to", userID);
-      },
-    });
-  };
-
+    return res.has_session;
+  }
   const cancelSession = async () => {
     await $.ajax({
       url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
@@ -140,26 +158,44 @@ export const NanniBot = () => {
       success: function (response) {
         console.log("Session canceled to", userID);
       },
+      error: error => {
+        console.log("cancelSession | status:", error.status);
+      }
     });
   };
 
   const askQuestion = async () => {
+    let res;
     console.log("ask с (node_id, ask_number) | вопрос и варианты ответа ");
-    const response = await $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
-      method: "POST",
-      data: {
-        url: "http://nimba.ru:82/nanni/ask",
-        method: "GET",
-        data: JSON.stringify({ user_id: userID }) 
-      },
-      success: function (response) {
-        setNodeId(   JSON.parse(response).node_id);
-        setAskNumber(JSON.parse(response).ask_number);
-        return response;
-      },
-    });
-    const message = JSON.parse(response);
+    await new Promise((resolve, reject) => {
+      $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
+        method: "POST",
+        data: {
+          url: "http://nimba.ru:82/nanni/ask",
+          method: "GET",
+          data: JSON.stringify({ user_id: userID }) 
+        },
+        success: function (response) {
+          // const status   = String(response).split(" ")[1];
+          const cutIndex = String(response).indexOf("SNAPSHOT)\r\n\r\n")
+          const base = String(response);
+          res        = base.slice(cutIndex + 13, base.length);
+
+          setNodeId       (JSON.parse(res).node_id);
+          setAskNumber    (JSON.parse(res).ask_number);
+          setGraphRevision(JSON.parse(res).graph_revision);
+         
+          resolve();
+        },
+        error: error => {
+          console.log("askQuestion | status:", error.status);
+          reject(error)
+        }
+      });
+    })
+
+    let message = JSON.parse(res);
     message.time = currentTime();
 
     setTimeout(() => {
@@ -169,7 +205,7 @@ export const NanniBot = () => {
     setTimeout(() => {
       setBotTyping(false);
       setHaveUnread(true);
-      setMessageLog([...messageLog, message]);
+      setMessageLog(currMessageLog => [...currMessageLog, message]);
       scrollToMessage();
     }, 800);
   };
@@ -185,14 +221,22 @@ export const NanniBot = () => {
         data: JSON.stringify({
           user_id: userID,
           answer: {
-            node_id: nodeId,
-            ask_number: askNumber
+            node_id:               nodeId,
+            ask_number:         askNumber,
+            graph_revision: graphRevision
           },
         }),
       },
       success: function (response) {
         return response;
       },
+      error: error => {
+        if (error.status == 409) {
+          setMessageLog([...messageLog, {continue: true, is_final: false, printed: true}]);
+          askQuestion();
+        }
+        console.log("answerConclusion | status:", error.status);
+      }
     });
 
     setMessageChosen(0, messageIdx);
@@ -203,32 +247,46 @@ export const NanniBot = () => {
 
   const sendAnswer = async (choiceIdx, messageIdx) => {
     console.log("answer в который передаём node_id ask_number | choiceId (выбранный вариант) и messageIdx");
-    const response = await $.ajax({
-      url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
-      method: "POST",
-      data: {
-        url: "http://nimba.ru:82/nanni/answer",
+    let res;
+    await new Promise((resolve, reject) => {
+      $.ajax({
+        url: "https://fani144.ru/local/php_interface/s1/ajax/proxy/",
         method: "POST",
-        data: JSON.stringify({
-          user_id:      userID,
-          ask_unique_id:    "",
-          answer_unique_id: "",
-          answer: {
-            choice:     choiceIdx,
-            node_id:       nodeId,
-            ask_number: askNumber
-          },
-        }),
-      },
-      success: function (response) {
-        return response;
-      },
-    });
+        data: {
+          url: "http://nimba.ru:82/nanni/answer",
+          method: "POST",
+          data: JSON.stringify({
+            user_id:      userID,
+            ask_unique_id:    "",
+            answer_unique_id: "",
+            answer: {
+              choice:             choiceIdx,
+              node_id:               nodeId,
+              ask_number:         askNumber,
+              graph_revision: graphRevision
+            },
+          }),
+        },
+        success: function (response) {
+          const base = String(response).replace(/\r\n/g, " ").split(" ");
+          res  = base[base.length - 1];
+          resolve();
+        },
+        error: error => {
+          if (error.status == 409) {
+            setMessageLog([...messageLog, {continue: true, is_final: false, printed: true}]);
+            askQuestion();
+          } 
+          reject();
+          console.log("sendAnswer | status:", error.status);
+        }
+      });
+    })
 
     setMessageChosen(choiceIdx, messageIdx);
-    setHaveUnread(false);
+    setHaveUnread(false)
 
-    const coversationFinished = JSON.parse(response).conversation_finished;
+    const coversationFinished = JSON.parse(res).conversation_finished;
 
     if (!coversationFinished) {
       await askQuestion();
@@ -240,9 +298,6 @@ export const NanniBot = () => {
   const botInit = async () => {
     setChatOpen(true);
 
-    let node_id
-    let ask_number
-
     if (window.matchMedia("(max-width: 767px)").matches) {
       document.body.style.overflowY = "hidden";
       document.body.style.position = "fixed";
@@ -251,7 +306,6 @@ export const NanniBot = () => {
     const session = await hasSession();
 
     if (!session) {
-      await startSession();
       await askQuestion();
     }
     await setMessagePrinted();
@@ -267,6 +321,8 @@ export const NanniBot = () => {
   const closeChat = () => {
     setChatOpen(false);
     setHaveUnread(false);
+    setMessageLog([])
+    setContinueNaniSession(false)
     document.body.style.overflowY = "";
     document.body.style.position  = "";
   };
@@ -331,20 +387,20 @@ export const NanniBot = () => {
             style={{
               height: "auto",
             }}
-            onClick={async () => {
-              await cancelSession();
-              setMessageLog([]);
+            onClick={() => {
               closeChat();
             }}
           >
-            Завершить
-            <br />
-            разговор
+            <span>
+              __
+            </span>
           </Button>
           <Button
             className="close-chat"
             shape="circle"
-            onClick={() => {
+            onClick={async () => {
+              await cancelSession();
+              setMessageLog([]);
               closeChat();
             }}
           >
@@ -363,18 +419,26 @@ export const NanniBot = () => {
                   <div className="icon">
                     <img className="bot-icon" src={`img/nanni.png`}/>
                   </div>
-                  <div className="content">
-                    <div className="question-header">
-                      <div className="name">NANNI Bot</div>
-                      <div className="time">{message.time}</div>
+                  <div className={clsx(message.continue ? "continue-container" : "content")}>
+                    <div className={clsx(message.continue ?"" : "question-header")}>
+                      { message.continue ?
+                        <div>
+                          <p>Продолжение диалога...</p> 
+                        </div>
+                        :
+                        <>
+                          <div className="name">NANNI Bot</div>
+                          <div className="time">{message.time}</div>
+                        </> 
+                      }
                     </div>
                     <div className="question-body">
                       {message.question_with_choice ? (
                         message.question_with_choice.question
-                      ) : message.conclusion.description ? (
+                      ) : message?.conclusion?.description ? (
                         <div>
                           <p>
-                            <b>{message.conclusion.title}</b>
+                            <b>{message?.conclusion?.title}</b>
                           </p>
                           <p dangerouslySetInnerHTML={{ __html: convertToHtml(message.conclusion.description) }}/>
 
@@ -402,11 +466,10 @@ export const NanniBot = () => {
                                                 src={
                                                   `https://www.youtube.com/embed/${
                                                     base.value
-                                                    .replace("https://youtu.be/", "")
-                                                    .replace("embed//", "embed/")
+                                                      .replace("https://www.youtube.com/watch?v=", "")
                                                   }`
                                                 } 
-                                                title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe>
                                             )
                                           }
                                         </div>
@@ -449,7 +512,7 @@ export const NanniBot = () => {
                           })()}
                         </div>
                       ) : (
-                        message.conclusion.title
+                        message?.conclusion?.title
                       )}
                     </div>
                   </div>
@@ -481,7 +544,7 @@ export const NanniBot = () => {
                       }
                     )}
                   </div>
-                ) : message.conclusion.is_final ? (
+                ) : message?.conclusion?.is_final ? (
                   <div className="choices">
                     <div
                       className={`choice fade-in-right ${conclusionChosen(
@@ -501,20 +564,22 @@ export const NanniBot = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="choices">
-                    <div
-                      className={`choice fade-in-right ${conclusionChosen(
-                        messageIdx
-                      )} ${message.hasOwnProperty("printed") ? "printed" : ""}`}
-                    >
-                      <button
-                        disabled={message.hasOwnProperty("chosen")}
-                        onClick={() => answerConclusion(messageIdx)}
+                  !message.continue && (
+                    <div className="choices">
+                      <div
+                        className={`choice fade-in-right ${conclusionChosen(
+                          messageIdx
+                        )} ${message.hasOwnProperty("printed") ? "printed" : ""}`}
                       >
-                        Ок
-                      </button>
+                        <button
+                          disabled={message.hasOwnProperty("chosen")}
+                          onClick={() => answerConclusion(messageIdx)}
+                        >
+                          Ок
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
               </div>
             );
@@ -525,14 +590,6 @@ export const NanniBot = () => {
                 onClick={() => {
                   askQuestion();
                   setContinueNaniSession(false)
-
-                  setTimeout(() => {
-                    setBotTyping(true);
-                  }, 500);
-
-                  setTimeout(() => {
-                    setBotTyping(false);
-                  }, 800);
                 }}
               >Продолжить чат</Button>
             </div>

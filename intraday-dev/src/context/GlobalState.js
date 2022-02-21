@@ -39,6 +39,7 @@ const initialState = {
   nodeId:    "",
   askNumber: "",
   continueNaniSession: false,
+  graphRevision: "",
 };
 
 export const GlobalContext = createContext(initialState);
@@ -622,6 +623,19 @@ export const GlobalProvider = ({ children }) => {
       });
     }
   }
+  async function setGraphRevision(value) {
+    try {
+      dispatch({
+        type: "SET_GRAPH_REVISION",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
 
   return (
     <GlobalContext.Provider
@@ -645,7 +659,7 @@ export const GlobalProvider = ({ children }) => {
         nodeId: state.nodeId,
         askNumber: state.askNumber,
         continueNaniSession: state.continueNaniSession,
-        
+        graphRevision: state.graphRevision,
 
         setInitialState,
         setIsLoading,
@@ -679,6 +693,7 @@ export const GlobalProvider = ({ children }) => {
         setNodeId,
         setAskNumber,
         setContinueNaniSession,
+        setGraphRevision,
       }}
     >
       {children}

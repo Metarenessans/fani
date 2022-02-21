@@ -238,6 +238,11 @@ export default (state, action) => {
         ...state,
         continueNaniSession: action.payload,
       };
+    case "SET_GRAPH_REVISION":
+      return {
+        ...state,
+        graphRevision: action.payload,
+      };
     case "ADD_TOOL":
       return addTool(action.payload);
     case "UPDATE_TOOL":
