@@ -384,7 +384,7 @@ export const NanniBot = () => {
             }}
           >
             <span>
-              __
+              _
             </span>
           </Button>
           <Button
