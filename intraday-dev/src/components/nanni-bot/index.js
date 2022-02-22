@@ -32,22 +32,6 @@ export const NanniBot = () => {
     setGraphRevision,
   } = useContext(GlobalContext);
 
-  // useEffect(() => {
-  //   window.addEventListener("keyup", e => {
-  //     // Пасхалка
-  //     if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
-  //       const file = new Blob([JSON.stringify(window.easterEgg, null, 2)], { type: "text/plain" });
-
-  //       const link = document.createElement("a");
-  //       link.href = URL.createObjectURL(file);
-  //       link.setAttribute("download", "easter_egg.json");
-  //       document.body.appendChild(link);
-  //       link.click();
-  //       link.remove();
-  //     }
-  //   });
-  // }, []);
-
   useEffect(() => {
     getInvestorInfo();
   }, []);
@@ -327,6 +311,14 @@ export const NanniBot = () => {
     document.body.style.position  = "";
   };
 
+  const minimizeChat = () => {
+    setChatOpen(false);
+    setHaveUnread(false);
+    setContinueNaniSession(false)
+    document.body.style.overflowY = "";
+    document.body.style.position  = "";
+  };
+
   const replaceURLs = (message) => {
     if (!message) return;
 
@@ -388,7 +380,7 @@ export const NanniBot = () => {
               height: "auto",
             }}
             onClick={() => {
-              closeChat();
+              minimizeChat();
             }}
           >
             <span>
@@ -463,12 +455,7 @@ export const NanniBot = () => {
                                           {
                                             base.value && (
                                               <iframe width="560" height="315" 
-                                                src={
-                                                  `https://www.youtube.com/embed/${
-                                                    base.value
-                                                      .replace("https://www.youtube.com/watch?v=", "")
-                                                  }`
-                                                } 
+                                                src={String(base.value)} 
                                                 title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe>
                                             )
                                           }
@@ -478,7 +465,7 @@ export const NanniBot = () => {
                                       {base.type == "file" && (
                                         <div key={index} className={base.type}>
                                           {base.description && (<b>{base.description}:</b>)}
-                                          { 
+                                          {
                                             base.value && (
                                               <Tooltip title="Перейти к документу" placement="left">
                                                 <Button>
