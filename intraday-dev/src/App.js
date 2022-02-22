@@ -20,9 +20,7 @@ function App() {
     <GlobalProvider>
       {(
         location.href.replace(/\/$/g, "").endsWith("intraday-dev" ) ||
-        location.href.replace(/\/$/g, "").endsWith("-ex"  ) ||
-        location.href.replace(/\/$/g, "").endsWith(":8080") ||
-        location.href.replace(/\/$/g, "").endsWith(":8081") 
+        location.href.replace(/\/$/g, "").endsWith("-ex"  )
       ) && (
         <>
          <PriceMove />
