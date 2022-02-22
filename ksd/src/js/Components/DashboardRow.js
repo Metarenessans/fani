@@ -42,14 +42,11 @@ export default class DashboardRow extends React.Component {
 
       tooltipPlacement: "top",
 
+      calculatedToolIndex: this.getCurrentToolIndex(),
+
       searchVal: "",
       planIncomeCustom: ""
     };
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return !isEqual(withoutFunctions(this.props), withoutFunctions(nextProps)) || 
-           !isEqual(this.state, nextState);
   }
 
   onScroll = () => {
@@ -80,6 +77,17 @@ export default class DashboardRow extends React.Component {
 
   componentDidMount() {
     addEventListener("scroll", this.onScroll);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (
+      !isEqual(prevProps.tools, this.props.tools) || 
+      !isEqual(prevProps.item,  this.props.item)
+    ) {
+      this.setState({ 
+        calculatedToolIndex: this.getCurrentToolIndex()
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -136,7 +144,7 @@ export default class DashboardRow extends React.Component {
     }
 
     const { tools } = this.props;
-    return tools[this.getCurrentToolIndex()] || Tools.createArray()[0];
+    return tools[this.state.calculatedToolIndex] || Tools.createArray()[0];
   }
 
   getCurrentToolIndex() {
@@ -163,7 +171,7 @@ export default class DashboardRow extends React.Component {
 
     selectedToolName = (selectedToolName != null) ? selectedToolName : tools[0].getSortProperty();
 
-    const currentToolIndex = this.getCurrentToolIndex();
+    const currentToolIndex = this.state.calculatedToolIndex;
     
     this.currentTool  = tools[currentToolIndex] ?? Tools.createArray()[0];
     /** @type {Tool} */
