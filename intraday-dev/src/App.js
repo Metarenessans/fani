@@ -27,7 +27,7 @@ function App() {
          <DataInputs />
          <LoadTables />
         </>
-      )};
+      )}
      
       {(
         location.href.replace(/\/$/g, "").endsWith("-dev" ) ||
@@ -37,7 +37,7 @@ function App() {
         location.href.replace(/\/$/g, "").endsWith("nanni-dev")
       ) && (
         <NanniBot />
-      )};
+      )}
       <Popup />
     </GlobalProvider>
   );

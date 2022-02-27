@@ -32,8 +32,41 @@ export const NanniBot = () => {
     setGraphRevision,
   } = useContext(GlobalContext);
 
+  let dragging = false;
+
   useEffect(() => {
     getInvestorInfo();
+    // ~~
+    let nanniChat = document.getElementById("nanni-draggable");
+    let drugButton = document.getElementById("drug-button");
+    console.log(nanniChat.onmousemove, "onmousemove");
+    // nanniChat.onmousemove = e => {
+    drugButton.onmousedown = e => {
+        dragging = true;
+
+        nanniChat.style.position = 'absolute';
+        moveAt(e);
+
+        nanniChat.style.zIndex = 1000; 
+
+        function moveAt(e) {
+          nanniChat.style.left = e.pageX - nanniChat.offsetWidth / 2 + 'px';
+          nanniChat.style.top =  e.pageY - 35 + 'px';
+        }
+
+        document.onmousemove = e => {
+          moveAt(e);
+        };
+
+        nanniChat.onmouseup = () => {
+          document.onmousemove = null;
+          nanniChat.onmouseup  = null;
+        };
+
+      nanniChat.ondragstart = () => {
+        return false;
+      };
+    }
   }, []);
 
   const messagesEndRef = useRef(null);
@@ -314,7 +347,7 @@ export const NanniBot = () => {
   const minimizeChat = () => {
     setChatOpen(false);
     setHaveUnread(false);
-    setContinueNaniSession(false)
+    setContinueNaniSession(false);
     document.body.style.overflowY = "";
     document.body.style.position  = "";
   };
@@ -344,19 +377,41 @@ export const NanniBot = () => {
   };
 
   return (
-    <div className={`nanni ${chatOpen ? "active" : ""}`}>
+    <div 
+      id={clsx(!chatOpen && "nanni-draggable")} 
+      className={clsx("nanni", chatOpen && "active")}
+    >
+      {/* ~~ */}
       <Button
         disabled={loading}
         type="primary"
         shape="round"
-        onClick={() => botInit()}
+        onClick={e => {
+          if (dragging) {
+            dragging = false;
+            return;
+          }
+          botInit(); 
+          console.log(e);
+        }}
         className="nanni-btn"
       >
         <img className="bot-icon" src={`img/nanni.png`}/>
         Talk to NANNI Bot
       </Button>
-      <div className="nanni-chat">
-        <div className="chat-header">
+      <div  className="nanni-chat">
+        <div 
+          className="chat-header"
+        >
+          <Button 
+            id="drug-button"
+            style={{border: "none"}}
+            onClick={e => {
+              e.onmouseup && onBlur()
+            }}
+          >
+            | |
+          </Button>
           <div className={`new-messages ${haveUnread ? "unread" : ""}`}>
             <img className="bot-icon" src={`img/nanni.png`}/>
           </div>
@@ -411,8 +466,8 @@ export const NanniBot = () => {
                   <div className="icon">
                     <img className="bot-icon" src={`img/nanni.png`}/>
                   </div>
-                  <div className={clsx(message.continue ? "continue-container" : "content")}>
-                    <div className={clsx(message.continue ?"" : "question-header")}>
+                  <div className={clsx(  message.continue ? "continue-container" : "content")}>
+                    <div className={clsx(message.continue ? "" : "question-header")}>
                       { message.continue ?
                         <div>
                           <p>Продолжение диалога...</p> 
