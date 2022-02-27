@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { Select, Tooltip } from "antd";
 const { Option } = Select;
 import { LoadingOutlined } from "@ant-design/icons";
+import clsx from "clsx";
 
 import sortInputBySearhValue from "../../utils/sort-tools-by-search-value";
 
@@ -9,7 +10,9 @@ import { Context } from "../BaseComponent";
 
 export default function ToolSelect({
   test,
+  className,
   errorMessage,
+  errorTrigger,
   value,
   onChange,
   onFocus,
@@ -30,11 +33,12 @@ export default function ToolSelect({
   return (
     <Tooltip
       title={errorMessage}
-      visible={errorMessage?.length > 0}
+      trigger={errorTrigger}
+      defaultVisible={errorTrigger ? false : errorMessage?.length > 0}
       placement={tooltipPlacement}
     >
       <Select
-        className={errorMessage && "error"}
+        className={clsx(className, errorMessage && "error")}
         disabled={toolsLoading || toolSelectDisabled}
         loading={toolsLoading || toolSelectDisabled}
         value={toolsLoading ? 0 : value}
