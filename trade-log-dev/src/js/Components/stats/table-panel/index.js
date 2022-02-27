@@ -12,6 +12,7 @@ import StatsPanel from "../../panel";
 import { StateContext } from "../../../App";
 
 import "./style.scss";
+import TrademeterSync from "../../trademeter-sync";
 
 function useViewportWidth() {
   const [width, setWidth] = useState(window.innerWidth);
@@ -29,7 +30,7 @@ function useViewportWidth() {
 export default function TablePanel() {
   const context = useContext(StateContext);
   const { state } = context;
-  const { loading } = state;
+  const { loading, syncedWithTrademeter } = state;
 
   const viewportWidth = useViewportWidth();
 
@@ -77,7 +78,7 @@ export default function TablePanel() {
                   <td>
                     <Value
                       value={(result / state.dailyRate) * 100}
-                      format={value => formatNumber(round(value, 3)) + "%"}
+                      format={value => formatNumber(round(value, 1)) + "%"}
                     />
                   </td>
                   <td>
@@ -109,7 +110,7 @@ export default function TablePanel() {
         </table>
       </div>
       <Button
-        disabled={loading}
+        disabled={loading || syncedWithTrademeter}
         className="table-panel__add-button custom-btn"
         onClick={async e => {
           const data = state.data;
@@ -128,6 +129,7 @@ export default function TablePanel() {
       >
         Добавить день
       </Button>
+      <TrademeterSync />
     </StatsPanel>
   );
 }

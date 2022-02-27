@@ -65,7 +65,8 @@ export default class FirstStep extends React.Component {
             tools, 
             dailyRate, 
             toolsLoading, 
-            currentRowIndex 
+            currentRowIndex,
+            syncedWithTrademeter
           } = state;
           const { expectedDeals, deals } = data[currentRowIndex];
 
@@ -409,6 +410,7 @@ export default class FirstStep extends React.Component {
                             {state.viewportWidth <= 768
                               ?
                                 <input
+                                  disabled={syncedWithTrademeter}
                                   type="time"
                                   value={
                                     enterTime != null
@@ -434,6 +436,7 @@ export default class FirstStep extends React.Component {
                               :
                                 <TimePicker 
                                   key={currentRowIndex}
+                                  disabled={syncedWithTrademeter}
                                   format="HH:mm"
                                   allowClear
                                   defaultValue={
@@ -606,6 +609,7 @@ export default class FirstStep extends React.Component {
                           )}
                         >
                           <NumericInput
+                            disabled={syncedWithTrademeter}
                             defaultValue={result || 0}
                             onBlur={async val => {
                               const data = cloneDeep(state.data);
@@ -651,7 +655,7 @@ export default class FirstStep extends React.Component {
                       <div>
                         <Button
                           className="trade-log-button"
-                          disabled={timeout > 0}
+                          disabled={timeout > 0 || syncedWithTrademeter}
                           onClick={() => {
                             const data = cloneDeep(state.data);
                             const deals = cloneDeep(data[currentRowIndex].deals);
@@ -675,7 +679,8 @@ export default class FirstStep extends React.Component {
                   className="trade-log-button"
                   disabled={
                     (state.limitUnprofitableDeals && deals.filter(deal => deal.result < 0).length >= state.allowedNumberOfUnprofitableDeals) || 
-                    deals.length == 1
+                    deals.length == 1 ||
+                    syncedWithTrademeter
                   }
                   onClick={() => {
                     const data = cloneDeep(state.data);

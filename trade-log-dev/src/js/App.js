@@ -8,9 +8,14 @@ import { Tools, Tool }       from "../../../common/tools";
 import { Dialog, dialogAPI } from "../../../common/components/dialog";
 import CrossButton           from "../../../common/components/cross-button";
 
+import fetchSaveById from "../../../common/api/fetch/fetch-save-by-id";
+import fetchSavesFor from "../../../common/api/fetch-saves";
+import fetch   from "../../../common/api/fetch";
+import delay   from "../../../common/utils/delay";
 import typeOf  from "../../../common/utils/type-of";
 import num2str from "../../../common/utils/num2str";
 import parseTasks          from "./components/stats/tasks/parse-tasks";
+import parseTrademeterSnapshot from "./components/trademeter-sync/parse-trademeter-snapshot";
 import parseEmotionalState from "./utils/parse-emotional-state";
 
 import SaveDialog, { dialogID as saveDialogID } from "../../../common/components/save-dialog";
@@ -422,6 +427,24 @@ export default class App extends BaseComponent {
        */
       timeoutMinutes: [],
 
+      /** Флаг загрузки сохранений Трейдометра */
+      loadingTrademeterSnapshots: false,
+
+      /**
+       * ID синхронизированного сохранения Трейдометра
+       * 
+       * @type {?number}
+       */
+      currentSyncedTrademeterSnapshotID: -1,
+
+      /**
+       * ID выбранного сохранения Трейдометра (нужен только для рендера radio-кнопок) 
+       */
+      selectedTrademeterSnapshotID: -1,
+
+      /** Флаг синхронизированности с Трейдометром */
+      syncedWithTrademeter: false,
+
       extraStep:  false,
       extraSaved: false,
       customTools:   []
@@ -431,7 +454,16 @@ export default class App extends BaseComponent {
       // Копирует `state` из BaseComponent
       ...this.state,
 
-      ...cloneDeep(this.initialState)
+      ...cloneDeep(this.initialState),
+
+      /**
+       * Массив сохранений Трейдометра
+       * 
+       * TODO: @type на нормальный тип из common
+       * 
+       * @type {{ name: string, id: number }[]}
+       */
+      trademeterSnapshots: []
     };
 
     // Bindings
@@ -520,12 +552,45 @@ export default class App extends BaseComponent {
       localStorage.setItem("timeoutStartTime", JSON.stringify(timeoutStartTime));
     }
   }
-  
-  componentDidMount() {
-    super.bindEvents();
 
-    this.fetchInitialData()
-      .then(() => this.setState({ changed: false }));
+  async fetchTrademeterSnapshots() {
+    this.setState({ loadingTrademeterSnapshots: true });
+    /** @type {import("../../../common/api/fetch-response").FetchResponse} */
+    let response;
+    try {
+      response = await fetchSavesFor("Trademeter");
+    }
+    catch (error) {
+      console.warn(error);
+      if (dev) {
+        response = require("./dev/trademeter-snapshots.json");
+      }
+    }
+
+    if (response) {
+      const trademeterSnapshots = response.data;
+      if (typeOf(trademeterSnapshots) == "array") {
+        dev && message.success("Успешно стянули сохранения Трейдометра!");
+
+        const { currentSyncedTrademeterSnapshotID } = this.state;
+        if (
+          currentSyncedTrademeterSnapshotID !== -1 &&
+          !trademeterSnapshots.find(snapshot => snapshot.id === currentSyncedTrademeterSnapshotID)
+        ) {
+          dev && console.log(`Сохранения с id ${currentSyncedTrademeterSnapshotID} больше нет`);
+          // TODO: что делать?
+          return this.reset();
+        }
+
+        return this.setStateAsync({ trademeterSnapshots, loadingTrademeterSnapshots: false });
+      }
+
+      console.error("data объекта", response, "должна быть массивом!");
+    }
+  }
+  
+  async componentDidMount() {
+    super.bindEvents();
     
     // При наведении мыши на .dashboard-extra-container, элемент записывается в scrollInitiator
     $(document).on("mouseenter", ".table-extra-column-container", function (e) {
@@ -564,6 +629,62 @@ export default class App extends BaseComponent {
         console.log(timeoutMinutes);
       }
     }, 60_000);
+
+    await this.fetchInitialData();
+    await this.setStateAsync({ changed: false });
+
+    await this.fetchTrademeterSnapshots();
+    const id = this.state.currentSyncedTrademeterSnapshotID; 
+    if (id !== -1) {
+      await this.syncWithTrademeter(id);
+    }
+  }
+
+  async syncWithTrademeter(id) {
+    /** @type {import("../../../../../common/api/fetch-response").FetchResponse} */
+    let response = null;
+    try {
+      response = await fetchSaveById("Trademeter", id);
+    }
+    catch (error) {
+      message.error(error);
+      if (dev) {
+        response = require("./dev/trademeter-snapshot.json");
+      }
+    }
+
+    const parsedSnapshot = parseTrademeterSnapshot(response.data);
+
+    /** @type  */
+    const state = {};
+    // Подставляем минимальную доходность
+    state.dailyRate = parsedSnapshot.rate;
+
+    // Подставляем сделки
+    if (parsedSnapshot.data.length === 0) {
+      state.data = [cloneDeep(dayTemplate)];
+    }
+    else {
+      state.data = cloneDeep(parsedSnapshot.data).map(parsedDay => {
+        const day = cloneDeep(dayTemplate);
+        day.deals = parsedDay.iterations.map(rate => {
+          const deal = cloneDeep(dealTemplate);
+          deal.currentToolCode = parsedSnapshot.currentToolCode;
+          deal.result = rate;
+          return deal;
+        });
+        day.reportMonitor = day.deals.map(deal => {
+          return { result: true, baseTrendDirection: null, momentDirection: null, doubts: null };
+        });
+        return day;
+      });
+    }
+
+    state.currentSyncedTrademeterSnapshotID = id;
+    state.selectedTrademeterSnapshotID = id;
+    state.syncedWithTrademeter = true;
+
+    return this.setStateAsync(state);
   }
 
   // Fetching everithing we need to start working
@@ -604,7 +725,8 @@ export default class App extends BaseComponent {
       customTools,
       readyWorkTasksCheckTime,
       notes,
-      lockTimeoutMinutes
+      lockTimeoutMinutes,
+      currentSyncedTrademeterSnapshotID
     } = this.state;
 
     const json = {
@@ -617,7 +739,8 @@ export default class App extends BaseComponent {
         customTools,
         readyWorkTasksCheckTime,
         notes,
-        lockTimeoutMinutes
+        lockTimeoutMinutes,
+        currentSyncedTrademeterSnapshotID
       }
     };
 
@@ -849,6 +972,7 @@ export default class App extends BaseComponent {
       notes:                            parsedSnapshot.notes                            ?? initialState.notes,
       lockTimeoutMinutes:               parsedSnapshot.lockTimeoutMinutes               ?? initialState.lockTimeoutMinutes,
       currentRowIndex:                  parsedSnapshot.currentRowIndex                  ?? initialState.currentRowIndex,
+      currentSyncedTrademeterSnapshotID: parsedSnapshot.currentSyncedTrademeterSnapshotID ?? initialState.currentSyncedTrademeterSnapshotID,
       // TODO: у инструмента не может быть ГО <= 0, по идее надо удалять такие инструменты
       customTools:                     (parsedSnapshot.customTools || []).map(tool => Tool.fromObject(tool))
     };
@@ -894,6 +1018,9 @@ export default class App extends BaseComponent {
     try {
       await super.extractSnapshot(snapshot, this.parseSnapshot);
       await this.readLocalStorage();
+      setTimeout(() => {
+        this.setStateAsync({ changed: false });
+      }, 150);
     }
     catch (error) {
       message.error(error);
@@ -1065,7 +1192,7 @@ export default class App extends BaseComponent {
                                 <Button 
                                   className="main-button"
                                   onClick={async e => {
-                                    if (!dev && hasChanged) {
+                                    if (hasChanged) {
                                       dialogAPI.open("close-slider-dialog", e.target);
                                     }
                                     else {
@@ -1216,6 +1343,42 @@ export default class App extends BaseComponent {
             cancelText="Отмена"
           >
             Вы уверены, что хотите выйти? Все несохраненные изменения будут потеряны
+          </Dialog>
+
+          {/*
+            Предупреждение о несохраненных изменениях
+            при попытке синхронизироваться с Трейдометром
+          */}
+          <Dialog
+            id="sync-with-trademeter-waring-dialog"
+            title="Предупреждение"
+            confirmText="ОК"
+            onConfirm={e => {
+              this.syncWithTrademeter(this.state.selectedTrademeterSnapshotID);
+              return true;
+            }}
+            cancelText="Отмена"
+          >
+            Если включить синхронизацию, все введенные на этой странице данные<br />
+            будут заменены данными из Трейдометра
+          </Dialog>
+
+          {/*
+            Предупреждение о потере данных
+            при попытке отключиться от Трейдометра
+          */}
+          <Dialog
+            id="cancel-sync-with-trademeter-waring-dialog"
+            title="Предупреждение"
+            confirmText="ОК"
+            onConfirm={e => {
+              this.reset();
+              return true;
+            }}
+            cancelText="Отмена"
+          >
+            Связь с данными трейдометра будет отключена,<br />
+            все новые данные из трейдометра загружены не будут
           </Dialog>
 
         </div>

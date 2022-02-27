@@ -52,7 +52,7 @@ export default function Dashboard(props) {
                   ...cloneDeep(state),
                   updatedOnce: true
                 };
-                context.dataBuffer = data;
+                context.dataBuffer = cloneDeep(data);
               }}
               onChange={async (prop, val) => {
                 if (prop == "isToolsDropdownOpen") {
@@ -66,12 +66,14 @@ export default function Dashboard(props) {
                   data[index].planIncome = null;
                 }
                 console.log("onChange", index, prop, val);
-                return context.setStateAsync({ data, changed: true });
+                context.dataBuffer = data;
+                return context.setStateAsync({ changed: true });
               }}
               onDelete={async index => {
                 const data = cloneDeep(state.data);
                 data.splice(index, 1);
-                return context.setStateAsync({ data, changed: true });
+                context.dataBuffer = data;
+                return context.setStateAsync({ changed: true });
               }}
             />
           )

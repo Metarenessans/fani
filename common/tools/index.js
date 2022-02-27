@@ -1,4 +1,4 @@
-import { round } from "lodash";
+import { cloneDeep, round } from "lodash";
 import readyTools      from "../adr.json";
 import readyToolsNew   from "../adr-new.json";
 import readyToolsMarch from "../adr-march.json";
@@ -251,6 +251,15 @@ class Tool {
   guarantee;
 
   /**
+   * Кастомное ГО (гарантийное обеспечение)
+   * 
+   * Используется вместо обычного ГО, если не равно null
+   * 
+   * @type {number}
+   */
+  customGuarantee;
+
+  /**
    * Текущая цена
    * 
    * @type {number}
@@ -375,6 +384,28 @@ class Tool {
       ? ""
       : this.dollarRate == 1 ? "RU" : "US";
   }
+
+  set currentPrice(value) {
+    this._currentPrice = value;
+  }
+
+  get currentPrice() {
+    if (this.customCurrentPrice != null) {
+      return this.customCurrentPrice;
+    }
+    return this._currentPrice;
+  }
+
+  set guarantee(value) {
+    this._guarantee = value;
+  }
+
+  get guarantee() {
+    if (this.customGuarantee != null) {
+      return this.customGuarantee;
+    }
+    return this._guarantee;
+  }
   
   getFullName() {
     if (this.fullName) {
@@ -399,6 +430,10 @@ class Tool {
   }
 
   toString(options = { long: true }) {
+    if (this.calculatedString) {
+      return this.calculatedString;
+    }
+
     let str = String(this.code);
     if (!this.shortName && this.fullName && options.long) {
       return this.fullName + (str ? ` (${str})` : "");
@@ -407,6 +442,7 @@ class Tool {
       return this.shortName + (str ? ` (${str})` : "");
     }
 
+    this.calculatedString = str;
     return str;
   }
 
@@ -499,11 +535,11 @@ class Tools {
   static sort(tools) {
     let c = a => 10 > a ? -1000 + +a : a.charCodeAt(0);
 
-    return tools
+    return cloneDeep(tools)
       // Сортировка по алфавиту
       .sort((a, b) => {
-        const l = String(a.toString()).toLowerCase().replace(/["().]+/g, "").trim();
-        const r = String(b.toString()).toLowerCase().replace(/["().]+/g, "").trim();
+        const l = a.toString().toLowerCase().replace(/["().]+/g, "").trim();
+        const r = b.toString().toLowerCase().replace(/["().]+/g, "").trim();
 
         let res = 0;
         for (let i = 0; i < Math.min(l.length, r.length); i++) {
@@ -525,10 +561,13 @@ class Tools {
         const convert = str => {
           let code;
           let number;
-          let found = /-(\d+)\.(\d+)/g.exec(str);
+          const regexp = /-(\d+)\.(\d+)/g;
+          let found = regexp.test(str);
           if (found) {
-            number = found[2] + "." + found[1];
-            code = str.slice(0, found.index);
+            regexp.lastIndex = 0;
+            const match = regexp.exec(str);
+            number = match[2] + "." + match[1];
+            code = str.slice(0, match.index);
           }
           else {
             code = a;
@@ -563,53 +602,7 @@ class Tools {
    * @returns {number}
    */
   static getIndexByCode(search, tools) {
-    if (!search || !tools.length) {
-      return 0;
-    }
-
-    const alike = [];
-
-    let index = -1;
-
-    for (let i = 0; i < tools.length; i++) {
-      const tool = tools[i];
-
-      if (
-        tool.getSortProperty() === search ||
-        tool.toString() === search ||
-        tool.code === search
-      ) {
-        return i;
-      }
-
-      // Текущий инструмент - фьючерс
-      if (tool.dollarRate == 0) {
-        if (tool.code.slice(0, 2).toLowerCase() == search.slice(0, 2).toLowerCase()) {
-          alike.push(tool);
-        }
-      }
-
-      // Если в id есть месяц и год, то можно начать искать ближайший
-      const regexp = /\d{1,2}\.\d{1,2}/;
-      const found = regexp.exec(search);
-      if (found) {
-        // Находим все инструменты с одинаковым кодом
-        let alike = [...tools].filter(tool =>
-          tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
-        );
-
-        const sorted = this.sort(alike.map(t => t.getSortProperty()).concat(search));
-        index = tools.indexOf(alike[0]) + sorted.indexOf(sorted.find(n => n == search));
-      }
-    }
-
-    if (index == -1 && alike.length) {
-      const toolsSorted = this.sort(alike);
-      const s = toolsSorted[0].toString();
-      return this.getIndexByCode(s, tools);
-    }
-
-    return Math.max(index, 0);
+    return this.getToolIndexByCode(tools, search);
   }
 
   /**
@@ -650,7 +643,7 @@ class Tools {
       const found = regexp.exec(search);
       if (found) {
         // Находим все инструменты с одинаковым кодом
-        let alike = [...tools].filter(tool =>
+        let alike = tools.filter(tool =>
           tool.getSortProperty().slice(0, found.index) == search.slice(0, found.index)
         );
 

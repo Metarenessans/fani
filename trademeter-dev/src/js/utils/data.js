@@ -1,10 +1,53 @@
+import { Tool }        from "../../../../common/tools"
 import fallbackBoolean from "../../../../common/utils/fallback-boolean"
 import round           from "../../../../common/utils/round"
 
+/**
+ * @typedef Options
+ * @property {0|1}    $mode      Режим
+ * @property {number} $startFrom       День, с которого начнется расчет
+ * @property {number} $percent         Процент депозита на вход в сделку (от 0 до 100)
+ * @property {number} $start           Начальный депозит
+ * @property {number} $length          Кол-во дней для расчета
+ * @property {number} $rate            Ставка / rate (от 0 до 100)
+ * @property {number} $rateRequired    Требуемая доходность ???
+ * @property {number} $payment         Сумма вывода
+ * @property {number} $paymentInterval Частота вывод (в днях)
+ * @property {number} $payload         Сумма пополнения
+ * @property {number} $payloadInterval Частота пополнения (в днях)
+ * @property {Tool}   $tool            Торговый инструмент
+ */
+
+/**
+ * @typedef {{ a: number }[]} DataInstance
+ */
+
+/**
+ * Массив дней трейдометра
+ */
 export default class Data extends Array {
 
+  /**
+   * Плановый конечный депозит (отображается на графике)
+   * @type {number}
+   */
+  depoEndPlan;
+
+  /** 
+   * @returns {{ a: number }[]}
+   */
+  constructor(settings) {
+    super();
+    if (settings) {
+      this.build(settings);
+    }
+  }
+
+  /**
+   * @param {Options} options
+   */
   build({
-    $mode            = 0,
+    $mode,
     $startFrom       = 0,
     $percent         = 100,
     $start           = 1_000_000,

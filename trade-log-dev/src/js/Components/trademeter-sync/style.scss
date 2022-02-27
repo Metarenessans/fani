@@ -1,0 +1,97 @@
+.trademeter-sync {
+  margin: 0 auto;
+  margin-top: -2.8em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  &-header {
+    position: relative;
+
+    display: inline-flex;
+
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__sync-btn {
+
+  }
+
+  &__refresh-btn {
+    position: absolute;
+    left:  100%;
+    top:  0.3em;
+    margin-left: .5em;
+
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width:  1.75em;
+    height: 1.75em;
+    background: none;
+    border: none;
+    padding: 0;
+
+    font-size: 1.2em;
+
+    cursor: pointer;
+  }
+
+  &-content {
+    margin-top: 1.5em;
+    padding: .75em 4.5em;
+    border-radius: .5em;
+    outline: .1em solid var(--primary-color);
+
+    display: none;
+
+    &.open {
+      display: block;
+    }
+
+    > * {
+      margin: 0;
+
+      + * {
+        margin-top: 1em;
+      }
+    }
+
+    &__title {
+      font-size: 1.75em;
+      font-weight: bold;
+    }
+    
+    .ant-radio-group {
+      // background: yellow;
+      font-size: 1.3em;
+
+      > * + * {
+        margin-top: 1em;
+      }
+    }
+
+    .ant-radio-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    &-footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      button {
+        min-width: 9.5em;
+        padding: 0.6em 1em;
+        padding-top: 0.7em;
+        font-size: 1em;
+      }
+
+      > * + * {
+        margin-left: 1em;
+      }
+    }
+  }
+}

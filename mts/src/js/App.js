@@ -110,10 +110,23 @@ class App extends BaseComponent {
       profitRatio:          100,
       searchVal:             "",
 
-      // Индекс алгоритма МААНИ (0 - Стандарт, 1 - СМС + ТОР, 2 - Лимитник)
-      mode:                  0,
-      // Индекс выбранного пресета в данной категории (mode)
-      presetSelection:       algorithms.map(algorithm => 0),
+      /**
+       * Индекс алгоритма МААНИ
+       * 
+       * 0 - Стандарт
+       * 
+       * 1 - СМС + ТОР
+       * 
+       * 2 - Лимитник
+       * 
+       * @type {number}
+       */
+      mode: 0,
+
+      /**
+       * Индекс выбранного пресета в данной категории (`mode`)
+       */
+      presetSelection: algorithms.map(algorithm => 0),
 
       totalIncome:           0,
       totalStep:             0,
@@ -202,27 +215,21 @@ class App extends BaseComponent {
     return this.setStateAsync({ presetSelection, genaSave });
   }
 
-  fetchCompanyQuotes() {
-    // Отменяем запрос, если модуль с графиком не подгрузился
-    // или ответ от предыдущего запроса еще не был получен 
-    if (!Chart) {
-      return Promise.resolve();
-    }
-
+  async fetchCompanyQuotes() {
     this.setState({ chartLoading: true });
 
-    let from = new Date();
     let to   = new Date();
+    let from = new Date();
     from.setMonth(from.getMonth() - 1);
 
-    from = Math.floor(+from / 1000);
-    to   = Math.floor(+to   / 1000);
+    from = Math.floor(+from / 1_000);
+    to   = Math.floor(+to   / 1_000);
 
     const tool = this.getCurrentTool();
     const { code } = tool;
     let method = "getCompanyQuotes";
 
-    if (tool.dollarRate == 0) {
+    if (tool.isFutures) {
       method = "getPeriodFutures";
 
       let _f = from;
@@ -245,28 +252,23 @@ class App extends BaseComponent {
     }
 
     let body = { code, from, to };
-    
-    if (tool.dollarRate != 0) {
-      body = {
-        ...body,
-        region: tool.dollarRate != 1 ? "US" : "RU",
-      };
+
+    const { region } = tool;
+    if (region) {
+      body = { ...body, region };
     }
 
-    fetch(method, "GET", body)
-      .then(response => {
-        const { data } = response;
-        return this.setStateAsync({ data, chartLoading: false });
-      })
-      .catch(async reason => {
-        message.error(`Не удалось получить график для ${code}: ${reason}`);
-        console.warn(`Не удалось получить график для ${code}: ${reason}`);
-
-        this.setStateAsync({ chartLoading: false });
-        // Пробуем отправить запрос снова 2 секунды
-        await delay(2_000);
-        return this.fetchCompanyQuotes();
-      });
+    try {
+      const response = await fetch(method, "GET", body);
+      const { data } = response;
+      return this.setStateAsync({ data, chartLoading: false });
+    }
+    catch (xhr) {
+      console.warn(`Не удалось получить график для ${code}: ${xhr}`);
+      // Отправляем повторный запрос через 2 секунды
+      await delay(2_000);
+      return this.fetchCompanyQuotes();
+    }
   }
 
   async setFetchingToolsTimeout() {
@@ -300,22 +302,27 @@ class App extends BaseComponent {
     if (currentToolRegion != null || currentToolCode === "SBER") {
       // Поулчаем конкретную акцию, если в сохранении есть регион инструмента
       // + дефолтный SBER
-      if (currentToolRegion || currentToolCode === "SBER") {
-        await this.fetchTool(currentToolCode, currentToolCode === "SBER" ? "RU" : currentToolRegion);
-      }
-      // Фьючерс
-      else if (currentToolRegion === "") {
-        await this.fetchFutures();
-      }
+      try {
+        if (currentToolRegion || currentToolCode === "SBER") {
+          await this.fetchTool(currentToolCode, currentToolCode === "SBER" ? "RU" : currentToolRegion);
+        }
+        // Фьючерс
+        else if (currentToolRegion === "") {
+          await this.fetchFutures();
+        }
 
-      // Фоновая загрузка всех инструментов
-      (async () => {
-        await this.setStateAsync({ toolSelectDisabled: true });
-        const tools = await this.prefetchTools();
-        await this.setStateAsync({ toolSelectDisabled: false, tools });
-        await this.syncToolsWithInvestorInfo();
-        await this.clampPriceRange();
-      })();
+        // Фоновая загрузка всех инструментов
+        (async () => {
+          await this.setStateAsync({ toolSelectDisabled: true });
+          const tools = await this.prefetchTools();
+          await this.setStateAsync({ toolSelectDisabled: false, tools });
+          await this.syncToolsWithInvestorInfo();
+          await this.clampPriceRange();
+        })();
+      }
+      catch (error) {
+        await this.fetchTools();
+      }
     }
     else {
       await this.fetchTools();
@@ -998,7 +1005,11 @@ class App extends BaseComponent {
         mode = 0;
         disabledModes = [false, false, false];
       }
-      onAlgorythmChange(mode, presetSelection[mode]);
+
+      // Предотвращаем рекурсию
+      if (mode !== this.state.mode) {
+        onAlgorythmChange(mode, presetSelection[mode]);
+      }
     }
 
     const price = currentTool.currentPrice;
@@ -1806,10 +1817,10 @@ class App extends BaseComponent {
 
               const target = e?.target || document.querySelector(".settings-button");
 
-              const saveToCompare = cloneDeep(lastSavedSG);
+              const saveToCompare = cloneDeep(lastSavedSG) ?? {};
               delete saveToCompare.currentTab;
               
-              const genaSavePure = cloneDeep(genaSave);
+              const genaSavePure = cloneDeep(genaSave) ?? {};
               delete genaSavePure.key;
               delete genaSavePure.currentTab;
               
@@ -1835,50 +1846,47 @@ class App extends BaseComponent {
             };
 
             return (
-              <Dialog
-                id="settings-generator"
-                pure={true}
-                onClose={() => onClose()}
-              >
-                <SettingsGenerator
-                  loading={this.state.loadingSG}
-                  depo={depo}
-                  tools={tools}
-                  load={percentage}
-                  toolsLoading={toolsLoading}
-                  investorInfo={investorInfo}
-                  defaultToolCode={currentToolCode}
-                  currentToolCode={currentToolCode}
-                  contracts={contracts}
-                  risk={risk}
-                  algorithm={algorithms[mode].name}
-                  genaSave={genaSave}
-                  onSave={genaSave => {
-                    this.saveGENA(genaSave);
-                  }}
-                  onUpdate={(genaSave, tableData, changed) => {
-                    sgChanged = sgChanged || changed;
-                    genaTable = tableData;
-                    this.setStateAsync({ genaSave });
-                  }}
-                  onClose={(save, e) => onClose(save, e)}
-                  onDownload={(title, text) => {
-                    const file = new Blob([text], { type: "text/plain" });
+              <SettingsGenerator
+                loading={this.state.loadingSG}
+                depo={depo}
+                tools={tools}
+                load={percentage}
+                toolsLoading={toolsLoading}
+                investorInfo={investorInfo}
+                defaultToolCode={currentToolCode}
+                currentToolCode={currentToolCode}
+                contracts={contracts}
+                risk={risk}
+                algorithm={algorithms[mode].name}
+                genaSave={genaSave}
+                onSave={genaSave => {
+                  this.saveGENA(genaSave);
+                }}
+                onUpdate={(genaSave, tableData, changed) => {
+                  sgChanged = sgChanged || changed;
+                  genaTable = tableData;
+                  this.setStateAsync({ genaSave });
+                }}
+                onClose={(save, e) => {
+                  console.log("CLOSE");
+                  onClose(save, e);
+                }}
+                onDownload={(title, text) => {
+                  const file = new Blob([text], { type: "text/plain" });
 
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(file);
-                    link.setAttribute("download", title + ".txt");
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                  }}
-                  onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
-                  onToolSelectBlur={() => {
-                    this.setStateAsync({ isToolsDropdownOpen: false })
-                      .then(() => this.imitateFetchingTools());
-                  }}
-                />
-              </Dialog>
+                  const link = document.createElement("a");
+                  link.href = URL.createObjectURL(file);
+                  link.setAttribute("download", title + ".txt");
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                }}
+                onToolSelectFocus={() => this.setState({ isToolsDropdownOpen: true })}
+                onToolSelectBlur={() => {
+                  this.setStateAsync({ isToolsDropdownOpen: false })
+                    .then(() => this.imitateFetchingTools());
+                }}
+              />
             )
           })()}
 

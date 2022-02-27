@@ -564,6 +564,26 @@ $m: .4475;
             }
           }
         }
+
+        // TODO: Временное решение. Удалить
+        &--quiсk-fix {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+
+          @include xs {
+            flex-direction: column;
+          }
+
+          label {
+            width: 31.333% !important;
+            max-width: 100% !important;
+
+            @include xs {
+              width: 100% !important;
+            }
+          }
+        }
       }
 
       &-col-custom {
