@@ -251,6 +251,15 @@ class Tool {
   guarantee;
 
   /**
+   * Кастомное ГО (гарантийное обеспечение)
+   * 
+   * Используется вместо обычного ГО, если не равно null
+   * 
+   * @type {number}
+   */
+  customGuarantee;
+
+  /**
    * Текущая цена
    * 
    * @type {number}
@@ -374,6 +383,28 @@ class Tool {
     return this.isFutures
       ? ""
       : this.dollarRate == 1 ? "RU" : "US";
+  }
+
+  set currentPrice(value) {
+    this._currentPrice = value;
+  }
+
+  get currentPrice() {
+    if (this.customCurrentPrice != null) {
+      return this.customCurrentPrice;
+    }
+    return this._currentPrice;
+  }
+
+  set guarantee(value) {
+    this._guarantee = value;
+  }
+
+  get guarantee() {
+    if (this.customGuarantee != null) {
+      return this.customGuarantee;
+    }
+    return this._guarantee;
   }
   
   getFullName() {
