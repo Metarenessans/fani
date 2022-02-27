@@ -44,6 +44,33 @@ export const PriceMove = () => {
     setIsLoading,
   } = useContext(GlobalContext);
 
+
+  // useEffect(() => {
+  //   window.addEventListener("keyup", e => {
+  //     const save = saves[1];
+  //     const data = {
+  //       id:     save.id,
+  //       name: save.name,
+  //       static: JSON.stringify(formSnapshot())
+  //     }
+  //     console.log("EASTER:", data);
+  //     // Пасхалка
+      
+  //     if (e.ctrlKey && e.shiftKey && e.keyCode == 191) { // Ctrl + Shift + /
+  //       console.log("EASTER EGG:",easter);
+  //       const file = new Blob([JSON.stringify(easterEgg, null, 2)], { type: "text/plain" });
+
+  //       const link = document.createElement("a");
+  //       link.href = URL.createObjectURL(file);
+  //       link.setAttribute("download", "easter_egg.json");
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       link.remove();
+  //     }
+  //   });
+  // }, []);
+
+
   const loadData = async () => {
     await setIsLoading(true);
     await Promise.all([getInvestorInfo(), getTools()]);

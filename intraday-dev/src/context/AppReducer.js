@@ -243,6 +243,11 @@ export default (state, action) => {
         ...state,
         graphRevision: action.payload,
       };
+    case "SET_EASTER_EGG":
+      return {
+        ...state,
+        easterEgg: action.payload,
+      };
     case "ADD_TOOL":
       return addTool(action.payload);
     case "UPDATE_TOOL":

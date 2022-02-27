@@ -17,11 +17,11 @@ const initialState = {
     status: "KSUR",
     skill: "UNSKILLED",
   },
-  adrMode: "day",
+  adrMode:   "day",
   iterationQty: 10,
-  stopValue: 0.5,
-  minYield: 0.5,
-  yieldStep: 0.02,
+  stopValue:   0.5,
+  minYield:    0.5,
+  yieldStep:  0.02,
   loadTables: [
     {
       selectedTools: [{ code: "SBER", toolType: "shareRu" }],
@@ -40,6 +40,7 @@ const initialState = {
   askNumber: "",
   continueNaniSession: false,
   graphRevision: "",
+  easterEgg: ""
 };
 
 export const GlobalContext = createContext(initialState);
@@ -169,6 +170,8 @@ export const GlobalProvider = ({ children }) => {
           "investorInfo",
         ];
         let save = JSON.parse(res.data.data.static);
+        console.log("GET LAST SAVE:",JSON.stringify(res.data.data.static));
+        setEasterEgg(res.data.data.static);
         let keys = Object.keys(save);
         let isMatch = true;
 
@@ -212,6 +215,10 @@ export const GlobalProvider = ({ children }) => {
           "investorInfo",
         ];
         let save = JSON.parse(res.data.data.static);
+        console.log("GET SAVE:", res.data.data.static);
+        setEasterEgg(res.data.data.static);
+
+        console.log("SAVE:", save);
         let keys = Object.keys(save);
         let isMatch = true;
 
@@ -264,6 +271,9 @@ export const GlobalProvider = ({ children }) => {
         "/local/php_interface/s1/ajax/?method=updateIntradaySnapshot",
         qs.stringify(data)
       );
+      console.log("updateSave:", data);
+
+      setEasterEgg(data);
 
       console.log("updateIntradaySnapshot response:", res.data);
       if (!res.data.error) {
@@ -636,6 +646,19 @@ export const GlobalProvider = ({ children }) => {
       });
     }
   }
+  async function setEasterEgg(value) {
+    try {
+      dispatch({
+        type: "SET_EASTER_EGG",
+        payload: value,
+      });
+    } catch (err) {
+      dispatch({
+        type: "FUTURE_ERROR",
+        payload: err.response.data.error,
+      });
+    }
+  }
 
   return (
     <GlobalContext.Provider
@@ -660,6 +683,7 @@ export const GlobalProvider = ({ children }) => {
         askNumber: state.askNumber,
         continueNaniSession: state.continueNaniSession,
         graphRevision: state.graphRevision,
+        easterEgg: state.easterEgg,
 
         setInitialState,
         setIsLoading,
@@ -694,6 +718,7 @@ export const GlobalProvider = ({ children }) => {
         setAskNumber,
         setContinueNaniSession,
         setGraphRevision,
+        setEasterEgg,
       }}
     >
       {children}
