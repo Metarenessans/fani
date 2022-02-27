@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react'
+import { unstable_batchedUpdates } from "react-dom"
 import { Button, Input, Select, Switch, Tooltip } from 'antd/es'
 
 import { LoadingOutlined } from "@ant-design/icons"
@@ -20,18 +21,21 @@ import createTabs       from "./tabs"
 import BurgerButton     from "./burger-button"
 import Table            from "./table"
 import SaveModal        from '../save-modal'
-import { Tools }  from '../../../../../common/tools'
+import { Tool, Tools }  from '../../../../../common/tools'
 import CrossButton      from '../../../../../common/components/cross-button'
 import NumericInput     from '../../../../../common/components/numeric-input'
 import CustomSlider     from '../../../../../common/components/custom-slider'
+import ToolSelect       from '../../../../../common/components/tool-select'
 import { Dialog, dialogAPI } from '../../../../../common/components/dialog'
 
 import round           from '../../../../../common/utils/round'
 import formatNumber    from '../../../../../common/utils/format-number'
 import fractionLength  from '../../../../../common/utils/fraction-length'
 import magnetToClosest from '../../../../../common/utils/magnet-to-closest'
+import customIsEqual   from '../../../../../common/utils/is-equal'
 
 import { isEqual, cloneDeep } from "lodash"
+import { diff } from "deep-diff"
 
 import stepConverter from './step-converter'
 
@@ -79,6 +83,7 @@ const SettingsGenerator = props => {
   }
 
   const prevGENA = usePrevious(genaSave);
+  let prevProps = usePrevious(props);
 
   const onDownload = props.onDownload || function(title, text) {
     const file = new Blob([text], { type: 'text/plain' });
@@ -179,16 +184,20 @@ const SettingsGenerator = props => {
   const [presets, setPresets] = useState(initialPresets);
   const [newPresetName, setNewPresetName] = useState("МТС");
   const [currentPresetName, setCurrentPresetName] = useState(props.defaultPresetName || "Стандарт");
-  const currentPreset = presets.find(preset => preset.name == currentPresetName);
+  const currentPreset = presets.find(preset => preset.name == currentPresetName) ?? presets[0];
   const currentPresetIndex = presets.indexOf(currentPreset);
 
   const [tools, setTools] = useState(props.tools?.length ? props.tools : Tools.createArray());
   const [changedToolManually, setChangedToolManually] = useState(false)
   const currentToolCode = currentPreset.options.currentToolCode || defaultToolCode;
   const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+  /** @type {Tool} */
   const currentTool = tools[currentToolIndex] || Tools.createArray()[0];
   const prevTool = useRef(currentTool);
   const fraction = fractionLength(currentTool.priceStep);
+
+  const [customGuarantee, setCustomGuarantee] = useState(currentTool.guarantee);
+  const [customCurrentPrice, setCustomCurrentPrice] = useState(currentTool.currentPrice);
 
   const [searchVal, setSearchVal] = useState("");
   const [isLong, setIsLong] = useState(true);
@@ -454,7 +463,6 @@ const SettingsGenerator = props => {
 
     changedDueToCurrentPreset = false;
     changedDueToAddPreset     = false;
-    setShouldRegisterUpdate(true);
   }
 
   function updateCurrentPresetTool(code) {
@@ -536,155 +544,6 @@ const SettingsGenerator = props => {
     }
   }, []);
 
-  // Проверка обновления гены
-  useEffect(() => {
-
-    if (open) {
-      dev && console.log("ГЕНА открыт, поэтому не нужно стягивать данные");
-      // return;
-    }
-
-    let prevGENAToCompare;
-    if (prevGENA) {
-      prevGENAToCompare = cloneDeep(prevGENA);
-      delete prevGENAToCompare.currentPresetName;
-      delete prevGENAToCompare.totalIncome;
-      delete prevGENAToCompare.totalLoss;
-    }
-
-    let genaToCompare;
-    if (genaSave) {
-      genaToCompare = cloneDeep(genaSave);
-      delete genaToCompare.currentPresetName;
-      delete genaToCompare.totalIncome;
-      delete genaToCompare.totalLoss;
-    }
-
-    if (prevGENA && !isEqual(prevGENAToCompare, genaToCompare)) {
-      if (genaSave == null) {
-        // Откат к дефолту
-        setPresets(initialPresets);
-        const currentPresetName = props.defaultPresetName || "Стандарт";
-        setCurrentPresetName(currentPresetName);
-        const currentPreset = initialPresets.find(preset => preset.name == currentPresetName);
-
-        setInvestorDepo(props.depo || 1_000_000)
-        setChangedDepoManually(true);
-
-        setCurrentTab(initialCurrentTab);
-        setLoad(props.load || 0);
-        setIsLong(true);
-        
-        const tools = props.tools?.length ? props.tools : Tools.createArray();
-        setTools(tools);
-        setChangedToolManually(true);
-
-        const currentToolCode = initialPresets[0].options.currentToolCode;
-        const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
-        const currentTool = tools[currentToolIndex] || Tools.createArray()[0];
-
-        setSearchVal("");
-        setIsRiskStatic(true);
-        setComission(currentTool.dollarRate == 0 ? 1 : 45);
-
-        setRanull(10);
-        setRanullMode(true);
-        setRanullPlus(3);
-        setRanullPlusMode(true);
-
-        // Прямые профитные докупки 
-        setProfitableBying(false);
-        setReversedProfitableBying(false);
-        setMirrorBying(false);
-        setReversedBying(currentPreset.type == "СМС + ТОР");
-
-        changedDueToCurrentPreset = false;
-        changedDueToAddPreset     = false;
-
-        setShouldRegisterUpdate(true);
-
-        return;
-      }
-
-      let {
-        isLong,
-        comission,
-        depo,
-        secondaryDepo,
-        load,
-        currentTab,
-        presets,
-        currentPresetName,
-        isProfitableBying,
-        isReversedProfitableBying,
-        isMirrorBying,
-        isReversedBying,
-        ranull,
-        ranullMode,
-        ranullPlus,
-        ranullPlusMode
-      } = genaSave;
-
-      setDepo(depo);
-      setSecondaryDepo(secondaryDepo);
-      setLoad(load);
-      setCurrentTab(currentTab);
-
-      setCurrentPresetName(currentPresetName);
-      setProfitableBying(isProfitableBying);
-      setReversedProfitableBying(isReversedProfitableBying)
-      setMirrorBying(isMirrorBying);
-      setReversedBying(isReversedBying);
-      setRanull(ranull);
-      setRanullMode(ranullMode);
-      setRanullPlus(ranullPlus);
-      setRanullPlusMode(ranullPlusMode);
-
-      setIsLong(isLong);
-
-      // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
-      let _presets = cloneDeep(presets);
-      if (genaSave.firstLoad) {
-        _presets.splice(0, 3, ...initialPresets);
-        // Переносится только инструмент
-        _presets = _presets.map((preset, index) => {
-          preset.options.currentToolCode = genaSave.presets[index].options.currentToolCode;
-          preset.options[initialCurrentTab].customData[0].preferredStep =
-            genaSave.presets[index].options[initialCurrentTab].customData[0].preferredStep;
-          return preset;
-        })
-      }
-
-      _presets = _presets.map(preset => {
-        preset.percentMode = preset.percentMode ?? "total";
-        preset.options.risk = preset.options.risk ?? calcRisk(preset.type);
-        return preset;
-      })
-
-      setPresets(_presets);
-
-      const currentPreset = _presets.find(preset => preset.name == currentPresetName);
-      const currentPresetIndex = _presets.indexOf(currentPreset);
-      if (currentPresetIndex > 2) {
-        setComission(comission);
-      }
-
-      setChangedToolManually(false);
-      setChangedDepoManually(false);
-
-      if (changedDueToCurrentPreset) {
-        changedDueToCurrentPreset = false;
-      }
-      else if (changedDueToAddPreset) {
-        changedDueToAddPreset = false;
-      }
-      else {
-      }
-
-      setShouldRegisterUpdate(true);
-    }
-  });
-
   useEffect(() => {
     prevCurrentTab.current = currentTab;
   }, [currentTab]);
@@ -702,7 +561,8 @@ const SettingsGenerator = props => {
 
     changedDueToCurrentPreset = true;
     changedDueToAddPreset     = false;
-    setShouldRegisterUpdate(true);
+    // ##
+    // setShouldRegisterUpdate(true);
 
   }, [currentPreset.name]);
 
@@ -722,7 +582,8 @@ const SettingsGenerator = props => {
 
     changedDueToCurrentPreset = false;
     changedDueToAddPreset     = false;
-    setShouldRegisterUpdate(true);
+    // ##
+    // setShouldRegisterUpdate(true);
 
   }, [investorDepo]);
 
@@ -824,14 +685,18 @@ const SettingsGenerator = props => {
 
     prevTool.current = currentTool;
 
-    setShouldRegisterUpdate(true);
-
   }, [currentToolCode]);
+
+  useEffect(() => {
+    setCustomGuarantee(currentTool.guarantee);
+    setCustomCurrentPrice(currentTool.currentPrice);
+  }, [currentTool]);
 
   useEffect(() => {
     changedDueToCurrentPreset = false;
     changedDueToAddPreset     = false;
-    setShouldRegisterUpdate(true);
+    // ##
+    // setShouldRegisterUpdate(true);
   }, [load, comission, depo, secondaryDepo])
 
   useEffect(() => {
@@ -852,1001 +717,1198 @@ const SettingsGenerator = props => {
       changed = true;
       if (changedDueToCurrentPreset) {
         changed = false;
-        // changedDueToCurrentPreset = false;
       }
       else if (changedDueToAddPreset) {
         changed = false;
-        // changedDueToAddPreset = false;
       }
 
+      // console.log("Отправляем обновление", getPackedSave());
       onUpdate && onUpdate(getPackedSave(), data, changed);
     }
   }, [shouldRegisterUpdate]);
 
+  // Проверка обновления гены
+  useEffect(() => {
+
+    const genaSave = cloneDeep(props.genaSave);
+
+    const withoutFunctions = (obj) => {
+      const stringified = JSON.stringify(obj);
+
+      // We need to parse string back to object and return it
+      const parsed = JSON.parse(stringified);
+
+      return parsed;
+    }
+
+    if (shouldRegisterUpdate) {
+      return;
+    }
+
+    // console.log(prevProps, props);
+    // if (isEqual(withoutFunctions(prevProps), withoutFunctions(props))) {
+    //   console.log("Пропсы не изменились, скипаем стягивание");
+    //   return;
+    // }
+    // else {
+    //   console.log(diff(withoutFunctions(prevProps), withoutFunctions(props)));
+    // }
+
+    let prevGENAToCompare;
+    if (prevGENA) {
+      prevGENAToCompare = cloneDeep(prevGENA);
+      delete prevGENAToCompare.currentPresetName;
+      delete prevGENAToCompare.totalIncome;
+      delete prevGENAToCompare.totalLoss;
+    }
+
+    let genaToCompare;
+    if (genaSave) {
+      genaToCompare = cloneDeep(genaSave);
+      delete genaToCompare.currentPresetName;
+      delete genaToCompare.totalIncome;
+      delete genaToCompare.totalLoss;
+    }
+
+    if (prevGENA && !isEqual(prevGENAToCompare, genaToCompare)) {
+
+      if (genaSave == null) {
+        // Откат к дефолту
+        setPresets(initialPresets);
+        const currentPresetName = props.defaultPresetName || "Стандарт";
+        setCurrentPresetName(currentPresetName);
+        const currentPreset = initialPresets.find(preset => preset.name == currentPresetName);
+
+        setInvestorDepo(props.depo || 1_000_000)
+        setChangedDepoManually(true);
+
+        setCurrentTab(initialCurrentTab);
+        setLoad(props.load || 0);
+        setIsLong(true);
+        
+        const tools = props.tools?.length ? props.tools : Tools.createArray();
+        setTools(tools);
+        setChangedToolManually(true);
+
+        const currentToolCode = initialPresets[0].options.currentToolCode;
+        const currentToolIndex = Tools.getToolIndexByCode(tools, currentToolCode);
+        const currentTool = tools[currentToolIndex] || Tools.createArray()[0];
+
+        setSearchVal("");
+        setIsRiskStatic(true);
+        setComission(currentTool.dollarRate == 0 ? 1 : 45);
+
+        setRanull(10);
+        setRanullMode(true);
+        setRanullPlus(3);
+        setRanullPlusMode(true);
+
+        // Прямые профитные докупки 
+        setProfitableBying(false);
+        setReversedProfitableBying(false);
+        setMirrorBying(false);
+        setReversedBying(currentPreset.type == "СМС + ТОР");
+
+        changedDueToCurrentPreset = false;
+        changedDueToAddPreset     = false;
+
+        // ##
+        // setShouldRegisterUpdate(true);
+
+        return;
+      }
+
+      let {
+        isLong,
+        comission,
+        depo,
+        secondaryDepo,
+        load,
+        currentTab,
+        presets,
+        currentPresetName,
+        isProfitableBying,
+        isReversedProfitableBying,
+        isMirrorBying,
+        isReversedBying,
+        ranull,
+        ranullMode,
+        ranullPlus,
+        ranullPlusMode
+      } = genaSave;
+
+      dev && console.log("ГЕНА: стягиваемся с основной страницы");
+
+      setDepo(depo);
+      setSecondaryDepo(secondaryDepo);
+      setLoad(load);
+      setCurrentTab(currentTab);
+
+      setCurrentPresetName(currentPresetName);
+      setProfitableBying(isProfitableBying);
+      setReversedProfitableBying(isReversedProfitableBying)
+      setMirrorBying(isMirrorBying);
+      setReversedBying(isReversedBying);
+      setRanull(ranull);
+      setRanullMode(ranullMode);
+      setRanullPlus(ranullPlus);
+      setRanullPlusMode(ranullPlusMode);
+
+      setIsLong(isLong);
+
+      // Во время первой загрузки игнорируем первые 3 пресета - они дефолтные
+      let _presets = cloneDeep(presets);
+      if (genaSave.firstLoad) {
+        _presets.splice(0, 3, ...initialPresets);
+        // Переносится только инструмент
+        _presets = _presets.map((preset, index) => {
+          preset.options.currentToolCode = genaSave.presets[index].options.currentToolCode;
+          preset.options[initialCurrentTab].customData[0].preferredStep =
+            genaSave.presets[index].options[initialCurrentTab].customData[0].preferredStep;
+          return preset;
+        })
+      }
+
+      _presets = _presets.map(preset => {
+        preset.percentMode = preset.percentMode ?? "total";
+        preset.options.risk = preset.options.risk ?? calcRisk(preset.type);
+        return preset;
+      })
+
+      setPresets(_presets);
+
+      const currentPreset = _presets.find(preset => preset.name == currentPresetName);
+      const currentPresetIndex = _presets.indexOf(currentPreset);
+      if (currentPresetIndex > 2) {
+        setComission(comission);
+      }
+
+      setChangedToolManually(false);
+      setChangedDepoManually(false);
+
+      if (changedDueToCurrentPreset) {
+        changedDueToCurrentPreset = false;
+      }
+      else if (changedDueToAddPreset) {
+        changedDueToAddPreset = false;
+      }
+      else {
+      }
+
+      // ##
+      // setShouldRegisterUpdate(true);
+    }
+  });
+
   return (
     <>
-      <div 
-        className="settings-generator"
-        onClick={e => {
-          if (menuVisible && e.target == root.current) {
-            setMenuVisible(false);
+      <Dialog
+        id="settings-generator"
+        pure={true}
+        onClose={() => {
+          if (onClose) {
+            onClose(getPackedSave());
           }
         }}
-        ref={root}
       >
-
         <div 
-          className={
-            ["settings-generator-menu"]
-              .concat(menuVisible ? "visible" : "")
-              .join(" ")
-              .trim()
-          }
-          ref={menu}
+          className="settings-generator"
+          onClick={e => {
+            if (menuVisible && e.target == root.current) {
+              setMenuVisible(false);
+            }
+          }}
+          ref={root}
         >
 
-          <div className="settings-generator__header">
+          <div 
+            className={
+              ["settings-generator-menu"]
+                .concat(menuVisible ? "visible" : "")
+                .join(" ")
+                .trim()
+            }
+            ref={menu}
+          >
 
-            <Input className="settings-generator-menu__search" placeholder="Поиск настроек" />
+            <div className="settings-generator__header">
 
-            <Tooltip title="Добавить настройку">
-              <button 
-                className="settings-generator-menu__add"
-                aria-label="Добавить новую настройку"
-                onClick={e => {
-                  dialogAPI.open("settings-generator-add-popup");
-                }}
-              >
-                +
-              </button>
-            </Tooltip>
+              <Input className="settings-generator-menu__search" placeholder="Поиск настроек" />
 
-          </div>
-          {/* settings-generator__header */}
-
-          <ul className="settings-generator-menu-list">
-            {presets.map((preset, index) =>
-              <li 
-                className={
-                  ["settings-generator-menu-list-item"]
-                    .concat(index == currentPresetIndex ? "selected" : "")
-                    .join(" ")
-                    .trim()
-                }
-                key={index}
-              >
-                <button className="settings-generator-menu-list-item__name"
-                        onClick={e => setCurrentPresetName(preset.name)}>
-                  {preset.name}
-                </button>
-                <ItemOptions 
-                  locked={index < 3} 
-                  onDelete={e => {
-                    const presetsCopy = [...presets];
-                    presetsCopy.splice(index, 1);
-                    setPresets(presetsCopy);
-                    // Был удален выбранный сейв
-                    if (preset.name == currentPresetName) {
-                      setCurrentPresetName(presetsCopy[0].name);
-                    }
-
-                    setShouldSave(true);
-
-                    changedDueToCurrentPreset = false;
-                    changedDueToAddPreset     = false;
-                    setShouldRegisterUpdate(true);
-                  }}
-                  preset={preset}
-                />
-              </li>
-            )}
-          </ul>
-
-          {props.loading && <LoadingOutlined className="settings-generator-preloader" />}
-          
-        </div>
-
-        <div 
-          className="settings-generator-content"
-          inert={menuVisible ? "true" : null}
-        >
-
-          <div className="settings-generator__header">
-
-            <BurgerButton 
-              key={menuVisible}
-              active={menuVisible}
-              className="settings-generator__burger-button" 
-              onClick={e => setMenuVisible(!menuVisible)}
-            />
-
-            <h3 className="settings-generator__title">Генератор настроек МААНИ 144</h3>
-            
-            <Tooltip title="Закрыть генератор настроек">
-              <CrossButton 
-                className="settings-generator__close js-dialog-focus-first"
-                onClick={e => {
-                  if (onClose) {
-                    onClose(getPackedSave(), e);
-                  }
-                }}
-              />
-            </Tooltip>
-
-          </div>
-
-          <div className="settings-generator-content__inner">
-
-            <div className="settings-generator-content-header">
-
-              <div
-                className="settings-generator-content-header__title-wrap"
-              >
-
-                <h3
-                  className="settings-generator-content-header__title"
-                  contentEditable={currentPresetIndex > 2}
-                  suppressContentEditableWarning={true}
-                  onKeyDown={e => {
-                    const key = e.key.toLowerCase();
-                    if (key == "enter" || key == "escape") {
-                      e.target.blur();
-                    }
-                  }}
-                  onBlur={e => {
-                    let name = e.target.innerText;
-
-                    const presetsCopy = [...presets];
-                    const currentPreset = presetsCopy.find( preset => preset.name == currentPresetName );
-                    currentPreset.name = name;
-
-                    const namesArray = presetsCopy.map(preset => preset.name);
-                    if ( namesArray.filter(n => n == name).length > 1 ) {
-                      name = makeUnique( name, namesArray );
-                    }
-                    
-                    currentPreset.name = name;
-                    setCurrentPresetName(name);
-                    setPresets(presetsCopy);
-
-                    changedDueToCurrentPreset = false;
-                    changedDueToAddPreset     = false;
-                    setShouldRegisterUpdate(true);
+              <Tooltip title="Добавить настройку">
+                <button 
+                  className="settings-generator-menu__add"
+                  aria-label="Добавить новую настройку"
+                  onClick={e => {
+                    dialogAPI.open("settings-generator-add-popup");
                   }}
                 >
-                  {currentPresetName}
-                </h3>
-                <Tooltip title='Скачать файл'>
-                  <button 
-                    className="round-btn settings-generator-content-header__download"
-                    aria-label="Скачать"
-                    onClick={e => {
-                      const title = currentPreset.name;
-                      const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
-                        .map(node => [...node.querySelectorAll("[data-should-output]")]
-                          .map(node => node.innerText)
-                          .join("\n")
-                        )
-                        .join("\n");
-                      
-                      onDownload(title, content);
-                    }}
-                  >
-                    <DownloadIcon />
+                  +
+                </button>
+              </Tooltip>
+
+            </div>
+            {/* settings-generator__header */}
+
+            <ul className="settings-generator-menu-list">
+              {presets.map((preset, index) =>
+                <li 
+                  className={
+                    ["settings-generator-menu-list-item"]
+                      .concat(index == currentPresetIndex ? "selected" : "")
+                      .join(" ")
+                      .trim()
+                  }
+                  key={index}
+                >
+                  <button className="settings-generator-menu-list-item__name"
+                          onClick={e => setCurrentPresetName(preset.name)}>
+                    {preset.name}
                   </button>
-                </Tooltip>
-              </div>
-
-              <ul className="settings-generator-content-header-options">
-                <li>
-                  <Tooltip title="Сохранить текущие настройки">
-                    <Button 
-                      className="custom-btn"
-                      onClick={e => {
-                        if (currentPresetIndex < 3) {
-                          dialogAPI.open("settings-generator-save-preset-popup", e.target);
-                        }
-                        else {
-                          setShouldSave(true);
-                        }
-                      }}
-                    >
-                      Сохранить
-                    </Button>
-                  </Tooltip>
-                </li>
-              </ul>
-
-            </div>
-            {/* settings-generator-content-header */}
-
-            <div className="settings-generator-content__row settings-generator-content__row--1">
-
-              <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
-
-                <label className="input-group">
-                  <span className="input-group__label">
-                    <span className="visually-hidden">Торговый</span>
-                    Инструмент
-                  </span>
-                  <Select
-                    onFocus={() => onToolSelectFocus && onToolSelectFocus()}
-                    onBlur={() => onToolSelectBlur && onToolSelectBlur()}
-                    loading={toolsLoading || state.toolSelectDisabled}
-                    disabled={toolsLoading || state.toolSelectDisabled}
-                    value={toolsLoading ? 0 : currentToolIndex}
-                    onChange={index => updateCurrentPresetTool(tools[index].code)}
-                    showSearch
-                    onSearch={value => setSearchVal(value)}
-                    optionFilterProp="children"
-                    filterOption={(input, option) =>
-                      option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }
-                    style={{ width: "100%" }}
-                  >
-                    {toolsLoading
-                      ?
-                        <Select.Option key={0} value={0}>
-                          <LoadingOutlined style={{ marginRight: ".2em" }} />
-                          Загрузка...
-                        </Select.Option>
-                      :
-                        tools.map((tool, index) => (
-                          <Select.Option key={index} value={index} title={String(tool)}>
-                            {String(tool)}
-                          </Select.Option>
-                        ))
-                    }
-                  </Select>
-                </label>
-
-                <label className="input-group">
-                  <span className="input-group__label">
-                    <Tooltip title="Комиссия в рублях за сделку (вход + выход)">
-                      Комиссия
-                    </Tooltip>
-                  </span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={comission}
-                    format={formatNumber}
-                    unsigned="true"
-                    onBlur={value => setComission(value)}
-                  />
-                </label>
-
-                <label className="input-group">
-                  <span className="input-group__label">Основной депо</span>
-                  <NumericInput
-                    className="input-group__input"
-                    defaultValue={depo}
-                    format={formatNumber}
-                    unsigned="true"
-                    min={10_000}
-                    onBlur={depo => {
-                      setDepo(depo);
-                      setChangedDepoManually(true);
-                    }}
-                  />
-                </label>
-
-                {
-                  ["СМС + ТОР"].indexOf(currentPreset.type) > -1 &&
-                    <label className="input-group">
-                      <span className="input-group__label">Плечевой депо</span>
-                      <NumericInput
-                        className="input-group__input"
-                        defaultValue={secondaryDepo}
-                        format={formatNumber}
-                        unsigned="true"
-                        min={0}
-                        onBlur={secondaryDepo => {
-                          setSecondaryDepo(secondaryDepo);
-                          setChangedDepoManually(true);
-                        }}
-                      />
-                    </label>
-                }
-
-              </div>
-              {/* row-col-half */}
-
-              <div className="settings-generator-content__row-col-half settings-generator-content__pairs-wrap">
-                {(() => {
-                  const PairJSX = props => {
-                    let { name, value, formatValue } = props;
-                    if (formatValue == null) {
-                      formatValue = true;
-                    }
-
-                    return (
-                      <div className="settings-generator-content__pair">
-                        <span className="settings-generator-content__pair-key">{name}</span>
-                        <span className="settings-generator-content__pair-val">
-                          {formatValue ? formatNumber(value) : value}
-                        </span>
-                      </div>
-                    )
-                  };
-
-                  return (
-                    <>
-                      <PairJSX 
-                        name={
-                          <Tooltip title="Максимальное количество контрактов на депозит">
-                            Контрактов max.
-                          </Tooltip>
-                        }
-                        value={contractsTotal}
-                      />
-                      <PairJSX
-                        name={
-                          <Tooltip title="Количество контрактов на заданный объём загрузки">
-                            {"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
-                          </Tooltip>
-                        }
-                        value={
-                          <span>
-                            {formatNumber(contracts)}
-                            {hasExtraDepo &&
-                              <>
-                                {window.innerWidth < 768 ? <br /> : " "}
-                                (
-                                  {formatNumber(contracts - contractsSecondary)}
-                                  /
-                                  {formatNumber(contractsSecondary)}
-                                )
-                              </>
-                            }
-                          </span>
-                        }
-                        formatValue={false}
-                      />
-                      <PairJSX 
-                        name={
-                          <Tooltip title="Величина прибыли с учётом алгоритмов разгрузки">
-                            Прибыль
-                          </Tooltip>
-                        }
-                        value={
-                          formatNumber(round(totalIncome, 1)) + 
-                          " (" + round(totalIncome / depoSum * 100, 2) + "%)"
-                        }
-                        formatValue={false}
-                      />
-                      <PairJSX
-                        name={<span>Комиссия</span>}
-                        value={
-                          Math.round(
-                            mainData
-                              .map(row => row.comission)
-                              .reduce((prev, curr) => prev + curr, 0)
-                          )
-                        }
-                      />
-                      <PairJSX
-                        name={
-                          <Tooltip title="Величина убытка при закрытии позиции по стопу">
-                            Убыток (риск)
-                          </Tooltip>
-                        }
-                        value={totalLoss}
-                      />
-                    </>
-                  )
-
-                })()}
-
-              </div>
-              {/* row-col-half */}
-
-            </div>
-            {/* row */}
-
-            <div className="settings-generator-content__row">
-
-              <div className="settings-generator-content__row-col-half">
-
-                <label className="settings-generator-slider__label input-group">
-                  <span className="input-group__label">
-                    <Tooltip title="Объём депозита в процентах на вход в сделку">
-                      Загрузка
-                    </Tooltip>
-                  </span>
-                  <span className="settings-generator-slider__value">
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={load}
-                      format={value => formatNumber(round(value, fraction))}
-                      unsigned="true"
-                      onBlur={value => setLoad(value)}
-                      suffix="%"
-                    />
-                  </span>
-                </label>
-
-                {/* 
-                  Лев, [24.07.21 21:34]
-                  Короче по второму: убираем свитч лонш шорт и считаем по дефолтному го
-                */}
-                {false &&
-                <Tooltip title="Направление позиции">
-                  <Switch
-                    className="settings-generator-slider__switch-long-short"
-                    checkedChildren="LONG"
-                    unCheckedChildren="SHORT"
-                    checked={isLong}
-                    onChange={isLong => {
-                      setIsLong(isLong);
-                      const updatedTools = [...tools];
-                      updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
-                      setTools(updatedTools);
-                    }}
-                  />
-                </Tooltip>
-                }
-
-                <div className="settings-generator-slider__wrap">
-
-                  <CustomSlider 
-                    className="settings-generator-slider"
-                    value={load}
-                    step={0.01}
-                    onChange={value => setLoad(value)}
-                  />
-
-                </div>
-                
-              </div>
-              {/* row-col-half */}
-
-              <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
-
-                <div>
-                  
-                  <label className="input-group">
-                    <div className="risk-label-wrap">
-                      <span className="input-group__label">Б/У</span>
-                      <button className="risk-label__switch"
-                              onClick={() => setRanullMode(!ranullMode)}>
-                        {ranullMode 
-                          ? currentPreset.type == "Лимитник"
-                            ? "% от депо"
-                            : "п" 
-                          : currentPreset.type == "Лимитник"
-                            ? "% от ср цены"
-                            : "%"
-                        }
-                      </button>
-                    </div>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={ranull}
-                      format={formatNumber}
-                      unsigned="true"
-                      onBlur={ranull => setRanull(ranull)}
-                      suffix={currentPreset.type == "Лимитник" ? "%" : ranullMode ? "п" : "%"}
-                    />
-                  </label>
-
-                  <label className="input-group">
-                    <div className="risk-label-wrap">
-                      <span className="input-group__label">Смещение Б/У</span>
-                      <button className="risk-label__switch"
-                              onClick={() => setRanullPlusMode(!ranullPlusMode)}>
-                        {ranullPlusMode
-                          ? currentPreset.type == "Лимитник"
-                            ? "% от депо"
-                            : "п"
-                          : currentPreset.type == "Лимитник"
-                            ? "% от сред. цены"
-                            : "%"
-                        }
-                      </button>
-                    </div>
-                    <NumericInput
-                      className="input-group__input"
-                      defaultValue={ranullPlus}
-                      format={formatNumber}
-                      unsigned="true"
-                      onBlur={ranullPlus => setRanullPlus(ranullPlus)}
-                      suffix={currentPreset.type == "Лимитник" ? "%" : ranullPlusMode ? "п" : "%"}
-                    />
-                  </label>
-
-                </div>
-
-                <div>
-                  
-                  <div className="input-group">
-                    <div className="risk-label-wrap">
-                      <span className="input-group__label">
-                        <Tooltip title="Stop loss в процентах, пунктах или рублях на весь депозит">
-                          Риск (стоп)
-                        </Tooltip>
-                      </span>
-                      <button className="risk-label__switch"
-                              onClick={() => setIsRiskStatic(!isRiskStatic)}>
-                        {isRiskStatic ? "статический" : "динамический"}
-                      </button>
-                    </div>
-                    <NumericInput
-                      className="input-group__input"
-                      disabled={isReversedBying}
-                      // defaultValue={risk}
-                      defaultValue={currentPreset.options.risk}
-                      format={val => formatNumber(round(val, 2))}
-                      unsigned="true"
-                      onBlur={value => {
-                        if (value == round(risk, 2)) {
-                          value = risk;
-                        }
-                        setRisk(value);
-                      }}
-                      suffix={<Tooltip title="Процент от депозита">%</Tooltip>}
-                    />
-                  </div>
-
-                  <label className="input-group">
-                    <span className="input-group__label visually-hidden">Риск (стоп)</span>
-                    <NumericInput
-                      className="input-group__input"
-                      disabled={isReversedBying}
-                      defaultValue={
-                        (depoSum * risk / 100)
-                        /
-                        currentTool.stepPrice
-                        *
-                        currentTool.priceStep
-                        /
-                        (contracts || 1)
+                  <ItemOptions 
+                    locked={index < 3} 
+                    onDelete={e => {
+                      const presetsCopy = [...presets];
+                      presetsCopy.splice(index, 1);
+                      setPresets(presetsCopy);
+                      // Был удален выбранный сейв
+                      if (preset.name == currentPresetName) {
+                        setCurrentPresetName(presetsCopy[0].name);
                       }
-                      min={currentTool.priceStep}
-                      format={value => formatNumber(filterStep(value))}
-                      unsigned="true"
-                      onBlur={riskInSteps => {
-                        setRisk(
-                          riskInSteps
-                          *
-                          currentTool.stepPrice
-                          /
-                          currentTool.priceStep
-                          *
-                          (contracts || 1)
-                          /
-                          depoSum
-                          *
-                          100
-                        );
-                      }}
-                      suffix={<Tooltip title="Ход цены от точки входа">$/₽</Tooltip>}
-                    />
-                  </label>
 
-                  <label className="input-group">
-                    <span className="input-group__label visually-hidden">Риск (стоп)</span>
-                    <NumericInput
-                      className="input-group__input"
-                      disabled={isReversedBying}
-                      defaultValue={depoSum * risk / 100}
-                      format={value => formatNumber(round(value, fraction))}
-                      unsigned="true"
-                      onBlur={riskInMoney => {
-                        setRisk(riskInMoney / depoSum * 100);
-                      }}
-                      suffix="₽"
-                      suffix={<Tooltip title="Сумма риска в рублях">₽</Tooltip>}
-                    />
-                  </label>
+                      setShouldSave(true);
 
-                </div>
-
-                  
-              </div>
-              {/* row-col-half */}
-
-            </div>
-            {/* row */}
-
-            {/* Закрытие основного депозита */}
-            <div style={{ width: '100%' }}>
-              <div className="settings-generator-content__row-header-wrap">
-                <h3 className="settings-generator-content__row-header">
-                  Закрытие основного депозита
-                </h3>
-
-                <Tooltip title={
-                  currentPreset.options[initialCurrentTab].closeAll
-                    ? "Закрывать все открытые контракты"
-                    : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
-                }>
-                  <Switch
-                    className="settings-generator-content__row-header-close-all"
-                    checked={currentPreset.options[initialCurrentTab].closeAll}
-                    checkedChildren="100%"
-                    unCheckedChildren="100%"
-                    onChange={closeAll => updatePresetProperty(initialCurrentTab, { closeAll })}
+                      changedDueToCurrentPreset = false;
+                      changedDueToAddPreset     = false;
+                      // ##
+                      // setShouldRegisterUpdate(true);
+                    }}
+                    preset={preset}
                   />
-                </Tooltip>
+                </li>
+              )}
+            </ul>
 
-                <label className="switch-group">
-                  <Switch
-                    checked={currentPreset.options[initialCurrentTab].shouldResetByings}
-                    onChange={shouldResetByings => updatePresetProperty(initialCurrentTab, { shouldResetByings })}
-                  />
-                  <span className="switch-group__label">Сброс массива закрытия</span>
-                </label>                
+            {props.loading && <LoadingOutlined className="settings-generator-preloader" />}
+            
+          </div>
 
-                {/* В Стандарте нет зеркальных докупок */}
-                {["Стандарт"].indexOf(currentPreset.type) == -1 &&
-                  <label className="switch-group settings-generator-content__row-header-mirror-switch">
-                    <Switch
-                      checked={isResetStartPointEnabled}
-                      onChange={checked => {
-                        // Зеркальные докупки и Перевыставление в точку входа
-                        // не могут быть включены одновременно
-                        if (checked && isMirrorBying) {
-                          setMirrorBying(false);
-                        }
-                        setResetStartPointEnabled(checked);
-                      }}
-                    />
-                    <span className="switch-group__label">
-                      Перевыставление<br/>
-                      в точку входа
-                    </span>
-                  </label>
-                }
+          <div 
+            className="settings-generator-content"
+            inert={menuVisible ? "true" : null}
+          >
 
-                {/* В Стандарте нет зеркальных докупок */}
-                {["Стандарт"].indexOf(currentPreset.type) == -1 &&
-                  <label className="switch-group settings-generator-content__row-header-mirror-switch">
-                    <Switch
-                      checked={isMirrorBying}
-                      onChange={checked => {
-                        // Зеркальные докупки и Перевыставление в точку входа
-                        // не могут быть включены одновременно
-                        if (checked && isResetStartPointEnabled) {
-                          setResetStartPointEnabled(false);
-                        }
-                        setMirrorBying(checked);
-                      }}
-                    />
-                    <span className="switch-group__label">
-                      Зеркальные докупки<br/>
-                      (СМС)
-                    </span>
-                  </label>
-                }
-              </div>
+            <div className="settings-generator__header">
 
-              <SGRow
-                options={currentPreset.options[initialCurrentTab]}
-                onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
-                onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
-                data={data[initialCurrentTab]}
-                contracts={contracts}
-                currentTool={currentTool}
-                stepsToPercentConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromStepsToPercent : undefined}
-                percentToStepsConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromPercentToSteps : undefined}
+              <BurgerButton 
+                key={menuVisible}
+                active={menuVisible}
+                className="settings-generator__burger-button" 
+                onClick={e => setMenuVisible(!menuVisible)}
               />
 
+              <h3 className="settings-generator__title">Генератор настроек МААНИ 144</h3>
+              
+              <Tooltip title="Закрыть генератор настроек">
+                <CrossButton 
+                  className="settings-generator__close js-dialog-focus-first"
+                  onClick={e => {
+                    if (onClose) {
+                      onClose(getPackedSave(), e);
+                    }
+                  }}
+                />
+              </Tooltip>
+
             </div>
 
-            {/* Закрытие плечевого депозита */}
-            {hasExtraDepo && 
-              <div style={{ width: '100%', marginTop: "0.7em" }}>
+            <div className="settings-generator-content__inner">
+
+              <div className="settings-generator-content-header">
+
+                <div
+                  className="settings-generator-content-header__title-wrap"
+                >
+
+                  <h3
+                    className="settings-generator-content-header__title"
+                    contentEditable={currentPresetIndex > 2}
+                    suppressContentEditableWarning={true}
+                    onKeyDown={e => {
+                      const key = e.key.toLowerCase();
+                      if (key == "enter" || key == "escape") {
+                        e.target.blur();
+                      }
+                    }}
+                    onBlur={e => {
+                      let name = e.target.innerText;
+
+                      const presetsCopy = [...presets];
+                      const currentPreset = presetsCopy.find( preset => preset.name == currentPresetName );
+                      currentPreset.name = name;
+
+                      const namesArray = presetsCopy.map(preset => preset.name);
+                      if ( namesArray.filter(n => n == name).length > 1 ) {
+                        name = makeUnique( name, namesArray );
+                      }
+                                          
+                      currentPreset.name = name;
+                      setCurrentPresetName(name);
+                      setPresets(presetsCopy);
+
+                      changedDueToCurrentPreset = false;
+                      changedDueToAddPreset     = false;
+                      setShouldRegisterUpdate(true);
+                    }}
+                  >
+                    {currentPresetName}
+                  </h3>
+                  <Tooltip title='Скачать файл'>
+                    <button 
+                      className="round-btn settings-generator-content-header__download"
+                      aria-label="Скачать"
+                      onClick={e => {
+                        const title = currentPreset.name;
+                        const content = [...document.querySelector("#settings-generator-code").querySelectorAll(".code-panel-group")]
+                          .map(node => [...node.querySelectorAll("[data-should-output]")]
+                            .map(node => node.innerText)
+                            .join("\n")
+                          )
+                          .join("\n");
+                        
+                        onDownload(title, content);
+                      }}
+                    >
+                      <DownloadIcon />
+                    </button>
+                  </Tooltip>
+                </div>
+
+                <ul className="settings-generator-content-header-options">
+                  <li>
+                    <Tooltip title="Сохранить текущие настройки">
+                      <Button 
+                        className="custom-btn"
+                        onClick={e => {
+                          if (currentPresetIndex < 3) {
+                            dialogAPI.open("settings-generator-save-preset-popup", e.target);
+                          }
+                          else {
+                            setShouldSave(true);
+                          }
+                        }}
+                      >
+                        Сохранить
+                      </Button>
+                    </Tooltip>
+                  </li>
+                </ul>
+
+              </div>
+              {/* settings-generator-content-header */}
+
+              <div className="settings-generator-content__row settings-generator-content__row--1">
+
+                <div className="settings-generator-content__row-col-half" style={{ alignContent: "space-around" }}>
+
+                  <label className="input-group">
+                    <span className="input-group__label">
+                      <span className="visually-hidden">Торговый</span>
+                      Инструмент
+                    </span>
+                    <ToolSelect
+                      value={toolsLoading ? 0 : currentToolIndex}
+                      onChange={index => updateCurrentPresetTool(tools[index].code)}
+                      onBlur={() => context.imitateFetchingTools()}
+                    />
+                  </label>
+
+                  <label className="input-group">
+                    <span className="input-group__label">
+                      <Tooltip title="Комиссия в рублях за сделку (вход + выход)">
+                        Комиссия
+                      </Tooltip>
+                    </span>
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={comission}
+                      format={formatNumber}
+                      unsigned="true"
+                      onBlur={value => setComission(value)}
+                    />
+                  </label>
+
+                  <label className="input-group">
+                    <span className="input-group__label">Основной депо</span>
+                    <NumericInput
+                      className="input-group__input"
+                      defaultValue={depo}
+                      format={formatNumber}
+                      unsigned="true"
+                      min={10_000}
+                      onBlur={depo => {
+                        setDepo(depo);
+                        setChangedDepoManually(true);
+                      }}
+                    />
+                  </label>
+
+                  {
+                    ["СМС + ТОР"].indexOf(currentPreset.type) > -1 &&
+                      <label className="input-group">
+                        <span className="input-group__label">Плечевой депо</span>
+                        <NumericInput
+                          className="input-group__input"
+                          defaultValue={secondaryDepo}
+                          format={formatNumber}
+                          unsigned="true"
+                          min={0}
+                          onBlur={secondaryDepo => {
+                            setSecondaryDepo(secondaryDepo);
+                            setChangedDepoManually(true);
+                          }}
+                        />
+                      </label>
+                  }
+
+                </div>
+                {/* row-col-half */}
+
+                <div className="settings-generator-content__row-col-half settings-generator-content__pairs-wrap">
+                  {(() => {
+                    const PairJSX = props => {
+                      let { name, value, formatValue } = props;
+                      if (formatValue == null) {
+                        formatValue = true;
+                      }
+
+                      return (
+                        <div className="settings-generator-content__pair">
+                          <span className="settings-generator-content__pair-key">{name}</span>
+                          <span className="settings-generator-content__pair-val">
+                            {formatValue ? formatNumber(value) : value}
+                          </span>
+                        </div>
+                      )
+                    };
+
+                    return (
+                      <>
+                        <PairJSX 
+                          name={
+                            <Tooltip title="Максимальное количество контрактов на депозит">
+                              Контрактов max.
+                            </Tooltip>
+                          }
+                          value={contractsTotal}
+                        />
+                        <PairJSX
+                          name={
+                            <Tooltip title="Количество контрактов на заданный объём загрузки">
+                              {"Контракты" + (hasExtraDepo ? " (осн./плеч.)" : "")}
+                            </Tooltip>
+                          }
+                          value={
+                            <span>
+                              {formatNumber(contracts)}
+                              {hasExtraDepo &&
+                                <>
+                                  {window.innerWidth < 768 ? <br /> : " "}
+                                  (
+                                    {formatNumber(contracts - contractsSecondary)}
+                                    /
+                                    {formatNumber(contractsSecondary)}
+                                  )
+                                </>
+                              }
+                            </span>
+                          }
+                          formatValue={false}
+                        />
+                        <PairJSX 
+                          name={
+                            <Tooltip title="Величина прибыли с учётом алгоритмов разгрузки">
+                              Прибыль
+                            </Tooltip>
+                          }
+                          value={
+                            formatNumber(round(totalIncome, 1)) + 
+                            " (" + round(totalIncome / depoSum * 100, 2) + "%)"
+                          }
+                          formatValue={false}
+                        />
+                        <PairJSX
+                          name={<span>Комиссия</span>}
+                          value={
+                            Math.round(
+                              mainData
+                                .map(row => row.comission)
+                                .reduce((prev, curr) => prev + curr, 0)
+                            )
+                          }
+                        />
+                        <PairJSX
+                          name={
+                            <Tooltip title="Величина убытка при закрытии позиции по стопу">
+                              Убыток (риск)
+                            </Tooltip>
+                          }
+                          value={totalLoss}
+                        />
+                      </>
+                    )
+
+                  })()}
+
+                </div>
+                {/* row-col-half */}
+
+              </div>
+              {/* row */}
+
+              <div className="settings-generator-content__row">
+
+                <div className="settings-generator-content__row-col-half settings-generator-content__row-col-half--quiсk-fix">
+
+                  <label className="settings-generator-slider__label input-group">
+                    <span className="input-group__label">
+                      <Tooltip title="Объём депозита в процентах на вход в сделку">
+                        Загрузка
+                      </Tooltip>
+                    </span>
+                    <span className="settings-generator-slider__value">
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={load}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => setLoad(value)}
+                        suffix="%"
+                      />
+                    </span>
+                  </label>
+
+                  <label className="settings-generator-slider__label input-group">
+                    <span className="input-group__label">
+                      ГО
+                    </span>
+                    <span className="settings-generator-slider__value">
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={customGuarantee}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => {
+                          setCustomGuarantee(value);
+                          currentTool.customGuarantee = value;
+                        }}
+                        suffix="₽"
+                      />
+                    </span>
+                  </label>
+
+                  <label className="settings-generator-slider__label input-group">
+                    <span className="input-group__label">
+                      Цена
+                    </span>
+                    <span className="settings-generator-slider__value">
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={customCurrentPrice}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={value => {
+                          setCustomCurrentPrice(value);
+                          currentTool.customCurrentPrice = value;
+                        }}
+                        suffix="₽"
+                      />
+                    </span>
+                  </label>
+
+                  {/* 
+                    Лев, [24.07.21 21:34]
+                    Короче по второму: убираем свитч лонш шорт и считаем по дефолтному го
+                  */}
+                  {false &&
+                  <Tooltip title="Направление позиции">
+                    <Switch
+                      className="settings-generator-slider__switch-long-short"
+                      checkedChildren="LONG"
+                      unCheckedChildren="SHORT"
+                      checked={isLong}
+                      onChange={isLong => {
+                        setIsLong(isLong);
+                        const updatedTools = [...tools];
+                        updatedTools[currentToolIndex].update({ ...investorInfo, type: isLong ? "LONG" : "SHORT" })
+                        setTools(updatedTools);
+                      }}
+                    />
+                  </Tooltip>
+                  }
+
+                  <div className="settings-generator-slider__wrap">
+
+                    <CustomSlider 
+                      className="settings-generator-slider"
+                      value={load}
+                      step={0.01}
+                      onChange={value => setLoad(value)}
+                    />
+
+                  </div>
+                  
+                </div>
+                {/* row-col-half */}
+
+                <div className="settings-generator-content__row-col-half settings-generator-content__after-slider">
+
+                  <div>
+                    
+                    <label className="input-group">
+                      <div className="risk-label-wrap">
+                        <span className="input-group__label">Б/У</span>
+                        <button className="risk-label__switch"
+                                onClick={() => setRanullMode(!ranullMode)}>
+                          {ranullMode 
+                            ? currentPreset.type == "Лимитник"
+                              ? "% от депо"
+                              : "п" 
+                            : currentPreset.type == "Лимитник"
+                              ? "% от ср цены"
+                              : "%"
+                          }
+                        </button>
+                      </div>
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={ranull}
+                        format={formatNumber}
+                        unsigned="true"
+                        onBlur={ranull => setRanull(ranull)}
+                        suffix={currentPreset.type == "Лимитник" ? "%" : ranullMode ? "п" : "%"}
+                      />
+                    </label>
+
+                    <label className="input-group">
+                      <div className="risk-label-wrap">
+                        <span className="input-group__label">Смещение Б/У</span>
+                        <button className="risk-label__switch"
+                                onClick={() => setRanullPlusMode(!ranullPlusMode)}>
+                          {ranullPlusMode
+                            ? currentPreset.type == "Лимитник"
+                              ? "% от депо"
+                              : "п"
+                            : currentPreset.type == "Лимитник"
+                              ? "% от сред. цены"
+                              : "%"
+                          }
+                        </button>
+                      </div>
+                      <NumericInput
+                        className="input-group__input"
+                        defaultValue={ranullPlus}
+                        format={formatNumber}
+                        unsigned="true"
+                        onBlur={ranullPlus => setRanullPlus(ranullPlus)}
+                        suffix={currentPreset.type == "Лимитник" ? "%" : ranullPlusMode ? "п" : "%"}
+                      />
+                    </label>
+
+                  </div>
+
+                  <div>
+                    
+                    <div className="input-group">
+                      <div className="risk-label-wrap">
+                        <span className="input-group__label">
+                          <Tooltip title="Stop loss в процентах, пунктах или рублях на весь депозит">
+                            Риск (стоп)
+                          </Tooltip>
+                        </span>
+                        <button className="risk-label__switch"
+                                onClick={() => setIsRiskStatic(!isRiskStatic)}>
+                          {isRiskStatic ? "статический" : "динамический"}
+                        </button>
+                      </div>
+                      <NumericInput
+                        className="input-group__input"
+                        disabled={isReversedBying}
+                        // defaultValue={risk}
+                        defaultValue={currentPreset.options.risk}
+                        format={val => formatNumber(round(val, 2))}
+                        unsigned="true"
+                        onBlur={value => {
+                          if (value == round(risk, 2)) {
+                            value = risk;
+                          }
+                          setRisk(value);
+                        }}
+                        suffix={<Tooltip title="Процент от депозита">%</Tooltip>}
+                      />
+                    </div>
+
+                    <label className="input-group">
+                      <span className="input-group__label visually-hidden">Риск (стоп)</span>
+                      <NumericInput
+                        className="input-group__input"
+                        disabled={isReversedBying}
+                        defaultValue={
+                          (depoSum * risk / 100)
+                          /
+                          currentTool.stepPrice
+                          *
+                          currentTool.priceStep
+                          /
+                          (contracts || 1)
+                        }
+                        min={currentTool.priceStep}
+                        format={value => formatNumber(filterStep(value))}
+                        unsigned="true"
+                        onBlur={riskInSteps => {
+                          setRisk(
+                            riskInSteps
+                            *
+                            currentTool.stepPrice
+                            /
+                            currentTool.priceStep
+                            *
+                            (contracts || 1)
+                            /
+                            depoSum
+                            *
+                            100
+                          );
+                        }}
+                        suffix={<Tooltip title="Ход цены от точки входа">$/₽</Tooltip>}
+                      />
+                    </label>
+
+                    <label className="input-group">
+                      <span className="input-group__label visually-hidden">Риск (стоп)</span>
+                      <NumericInput
+                        className="input-group__input"
+                        disabled={isReversedBying}
+                        defaultValue={depoSum * risk / 100}
+                        format={value => formatNumber(round(value, fraction))}
+                        unsigned="true"
+                        onBlur={riskInMoney => {
+                          setRisk(riskInMoney / depoSum * 100);
+                        }}
+                        suffix="₽"
+                        suffix={<Tooltip title="Сумма риска в рублях">₽</Tooltip>}
+                      />
+                    </label>
+
+                  </div>
+
+                    
+                </div>
+                {/* row-col-half */}
+
+              </div>
+              {/* row */}
+
+              {/* Закрытие основного депозита */}
+              <div style={{ width: '100%' }}>
                 <div className="settings-generator-content__row-header-wrap">
-                <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
+                  <h3 className="settings-generator-content__row-header">
+                    Закрытие основного депозита
+                  </h3>
 
                   <Tooltip title={
-                    currentPreset.options["Закрытие плечевого депозита"].closeAll
+                    currentPreset.options[initialCurrentTab].closeAll
                       ? "Закрывать все открытые контракты"
                       : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
                   }>
                     <Switch
                       className="settings-generator-content__row-header-close-all"
-                      checked={currentPreset.options["Закрытие плечевого депозита"].closeAll}
+                      checked={currentPreset.options[initialCurrentTab].closeAll}
                       checkedChildren="100%"
                       unCheckedChildren="100%"
-                      onChange={closeAll => updatePresetProperty("Закрытие плечевого депозита", { closeAll })}
+                      onChange={closeAll => updatePresetProperty(initialCurrentTab, { closeAll })}
                     />
                   </Tooltip>
+
+                  <label className="switch-group">
+                    <Switch
+                      checked={currentPreset.options[initialCurrentTab].shouldResetByings}
+                      onChange={shouldResetByings => updatePresetProperty(initialCurrentTab, { shouldResetByings })}
+                    />
+                    <span className="switch-group__label">Сброс массива закрытия</span>
+                  </label>                
+
+                  {/* В Стандарте нет зеркальных докупок */}
+                  {["Стандарт"].indexOf(currentPreset.type) == -1 &&
+                    <label className="switch-group settings-generator-content__row-header-mirror-switch">
+                      <Switch
+                        checked={isResetStartPointEnabled}
+                        onChange={checked => {
+                          // Зеркальные докупки и Перевыставление в точку входа
+                          // не могут быть включены одновременно
+                          if (checked && isMirrorBying) {
+                            setMirrorBying(false);
+                          }
+                          setResetStartPointEnabled(checked);
+                        }}
+                      />
+                      <span className="switch-group__label">
+                        Перевыставление<br/>
+                        в точку входа
+                      </span>
+                    </label>
+                  }
+
+                  {/* В Стандарте нет зеркальных докупок */}
+                  {["Стандарт"].indexOf(currentPreset.type) == -1 &&
+                    <label className="switch-group settings-generator-content__row-header-mirror-switch">
+                      <Switch
+                        checked={isMirrorBying}
+                        onChange={checked => {
+                          // Зеркальные докупки и Перевыставление в точку входа
+                          // не могут быть включены одновременно
+                          if (checked && isResetStartPointEnabled) {
+                            setResetStartPointEnabled(false);
+                          }
+                          setMirrorBying(checked);
+                        }}
+                      />
+                      <span className="switch-group__label">
+                        Зеркальные докупки<br/>
+                        (СМС)
+                      </span>
+                    </label>
+                  }
                 </div>
 
                 <SGRow
-                  options={currentPreset.options["Закрытие плечевого депозита"]}
-                  onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
-                  onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
-                  data={data["Закрытие плечевого депозита"]}
+                  options={currentPreset.options[initialCurrentTab]}
+                  onModeChange={mode => updatePresetProperty(initialCurrentTab, { mode })}
+                  onPropertyChange={mappedValue => updatePresetProperty(initialCurrentTab, mappedValue)}
+                  data={data[initialCurrentTab]}
                   contracts={contracts}
                   currentTool={currentTool}
+                  stepsToPercentConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromStepsToPercent : undefined}
+                  percentToStepsConverter={currentPreset.type == "Лимитник" ? stepConverter.complexFromPercentToSteps : undefined}
                 />
+
               </div>
-            }
 
-            {/* Прямые профитные докупки */}
-            {currentPreset.options["Прямые профитные докупки"] &&
-              <>
-                <label className="switch-group">
-                  <Switch
-                    checked={isProfitableBying}
-                    onChange={checked => setProfitableBying(checked)}
-                  />
-                  <span className="switch-group__label">Прямые профитные докупки</span>
-                </label>
+              {/* Закрытие плечевого депозита */}
+              {hasExtraDepo && 
+                <div style={{ width: '100%', marginTop: "0.7em" }}>
+                  <div className="settings-generator-content__row-header-wrap">
+                  <h3 className="settings-generator-content__row-header">Закрытие плечевого депозита</h3>
 
-                {isProfitableBying &&
-                  <div style={{ width: '100%' }} hidden={!isProfitableBying}>
-                    <SGRow
-                      isBying={true}
-                      preferredStepLabel="Прямой ход"
-                      data={data["Прямые профитные докупки"]}
-                      options={currentPreset.options["Прямые профитные докупки"]}
-                      onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
-                      onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
-                      contracts={contractsTotal - contracts}
-                      currentTool={currentTool}
-                    />
+                    <Tooltip title={
+                      currentPreset.options["Закрытие плечевого депозита"].closeAll
+                        ? "Закрывать все открытые контракты"
+                        : "Закрывать строго согласно массиву (возможно закрытие не всех контрактов)"
+                    }>
+                      <Switch
+                        className="settings-generator-content__row-header-close-all"
+                        checked={currentPreset.options["Закрытие плечевого депозита"].closeAll}
+                        checkedChildren="100%"
+                        unCheckedChildren="100%"
+                        onChange={closeAll => updatePresetProperty("Закрытие плечевого депозита", { closeAll })}
+                      />
+                    </Tooltip>
                   </div>
-                }
-              </>
-            }
 
-            {/* Обратные профитные докупки */}
-            {currentPreset.options["Обратные профитные докупки"] &&
-              <>
-                <label className="switch-group">
-                  <Switch
-                    checked={isReversedProfitableBying}
-                    onChange={checked => setReversedProfitableBying(checked)}
-                  />
-                  <span className="switch-group__label">Обратные профитные докупки</span>
-                </label>
-
-                {isReversedProfitableBying &&
-                  <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
-                    <SGRow
-                      isBying={true}
-                      data={data["Обратные профитные докупки"]}
-                      options={currentPreset.options["Обратные профитные докупки"]}
-                      contracts={contractsTotal - contracts}
-                      currentTool={currentTool}
-                      onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
-                    />
-                  </div>
-                }
-              </>
-            }
-
-            {/* Обратные докупки (ТОР) */}
-            {currentPreset.options["Обратные докупки (ТОР)"] &&
-              <>
-                <label className="switch-group">
-                  <Switch
-                    checked={isReversedBying}
-                    onChange={checked => setReversedBying(checked)}
-                  />
-                  <span className="switch-group__label">
-                    {currentPreset.type == "Лимитник"
-                      ? "Докупки"
-                      : "Обратные докупки (ТОР)"
-                    }
-                  </span>
-                </label>
-
-                <div style={{ width: '100%' }} hidden={!isReversedBying}>
                   <SGRow
-                    isBying={true}
-                    currentPreset={currentPreset}
-                    currentOption="Обратные докупки (ТОР)"
-                    data={data["Обратные докупки (ТОР)"]}
-                    options={currentPreset.options["Обратные докупки (ТОР)"]}
-                    contracts={contractsTotal - contracts}
+                    options={currentPreset.options["Закрытие плечевого депозита"]}
+                    onModeChange={mode => updatePresetProperty("Закрытие плечевого депозита", { mode })}
+                    onPropertyChange={mappedValue => updatePresetProperty("Закрытие плечевого депозита", mappedValue)}
+                    data={data["Закрытие плечевого депозита"]}
+                    contracts={contracts}
                     currentTool={currentTool}
-                    onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
                   />
                 </div>
-              </>
-            }
+              }
 
-            {/* Начало таблицы */}
-            <div className="settings-generator-table-wrap">
+              {/* Прямые профитные докупки */}
+              {currentPreset.options["Прямые профитные докупки"] &&
+                <>
+                  <label className="switch-group">
+                    <Switch
+                      checked={isProfitableBying}
+                      onChange={checked => setProfitableBying(checked)}
+                    />
+                    <span className="switch-group__label">Прямые профитные докупки</span>
+                  </label>
 
-              <div className="settings-generator-table-header">
+                  {isProfitableBying &&
+                    <div style={{ width: '100%' }} hidden={!isProfitableBying}>
+                      <SGRow
+                        isBying={true}
+                        preferredStepLabel="Прямой ход"
+                        data={data["Прямые профитные докупки"]}
+                        options={currentPreset.options["Прямые профитные докупки"]}
+                        onModeChange={mode => updatePresetProperty("Прямые профитные докупки", { mode })}
+                        onPropertyChange={mappedValue => updatePresetProperty("Прямые профитные докупки", mappedValue)}
+                        contracts={contractsTotal - contracts}
+                        currentTool={currentTool}
+                      />
+                    </div>
+                  }
+                </>
+              }
 
-                <div
-                  className="settings-generator-table-tabs"
-                  role="tablist"
-                  aria-label="Таблицы" // TODO: придумать название, которое будет лучше описывать контент
-                >
+              {/* Обратные профитные докупки */}
+              {currentPreset.options["Обратные профитные докупки"] &&
+                <>
+                  <label className="switch-group">
+                    <Switch
+                      checked={isReversedProfitableBying}
+                      onChange={checked => setReversedProfitableBying(checked)}
+                    />
+                    <span className="switch-group__label">Обратные профитные докупки</span>
+                  </label>
 
-                  <Button className="custom-btn"
-                          role="tab"
-                          aria-selected="true"
-                          aria-controls="settings-generator-tab1"
-                          id="settings-generator-tab1-control"
-                          onClick={e => setCurrentTab(initialCurrentTab)}>
-                    Закрытие основного депо<span className="visually-hidden">зита</span>
-                  </Button>
+                  {isReversedProfitableBying &&
+                    <div style={{ width: '100%' }} hidden={!isReversedProfitableBying}>
+                      <SGRow
+                        isBying={true}
+                        data={data["Обратные профитные докупки"]}
+                        options={currentPreset.options["Обратные профитные докупки"]}
+                        contracts={contractsTotal - contracts}
+                        currentTool={currentTool}
+                        onPropertyChange={mappedValue => updatePresetProperty("Обратные профитные докупки", mappedValue)}
+                      />
+                    </div>
+                  }
+                </>
+              }
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab2"
-                          id="settings-generator-tab2-control"
-                          hidden={!hasExtraDepo}
-                          onClick={e => setCurrentTab("Закрытие плечевого депозита")}>
-                    Закрытие плечевого депо<span className="visually-hidden">зита</span>
-                  </Button>
+              {/* Обратные докупки (ТОР) */}
+              {currentPreset.options["Обратные докупки (ТОР)"] &&
+                <>
+                  <label className="switch-group">
+                    <Switch
+                      checked={isReversedBying}
+                      onChange={checked => setReversedBying(checked)}
+                    />
+                    <span className="switch-group__label">
+                      {currentPreset.type == "Лимитник"
+                        ? "Докупки"
+                        : "Обратные докупки (ТОР)"
+                      }
+                    </span>
+                  </label>
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab3"
-                          id="settings-generator-tab3-control"
-                          hidden={!isProfitableBying}
-                          onClick={e => setCurrentTab("Прямые профитные докупки")}>
-                    Прямые докупки
-                  </Button>
+                  <div style={{ width: '100%' }} hidden={!isReversedBying}>
+                    <SGRow
+                      isBying={true}
+                      currentPreset={currentPreset}
+                      currentOption="Обратные докупки (ТОР)"
+                      data={data["Обратные докупки (ТОР)"]}
+                      options={currentPreset.options["Обратные докупки (ТОР)"]}
+                      contracts={contractsTotal - contracts}
+                      currentTool={currentTool}
+                      onPropertyChange={mappedValue => updatePresetProperty("Обратные докупки (ТОР)", mappedValue)}
+                    />
+                  </div>
+                </>
+              }
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab4"
-                          id="settings-generator-tab4-control"
-                          hidden={true}
-                          // hidden={!isReversedProfitableBying}
-                          onClick={e => setCurrentTab("Обратные профитные докупки")}>
-                    Обратные докупки
-                  </Button>
+              {/* Начало таблицы */}
+              <div className="settings-generator-table-wrap">
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab5"
-                          id="settings-generator-tab5-control"
-                          // TODO: убрать?
-                          // hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
-                          hidden={true}
-                          onClick={e => setCurrentTab(e.target.innerText)}>
-                    Зеркальные докупки (СМС)
-                  </Button>
+                <div className="settings-generator-table-header">
 
-                  <Button className="custom-btn"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-tab6"
-                          id="settings-generator-tab6-control"
-                          hidden={!isReversedBying}
-                          onClick={e => setCurrentTab("Обратные докупки (ТОР)")}>
-                    {currentPreset.type == "Лимитник"
-                      ? "Докупки"
-                      : "Обратные докупки (ТОР)"
-                    }
-                  </Button>
+                  <div
+                    className="settings-generator-table-tabs"
+                    role="tablist"
+                    aria-label="Таблицы" // TODO: придумать название, которое будет лучше описывать контент
+                  >
 
-                  <Button className="settings-generator-table__show-code"
-                          id="settings-generator-code-control"
-                          tabIndex="-1"
-                          role="tab"
-                          aria-selected="false"
-                          aria-controls="settings-generator-code">
-                    <span className="visually-hidden">Показать код</span>
-                    <CodeIcon />
-                  </Button>
-                  {/*  */}
+                    <Button className="custom-btn"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="settings-generator-tab1"
+                            id="settings-generator-tab1-control"
+                            onClick={e => setCurrentTab(initialCurrentTab)}>
+                      Закрытие основного депо<span className="visually-hidden">зита</span>
+                    </Button>
+
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab2"
+                            id="settings-generator-tab2-control"
+                            hidden={!hasExtraDepo}
+                            onClick={e => setCurrentTab("Закрытие плечевого депозита")}>
+                      Закрытие плечевого депо<span className="visually-hidden">зита</span>
+                    </Button>
+
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab3"
+                            id="settings-generator-tab3-control"
+                            hidden={!isProfitableBying}
+                            onClick={e => setCurrentTab("Прямые профитные докупки")}>
+                      Прямые докупки
+                    </Button>
+
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab4"
+                            id="settings-generator-tab4-control"
+                            hidden={true}
+                            // hidden={!isReversedProfitableBying}
+                            onClick={e => setCurrentTab("Обратные профитные докупки")}>
+                      Обратные докупки
+                    </Button>
+
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab5"
+                            id="settings-generator-tab5-control"
+                            // TODO: убрать?
+                            // hidden={["СМС + ТОР", "Стандарт"].indexOf(currentPreset.type) > -1 || !isMirrorBying}
+                            hidden={true}
+                            onClick={e => setCurrentTab(e.target.innerText)}>
+                      Зеркальные докупки (СМС)
+                    </Button>
+
+                    <Button className="custom-btn"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-tab6"
+                            id="settings-generator-tab6-control"
+                            hidden={!isReversedBying}
+                            onClick={e => setCurrentTab("Обратные докупки (ТОР)")}>
+                      {currentPreset.type == "Лимитник"
+                        ? "Докупки"
+                        : "Обратные докупки (ТОР)"
+                      }
+                    </Button>
+
+                    <Button className="settings-generator-table__show-code"
+                            id="settings-generator-code-control"
+                            tabIndex="-1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="settings-generator-code">
+                      <span className="visually-hidden">Показать код</span>
+                      <CodeIcon />
+                    </Button>
+                    {/*  */}
+
+                  </div>
+                  {/* tablist */}
 
                 </div>
-                {/* tablist */}
+                {/* header */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab1"
+                    aria-labelledby="settings-generator-tab1-control">
+                  
+                  <Table data={mainData} />
+                  
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab2"
+                    aria-labelledby="settings-generator-tab2-control"
+                    hidden>
+
+                  {currentPreset.type != "Лимитник" &&
+                    <Table data={data['Закрытие плечевого депозита']} />
+                  }
+
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab3"
+                    aria-labelledby="settings-generator-tab3-control"
+                    hidden>
+                  
+                  <Table data={data['Прямые профитные докупки']} isBying={true} />
+
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab4"
+                    aria-labelledby="settings-generator-tab4-control"
+                    hidden>
+                  
+                  <Table data={data['Обратные профитные докупки']} isBying={true} />
+                  
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab5"
+                    aria-labelledby="settings-generator-tab5-control"
+                    hidden>
+                  
+                  <Table data={data['Зеркальные докупки']} isBying={true} />
+                  
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-tab6"
+                    aria-labelledby="settings-generator-tab6-control"
+                    hidden>
+                  
+                  <Table data={data['Обратные докупки (ТОР)']} isBying={true} />
+                  
+                </div>
+                {/* tabpanel */}
+
+                <div tabIndex="0"
+                    role="tabpanel"
+                    id="settings-generator-code"
+                    aria-labelledby="settings-generator-code-control"
+                    hidden>
+                  
+                  <CodePanel currentPreset={currentPreset}
+                            data={data} 
+                            tool={currentTool}
+                            contracts={contracts}
+                            risk={risk}
+                            flagMirror={isMirrorBying}
+                            flagPR={isResetStartPointEnabled}
+                            isRiskStatic={isRiskStatic}
+                            ranull={ranull}
+                            ranullMode={ranullMode}
+                            ranullPlus={ranullPlus}
+                            ranullPlusMode={ranullPlusMode} />
+                  
+                </div>
+                {/* tabpanel */}
 
               </div>
-              {/* header */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab1"
-                   aria-labelledby="settings-generator-tab1-control">
-                
-                <Table data={mainData} />
-                
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab2"
-                   aria-labelledby="settings-generator-tab2-control"
-                   hidden>
-
-                {currentPreset.type != "Лимитник" &&
-                  <Table data={data['Закрытие плечевого депозита']} />
-                }
-
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab3"
-                   aria-labelledby="settings-generator-tab3-control"
-                   hidden>
-                
-                <Table data={data['Прямые профитные докупки']} isBying={true} />
-
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab4"
-                   aria-labelledby="settings-generator-tab4-control"
-                   hidden>
-                
-                <Table data={data['Обратные профитные докупки']} isBying={true} />
-                
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab5"
-                   aria-labelledby="settings-generator-tab5-control"
-                   hidden>
-                
-                <Table data={data['Зеркальные докупки']} isBying={true} />
-                
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-tab6"
-                   aria-labelledby="settings-generator-tab6-control"
-                   hidden>
-                
-                <Table data={data['Обратные докупки (ТОР)']} isBying={true} />
-                
-              </div>
-              {/* tabpanel */}
-
-              <div tabIndex="0"
-                   role="tabpanel"
-                   id="settings-generator-code"
-                   aria-labelledby="settings-generator-code-control"
-                   hidden>
-                
-                <CodePanel currentPreset={currentPreset}
-                           data={data} 
-                           tool={currentTool}
-                           contracts={contracts}
-                           risk={risk}
-                           flagMirror={isMirrorBying}
-                           flagPR={isResetStartPointEnabled}
-                           isRiskStatic={isRiskStatic}
-                           ranull={ranull}
-                           ranullMode={ranullMode}
-                           ranullPlus={ranullPlus}
-                           ranullPlusMode={ranullPlusMode} />
-                
-              </div>
-              {/* tabpanel */}
+              {/* table-wrap */}
 
             </div>
-            {/* table-wrap */}
+            {/* inner */}
 
           </div>
-          {/* inner */}
+          {/* content */}
 
         </div>
-        {/* content */}
-
-      </div>
+      </Dialog>
 
       <Dialog
         id="settings-generator-add-popup"
@@ -1879,7 +1941,8 @@ const SettingsGenerator = props => {
           setCurrentPresetName(newPreset.name);
 
           setShouldSave(true);
-          setShouldRegisterUpdate(true);
+          // ##
+          // setShouldRegisterUpdate(true);
 
           return true;
         }}
@@ -1907,10 +1970,9 @@ const SettingsGenerator = props => {
         title={`${currentPreset.type} (${currentTool.code})`}
         namesTaken={presets.map(preset => preset.name)}
         onConfirm={name => {
-          const presetsCopy = [...presets];
-          const presetToCopy = currentPreset;
+          const presetsCopy = cloneDeep(presets);
           if (currentPresetIndex < 3) {
-            const newPreset = { ...presetToCopy };
+            const newPreset = cloneDeep(currentPreset);
             newPreset.name = makeUnique(name, presets.map(preset => preset.name));
             presetsCopy.push(newPreset);
             setCurrentPresetName(newPreset.name);
@@ -1918,7 +1980,8 @@ const SettingsGenerator = props => {
           }
 
           setShouldSave(true);
-          setShouldRegisterUpdate(true);
+          // ##
+          // setShouldRegisterUpdate(true);
           return true;
         }}
       />
