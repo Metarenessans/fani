@@ -322,7 +322,7 @@ class Dialog extends React.Component {
         }}>
         <div tabIndex="0" aria-hidden="true"></div>
         <div className={`${block}__inner card`}>
-          <Stack>
+          <Stack space="0.8rem">
             {!pure && <h2 className={`${block}__title`}>{title}</h2>}
 
             <div className={clsx(`${block}__content`, contentClassName)}>
